@@ -1,0 +1,52 @@
+{
+  "name": "india-smart-bus",
+  "version": "1.0.0",
+  "private": true,
+  "description": "India-Wide Smart Bus Directory, Community-Powered Live Tracking & Android App",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "server": "node --loader ts-node/esm backend/src/server.ts",
+    "test": "node --loader ts-node/esm tests/runTests.ts",
+    "cap:sync": "cap sync",
+    "cap:android": "cap open android"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.23.0",
+    "leaflet": "^1.9.4",
+    "lucide-react": "^0.378.0"
+  },
+  "devDependencies": {
+    "@capacitor/android": "^6.0.0",
+    "@capacitor/cli": "^6.0.0",
+    "@capacitor/core": "^6.0.0",
+    "@capacitor/geolocation": "^6.0.0",
+    "@types/leaflet": "^1.9.11",
+    "@types/node": "^20.12.7",
+    "@types/react": "^18.3.1",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.2.1",
+    "autoprefixer": "^10.4.19",
+    "postcss": "^8.4.38",
+    "tailwindcss": "^3.4.3",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.5",
+    "vite": "^5.2.10"
+  },
+  "keywords": [
+    "bus-tracking",
+    "public-transport",
+    "india-bus",
+    "postgis",
+    "community-powered",
+    "gps-confidence",
+    "open-street-map",
+    "capacitor"
+  ],
+  "author": "YatriBus Open Source Contributors",
+  "license": "Apache-2.0"
+}

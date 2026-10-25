@@ -1,0 +1,380 @@
+import React, { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { api } from '../services/api.js';
+import { SubmissionType } from '@shared/types/contribution.js';
+import { PlusCircle, Search, CheckCircle, AlertTriangle, ShieldCheck, ArrowRight } from 'lucide-react';
+
+export const ContributePage: React.FC = () => {
+  const [searchParams] = useSearchParams();
+  const initialType = (searchParams.get('type') as SubmissionType) || 'ADD_BUS';
+
+  const [activeTab, setActiveTab] = useState<'SUBMIT' | 'CHECK_STATUS'>('SUBMIT');
+  const [submissionType, setSubmissionType] = useState<SubmissionType>(initialType);
+
+  // Form State
+  const [name, setName] = useState('');
+  const [routeNumber, setRouteNumber] = useState('');
+  const [origin, setOrigin] = useState('');
+  const [destination, setDestination] = useState('');
+  const [stateName, setStateName] = useState('Delhi');
+  const [departureTime, setDepartureTime] = useState('');
+  const [notes, setNotes] = useState('');
+
+  // Status check state
+  const [refIdQuery, setRefIdQuery] = useState('');
+  const [statusResult, setStatusResult] = useState<any>(null);
+  const [statusError, setStatusError] = useState('');
+
+  // Submission result
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submittedRefId, setSubmittedRefId] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      const res = await api.submitContribution({
+        submissionType,
+        entityType: submissionType === 'ADD_STOP' ? 'STOP' : 'BUS',
+        contributorNote: notes,
+        proposedData: {
+          name: name || routeNumber,
+          routeNumber,
+          origin,
+          destination,
+          state: stateName,
+          departureTime,
+        },
+      });
+
+      setSubmittedRefId(res.referenceId);
+      setIsSubmitting(false);
+    } catch {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleCheckStatus = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setStatusError('');
+    setStatusResult(null);
+
+    try {
+      const res = await api.getSubmissionStatus(refIdQuery.trim());
+      setStatusResult(res);
+    } catch (err: any) {
+      setStatusError(err.message || 'Reference ID not found. Please double-check.');
+    }
+  };
+
+  return (
+    <div className="max-w-3xl mx-auto px-4 py-8 space-y-8">
+      <div className="text-center space-y-2">
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-yatribrand-100 text-yatribrand-900 text-xs font-semibold">
+          <ShieldCheck className="w-3.5 h-3.5 text-yatribrand-700" />
+          <span>No Passenger Account Required</span>
+        </div>
+        <h1 className="text-2xl sm:text-3xl font-bold text-yatriwarm-950">
+          Community Transport Contribution
+        </h1>
+        <p className="text-xs sm:text-sm text-yatriwarm-600 max-w-lg mx-auto">
+          Help fellow commuters keep public transport data accurate. Submit updates, verify schedules, or check previous submissions with your Reference ID.
+        </p>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex border-b border-yatriwarm-200">
+        <button
+          type="button"
+          onClick={() => setActiveTab('SUBMIT')}
+          className={`flex-1 py-3 text-center text-sm font-semibold border-b-2 transition-colors ${
+            activeTab === 'SUBMIT'
+              ? 'border-yatribrand-900 text-yatribrand-900'
+              : 'border-transparent text-yatriwarm-500 hover:text-yatriwarm-800'
+          }`}
+        >
+          Submit Missing Info
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('CHECK_STATUS')}
+          className={`flex-1 py-3 text-center text-sm font-semibold border-b-2 transition-colors ${
+            activeTab === 'CHECK_STATUS'
+              ? 'border-yatribrand-900 text-yatribrand-900'
+              : 'border-transparent text-yatriwarm-500 hover:text-yatriwarm-800'
+          }`}
+        >
+          Check Submission Status
+        </button>
+      </div>
+
+      {/* SUBMIT FORM */}
+      {activeTab === 'SUBMIT' && (
+        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-yatriwarm-200 shadow-card">
+          {submittedRefId ? (
+            <div className="text-center py-6 space-y-4">
+              <div className="w-14 h-14 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto">
+                <CheckCircle className="w-8 h-8" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-xl font-bold text-yatriwarm-900">Contribution Received!</h3>
+                <p className="text-xs text-yatriwarm-600">
+                  Your update has been placed in the verifier review queue.
+                </p>
+              </div>
+
+              <div className="p-4 bg-yatriwarm-50 rounded-2xl border border-yatriwarm-200 max-w-sm mx-auto">
+                <div className="text-xs text-yatriwarm-500 font-medium">Your Tracking Reference ID</div>
+                <div className="text-lg font-mono font-bold text-yatribrand-900 mt-1 select-all">
+                  {submittedRefId}
+                </div>
+                <div className="text-[11px] text-yatriwarm-400 mt-1">
+                  Save this code to check verification status without creating an account.
+                </div>
+              </div>
+
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSubmittedRefId(null);
+                    setName('');
+                    setRouteNumber('');
+                    setNotes('');
+                  }}
+                  className="px-5 py-2.5 bg-yatribrand-900 text-white rounded-xl text-xs font-semibold shadow-subtle hover:bg-yatribrand-950 transition-colors"
+                >
+                  Submit Another Contribution
+                </button>
+              </div>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-5">
+              {/* Type selection */}
+              <div>
+                <label className="block text-xs font-bold text-yatriwarm-700 uppercase tracking-wider mb-2">
+                  What would you like to contribute?
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {[
+                    { id: 'ADD_BUS' as SubmissionType, label: 'Add Bus' },
+                    { id: 'ADD_STOP' as SubmissionType, label: 'Add Stop' },
+                    { id: 'CORRECT_TIMETABLE' as SubmissionType, label: 'Fix Schedule' },
+                    { id: 'REPORT_CHANGED_ROUTE' as SubmissionType, label: 'Report Issue' },
+                  ].map(t => (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => setSubmissionType(t.id)}
+                      className={`p-2.5 rounded-xl border text-xs font-semibold transition-all ${
+                        submissionType === t.id
+                          ? 'bg-yatribrand-900 text-white border-yatribrand-900 shadow-xs'
+                          : 'bg-yatriwarm-50 text-yatriwarm-700 border-yatriwarm-200 hover:bg-yatriwarm-100'
+                      }`}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Dynamic form fields */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {submissionType === 'ADD_BUS' && (
+                  <div>
+                    <label className="block text-xs font-medium text-yatriwarm-700 mb-1">
+                      Bus Route Number
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={routeNumber}
+                      onChange={e => setRouteNumber(e.target.value)}
+                      placeholder="e.g. 534, AC-105, 500D"
+                      className="w-full px-3.5 py-2.5 bg-yatriwarm-50 border border-yatriwarm-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-yatribrand-800 focus:bg-white"
+                    />
+                  </div>
+                )}
+
+                {submissionType === 'ADD_STOP' && (
+                  <div>
+                    <label className="block text-xs font-medium text-yatriwarm-700 mb-1">
+                      Bus Stop Name
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={name}
+                      onChange={e => setName(e.target.value)}
+                      placeholder="e.g. AIIMS Ansari Nagar Gate 2"
+                      className="w-full px-3.5 py-2.5 bg-yatriwarm-50 border border-yatriwarm-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-yatribrand-800 focus:bg-white"
+                    />
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-xs font-medium text-yatriwarm-700 mb-1">
+                    State / Union Territory
+                  </label>
+                  <select
+                    value={stateName}
+                    onChange={e => setStateName(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-yatriwarm-50 border border-yatriwarm-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-yatribrand-800 focus:bg-white"
+                  >
+                    <option value="Delhi">Delhi</option>
+                    <option value="Maharashtra">Maharashtra</option>
+                    <option value="Karnataka">Karnataka</option>
+                    <option value="West Bengal">West Bengal</option>
+                    <option value="Tamil Nadu">Tamil Nadu</option>
+                    <option value="Uttar Pradesh">Uttar Pradesh</option>
+                    <option value="Gujarat">Gujarat</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-yatriwarm-700 mb-1">
+                    Origin Terminal
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={origin}
+                    onChange={e => setOrigin(e.target.value)}
+                    placeholder="e.g. Anand Vihar ISBT"
+                    className="w-full px-3.5 py-2.5 bg-yatriwarm-50 border border-yatriwarm-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-yatribrand-800 focus:bg-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-yatriwarm-700 mb-1">
+                    Destination Terminal
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={destination}
+                    onChange={e => setDestination(e.target.value)}
+                    placeholder="e.g. Mehrauli Terminal"
+                    className="w-full px-3.5 py-2.5 bg-yatriwarm-50 border border-yatriwarm-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-yatribrand-800 focus:bg-white"
+                  />
+                </div>
+              </div>
+
+              {/* Departure time if schedule correction */}
+              {submissionType === 'CORRECT_TIMETABLE' && (
+                <div>
+                  <label className="block text-xs font-medium text-yatriwarm-700 mb-1">
+                    Correct Departure Time (IST)
+                  </label>
+                  <input
+                    type="time"
+                    required
+                    value={departureTime}
+                    onChange={e => setDepartureTime(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-yatriwarm-50 border border-yatriwarm-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-yatribrand-800 focus:bg-white"
+                  />
+                </div>
+              )}
+
+              {/* Contributor note */}
+              <div>
+                <label className="block text-xs font-medium text-yatriwarm-700 mb-1">
+                  Additional Notes / Evidence (Optional)
+                </label>
+                <textarea
+                  rows={3}
+                  value={notes}
+                  onChange={e => setNotes(e.target.value)}
+                  placeholder="e.g. Timetable photo taken at depot, or observed route change starting this Monday..."
+                  className="w-full px-3.5 py-2.5 bg-yatriwarm-50 border border-yatriwarm-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-yatribrand-800 focus:bg-white"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full py-3 bg-yatribrand-900 hover:bg-yatribrand-950 text-white font-bold text-sm rounded-xl transition-all shadow-subtle flex items-center justify-center gap-2"
+              >
+                <PlusCircle className="w-4 h-4" />
+                {isSubmitting ? 'Submitting...' : 'Submit Contribution'}
+              </button>
+            </form>
+          )}
+        </div>
+      )}
+
+      {/* CHECK STATUS TAB */}
+      {activeTab === 'CHECK_STATUS' && (
+        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-yatriwarm-200 shadow-card space-y-6">
+          <form onSubmit={handleCheckStatus} className="space-y-4">
+            <div>
+              <label className="block text-xs font-bold text-yatriwarm-700 uppercase tracking-wider mb-1.5">
+                Enter Your Submission Reference ID
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  required
+                  value={refIdQuery}
+                  onChange={e => setRefIdQuery(e.target.value)}
+                  placeholder="e.g. YB-SUB-2026-9481"
+                  className="flex-1 px-4 py-2.5 bg-yatriwarm-50 border border-yatriwarm-200 rounded-xl text-sm font-mono focus:ring-2 focus:ring-yatribrand-800 focus:bg-white"
+                />
+                <button
+                  type="submit"
+                  className="px-5 py-2.5 bg-yatribrand-900 hover:bg-yatribrand-950 text-white text-xs font-bold rounded-xl shadow-subtle transition-colors shrink-0"
+                >
+                  Check
+                </button>
+              </div>
+            </div>
+          </form>
+
+          {statusError && (
+            <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-800 flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 shrink-0 text-rose-600" />
+              <span>{statusError}</span>
+            </div>
+          )}
+
+          {statusResult && (
+            <div className="p-5 rounded-2xl bg-yatriwarm-50 border border-yatriwarm-200 space-y-3">
+              <div className="flex items-center justify-between pb-2 border-b border-yatriwarm-200">
+                <span className="text-xs font-mono font-bold text-yatribrand-900">
+                  {statusResult.referenceId}
+                </span>
+                <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${
+                  statusResult.status === 'ADMIN_VERIFIED'
+                    ? 'bg-emerald-100 text-emerald-800'
+                    : statusResult.status === 'REJECTED'
+                    ? 'bg-rose-100 text-rose-800'
+                    : 'bg-amber-100 text-amber-800'
+                }`}>
+                  {statusResult.status.replace('_', ' ')}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div>
+                  <span className="text-yatriwarm-500">Submission Type:</span>{' '}
+                  <strong className="text-yatriwarm-800">{statusResult.submissionType}</strong>
+                </div>
+                <div>
+                  <span className="text-yatriwarm-500">Submitted:</span>{' '}
+                  <strong className="text-yatriwarm-800">{new Date(statusResult.submittedAt).toLocaleDateString()}</strong>
+                </div>
+              </div>
+
+              {statusResult.adminDecisionReason && (
+                <div className="text-xs text-yatriwarm-700 bg-white p-2.5 rounded-lg border border-yatriwarm-200">
+                  <span className="font-semibold">Reviewer Note:</span> {statusResult.adminDecisionReason}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};

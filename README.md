@@ -1,0 +1,105 @@
+# YatriBus (यात्रीबस / যাত্রীবাস)
+### India-Wide Smart Bus Directory, Community-Powered Live Tracking & Android App
+
+[![Build Android Debug APK](https://github.com/your-username/india-smart-bus/actions/workflows/android-apk.yml/badge.svg)](https://github.com/your-username/india-smart-bus/actions/workflows/android-apk.yml)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Target Budget](https://img.shields.io/badge/Cost_Target-₹0_Initial_Budget-emerald.svg)](#)
+
+---
+
+## 🚌 Overview
+
+**YatriBus** is a community-powered public transport information platform designed for daily commuters across Indian cities and states. It combines a comprehensive Indian places directory, bus route schedules, intelligent typo-tolerant search, account-free community contributions, and consent-based passenger-assisted GPS live tracking.
+
+### Core Non-Negotiables Built In:
+- **No Mandatory Passenger Accounts**: Search, view routes, and submit corrections immediately without phone numbers, OTPs, or passwords.
+- **Explicit Location Consent**: Zero covert background tracking. Location is only requested when using proximity features or confirming a bus journey.
+- **Deterministic Multi-Signal GPS Engine**: Evaluates horizontal accuracy, timestamp freshness, route cross-track distance, and speed realism without requiring paid AI APIs.
+- **Transparent Distinction**: Live GPS observations and schedule timetable predictions are clearly differentiated. Schedule estimates are **never** falsely labeled as "Live GPS".
+- **Custom SVG Bus Artwork**: Missing bus photos display a custom vector SVG bus illustration, never a broken image icon.
+- **₹0 Initial Cost Target**: Runs on open-source code, free-tier PostGIS/PostgreSQL, OpenStreetMap tiles, and automated GitHub Actions Android APK builds.
+
+---
+
+## 📱 Features
+
+- **Origin to Destination Search**: Fast direct bus routes and 1-transfer connections with realistic interchange wait times.
+- **Typo-Tolerant Place Autocomplete**: Levenshtein distance, token similarity, and Indian administrative disambiguation (e.g., distinguishing Kashmere Gate from Kashmiri Gate, or Rampur HP from Rampur UP).
+- **Multilingual Support**: First-class support for English, Hindi (हिन्दी), and Bengali (বাংলা).
+- **Interactive Route Maps**: Route polylines, ordered stop markers, and real-time pulsing bus markers powered by Leaflet and OpenStreetMap.
+- **Account-Free Contribution Portal**: Submit missing buses, stops, or schedule corrections. Contributors receive a public Reference ID (e.g., `YB-SUB-2026-9481`) to check review progress.
+- **Administrator Moderation Dashboard**: Protected console for transit verifiers to review submissions, resolve duplicate candidates, configure automation rules, and monitor active tracking sessions.
+- **Android Mobile App**: Packaged via Capacitor with native fine location and foreground service permissions.
+
+---
+
+## 🚀 Quick Start Guide
+
+### Prerequisites
+- Node.js 20 or newer
+- npm 9 or newer
+
+### 1. Clone & Install Dependencies
+```bash
+git clone https://github.com/your-username/india-smart-bus.git
+cd india-smart-bus
+npm install
+```
+
+### 2. Configure Environment
+Copy the example environment template:
+```bash
+cp .env.example .env
+```
+*(The default configuration runs out of the box with zero external dependencies using the embedded transit repository).*
+
+### 3. Run Automated Tests
+Execute the master automated test runner verifying normalizers, route matching, confidence engine, and ETA logic:
+```bash
+npm test
+```
+
+### 4. Start Development Servers
+- **Frontend Web UI** (Vite + React + Tailwind):
+  ```bash
+  npm run dev
+  ```
+  Open `http://localhost:3000` in your web browser.
+
+- **Backend Express REST API**:
+  ```bash
+  npm run server
+  ```
+  Listening on `http://localhost:5000`.
+
+---
+
+## 📦 Android APK Build via GitHub Actions
+
+You do **not** need Android Studio installed locally. The repository includes an automated GitHub Actions workflow (`.github/workflows/android-apk.yml`) that builds an installable Android Debug APK in the cloud.
+
+### How to Get Your APK:
+1. Push this repository to GitHub.
+2. Navigate to the **Actions** tab on your GitHub repository page.
+3. Select the latest completed run of **Build Android Debug APK**.
+4. Download the **`yatribus-debug-apk`** artifact.
+5. Transfer the unzipped `app-debug.apk` to your Android phone, enable *"Install Unknown Apps"* for your file manager, and tap **Install**.
+
+*For complete details, see [docs/APK_INSTALLATION.md](docs/APK_INSTALLATION.md).*
+
+---
+
+## 📚 Documentation Directory
+
+- **[System Architecture](docs/ARCHITECTURE.md)**: Deep dive into the client-server layers, route graph, and geospatial confidence pipeline.
+- **[Database & PostGIS](docs/DATABASE.md)**: Schema definitions, spatial GIST indexes, and migration scripts.
+- **[REST API Reference](docs/API.md)**: Endpoint documentation, query parameters, and JSON payloads.
+- **[Privacy & Data Minimization](docs/PRIVACY.md)**: Consent lifecycle, 12-hour session limits, and bus-level anonymization.
+- **[Production Deployment (₹0 Tier)](docs/DEPLOYMENT.md)**: Setup guide for Supabase/Neon PostgreSQL and hosting.
+- **[Milestone Verification Report](docs/MILESTONE_REPORT.md)**: Audit checklist of completed requirements.
+
+---
+
+## 📜 License
+
+Licensed under the [Apache License, Version 2.0](LICENSE). Transit schedule data and OpenStreetMap tiles remain subject to their respective ODbL and open government licenses.
