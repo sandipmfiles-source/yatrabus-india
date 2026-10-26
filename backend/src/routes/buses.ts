@@ -1,13 +1,13 @@
 import { Router, Request, Response } from 'express';
 import { repository } from '../db/repository.js';
-import { calculateStopETAs } from '../../packages/shared/src/engine/etaCalculator.js';
-import { evaluateObservationFreshness } from '../../packages/shared/src/engine/staleDetector.js';
+import { calculateStopETAs } from '../../../packages/shared/src/engine/etaCalculator.js';
+import { evaluateObservationFreshness } from '../../../packages/shared/src/engine/staleDetector.js';
 
 export const busesRouter = Router();
 
 // GET /api/buses/:id
 busesRouter.get('/:id', (req: Request, res: Response) => {
-  const bus = repository.getBusById(req.params.id);
+  const bus = repository.getBusById(String(req.params.id));
   if (!bus) {
     return res.status(404).json({ error: 'Bus not found' });
   }

@@ -26,30 +26,61 @@ export function checkDuplicateStop(
   );
 
   const nameSim = calculateTokenSimilarity(stopA.name, stopB.name);
+  const nameA = normalizePlaceName(stopA.name);
+  const nameB = normalizePlaceName(stopB.name);
+  const tokensA = new Set(nameA.split(/\s+/).filter(Boolean));
+  const tokensB = new Set(nameB.split(/\s+/).filter(Boolean));
+  const commonTokens = [...tokensA].filter((token) => tokensB.has(token));
   const matchingFactors: string[] = [];
+
+  // Stops in different cities should not be duplicates just because
+  // their names match. More than 400 m is outside this detector's
+  // duplicate-stop proximity threshold.
+  if (!Number.isFinite(distMeters) || distMeters > 400) {
+    return {
+      isLikelyDuplicate: false,
+      similarityScore: 0,
+      matchingFactors: [],
+      recommendation: 'DISTINCT',
+    };
+  }
 
   let score = 0;
 
   if (distMeters <= 50) {
     score += 50;
-    matchingFactors.push(`Extremely close geographic distance (${Math.round(distMeters)}m)`);
+    matchingFactors.push(
+      `Extremely close geographic distance (${Math.round(distMeters)}m)`
+    );
   } else if (distMeters <= 150) {
     score += 35;
-    matchingFactors.push(`Close geographic distance (${Math.round(distMeters)}m)`);
-  } else if (distMeters <= 400) {
+    matchingFactors.push(
+      `Close geographic distance (${Math.round(distMeters)}m)`
+    );
+  } else {
     score += 15;
     matchingFactors.push(`Nearby area (${Math.round(distMeters)}m)`);
   }
 
   if (nameSim >= 0.85) {
     score += 50;
-    matchingFactors.push(`Near-identical stop name (${Math.round(nameSim * 100)}% match)`);
+    matchingFactors.push(
+      `Near-identical stop name (${Math.round(nameSim * 100)}% match)`
+    );
   } else if (nameSim >= 0.6) {
     score += 30;
-    matchingFactors.push(`Significant name token overlap (${Math.round(nameSim * 100)}% match)`);
+    matchingFactors.push(
+      `Significant name token overlap (${Math.round(nameSim * 100)}% match)`
+    );
+  } else if (commonTokens.length >= 2) {
+    score += 30;
+    matchingFactors.push(
+      `Shared name tokens (${commonTokens.length})`
+    );
   }
 
   const finalScore = Math.min(100, score);
+
   let recommendation: DuplicateDetectionResult['recommendation'] = 'DISTINCT';
 
   if (finalScore >= 75) {

@@ -1,20 +1,20 @@
-import { Place } from '../../packages/shared/src/types/places.js';
-import { Bus, Operator, Route, RouteStop } from '../../packages/shared/src/types/bus.js';
+import { Place } from '../../../packages/shared/src/types/places.js';
+import { Bus, Operator, Route } from '../../../packages/shared/src/types/bus.js';
 import {
   ConsentRecord,
   JourneySession,
   LocationObservation,
   AggregatedBusLocation,
-} from '../../packages/shared/src/types/tracking.js';
+} from '../../../packages/shared/src/types/tracking.js';
 import {
   CommunitySubmission,
   DuplicateCandidate,
   OperatorClaimRequest,
-} from '../../packages/shared/src/types/contribution.js';
-import { AdminUser, AuditLogEntry, AutomationRule, SystemHealthStats } from '../../packages/shared/src/types/admin.js';
+} from '../../../packages/shared/src/types/contribution.js';
+import { AdminUser, AuditLogEntry, AutomationRule, SystemHealthStats } from '../../../packages/shared/src/types/admin.js';
 import { SEED_PLACES, SEED_OPERATORS, SEED_ROUTES, SEED_BUSES } from './seedData.js';
-import { searchPlaces as runSearchPlaces } from '../../packages/shared/src/search/typoSearch.js';
-import { haversineDistanceMeters } from '../../packages/shared/src/engine/routeMatcher.js';
+import { searchPlaces as runSearchPlaces } from '../../../packages/shared/src/search/typoSearch.js';
+import { haversineDistanceMeters } from '../../../packages/shared/src/engine/routeMatcher.js';
 
 export class TransitRepository {
   private places: Map<string, Place> = new Map();
@@ -225,7 +225,7 @@ export class TransitRepository {
     const sinceMs = new Date(sinceIso).getTime();
     const sessions = new Set<string>();
     for (const obs of this.observations) {
-      if (obs.busId === busId && new Date(obs.observedAt || obs.timestamp).getTime() >= sinceMs) {
+      if (obs.busId === busId && new Date(obs.timestamp).getTime() >= sinceMs) {
         sessions.add(obs.sessionId);
       }
     }

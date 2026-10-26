@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { repository } from '../db/repository.js';
-import { checkDuplicateStop, checkDuplicateRoute } from '../../packages/shared/src/engine/duplicateDetector.js';
+import { checkDuplicateStop, checkDuplicateRoute } from '../../../packages/shared/src/engine/duplicateDetector.js';
 import { contributionLimiter } from '../middleware/rateLimiter.js';
 
 export const contributionsRouter = Router();
@@ -74,7 +74,7 @@ contributionsRouter.post('/submit', contributionLimiter, (req: Request, res: Res
 // GET /api/contributions/status/:refId
 // Public check of review status without account
 contributionsRouter.get('/status/:refId', (req: Request, res: Response) => {
-  const sub = repository.getSubmissionByReference(req.params.refId);
+  const sub = repository.getSubmissionByReference(String(req.params.refId));
   if (!sub) {
     return res.status(404).json({
       error: 'Submission reference ID not found. Please verify the code.',

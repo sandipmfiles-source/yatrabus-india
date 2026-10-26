@@ -39,7 +39,7 @@ placesRouter.get('/nearby', (req: Request, res: Response) => {
 
 // GET /api/places/:id
 placesRouter.get('/:id', (req: Request, res: Response) => {
-  const place = repository.getPlaceById(req.params.id);
+  const place = repository.getPlaceById(String(req.params.id));
   if (!place) {
     return res.status(404).json({ error: 'Place not found' });
   }

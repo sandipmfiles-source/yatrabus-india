@@ -1,4 +1,4 @@
-import { Route, RouteStop, JourneyCandidate } from '../types/bus.js';
+import { Route, JourneyCandidate } from '../types/bus.js';
 import { normalizePlaceName } from '../search/normalizer.js';
 
 export interface RouteSearchResult {
@@ -14,7 +14,7 @@ export function discoverJourneys(
   originStopQuery: string,
   destinationStopQuery: string,
   allRoutes: Route[],
-  currentTimeIso: string = new Date().toISOString()
+  _currentTimeIso: string = new Date().toISOString()
 ): RouteSearchResult {
   const normOrigin = normalizePlaceName(originStopQuery);
   const normDest = normalizePlaceName(destinationStopQuery);
@@ -90,7 +90,7 @@ export function discoverJourneys(
           if (routeA.id === routeB.id) continue;
 
           const interchangeIdxB = routeB.stops.findIndex(s =>
-            stopMatches(s.stops ? s.stopName : '', normInterchange)
+            stopMatches(s.stopName, normInterchange)
           );
           if (interchangeIdxB === -1) continue;
 

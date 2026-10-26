@@ -1,7 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { repository } from '../db/repository.js';
 import { requireAdminAuth } from '../middleware/auth.js';
-import { CONFIG } from '../config.js';
 
 export const adminRouter = Router();
 
@@ -61,7 +60,7 @@ adminRouter.post('/submissions/:id/review', requireAdminAuth(), (req: Request, r
     return res.status(400).json({ error: 'Valid review decision required' });
   }
 
-  const success = repository.updateSubmissionReview(req.params.id, decision, reason || 'Reviewed by administrator', adminId);
+  const success = repository.updateSubmissionReview(String(req.params.id), decision, reason || 'Reviewed by administrator', adminId);
   if (!success) {
     return res.status(404).json({ error: 'Submission not found' });
   }
@@ -69,7 +68,7 @@ adminRouter.post('/submissions/:id/review', requireAdminAuth(), (req: Request, r
   repository.createAuditLog({
     id: `audit-${Date.now()}`,
     entityType: 'SUBMISSION',
-    entityId: req.params.id,
+    entityId: String(req.params.id),
     action: decision === 'REJECTED' ? 'DELETE' : 'VERIFY',
     actorId: adminId,
     actorRole: 'SUPER_ADMIN',
@@ -91,7 +90,7 @@ adminRouter.post('/duplicates/:id/resolve', requireAdminAuth(), (req: Request, r
   const { resolution } = req.body; // 'MERGED' | 'REJECTED_DIFFERENT'
   const adminId = (req as any).admin?.id || 'admin-default';
 
-  const success = repository.resolveDuplicateCandidate(req.params.id, resolution, adminId);
+  const success = repository.resolveDuplicateCandidate(String(req.params.id), resolution, adminId);
   if (!success) {
     return res.status(404).json({ error: 'Duplicate candidate not found' });
   }
@@ -109,7 +108,7 @@ adminRouter.get('/automation/rules', requireAdminAuth(), (req: Request, res: Res
 adminRouter.put('/automation/rules/:id', requireAdminAuth(), (req: Request, res: Response) => {
   const { isEnabled, parameters } = req.body;
 
-  const success = repository.updateAutomationRule(req.params.id, isEnabled, parameters || {});
+  const success = repository.updateAutomationRule(String(req.params.id), isEnabled, parameters || {});
   if (!success) {
     return res.status(404).json({ error: 'Automation rule not found' });
   }

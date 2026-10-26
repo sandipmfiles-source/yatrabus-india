@@ -1,6 +1,6 @@
 import { CONFIG } from '../config.js';
 import { repository } from '../db/repository.js';
-import { AdminRole } from '../../packages/shared/src/types/admin.js';
+import { AdminRole } from '../../../packages/shared/src/types/admin.js';
 
 export function requireAdminAuth(requiredRole?: AdminRole) {
   return (req: any, res: any, next: any) => {

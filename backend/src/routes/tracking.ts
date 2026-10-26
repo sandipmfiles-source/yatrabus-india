@@ -1,8 +1,8 @@
 import { Router, Request, Response } from 'express';
 import { repository } from '../db/repository.js';
-import { evaluateLocationConfidence } from '../../packages/shared/src/engine/confidenceEngine.js';
-import { evaluateJourneyPrompt } from '../../packages/shared/src/engine/journeyConfirmationEngine.js';
-import { evaluateObservationFreshness } from '../../packages/shared/src/engine/staleDetector.js';
+import { evaluateLocationConfidence } from '../../../packages/shared/src/engine/confidenceEngine.js';
+import { evaluateJourneyPrompt } from '../../../packages/shared/src/engine/journeyConfirmationEngine.js';
+import { evaluateObservationFreshness } from '../../../packages/shared/src/engine/staleDetector.js';
 import { CONFIG } from '../config.js';
 
 export const trackingRouter = Router();
@@ -188,10 +188,10 @@ trackingRouter.post('/observation', (req: Request, res: Response) => {
 
 // GET /api/tracking/bus/:id/location
 trackingRouter.get('/bus/:id/location', (req: Request, res: Response) => {
-  const loc = repository.getBusLocation(req.params.id);
+  const loc = repository.getBusLocation(String(req.params.id));
   if (!loc) {
     return res.json({
-      busId: req.params.id,
+      busId: String(req.params.id),
       displayState: 'UNAVAILABLE',
       isLive: false,
       confidenceCategory: 'LOW',
@@ -207,7 +207,7 @@ trackingRouter.get('/bus/:id/location', (req: Request, res: Response) => {
       loc.displayState = freshness.displayState;
       loc.isLive = false;
       loc.statusExplanation = freshness.label;
-      repository.updateBusLocation(req.params.id, loc);
+      repository.updateBusLocation(String(req.params.id), loc);
     }
   }
 

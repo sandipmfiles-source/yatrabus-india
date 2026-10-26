@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { repository } from '../db/repository.js';
-import { discoverJourneys } from '../../packages/shared/src/engine/routeGraph.js';
+import { discoverJourneys } from '../../../packages/shared/src/engine/routeGraph.js';
 import { publicSearchLimiter } from '../middleware/rateLimiter.js';
 
 export const routesRouter = Router();
@@ -37,7 +37,7 @@ routesRouter.get('/', (req: Request, res: Response) => {
 
 // GET /api/routes/:id
 routesRouter.get('/:id', (req: Request, res: Response) => {
-  const route = repository.getRouteById(req.params.id);
+  const route = repository.getRouteById(String(req.params.id));
   if (!route) {
     return res.status(404).json({ error: 'Route not found' });
   }

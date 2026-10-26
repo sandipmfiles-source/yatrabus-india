@@ -1,6 +1,6 @@
-import { Place } from '../../packages/shared/src/types/places.js';
-import { Bus, Operator, Route } from '../../packages/shared/src/types/bus.js';
-import { AutomationRule } from '../../packages/shared/src/types/admin.js';
+import { Place } from '../../../packages/shared/src/types/places.js';
+import { Bus, Operator, Route } from '../../../packages/shared/src/types/bus.js';
+import { AutomationRule } from '../../../packages/shared/src/types/admin.js';
 
 export const SEED_PLACES: Place[] = [
   // ==================== DELHI NCR ====================
