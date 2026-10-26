@@ -1,0 +1,18 @@
+{
+  "name": "YatraBus India - Smart Directory & Live Bus Tracking",
+  "short_name": "YatraBus",
+  "description": "India-Wide Public Transport Directory, Community-Powered Live Tracking & Timetables",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fbfdfa",
+  "theme_color": "#0e5a36",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icons/bus-logo.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Place",
+  "description": "Geographical place or transport stop in India",
+  "type": "object",
+  "required": ["id", "canonicalName", "placeType", "state", "district", "latitude", "longitude"],
+  "properties": {
+    "id": { "type": "string" },
+    "canonicalName": { "type": "string", "minLength": 2 },
+    "placeType": {
+      "type": "string",
+      "enum": [
+        "country", "state", "district", "subdivision", "tehsil",
+        "block", "city", "town", "village", "locality",
+        "bus_terminal", "bus_station", "bus_stop", "interchange"
+      ]
+    },
+    "parentPlaceId": { "type": ["string", "null"] },
+    "state": { "type": "string" },
+    "district": { "type": "string" },
+    "subdivision": { "type": ["string", "null"] },
+    "latitude": { "type": "number", "minimum": 6.0, "maximum": 38.0 },
+    "longitude": { "type": "number", "minimum": 68.0, "maximum": 98.0 },
+    "sourceDataset": { "type": "string" },
+    "verificationStatus": {
+      "type": "string",
+      "enum": [
+        "pending_review", "published_unverified", "community_corroborated",
+        "admin_verified", "disputed", "possibly_discontinued", "confirmed_discontinued"
+      ]
+    },
+    "aliases": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["lang", "name"],
+        "properties": {
+          "lang": { "type": "string" },
+          "name": { "type": "string" },
+          "isTransliteration": { "type": "boolean" }
+        }
+      }
+    }
+  }
+}

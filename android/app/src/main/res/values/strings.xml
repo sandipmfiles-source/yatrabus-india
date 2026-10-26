@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">YatraBus India</string>
+    <string name="title_activity_main">YatraBus India</string>
+    <string name="package_name">in.yatrabus.app</string>
+    <string name="custom_url_scheme">in.yatrabus.app</string>
+</resources>

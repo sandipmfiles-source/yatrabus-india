@@ -1,0 +1,47 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Route",
+  "description": "Bus route and stop sequence schema",
+  "type": "object",
+  "required": ["id", "routeNumber", "name", "operatorId", "originPlaceId", "destinationPlaceId", "durationMinutes", "distanceKm", "stops"],
+  "properties": {
+    "id": { "type": "string" },
+    "routeNumber": { "type": "string" },
+    "name": { "type": "string" },
+    "operatorId": { "type": "string" },
+    "originPlaceId": { "type": "string" },
+    "destinationPlaceId": { "type": "string" },
+    "direction": { "type": "string", "enum": ["up", "down", "circular"] },
+    "durationMinutes": { "type": "integer", "minimum": 1 },
+    "distanceKm": { "type": "number", "minimum": 0.1 },
+    "operatingDays": {
+      "type": "array",
+      "items": { "type": "string", "enum": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] }
+    },
+    "status": { "type": "string", "enum": ["active", "disrupted", "discontinued"] },
+    "polyline": {
+      "type": "array",
+      "items": {
+        "type": "array",
+        "items": { "type": "number" },
+        "minItems": 2,
+        "maxItems": 2
+      }
+    },
+    "stops": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["stopId", "stopName", "stopSequence", "arrivalOffsetMinutes", "departureOffsetMinutes", "distanceFromOriginKm"],
+        "properties": {
+          "stopId": { "type": "string" },
+          "stopName": { "type": "string" },
+          "stopSequence": { "type": "integer", "minimum": 1 },
+          "arrivalOffsetMinutes": { "type": "integer", "minimum": 0 },
+          "departureOffsetMinutes": { "type": "integer", "minimum": 0 },
+          "distanceFromOriginKm": { "type": "number", "minimum": 0.0 }
+        }
+      }
+    }
+  }
+}

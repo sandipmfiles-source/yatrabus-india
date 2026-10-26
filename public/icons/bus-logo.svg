@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <defs>
+    <linearGradient id="busGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#15803d" />
+      <stop offset="100%" stop-color="#0e5a36" />
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="3" stdDeviation="3" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+  <!-- Background Circle -->
+  <rect width="100" height="100" rx="24" fill="url(#busGrad)" />
+  <!-- Bus Body -->
+  <g filter="url(#shadow)" fill="#ffffff">
+    <path d="M 24 28 C 24 22, 76 22, 76 28 L 76 68 C 76 72, 72 74, 68 74 L 32 74 C 28 74, 24 72, 24 68 Z" />
+  </g>
+  <!-- Windshield -->
+  <rect x="29" y="32" width="42" height="18" rx="4" fill="#0e5a36" opacity="0.9" />
+  <!-- Destination display banner -->
+  <rect x="35" y="25" width="30" height="5" rx="2" fill="#f59e0b" />
+  <!-- Side Windows -->
+  <rect x="29" y="53" width="9" height="10" rx="2" fill="#0e5a36" opacity="0.75" />
+  <rect x="42" y="53" width="16" height="10" rx="2" fill="#0e5a36" opacity="0.75" />
+  <rect x="62" y="53" width="9" height="10" rx="2" fill="#0e5a36" opacity="0.75" />
+  <!-- Headlights -->
+  <circle cx="32" cy="67" r="3.5" fill="#f59e0b" />
+  <circle cx="68" cy="67" r="3.5" fill="#f59e0b" />
+  <!-- Grille -->
+  <rect x="44" y="65" width="12" height="4" rx="1.5" fill="#cbd5e1" />
+  <!-- Wheels -->
+  <rect x="26" y="74" width="8" height="6" rx="2" fill="#1e293b" />
+  <rect x="66" y="74" width="8" height="6" rx="2" fill="#1e293b" />
+</svg>
