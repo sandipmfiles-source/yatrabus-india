@@ -32,7 +32,7 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v4
         with:
-          packages: 'platform-tools platforms;android-35 build-tools;35.0.0'
+          packages: 'platform-tools platforms;android-33 build-tools;33.0.2 platforms;android-35 build-tools;35.0.0'
           accept-android-sdk-licenses: true
           log-accepted-android-sdk-licenses: false
 
@@ -45,18 +45,50 @@ jobs:
       - name: Sync Capacitor
         run: npx cap sync android
 
-      - name: Prepare Gradle
+      - name: Verify Capacitor plugin settings
+        shell: bash
         run: |
-          cd android
-          if [ ! -f gradlew ]; then
-            gradle wrapper
+          set -e
+
+          test -f android/settings.gradle
+          test -f android/capacitor.settings.gradle
+
+          if ! grep -q "capacitor.settings.gradle" android/settings.gradle; then
+            printf "\napply from: 'capacitor.settings.gradle'\n" >> android/settings.gradle
           fi
+
+          if ! grep -q "capacitor-geolocation" android/capacitor.settings.gradle; then
+            echo "ERROR: Geolocation plugin missing after Capacitor sync."
+            cat android/capacitor.settings.gradle
+            exit 1
+          fi
+
+          echo "Capacitor plugin settings verified."
+
+      - name: Prepare Gradle
+        shell: bash
+        run: |
+          set -e
+          cd android
+
+          if [ ! -f gradlew ]; then
+            gradle wrapper --gradle-version 8.2.1 --distribution-type bin
+          fi
+
+          if [ ! -f gradle/wrapper/gradle-wrapper.properties ]; then
+            echo "ERROR: Gradle wrapper properties file not found."
+            exit 1
+          fi
+
+          sed -i 's#gradle-[0-9.]*-\(bin\|all\)\.zip#gradle-8.2.1-bin.zip#' gradle/wrapper/gradle-wrapper.properties
+
           chmod +x gradlew
+          cat gradle/wrapper/gradle-wrapper.properties
 
       - name: Build APK
         run: |
           cd android
-          ./gradlew assembleDebug
+          ./gradlew --no-daemon assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
