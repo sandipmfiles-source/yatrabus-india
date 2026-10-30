@@ -77,7 +77,7 @@ export const HomePage: React.FC = () => {
 
   const handleFindNearbyStops = () => {
     if (!('geolocation' in navigator)) {
-      alert('Geolocation is not supported by your browser.');
+      alert(t('location_error_nearby'));
       return;
     }
 
@@ -91,8 +91,8 @@ export const HomePage: React.FC = () => {
       err => {
         // Respectful error handling without guilt
         setIsLocating(false);
-        // Fallback to default central Delhi stops for demo preview
-        api.getNearbyStops(28.6469, 77.3160, 5000).then(stops => setNearbyStops(stops));
+        setNearbyStops([]);
+        alert(t('location_error_nearby'));
       },
       { timeout: 8000 }
     );
@@ -290,7 +290,7 @@ export const HomePage: React.FC = () => {
               {t('nearby_stops')}
             </h3>
             <p className="text-xs text-yatriwarm-500">
-              {t('location_startup_description')}
+              {t('nearby_stops_desc')}
             </p>
           </div>
 
