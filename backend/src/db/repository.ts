@@ -397,10 +397,9 @@ export class TransitRepository {
   // ==================== ADMIN & HEALTH ====================
   public ensureSuperAdmin(email: string): AdminUser | undefined {
     const normalizedEmail = email.trim().toLowerCase();
-    if (!normalizedEmail) return undefined;
-
     // Enforce a single owner account; never retain seeded or additional admin identities.
     this.adminUsers.clear();
+    if (!normalizedEmail) return undefined;
     const owner: AdminUser = {
       id: 'owner-super-admin',
       email: normalizedEmail,
