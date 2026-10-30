@@ -17,6 +17,13 @@ export const api = {
     return repository.searchPlaces(query, limit);
   },
 
+  async reverseGeocodePlace(latitude: number, longitude: number) {
+    const res = await fetch(`${API_BASE}/places/reverse-geocode?lat=${latitude}&lon=${longitude}`);
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.message || 'Could not identify this GPS location.');
+    return data.place || null;
+  },
+
   async searchMapPlaces(query: string) {
     const res = await fetch(`${API_BASE}/places/geocode-search?q=${encodeURIComponent(query)}`);
     const data = await res.json().catch(() => ({}));
