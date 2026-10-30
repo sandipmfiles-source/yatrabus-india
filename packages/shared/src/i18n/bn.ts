@@ -121,4 +121,7 @@ export const bn = {
   contribution_save_reference: 'অ্যাকাউন্ট ছাড়াই অবস্থা দেখতে এই কোডটি সংরক্ষণ করুন।',
   contribution_submit_another: 'আরও তথ্য জমা দিন',
   contribution_backend_error: 'তথ্য জমা দেওয়া যায়নি। সংযোগ পরীক্ষা করে আবার চেষ্টা করুন।',
+  feature_no_account: 'অ্যাকাউন্ট লাগবে না',
+  feature_gps_confidence: 'GPS নির্ভরযোগ্যতার স্বচ্ছ তথ্য',
+  feature_free_ai: '₹০ খরচের AI API',
 };
