@@ -232,7 +232,21 @@ adminRouter.post('/submissions/:id/review', requireAdminAuth(), (req: Request, r
       } else if (submission.entityType === 'TIMETABLE' && submission.targetEntityId) {
         const route = repository.getRouteById(submission.targetEntityId);
         if (!route) throw new Error('Target route was not found for this timetable correction.');
-        const updated = { ...route, firstDepartureTime: String(submission.proposedData.departureTime || route.firstDepartureTime), updatedAt: new Date().toISOString() };
+        const proposedTimes = Array.isArray(submission.proposedData.departureTimes)
+          ? submission.proposedData.departureTimes.map((time: unknown) => String(time).trim()).filter(Boolean).sort()
+          : [];
+        if (proposedTimes.some((time: string) => !/^([01]\\d|2[0-3]):[0-5]\\d$/.test(time))) {
+          throw new Error('Exact departures must use 24-hour HH:MM format.');
+        }
+        const updated = {
+          ...route,
+          firstDepartureTime: proposedTimes[0] || String(submission.proposedData.firstDepartureTime || submission.proposedData.departureTime || route.firstDepartureTime),
+          lastDepartureTime: proposedTimes[proposedTimes.length - 1] || String(submission.proposedData.lastDepartureTime || route.lastDepartureTime),
+          frequencyMinutes: Number(submission.proposedData.frequencyMinutes) > 0 ? Number(submission.proposedData.frequencyMinutes) : route.frequencyMinutes,
+          departureTimes: proposedTimes.length ? proposedTimes : route.departureTimes,
+          operatingDays: Array.isArray(submission.proposedData.operatingDays) ? normalizedDays(submission.proposedData.operatingDays) : route.operatingDays,
+          updatedAt: new Date().toISOString(),
+        };
         repository.updateRoute(updated);
         publishedEntity = { type: 'TIMETABLE', id: updated.id };
       }
