@@ -1,6 +1,11 @@
 name: Import India LGD Place Directory
 
 on:
+  push:
+    branches: [mx-local-preserve]
+    paths:
+      - 'scripts/import-lgd-directory.mjs'
+      - '.github/workflows/import-india-lgd.yml'
   workflow_dispatch:
   schedule:
     - cron: '20 2 * * 1'
