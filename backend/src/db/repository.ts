@@ -351,6 +351,49 @@ export class TransitRepository {
     return this.auditLogs.slice(0, limit);
   }
 
+  public exportState(): Record<string, unknown> {
+    return {
+      places: Array.from(this.places.values()),
+      operators: Array.from(this.operators.values()),
+      routes: Array.from(this.routes.values()),
+      buses: Array.from(this.buses.values()),
+      consentRecords: Array.from(this.consentRecords.values()),
+      journeySessions: Array.from(this.journeySessions.values()),
+      observations: this.observations.slice(-10000),
+      busLocations: Array.from(this.busLocations.values()),
+      submissions: Array.from(this.submissions.values()),
+      duplicateCandidates: Array.from(this.duplicateCandidates.values()),
+      operatorClaims: Array.from(this.operatorClaims.values()),
+      automationRules: Array.from(this.automationRules.values()),
+      auditLogs: this.auditLogs.slice(0, 500),
+      adminUsers: Array.from(this.adminUsers.values()),
+    };
+  }
+
+  public importState(snapshot: Record<string, unknown>): void {
+    const restore = <T,>(target: Map<string, T>, values: unknown, key: (item: T) => string) => {
+      if (!Array.isArray(values)) return;
+      for (const item of values as T[]) {
+        const id = key(item);
+        if (id) target.set(id, item);
+      }
+    };
+    restore(this.places, snapshot.places, item => (item as any).id);
+    restore(this.operators, snapshot.operators, item => (item as any).id);
+    restore(this.routes, snapshot.routes, item => (item as any).id);
+    restore(this.buses, snapshot.buses, item => (item as any).id);
+    restore(this.consentRecords, snapshot.consentRecords, item => (item as any).sessionId);
+    restore(this.journeySessions, snapshot.journeySessions, item => (item as any).sessionId);
+    restore(this.busLocations, snapshot.busLocations, item => (item as any).busId);
+    restore(this.submissions, snapshot.submissions, item => (item as any).id);
+    restore(this.duplicateCandidates, snapshot.duplicateCandidates, item => (item as any).id);
+    restore(this.operatorClaims, snapshot.operatorClaims, item => (item as any).id);
+    restore(this.automationRules, snapshot.automationRules, item => (item as any).id);
+    restore(this.adminUsers, snapshot.adminUsers, item => (item as any).id);
+    if (Array.isArray(snapshot.observations)) this.observations = (snapshot.observations as LocationObservation[]).slice(-10000);
+    if (Array.isArray(snapshot.auditLogs)) this.auditLogs = (snapshot.auditLogs as AuditLogEntry[]).slice(0, 500);
+  }
+
   // ==================== ADMIN & HEALTH ====================
   public ensureSuperAdmin(email: string): AdminUser | undefined {
     const normalizedEmail = email.trim().toLowerCase();
