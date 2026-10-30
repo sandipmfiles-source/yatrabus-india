@@ -6,7 +6,7 @@ import { ShieldCheck, Lock, Mail, ArrowRight } from 'lucide-react';
 export const AdminLoginPage: React.FC = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState('admin@yatribus.in');
-  const [password, setPassword] = useState('admin123');
+  const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -88,7 +88,7 @@ export const AdminLoginPage: React.FC = () => {
         </form>
 
         <div className="mt-4 pt-4 border-t border-yatriwarm-100 text-center text-[11px] text-yatriwarm-400">
-          Default verifier account preloaded for development verification
+          Only the owner-configured server credentials can access this portal.
         </div>
       </div>
     </div>
