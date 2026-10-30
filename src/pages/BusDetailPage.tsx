@@ -85,7 +85,7 @@ export const BusDetailPage: React.FC = () => {
   // Project a fresh GPS fix onto the ordered stop-to-stop corridor.
   // The timeline marker is intentionally hidden unless GPS is genuinely live.
   const liveBusProgress = (() => {
-    if (!location?.isLive || typeof location.latitude !== 'number' || typeof location.longitude !== 'number' || route.stops.length < 2) return null;
+    if (!route || !location?.isLive || typeof location.latitude !== 'number' || typeof location.longitude !== 'number' || route.stops.length < 2) return null;
     const stops = route.stops;
     let best: { ratio: number; error: number } | null = null;
     for (let i = 0; i < stops.length - 1; i++) {
