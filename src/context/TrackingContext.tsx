@@ -25,6 +25,8 @@ interface TrackingContextType {
   stopSharing: () => Promise<void>;
   observationsCount: number;
   trackingError: string;
+  isBackgroundTrackingActive: boolean;
+  trackingWarning: string;
 }
 
 const BackgroundGeolocation = registerPlugin<any>('BackgroundGeolocation');
@@ -36,6 +38,8 @@ export const TrackingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [pendingBusForTracking, setPendingBus] = useState<{ busId: string; routeId: string; routeNumber?: string } | null>(null);
   const [observationsCount, setObservationsCount] = useState(0);
   const [trackingError, setTrackingError] = useState('');
+  const [isBackgroundTrackingActive, setIsBackgroundTrackingActive] = useState(false);
+  const [trackingWarning, setTrackingWarning] = useState('');
   const nativeWatcherIdRef = useRef<string | null>(null);
   const webWatchIdRef = useRef<number | null>(null);
 
@@ -73,6 +77,8 @@ export const TrackingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     };
 
     if (!activeSession) {
+      setIsBackgroundTrackingActive(false);
+      setTrackingWarning('');
       if (nativeWatcherIdRef.current) {
         void BackgroundGeolocation.removeWatcher({ id: nativeWatcherIdRef.current }).catch(() => undefined);
         nativeWatcherIdRef.current = null;
@@ -95,6 +101,7 @@ export const TrackingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         },
         (location: any, error: any) => {
           if (error) {
+            setTrackingWarning(error.message || 'Background location service reported an error.');
             console.warn('Background location error:', error.message || error.code);
             return;
           }
@@ -105,8 +112,12 @@ export const TrackingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           void BackgroundGeolocation.removeWatcher({ id: watcherId });
         } else {
           nativeWatcherIdRef.current = watcherId;
+          setIsBackgroundTrackingActive(true);
+          setTrackingWarning('');
         }
       }).catch((error: unknown) => {
+        setIsBackgroundTrackingActive(false);
+        setTrackingWarning(error instanceof Error ? error.message : 'Background GPS could not start. Check Android permissions and notification settings.');
         console.error('Unable to start native background tracking:', error);
       });
     } else if (navigator.geolocation) {
@@ -121,6 +132,8 @@ export const TrackingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         error => console.warn('Browser location error:', error.message),
         { enableHighAccuracy: true, maximumAge: 10000, timeout: 20000 }
       );
+      setIsBackgroundTrackingActive(true);
+      setTrackingWarning('');
     }
 
     return () => {
@@ -217,6 +230,7 @@ export const TrackingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     <TrackingContext.Provider value={{
       activeSession, isConsentModalOpen, pendingBusForTracking, openConsentModalForBus,
       closeConsentModal, grantConsentAndStartTracking, declineConsent, stopSharing, observationsCount, trackingError,
+      isBackgroundTrackingActive, trackingWarning,
     }}>
       {children}
     </TrackingContext.Provider>
