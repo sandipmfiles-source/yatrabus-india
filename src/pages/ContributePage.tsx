@@ -191,8 +191,8 @@ export const ContributePage: React.FC = () => {
               </div>
             </div>
           ) : (
-            {submissionError && <div role="alert" className="mb-4 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800">{submissionError}</div>}
             <form onSubmit={handleSubmit} className="space-y-5">
+              {submissionError && <div role="alert" className="mb-4 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800">{submissionError}</div>}
               {/* Type selection */}
               <div>
                 <label className="block text-xs font-bold text-yatriwarm-700 uppercase tracking-wider mb-2">
