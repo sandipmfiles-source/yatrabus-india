@@ -1,7 +1,14 @@
 import { Route, JourneyCandidate } from '../types/bus.js';
 import { normalizePlaceName } from '../search/normalizer.js';
 
-function addMinutesToTime(value: string, minutes: number): string {\n  const match = /^(\\d{2}):(\\d{2})$/.exec(value);\n  if (!match) return value;\n  const total = (Number(match[1]) * 60 + Number(match[2]) + minutes + 1440) % 1440;\n  return String(Math.floor(total / 60)).padStart(2, '0') + ':' + String(total % 60).padStart(2, '0');\n}\n\nexport interface RouteSearchResult {
+function addMinutesToTime(value: string, minutes: number): string {
+  const match = /^(\d{2}):(\d{2})$/.exec(value);
+  if (!match) return value;
+  const total = (Number(match[1]) * 60 + Number(match[2]) + minutes + 1440) % 1440;
+  return String(Math.floor(total / 60)).padStart(2, '0') + ':' + String(total % 60).padStart(2, '0');
+}
+
+export interface RouteSearchResult {
   directRoutes: JourneyCandidate[];
   transferRoutes: JourneyCandidate[];
   totalOptionsCount: number;
