@@ -56,7 +56,7 @@ export const StartupLocationPermission: React.FC = () => {
         <h1 id="startup-location-title" className="mt-2 text-center text-2xl font-extrabold text-signal-charcoal-950">{t('location_startup_title')}</h1>
         <p className="mt-4 text-sm leading-relaxed text-signal-charcoal-700">{t('location_startup_description')}</p>
         <p className="mt-2 text-xs text-signal-charcoal-600">{t('location_startup_privacy')}</p>
-        {message && <p role="alert" className="mt-3 rounded-xl bg-amber-50 p-3 text-xs text-amber-900"{t(message)}</p>}
+        {message && <p role="alert" className="mt-3 rounded-xl bg-amber-50 p-3 text-xs text-amber-900">{t(message)}</p>}
         <div className="mt-5 flex flex-col gap-2">
           <button type="button" disabled={requesting} onClick={allowLocation} className="w-full rounded-xl bg-signal-charcoal-950 px-4 py-3 text-sm font-bold text-white disabled:opacity-60">
             {requesting ? t('requesting_permission') : hasPermission ? t('location_retry') : t('allow_location')}
