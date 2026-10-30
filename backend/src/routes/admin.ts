@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { CONFIG } from '../config.js';
-import { TimetableDeparture } from '../../../packages/shared/src/types/bus.js';
+import { TimetableDeparture, Route, RouteStop, Operator } from '../../../packages/shared/src/types/bus.js';
 import { repository } from '../db/repository.js';
 import { createAdminSessionToken, requireAdminAuth, verifyAdminPassword } from '../middleware/auth.js';
 
@@ -69,6 +69,104 @@ adminRouter.post('/submissions/:id/review', requireAdminAuth('SUPER_ADMIN'), (re
   }
 
   const reviewReason = typeof reason === 'string' ? reason.trim().slice(0, 1000) : '';
+
+  // A new route is published only after an explicit Super Admin approval.
+  const pendingSubmission = repository.listSubmissions().find(item => item.id === String(req.params.id));
+  if (decision === 'ADMIN_VERIFIED' && pendingSubmission?.submissionType === 'SUGGEST_ROUTE' &&
+      pendingSubmission.entityType === 'ROUTE') {
+    const data = pendingSubmission.proposedData || {};
+    const routeNumber = typeof data.routeNumber === 'string' ? data.routeNumber.trim() : '';
+    const routeName = typeof data.routeName === 'string' ? data.routeName.trim() : '';
+    const operatorName = typeof data.operatorName === 'string' ? data.operatorName.trim() : '';
+    const stopsInput = Array.isArray(data.stops) ? data.stops : [];
+    const validTime = (value: unknown) => typeof value === 'string' && /^([01]\\d|2[0-3]):[0-5]\\d$/.test(value);
+    const distanceKm = Number(data.distanceKm);
+    const durationMinutes = Number(data.typicalDurationMinutes);
+    if (!routeNumber || !routeName || !operatorName || stopsInput.length < 2 ||
+        !validTime(data.firstDepartureTime) || !validTime(data.lastDepartureTime) ||
+        !Number.isFinite(distanceKm) || distanceKm <= 0 ||
+        !Number.isFinite(durationMinutes) || durationMinutes <= 0) {
+      return res.status(422).json({ error: 'Route details are incomplete. Add route number, name, operator, at least two stops, valid service times, distance and duration.' });
+    }
+    if (repository.getRouteByNumber(routeNumber)) {
+      return res.status(409).json({ error: 'A route with this route number already exists.' });
+    }
+    const stopsAreValid = stopsInput.every((stop: any) =>
+      typeof stop?.name === 'string' && stop.name.trim().length > 1 &&
+      Number.isFinite(Number(stop.latitude)) && Number(stop.latitude) >= -90 && Number(stop.latitude) <= 90 &&
+      Number.isFinite(Number(stop.longitude)) && Number(stop.longitude) >= -180 && Number(stop.longitude) <= 180
+    );
+    if (!stopsAreValid) {
+      return res.status(422).json({ error: 'Every stop must have a name and valid latitude/longitude coordinates.' });
+    }
+    const now = new Date().toISOString();
+    let operator = repository.getOperatorByName(operatorName);
+    if (!operator) {
+      const createdOperator: Operator = {
+        id: `operator-community-${pendingSubmission.id}`,
+        name: operatorName.slice(0, 100),
+        operatorType: 'PRIVATE_FLEET',
+        serviceArea: String(data.state || 'India').slice(0, 80),
+        verificationStatus: 'COMMUNITY_LISTED',
+        isClaimed: false,
+        sourceDataset: 'COMMUNITY_SUBMISSION',
+        createdAt: now,
+        updatedAt: now,
+      };
+      operator = repository.addOperator(createdOperator);
+    }
+    const routeId = `route-community-${pendingSubmission.id}`;
+    let distanceFromStartKm = 0;
+    const stops: RouteStop[] = stopsInput.map((stop: any, index: number) => {
+      if (index > 0) {
+        const previous = stopsInput[index - 1];
+        const lat1 = Number(previous.latitude) * Math.PI / 180;
+        const lat2 = Number(stop.latitude) * Math.PI / 180;
+        const dLat = lat2 - lat1;
+        const dLon = (Number(stop.longitude) - Number(previous.longitude)) * Math.PI / 180;
+        const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2;
+        distanceFromStartKm += 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      }
+      return {
+        id: `${routeId}-stop-${index + 1}`,
+        routeId,
+        stopId: `${routeId}-place-${index + 1}`,
+        stopName: stop.name.trim().slice(0, 120),
+        stopSequence: index + 1,
+        latitude: Number(stop.latitude),
+        longitude: Number(stop.longitude),
+        distanceFromStartKm: Number(distanceFromStartKm.toFixed(2)),
+        scheduledArrivalTime: validTime(stop.arrivalTime) ? stop.arrivalTime : undefined,
+        scheduledDepartureTime: validTime(stop.departureTime) ? stop.departureTime : undefined,
+      };
+    });
+    const route: Route = {
+      id: routeId,
+      routeNumber: routeNumber.slice(0, 40),
+      routeName: routeName.slice(0, 160),
+      originStopId: stops[0].stopId,
+      originStopName: stops[0].stopName,
+      destinationStopId: stops[stops.length - 1].stopId,
+      destinationStopName: stops[stops.length - 1].stopName,
+      operatorId: operator.id,
+      operatorName: operator.name,
+      direction: 'UP',
+      distanceKm,
+      typicalDurationMinutes: durationMinutes,
+      operatingDays: ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'],
+      firstDepartureTime: data.firstDepartureTime,
+      lastDepartureTime: data.lastDepartureTime,
+      frequencyMinutes: Number.isFinite(Number(data.frequencyMinutes)) && Number(data.frequencyMinutes) > 0
+        ? Number(data.frequencyMinutes) : undefined,
+      stops,
+      geometry: stops.map(stop => ({ latitude: stop.latitude, longitude: stop.longitude })),
+      verificationStatus: 'ADMIN_VERIFIED',
+      serviceStatus: 'SCHEDULE_UNVERIFIED',
+      createdAt: now,
+      updatedAt: now,
+    };
+    repository.addRoute(route);
+  }
 
   // Only an explicit, admin-approved timetable contribution becomes publicly searchable.
   const pendingSubmission = repository.listSubmissions().find(item => item.id === String(req.params.id));
