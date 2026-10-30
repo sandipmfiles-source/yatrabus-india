@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useLanguage } from '../context/LanguageContext.js';
 import { useSearchParams } from 'react-router-dom';
 import { api } from '../services/api.js';
@@ -34,8 +34,49 @@ export const ContributePage: React.FC = () => {
     { name: '', latitude: '', longitude: '', arrivalTime: '', departureTime: '' },
     { name: '', latitude: '', longitude: '', arrivalTime: '', departureTime: '' },
   ]);
+  const [routePreview, setRoutePreview] = useState<any>(null);
+  const [routePreviewLoading, setRoutePreviewLoading] = useState(false);
+  const [routePreviewError, setRoutePreviewError] = useState('');
+  useEffect(() => {
+    setRoutePreview(null);
+    setRoutePreviewError('');
+  }, [routeStops]);
+
   const updateRouteStop = (index: number, field: string, value: string) => {
     setRouteStops(current => current.map((stop, i) => i === index ? { ...stop, [field]: value } : stop));
+  };
+  const moveRouteStop = (index: number, offset: -1 | 1) => {
+    setRouteStops(current => {
+      const target = index + offset;
+      if (index <= 0 || index >= current.length - 1 || target <= 0 || target >= current.length - 1) return current;
+      const next = [...current];
+      [next[index], next[target]] = [next[target], next[index]];
+      return next;
+    });
+  };
+  const checkNewRoutePreview = async () => {
+    if (routeStops.length < 2 || routeStops.some(stop => !stop.name.trim() || stop.latitude === '' || stop.longitude === '')) {
+      setRoutePreviewError('Add a name and coordinates for the origin, every intermediate stop, and destination first.');
+      return;
+    }
+    const formatPoint = (stop: typeof routeStops[number]) => `${stop.name.trim()} | ${stop.latitude} | ${stop.longitude}`;
+    setRoutePreviewLoading(true);
+    setRoutePreviewError('');
+    try {
+      const result = await api.previewRoadRoute(
+        formatPoint(routeStops[0]),
+        formatPoint(routeStops[routeStops.length - 1]),
+        routeStops.slice(1, -1).map(formatPoint)
+      );
+      setRoutePreview(result);
+      if (result.distanceKm) setRouteDistanceKm(String(result.distanceKm));
+      if (result.durationSeconds) setRouteDurationMinutes(String(Math.max(1, Math.round(result.durationSeconds / 60))));
+    } catch (error) {
+      setRoutePreview(null);
+      setRoutePreviewError(error instanceof Error ? error.message : 'Could not validate this route.');
+    } finally {
+      setRoutePreviewLoading(false);
+    }
   };
   const [notes, setNotes] = useState('');
 
@@ -51,6 +92,10 @@ export const ContributePage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submissionType === 'SUGGEST_ROUTE' && routePreview?.routeStatus !== 'ROAD_ROUTE_FOUND_IN_SUBMITTED_ORDER') {
+      setSubmissionError('Check the OpenStreetMap road route in the submitted stop order before sending this route for Super Admin approval.');
+      return;
+    }
     setIsSubmitting(true);
     setSubmissionError('');
 
@@ -78,11 +123,19 @@ export const ContributePage: React.FC = () => {
           typicalDurationMinutes: routeDurationMinutes ? Number(routeDurationMinutes) : undefined,
           firstDepartureTime,
           lastDepartureTime,
-          stops: routeStops.map(stop => ({
-            ...stop,
-            latitude: stop.latitude === '' ? undefined : Number(stop.latitude),
-            longitude: stop.longitude === '' ? undefined : Number(stop.longitude),
-          })),
+          stops: submissionType === 'SUGGEST_ROUTE' && Array.isArray(routePreview?.points)
+            ? routePreview.points.map((point: any, index: number) => ({
+                name: String(point.name),
+                latitude: Number(point.latitude),
+                longitude: Number(point.longitude),
+                arrivalTime: routeStops[index]?.arrivalTime || undefined,
+                departureTime: routeStops[index]?.departureTime || undefined,
+              }))
+            : routeStops.map(stop => ({
+                ...stop,
+                latitude: stop.latitude === '' ? undefined : Number(stop.latitude),
+                longitude: stop.longitude === '' ? undefined : Number(stop.longitude),
+              })),
           operatingDays: ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'],
         },
       });
@@ -347,8 +400,11 @@ export const ContributePage: React.FC = () => {
                     </div>
                     {routeStops.map((stop, index) => (
                       <div key={index} className="rounded-xl border border-yatriwarm-200 bg-white p-3 space-y-2">
-                        <div className="flex items-center justify-between"><span className="text-xs font-bold text-yatriwarm-800">Stop {index + 1} {index === 0 ? '(Origin)' : index === routeStops.length - 1 ? '(Destination)' : '(Intermediate)'}</span>
-                          {routeStops.length > 2 && <button type="button" onClick={() => setRouteStops(current => current.filter((_, i) => i !== index))} className="text-[11px] text-red-700">Remove</button>}
+                        <div className="flex items-center justify-between gap-2"><span className="text-xs font-bold text-yatriwarm-800">Stop {index + 1} {index === 0 ? '(Origin)' : index === routeStops.length - 1 ? '(Destination)' : '(Intermediate)'}</span>
+                          <div className="flex items-center gap-2">
+                            {index > 0 && index < routeStops.length - 1 && <><button type="button" onClick={() => moveRouteStop(index, -1)} disabled={index === 1} aria-label="Move stop up" className="rounded-md border border-yatriwarm-200 px-2 py-1 text-[11px] disabled:opacity-30">↑</button><button type="button" onClick={() => moveRouteStop(index, 1)} disabled={index === routeStops.length - 2} aria-label="Move stop down" className="rounded-md border border-yatriwarm-200 px-2 py-1 text-[11px] disabled:opacity-30">↓</button></>}
+                            {routeStops.length > 2 && index > 0 && index < routeStops.length - 1 && <button type="button" onClick={() => setRouteStops(current => current.filter((_, i) => i !== index))} className="text-[11px] text-red-700">Remove</button>}
+                          </div>
                         </div>
                         <input required value={stop.name} onChange={e => updateRouteStop(index, 'name', e.target.value)} placeholder="Stop / place name" className="w-full px-3 py-2 bg-yatriwarm-50 border border-yatriwarm-200 rounded-lg text-xs" />
                         <div className="grid grid-cols-2 gap-2">
@@ -361,6 +417,23 @@ export const ContributePage: React.FC = () => {
                         </div>
                       </div>
                     ))}
+                  </div>
+                  <div className="rounded-2xl border border-yatriwarm-200 bg-white p-4 space-y-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <h4 className="text-xs font-bold text-yatriwarm-900">Road route validation</h4>
+                        <p className="text-[11px] text-yatriwarm-600">Checks that every stop connects in the exact order you selected using OpenStreetMap routing.</p>
+                      </div>
+                      <button type="button" onClick={() => void checkNewRoutePreview()} disabled={routePreviewLoading} className="shrink-0 rounded-xl bg-slate-950 px-3 py-2 text-xs font-bold text-white disabled:opacity-50">{routePreviewLoading ? 'Checking…' : 'Check route'}</button>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-yatriwarm-700">
+                      <span className="font-semibold truncate">{routeStops[0]?.name || 'Origin'}</span>
+                      <span className="flex-1 border-t-2 border-dashed border-amber-400" />
+                      <span className="font-semibold truncate">{routeStops[routeStops.length - 1]?.name || 'Destination'}</span>
+                    </div>
+                    {routePreview?.routeStatus === 'ROAD_ROUTE_FOUND_IN_SUBMITTED_ORDER' && <div role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-800"><b>Road path checked.</b> {routePreview.distanceKm} km · {Math.round(routePreview.durationSeconds / 60)} min · {routePreview.points?.length || routeStops.length} ordered points. This does not prove that a bus service operates on the route.</div>}
+                    {routePreviewError && <p role="alert" className="text-xs text-rose-700">{routePreviewError}</p>}
+                    <p className="text-[10px] text-yatriwarm-500">© OpenStreetMap contributors · Routing by OSRM. Super Admin approval is still required.</p>
                   </div>
                 </section>
               )}
