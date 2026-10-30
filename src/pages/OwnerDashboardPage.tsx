@@ -315,14 +315,14 @@ export const OwnerDashboardPage: React.FC = () => {
                   <div className="rounded-xl bg-white/10 border border-white/10 p-3"><div className="text-slate-400">TO</div><div className="font-semibold text-white mt-1">{destination || 'Destination'}</div></div>
                 </div>
                 <div className="pl-6 ml-2 border-l-2 yb-route-line space-y-3">
-                  {(stopsText.split('\\n').map(line => line.split('|')[0].trim()).filter(Boolean)).map((stop, index) => (
+                  {(stopsText.split('\n').map(line => line.split('|')[0].trim()).filter(Boolean)).map((stop, index) => (
                     <div key={index} className="yb-route-stop text-xs text-slate-100">{stop}</div>
                   ))}
                   {stopsText.trim() === '' && <div className="text-xs text-slate-400">Intermediate stops will appear here as you add them.</div>}
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <input value={newStopName} onChange={e => setNewStopName(e.target.value)} placeholder="Add intermediate stop" className="min-w-0 flex-1 rounded-xl border border-white/20 bg-white/10 text-white placeholder:text-slate-400 px-3 py-2 text-xs" />
-                  <button type="button" onClick={() => { const name = newStopName.trim(); if (!name) return; setStopsText(current => current.trim() ? current + '\\n' + name : name); setNewStopName(''); }} className="rounded-xl bg-amber-300 hover:bg-amber-200 text-slate-950 font-bold px-4 py-2 text-xs">+ Add stop</button>
+                  <button type="button" onClick={() => { const name = newStopName.trim(); if (!name) return; setStopsText(current => current.trim() ? current + '\n' + name : name); setNewStopName(''); }} className="rounded-xl bg-amber-300 hover:bg-amber-200 text-slate-950 font-bold px-4 py-2 text-xs">+ Add stop</button>
                 </div>
                 <div className="rounded-2xl overflow-hidden border border-white/15 bg-slate-950/60 p-3">
                   <div className="flex items-center justify-between text-[10px] uppercase tracking-wider text-slate-300 mb-2"><span>Road route map</span><span>{routePreviewLoading ? 'Checking Google Maps…' : routePreview?.provider === 'GOOGLE_MAPS_ROUTES' ? 'Google Maps route' : 'Waiting for Maps setup'}</span></div>
@@ -333,7 +333,7 @@ export const OwnerDashboardPage: React.FC = () => {
                     <g transform="translate(148 49)" className="yb-bus-float"><rect width="38" height="22" rx="6" fill="#facc15"/><rect x="5" y="4" width="28" height="8" rx="2" fill="#172033"/><circle cx="9" cy="22" r="3" fill="#cbd5e1"/><circle cx="29" cy="22" r="3" fill="#cbd5e1"/></g>
                   </svg>
                   <div className="flex items-center justify-between gap-2 text-xs text-slate-200"><span className="truncate">{origin || 'Start'}</span><span className="text-amber-300 font-bold">{routePreview?.distanceKm ? routePreview.distanceKm + ' km' : '— km'}</span><span className="truncate text-right">{destination || 'Destination'}</span></div>
-                  {routePreview?.orderChanged && <div className="mt-3 rounded-xl border border-amber-300/40 bg-amber-300/10 p-3 text-xs text-amber-100"><b>Stop order suggestion:</b> Google Maps suggests a different waypoint sequence. Suggested: {routePreview.suggestedStops.join(' → ')}. <button type="button" onClick={() => setStopsText(routePreview.suggestedStops.join('\\n'))} className="underline font-bold ml-1">Apply suggested order</button></div>}
+                  {routePreview?.orderChanged && <div className="mt-3 rounded-xl border border-amber-300/40 bg-amber-300/10 p-3 text-xs text-amber-100"><b>Stop order suggestion:</b> Google Maps suggests a different waypoint sequence. Suggested: {routePreview.suggestedStops.join(' → ')}. <button type="button" onClick={() => setStopsText(routePreview.suggestedStops.join('\n'))} className="underline font-bold ml-1">Apply suggested order</button></div>}
                   {routePreviewError && <div className="mt-2 text-[11px] text-amber-200">{routePreviewError}</div>}
                   {routePreview?.disclaimer && <div className="mt-2 text-[10px] text-slate-400">{routePreview.disclaimer}</div>}
                 </div>
