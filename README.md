@@ -42,7 +42,7 @@
 ### 1. Clone & Install Dependencies
 ```bash
 git clone https://github.com/sandipmfiles-source/yatrabus-india.git
-cd india-smart-bus
+cd yatribus-india
 npm install
 ```
 
