@@ -142,6 +142,43 @@ contributionsRouter.get('/status/:refId', (req: Request, res: Response) => {
   });
 });
 
+// Account-free operator/owner submissions are routed to a separate Super Admin review queue.
+contributionsRouter.post('/operator-submit', contributionLimiter, (req: Request, res: Response) => {
+  const { submissionType, entityType, targetEntityId, contributorNote, proposedData } = req.body || {};
+  const contactName = typeof req.body?.contactName === 'string' ? req.body.contactName.trim().slice(0, 100) : '';
+  const contactPhone = typeof req.body?.contactPhone === 'string' ? req.body.contactPhone.trim().slice(0, 30) : '';
+  const operatorName = typeof req.body?.operatorName === 'string' ? req.body.operatorName.trim().slice(0, 120) : '';
+  const officialEmail = typeof req.body?.officialEmail === 'string' ? req.body.officialEmail.trim().slice(0, 160) : '';
+  const allowed: string[] = ['ADD_BUS', 'SUGGEST_ROUTE', 'CORRECT_TIMETABLE', 'DELETE_BUS', 'ADD_INTERMEDIATE_STOP'];
+  if (!allowed.includes(submissionType) || !['BUS', 'ROUTE', 'TIMETABLE', 'STOP'].includes(entityType) ||
+      !proposedData || typeof proposedData !== 'object' || Array.isArray(proposedData) ||
+      contactName.length < 2 || operatorName.length < 2 || contactPhone.replace(/\\D/g, '').length < 10) {
+    return res.status(400).json({ error: 'Provide a valid submission, operator name, contact person and 10-digit contact phone.' });
+  }
+  const referenceId = 'YB-OWN-' + Math.floor(100000 + Math.random() * 900000).toString();
+  const now = new Date().toISOString();
+  const submission = repository.createSubmission({
+    id: 'operator-sub-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8),
+    referenceId,
+    submissionType,
+    entityType,
+    targetEntityId: typeof targetEntityId === 'string' ? targetEntityId.slice(0, 120) : undefined,
+    contributorNote: typeof contributorNote === 'string' ? contributorNote.slice(0, 1000) : undefined,
+    proposedData: { ...proposedData, operatorName, operatorContactName: contactName, operatorContactPhone: contactPhone, officialEmail },
+    status: 'PENDING_REVIEW',
+    corroborationCount: 0,
+    createdAt: now,
+    sourceCategory: 'OPERATOR',
+    contributorDisplayName: contactName,
+  });
+  return res.status(201).json({
+    success: true,
+    referenceId: submission.referenceId,
+    status: submission.status,
+    message: 'Owner submission received without sign-in. It is waiting in the separate Super Admin owner-review queue.',
+  });
+});
+
 // POST /api/contributions/operator-claim
 contributionsRouter.post('/operator-claim', (req: Request, res: Response) => {
   const { operatorId, operatorName, claimantName, claimantRole, officialEmail, contactNumber, proofDocumentNote } = req.body;
