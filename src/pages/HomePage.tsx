@@ -110,7 +110,7 @@ export const HomePage: React.FC = () => {
         <h1 className="text-[clamp(0.78rem,4.2vw,2rem)] whitespace-nowrap font-extrabold text-yatriwarm-950 tracking-tight">
           {t('home_hero_title')}
         </h1>
-        <p className="text-sm sm:text-base text-yatriwarm-600 max-w-xl mx-auto">
+        <p className="text-[10px] sm:text-xs leading-tight text-yatriwarm-600 max-w-2xl mx-auto">
           {t('home_hero_description')}
         </p>
       </div>
