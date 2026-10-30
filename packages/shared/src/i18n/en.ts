@@ -153,6 +153,8 @@ export const en = {
   contribute_intro: 'Help fellow commuters keep public transport data accurate. Submit updates, verify schedules, or check previous submissions with your Reference ID.',
   nav_owner_portal: 'Bus Owner / Operator',
   owner_route_update: 'Owner: update route',
+  update_existing_route: 'Update Existing Route',
+
   owner_timetable_update: 'Owner: update timetable',
 
   owner_account_free_title: 'Bus owner / operator details — no sign-in required',
