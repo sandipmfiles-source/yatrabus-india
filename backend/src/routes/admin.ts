@@ -5,6 +5,7 @@ import { createAdminToken, requireAdminAuth } from '../middleware/auth.js';
 import { CONFIG } from '../config.js';
 import { Bus, Operator, Route, RouteStop } from '../../../packages/shared/src/types/bus.js';
 import { CommunitySubmission } from '../../../packages/shared/src/types/contribution.js';
+import { Place } from '../../../packages/shared/src/types/places.js';
 import { haversineDistanceMeters } from '../../../packages/shared/src/engine/routeMatcher.js';
 
 export const adminRouter = Router();
@@ -106,6 +107,26 @@ function publishVerifiedRoute(submission: CommunitySubmission): Route {
     };
   });
 
+  stops.forEach(stop => {
+    const place: Place = {
+      id: stop.stopId,
+      canonicalName: stop.stopName,
+      names: { en: stop.stopName },
+      placeType: 'BUS_STOP',
+      district: String(data.district || data.state || 'West Bengal'),
+      state: String(data.state || 'West Bengal') as Place['state'],
+      latitude: stop.latitude,
+      longitude: stop.longitude,
+      sourceDataset: 'COMMUNITY_SUBMISSIONS',
+      sourceLicense: 'Community Submitted',
+      verificationStatus: 'ADMIN_VERIFIED',
+      aliases: [],
+      createdAt: now,
+      updatedAt: now,
+    };
+    repository.addPlace(place);
+  });
+
   const route: Route = {
     id: routeId,
     routeNumber,
@@ -132,6 +153,35 @@ function publishVerifiedRoute(submission: CommunitySubmission): Route {
     updatedAt: now,
   };
   return repository.addRoute(route);
+}
+
+function publishVerifiedStop(submission: CommunitySubmission): Place {
+  const data = submission.proposedData || {};
+  const name = String(data.name || '').trim();
+  const latitude = Number(data.originLatitude);
+  const longitude = Number(data.originLongitude);
+  if (!name || data.originLatitude === undefined || data.originLongitude === undefined ||
+      !Number.isFinite(latitude) || !Number.isFinite(longitude) ||
+      Math.abs(latitude) > 90 || Math.abs(longitude) > 180) {
+    throw new Error('A stop name and valid GPS coordinates are required before publishing this stop.');
+  }
+  const now = new Date().toISOString();
+  return repository.addPlace({
+    id: `place-community-${submission.id}`,
+    canonicalName: name,
+    names: { en: name },
+    placeType: 'BUS_STOP',
+    district: String(data.district || data.state || 'West Bengal'),
+    state: String(data.state || 'West Bengal') as Place['state'],
+    latitude,
+    longitude,
+    sourceDataset: 'COMMUNITY_SUBMISSIONS',
+    sourceLicense: 'Community Submitted',
+    verificationStatus: 'ADMIN_VERIFIED',
+    aliases: [],
+    createdAt: now,
+    updatedAt: now,
+  });
 }
 
 function publishVerifiedBus(submission: CommunitySubmission): Bus {
@@ -226,10 +276,14 @@ adminRouter.post('/submissions/:id/review', requireAdminAuth(), (req: Request, r
       if (submission.entityType === 'ROUTE') {
         const route = publishVerifiedRoute(submission);
         publishedEntity = { type: 'ROUTE', id: route.id };
+      } else if (submission.entityType === 'STOP') {
+        const place = publishVerifiedStop(submission);
+        publishedEntity = { type: 'STOP', id: place.id };
       } else if (submission.entityType === 'BUS') {
         const bus = publishVerifiedBus(submission);
         publishedEntity = { type: 'BUS', id: bus.id };
-      } else if (submission.entityType === 'TIMETABLE' && submission.targetEntityId) {
+      } else if (submission.entityType === 'TIMETABLE') {
+        if (!submission.targetEntityId) throw new Error('Open the timetable correction from a specific route so it can be linked correctly.');
         const route = repository.getRouteById(submission.targetEntityId);
         if (!route) throw new Error('Target route was not found for this timetable correction.');
         const proposedTimes = Array.isArray(submission.proposedData.departureTimes)
