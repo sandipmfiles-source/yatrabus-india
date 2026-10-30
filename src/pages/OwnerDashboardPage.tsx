@@ -31,6 +31,7 @@ export const OwnerDashboardPage: React.FC = () => {
   const [message, setMessage] = useState('');
   const [kind, setKind] = useState<'ROUTE' | 'TIMETABLE'>('TIMETABLE');
   const [editingSubmissionId, setEditingSubmissionId] = useState<string | null>(null);
+  const [editingOriginalBusIdentifier, setEditingOriginalBusIdentifier] = useState('');
   const [busName, setBusName] = useState('');
   const [operatorName, setOperatorName] = useState('');
   const [routeNumber, setRouteNumber] = useState('');
@@ -115,6 +116,7 @@ export const OwnerDashboardPage: React.FC = () => {
     const data = item.proposedData || {};
     setKind('TIMETABLE');
     setEditingSubmissionId(item.id);
+    setEditingOriginalBusIdentifier(String(data.busIdentifier || data.name || ''));
     setBusName(String(data.busIdentifier || data.name || ''));
     setOperatorName(String(data.operatorName || ''));
     setRouteNumber(String(data.routeNumber || ''));
@@ -130,6 +132,7 @@ export const OwnerDashboardPage: React.FC = () => {
     const data = item.proposedData || {};
     setKind('ROUTE');
     setEditingSubmissionId(item.id);
+    setEditingOriginalBusIdentifier('');
     setBusName(String(data.name || data.busIdentifier || ''));
     setOperatorName(String(data.operatorName || ''));
     setRouteNumber(String(data.routeNumber || ''));
@@ -199,10 +202,11 @@ export const OwnerDashboardPage: React.FC = () => {
         entityType: kind === 'ROUTE' ? 'ROUTE' : 'TIMETABLE',
         targetEntityId: editingSubmissionId ? (kind === 'ROUTE' ? 'route-community-' : 'bus-community-') + editingSubmissionId : undefined,
         contributorNote: note || (editingSubmissionId ? 'Owner requested timetable update' : 'Bus owner submission'),
-        proposedData: editingSubmissionId ? { ...proposedData, timetableEntry: false, action: kind === 'ROUTE' ? 'UPDATE_ROUTE' : 'UPDATE_BUS_TIMETABLE' } : proposedData,
+        proposedData: editingSubmissionId ? { ...proposedData, originalBusIdentifier: editingOriginalBusIdentifier, timetableEntry: false, action: kind === 'ROUTE' ? 'UPDATE_ROUTE' : 'UPDATE_BUS_TIMETABLE' } : proposedData,
       });
       setMessage('Request submitted. Reference ID: ' + result.referenceId + '. It will appear publicly only after Super Admin approval.');
       setEditingSubmissionId(null);
+      setEditingOriginalBusIdentifier('');
       setBusName('');
       setDepartureTime('');
       setArrivalTime('');
