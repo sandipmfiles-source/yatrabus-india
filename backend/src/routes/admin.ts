@@ -280,7 +280,18 @@ adminRouter.post('/submissions/:id/review', requireAdminAuth('SUPER_ADMIN'), (re
     }
     const oldBusIdentifier = typeof data.originalBusIdentifier === 'string' && data.originalBusIdentifier.trim()
       ? data.originalBusIdentifier.trim() : String(data.busIdentifier);
-    if (!repository.updateTimetableDeparture(route.id, oldBusIdentifier, data.departureTime, data.arrivalTime, String(data.busIdentifier))) {
+    const stopTimes = (Array.isArray(data.stops) ? data.stops : []).flatMap((input: any) => {
+      const matched = typeof input?.name === 'string'
+        ? route.stops.find(stop => stop.stopName.trim().toLowerCase() === input.name.trim().toLowerCase())
+        : undefined;
+      if (!matched) return [];
+      return [{
+        stopId: matched.stopId,
+        arrivalTime: validTime(input.arrivalTime) ? input.arrivalTime : undefined,
+        departureTime: validTime(input.departureTime) ? input.departureTime : undefined,
+      }];
+    });
+    if (!repository.updateTimetableDeparture(route.id, oldBusIdentifier, data.departureTime, data.arrivalTime, String(data.busIdentifier), stopTimes)) {
       return res.status(404).json({ error: 'Existing timetable departure was not found for this bus.' });
     }
     const targetBus = pendingSubmission.targetEntityId ? repository.getBusById(pendingSubmission.targetEntityId) : undefined;
@@ -313,12 +324,24 @@ adminRouter.post('/submissions/:id/review', requireAdminAuth('SUPER_ADMIN'), (re
     const days = (Array.isArray(data.operatingDays)
       ? data.operatingDays.filter((day: string) => ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'].includes(day))
       : ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']) as TimetableDeparture['operatingDays'];
+    const stopTimes = (Array.isArray(data.stops) ? data.stops : []).flatMap((input: any) => {
+      const matched = typeof input?.name === 'string'
+        ? route.stops.find(stop => stop.stopName.trim().toLowerCase() === input.name.trim().toLowerCase())
+        : undefined;
+      if (!matched) return [];
+      return [{
+        stopId: matched.stopId,
+        arrivalTime: validTime(input.arrivalTime) ? input.arrivalTime : undefined,
+        departureTime: validTime(input.departureTime) ? input.departureTime : undefined,
+      }];
+    });
     const departure: TimetableDeparture = {
       id: `departure-${pendingSubmission.id}`,
       timetableId: route.id,
       departureTime: data.departureTime,
       arrivalTime: data.arrivalTime,
       busIdentifier: typeof data.busIdentifier === 'string' ? data.busIdentifier.trim().slice(0, 80) : undefined,
+      stopTimes,
       operatingDays: days.length ? days : ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'],
       confidenceScore: 100,
       isCancelled: false,
