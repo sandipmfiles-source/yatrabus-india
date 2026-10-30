@@ -44,4 +44,5 @@ export const bn = {
   approx_daily_departures: 'প্রতিদিন আনুমানিক বাস ছাড়ে',
   every_minutes: 'প্রতি {minutes} মিনিটে',
   intermediate_stops: 'এই যাত্রার মাঝের স্টপগুলি',
+  service_hours: 'পরিষেবার সময়',
 };
