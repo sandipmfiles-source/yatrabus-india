@@ -496,9 +496,9 @@ export const ContributePage: React.FC = () => {
                       <input required value={routeName} onChange={e => setRouteName(e.target.value)} placeholder="e.g. Kashmere Gate to Mehrauli" className="mt-1 w-full px-3 py-2.5 bg-white border border-yatriwarm-300 rounded-xl" />
                     </label>
                     <label className="text-xs font-medium text-yatriwarm-700">{t('route_direction_label')}<select value={direction} onChange={e => setDirection(e.target.value as 'UP' | 'DOWN')} className="mt-1 w-full px-3 py-2.5 bg-white border border-yatriwarm-300 rounded-xl"><option value="UP">{t('route_direction_outbound')}</option><option value="DOWN">{t('route_direction_return')}</option></select></label>
-                    <label className="text-xs font-medium text-yatriwarm-700">Bus operator / service name
+                    {!isOperatorSubmission && <label className="text-xs font-medium text-yatriwarm-700">Bus operator / service name
                       <input required value={operatorName} onChange={e => setOperatorName(e.target.value)} placeholder="Operator name" className="mt-1 w-full px-3 py-2.5 bg-white border border-yatriwarm-300 rounded-xl" />
-                    </label>
+                    </label>}
                     <label className="text-xs font-medium text-yatriwarm-700">Total route distance (km)
                       <input required type="number" min="0.1" step="0.1" value={routeDistanceKm} onChange={e => setRouteDistanceKm(e.target.value)} placeholder="e.g. 42" className="mt-1 w-full px-3 py-2.5 bg-white border border-yatriwarm-300 rounded-xl" />
                     </label>
