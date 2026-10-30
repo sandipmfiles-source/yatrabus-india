@@ -3,7 +3,7 @@
 ## Core Privacy Principles
 
 1. **No Passenger Account Required**: Passengers can search routes, look up timetables and submit public corrections without providing a phone number, email address or social account.
-2. **No Covert Location Collection**: GPS is requested only after an explicit in-app journey confirmation and operating-system permission. Location observations are not accepted by the API until a recorded consent with disclosures accepted exists.
+2. **No Covert Location Collection**: Location permission is not required to open or search the app. Android location permission is requested only when a passenger chooses nearby-stop search or explicitly starts journey tracking. GPS observations are not accepted by the API until a recorded tracking consent with disclosures accepted exists.
 3. **Session-Bound GPS**: Every observation must match an active journey session's bus and route. Invalid coordinates and expired sessions are rejected.
 4. **Temporary Coordinate Retention**: Raw per-session GPS observations are held only while the journey session is active, and are deleted when the user stops sharing or the session expires. Observations older than 12 hours are pruned. The latest bus-level aggregate can remain visible with its freshness state; an individual passenger path is not published.
 5. **Safety Expiry Limit**: Journey sessions automatically expire after a maximum of 12 hours. Passengers can stop sharing at any time using the Stop Sharing control.
