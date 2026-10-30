@@ -195,6 +195,25 @@ adminRouter.post('/submissions/:id/review', requireAdminAuth('SUPER_ADMIN'), (re
     repository.addRoute(updatedRoute);
   }
 
+  if (decision === 'ADMIN_VERIFIED' && pendingSubmission?.proposedData?.action === 'UPDATE_BUS_TIMETABLE') {
+    const data = pendingSubmission.proposedData;
+    const route = typeof data.routeNumber === 'string' ? repository.getRouteByNumber(data.routeNumber) : undefined;
+    const validTime = (value: unknown) => typeof value === 'string' && /^([01]\\d|2[0-3]):[0-5]\\d$/.test(value);
+    if (!route || !data.busIdentifier || !validTime(data.departureTime) || !validTime(data.arrivalTime)) {
+      return res.status(422).json({ error: 'Valid route, bus name, departure and arrival times are required.' });
+    }
+    if (!repository.updateTimetableDeparture(route.id, String(data.busIdentifier), data.departureTime, data.arrivalTime)) {
+      return res.status(404).json({ error: 'Existing timetable departure was not found for this bus.' });
+    }
+  }
+
+  if (decision === 'ADMIN_VERIFIED' && pendingSubmission?.submissionType === 'DELETE_BUS') {
+    const busId = pendingSubmission.targetEntityId || '';
+    const bus = busId ? repository.getBusById(busId) : undefined;
+    if (!bus) return res.status(404).json({ error: 'Bus record was not found for removal.' });
+    repository.addBus({ ...bus, isActive: false, updatedAt: new Date().toISOString() });
+  }
+
   if (decision === 'ADMIN_VERIFIED' && pendingSubmission?.proposedData?.timetableEntry === true) {
     const data = pendingSubmission.proposedData;
     const route = typeof data.routeNumber === 'string' ? repository.getRouteByNumber(data.routeNumber) : undefined;
