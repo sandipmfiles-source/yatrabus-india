@@ -16,10 +16,10 @@ adminRouter.post('/login', (req: Request, res: Response) => {
   }
 
   // Fail closed: no development/default credentials are accepted.
-  if (!CONFIG.ADMIN_PASSWORD_HASH || CONFIG.ADMIN_JWT_SECRET.length < 32) {
+  if (!CONFIG.ADMIN_EMAIL || !CONFIG.ADMIN_PASSWORD_HASH || CONFIG.ADMIN_JWT_SECRET.length < 32) {
     return res.status(503).json({
       error: 'Admin login is not configured',
-      message: 'The owner must configure ADMIN_PASSWORD_HASH and a 32+ character ADMIN_JWT_SECRET.',
+      message: 'The owner must configure ADMIN_EMAIL, ADMIN_PASSWORD_HASH and a 32+ character ADMIN_JWT_SECRET.',
     });
   }
 
