@@ -163,8 +163,11 @@ export const api = {
     return data;
   },
 
-  async getAdminSubmissions(token: string, status?: string) {
-    const query = status ? `?status=${encodeURIComponent(status)}` : '';
+  async getAdminSubmissions(token: string, status?: string, category?: 'PUBLIC' | 'OPERATOR') {
+    const params = new URLSearchParams();
+    if (status) params.set('status', status);
+    if (category) params.set('category', category);
+    const query = params.size ? `?${params.toString()}` : '';
     const res = await fetch(`${API_BASE}/admin/submissions${query}`, { headers: { Authorization: `Bearer ${token}` } });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.message || data.error || 'Unable to load submissions');
