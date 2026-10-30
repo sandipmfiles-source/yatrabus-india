@@ -123,4 +123,9 @@ export const en = {
   background_tracking_active: "Android background GPS is active",
   background_tracking_unavailable: "Background GPS is not active",
   location_updates_checked: "location checks",
+  origin_latitude: "Origin latitude",
+  origin_longitude: "Origin longitude",
+  destination_latitude: "Destination latitude",
+  destination_longitude: "Destination longitude",
+  exact_departures: "Exact departures (optional, comma separated)",
 };
