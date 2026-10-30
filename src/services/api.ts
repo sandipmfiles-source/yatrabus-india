@@ -17,6 +17,13 @@ export const api = {
     return repository.searchPlaces(query, limit);
   },
 
+  async previewRoadRoute(origin: string, destination: string, stops: string[] = []) {
+    const res = await fetch(`${API_BASE}/places/route-preview`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ origin, destination, stops }) });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.message || data.error || 'Google Maps route preview is unavailable.');
+    return data;
+  },
+
   async getNearbyStops(lat: number, lon: number, radius = 3000) {
     try {
       const res = await fetch(`${API_BASE}/places/nearby?lat=${lat}&lon=${lon}&radius=${radius}`);
