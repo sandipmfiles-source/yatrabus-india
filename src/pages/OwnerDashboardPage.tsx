@@ -17,7 +17,7 @@ declare global {
 }
 
 type OwnerUser = { id: string; email: string; name: string };
-type OwnerSubmission = { id: string; referenceId: string; submissionType: string; status: string; createdAt: string; contributorNote?: string };
+type OwnerSubmission = { id: string; referenceId: string; submissionType: string; status: string; createdAt: string; contributorNote?: string; proposedData?: Record<string, any> };
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
 
@@ -30,6 +30,7 @@ export const OwnerDashboardPage: React.FC = () => {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [kind, setKind] = useState<'ROUTE' | 'TIMETABLE'>('TIMETABLE');
+  const [editingSubmissionId, setEditingSubmissionId] = useState<string | null>(null);
   const [busName, setBusName] = useState('');
   const [operatorName, setOperatorName] = useState('');
   const [routeNumber, setRouteNumber] = useState('');
@@ -110,6 +111,40 @@ export const OwnerDashboardPage: React.FC = () => {
     setSubmissions([]);
   };
 
+  const startEdit = (item: OwnerSubmission) => {
+    const data = item.proposedData || {};
+    setKind('TIMETABLE');
+    setEditingSubmissionId(item.id);
+    setBusName(String(data.busIdentifier || data.name || ''));
+    setOperatorName(String(data.operatorName || ''));
+    setRouteNumber(String(data.routeNumber || ''));
+    setRouteName(String(data.routeName || ''));
+    setOrigin(String(data.origin || ''));
+    setDestination(String(data.destination || ''));
+    setDepartureTime(String(data.departureTime || ''));
+    setArrivalTime(String(data.arrivalTime || ''));
+    setNote('Owner timetable correction');
+  };
+
+  const requestRemoval = async (item: OwnerSubmission) => {
+    if (!token || !window.confirm('Send this bus for removal review? It will remain listed until the Super Admin approves.')) return;
+    setLoading(true);
+    setError('');
+    try {
+      const result = await api.submitOwnerContribution(token, {
+        submissionType: 'DELETE_BUS',
+        entityType: 'BUS',
+        targetEntityId: 'bus-community-' + item.id,
+        contributorNote: 'Bus owner requested removal',
+        proposedData: { action: 'DELETE_BUS', busIdentifier: item.proposedData?.busIdentifier || item.proposedData?.name || '' },
+      });
+      setMessage('Removal request submitted: ' + result.referenceId);
+      await loadSubmissions(token);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to request removal.');
+    } finally { setLoading(false); }
+  };
+
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!token) return;
@@ -140,12 +175,14 @@ export const OwnerDashboardPage: React.FC = () => {
         operatingDays: ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'],
       };
       const result = await api.submitOwnerContribution(token, {
-        submissionType: kind === 'ROUTE' ? 'SUGGEST_ROUTE' : 'ADD_BUS',
+        submissionType: editingSubmissionId ? 'CORRECT_TIMETABLE' : kind === 'ROUTE' ? 'SUGGEST_ROUTE' : 'ADD_BUS',
         entityType: kind === 'ROUTE' ? 'ROUTE' : 'TIMETABLE',
-        contributorNote: note,
-        proposedData,
+        targetEntityId: editingSubmissionId ? 'bus-community-' + editingSubmissionId : undefined,
+        contributorNote: note || (editingSubmissionId ? 'Owner requested timetable update' : 'Bus owner submission'),
+        proposedData: editingSubmissionId ? { ...proposedData, timetableEntry: false, action: 'UPDATE_BUS_TIMETABLE' } : proposedData,
       });
       setMessage('Request submitted. Reference ID: ' + result.referenceId + '. It will appear publicly only after Super Admin approval.');
+      setEditingSubmissionId(null);
       setBusName('');
       setDepartureTime('');
       setArrivalTime('');
@@ -184,7 +221,7 @@ export const OwnerDashboardPage: React.FC = () => {
           </section>
 
           <section className="bg-white rounded-3xl p-5 sm:p-7 border border-yatriwarm-200 shadow-card space-y-4">
-            <div><h2 className="text-lg font-bold text-yatriwarm-900">Submit a bus or route</h2><p className="text-xs text-yatriwarm-500">Every owner submission goes to a separate Super Admin approval queue.</p></div>
+            <div><h2 className="text-lg font-bold text-yatriwarm-900">{editingSubmissionId ? 'Update bus timetable' : 'Submit a bus or route'}</h2><p className="text-xs text-yatriwarm-500">Every owner submission goes to a separate Super Admin approval queue.</p></div>
             <div className="flex flex-wrap gap-2">
               <button type="button" onClick={() => setKind('TIMETABLE')} className={`px-3 py-2 rounded-xl text-xs font-semibold border ${kind === 'TIMETABLE' ? 'bg-yatribrand-900 text-white border-yatribrand-900' : 'bg-white text-yatriwarm-700 border-yatriwarm-200'}`}>Add bus / timetable</button>
               <button type="button" onClick={() => setKind('ROUTE')} className={`px-3 py-2 rounded-xl text-xs font-semibold border ${kind === 'ROUTE' ? 'bg-yatribrand-900 text-white border-yatribrand-900' : 'bg-white text-yatriwarm-700 border-yatriwarm-200'}`}>Suggest a new route</button>
@@ -207,13 +244,13 @@ export const OwnerDashboardPage: React.FC = () => {
               </>}
               <label className="sm:col-span-2 text-xs text-yatriwarm-700">Stops in order (one per line: Name | latitude | longitude | arrival HH:MM | departure HH:MM)<textarea required={kind === 'ROUTE'} rows={5} value={stopsText} onChange={e => setStopsText(e.target.value)} placeholder={'Jhargram | 22.45 | 86.98 | 06:55 | 07:00\nLodhasuli | 22.48 | 87.05 | 07:25 | 07:30\nKharagpur | 22.34 | 87.32 | 07:55 | 08:00\nKolkata | 22.57 | 88.36 | 10:30 | 10:35'} className="mt-1 w-full px-3 py-2 rounded-xl border border-yatriwarm-200 bg-white" /></label>
               <label className="sm:col-span-2 text-xs text-yatriwarm-700">“Helped by” note / source details<textarea rows={2} value={note} onChange={e => setNote(e.target.value)} placeholder="Name to show as contributor, or source of timetable" className="mt-1 w-full px-3 py-2 rounded-xl border border-yatriwarm-200 bg-white" /></label>
-              <button disabled={loading} type="submit" className="sm:col-span-2 px-5 py-3 rounded-xl bg-yatribrand-900 text-white text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2"><PlusCircle className="w-4 h-4" />{loading ? 'Submitting…' : 'Send for approval'}</button>
+              <button disabled={loading} type="submit" className="sm:col-span-2 px-5 py-3 rounded-xl bg-yatribrand-900 text-white text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2"><PlusCircle className="w-4 h-4" />{loading ? 'Submitting…' : editingSubmissionId ? 'Send update for approval' : 'Send for approval'}</button>
             </form>
           </section>
 
           <section className="bg-white rounded-3xl p-5 border border-yatriwarm-200 shadow-card space-y-3">
             <h2 className="font-bold text-yatriwarm-900">My submissions ({submissions.length})</h2>
-            {submissions.length === 0 ? <p className="text-xs text-yatriwarm-500">You have not submitted any buses or routes yet.</p> : submissions.map(item => <div key={item.id} className="flex items-center justify-between gap-3 py-3 border-t border-yatriwarm-100"><div><div className="text-sm font-semibold text-yatriwarm-900">{item.submissionType}</div><div className="text-[11px] text-yatriwarm-500">{item.referenceId} · {new Date(item.createdAt).toLocaleDateString()}</div></div><span className="text-[11px] rounded-full px-2 py-1 bg-yatriwarm-100 text-yatriwarm-700 flex items-center gap-1">{item.status === 'ADMIN_VERIFIED' ? <CheckCircle className="w-3 h-3" /> : <Clock className="w-3 h-3" />}{item.status.replace('_', ' ')}</span></div>)}
+            {submissions.length === 0 ? <p className="text-xs text-yatriwarm-500">You have not submitted any buses or routes yet.</p> : submissions.map(item => <div key={item.id} className="flex flex-wrap items-center justify-between gap-3 py-3 border-t border-yatriwarm-100"><div><div className="text-sm font-semibold text-yatriwarm-900">{item.proposedData?.busIdentifier || item.proposedData?.name || item.submissionType}</div><div className="text-[11px] text-yatriwarm-500">{item.submissionType} · {item.referenceId} · {new Date(item.createdAt).toLocaleDateString()}</div></div><div className="flex items-center gap-2"><span className="text-[11px] rounded-full px-2 py-1 bg-yatriwarm-100 text-yatriwarm-700 flex items-center gap-1">{item.status === 'ADMIN_VERIFIED' ? <CheckCircle className="w-3 h-3" /> : <Clock className="w-3 h-3" />}{item.status.replace('_', ' ')}</span>{item.status === 'ADMIN_VERIFIED' && item.submissionType === 'ADD_BUS' && <><button type="button" onClick={() => startEdit(item)} className="text-[11px] px-2 py-1 rounded-lg border border-yatriwarm-200">Edit</button><button type="button" onClick={() => void requestRemoval(item)} className="text-[11px] px-2 py-1 rounded-lg border border-rose-200 text-rose-700">Request delete</button></>}</div></div>)}
           </section>
         </>
       )}
