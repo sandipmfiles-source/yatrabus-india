@@ -14,6 +14,10 @@ This repository can run the built web app and the Express API from one Node serv
 4. Keep the persistent volume mounted at `/data`. If that volume is removed, the JSON store is lost.
 5. Run `docker compose up --build -d`.
 
+## Jhargram and Kharagpur starter places
+
+Jhargram New Bus Stand and KGP Bus Stand are included as searchable, **unverified** community map places using OpenStreetMap-derived coordinates. These are stop locators only, not bus-service or timetable records. No Jhargram–Kharagpur departure times are seeded because a verified public timetable for that exact route was not found. Add the real route, intermediate stops, exact departures and operator evidence through the contribution form, then approve it in Admin.
+
 ## Android APK
 
 The APK build must use the same public API origin. Set the GitHub repository Actions variable `VITE_API_BASE_URL` to the same HTTPS origin before producing the production APK. The value is compiled into the app; changing it requires a new APK build.
