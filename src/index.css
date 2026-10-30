@@ -122,3 +122,59 @@
 ::-webkit-scrollbar-track { background: #FFF9E8; }
 ::-webkit-scrollbar-thumb { background: #D6C58D; border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: #A89A6C; }
+
+
+/* Premium YatraBus identity and motion system */
+.yatribus-theme header {
+  background: rgba(12, 15, 22, .94);
+  border-bottom: 1px solid rgba(250, 204, 21, .42);
+  box-shadow: 0 12px 36px rgba(12, 15, 22, .22);
+  backdrop-filter: blur(18px) saturate(145%);
+}
+.yatribus-theme header .yb-brand-mark {
+  position: relative;
+  overflow: hidden;
+  color: #171717;
+  background: linear-gradient(145deg, #fff2ad 0%, #facc15 52%, #d97706 100%);
+  border: 1px solid rgba(255,255,255,.5);
+  box-shadow: 0 0 0 4px rgba(250,204,21,.08), 0 8px 22px rgba(250,204,21,.22);
+}
+.yatribus-theme header .yb-brand-mark::after {
+  content: "";
+  position: absolute;
+  inset: -45% auto -45% -35%;
+  width: 30%;
+  transform: rotate(22deg);
+  background: rgba(255,255,255,.55);
+  animation: yb-brand-sheen 5s ease-in-out infinite;
+}
+.yatribus-theme header .yb-brand-mark svg { filter: drop-shadow(0 2px 2px rgba(0,0,0,.18)); }
+.yatribus-theme header .yb-brand-name { color: #fff !important; letter-spacing: -.045em; text-shadow: 0 2px 18px rgba(255,255,255,.12); }
+.yatribus-theme header .yb-brand-country { color: #171717; background: linear-gradient(135deg,#fde68a,#facc15); box-shadow: 0 2px 12px rgba(250,204,21,.16); }
+.yatribus-theme header .yb-brand-tagline { color: #cbd5e1; letter-spacing: .055em; }
+.yatribus-theme header nav a { border: 1px solid transparent; }
+.yatribus-theme header nav a:hover { border-color: rgba(250,204,21,.22); transform: translateY(-1px); }
+.yatribus-theme main .rounded-3xl { transition: box-shadow .25s ease, border-color .25s ease, transform .25s ease; }
+.yatribus-theme main .rounded-3xl:hover { box-shadow: 0 16px 38px rgba(23,23,23,.09); }
+.yb-premium-panel {
+  position: relative; overflow: hidden; isolation: isolate;
+  background: linear-gradient(145deg, #171717 0%, #242424 58%, #431b1b 100%);
+  border: 1px solid rgba(250,204,21,.28);
+  box-shadow: 0 24px 60px rgba(23,23,23,.18), inset 0 1px rgba(255,255,255,.08);
+}
+.yb-premium-panel::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background: radial-gradient(circle at 85% 15%, rgba(250,204,21,.18), transparent 32%), radial-gradient(circle at 5% 95%, rgba(220,38,38,.18), transparent 35%);
+}
+.yb-route-line { background: linear-gradient(180deg, #facc15, #dc2626 55%, rgba(220,38,38,.12)); }
+.yb-route-stop { position: relative; }
+.yb-route-stop::before { content: ""; position: absolute; left: -1.32rem; top: .35rem; width: .7rem; height: .7rem; border-radius: 999px; background: #facc15; border: 2px solid #171717; box-shadow: 0 0 0 3px rgba(250,204,21,.18); }
+.yb-bus-float { animation: yb-bus-float 3.8s ease-in-out infinite; }
+.yb-bus-wheel { transform-box: fill-box; transform-origin: center; animation: yb-wheel-spin 2s linear infinite; }
+@keyframes yb-brand-sheen { 0%,65% { left:-35%; opacity:0 } 75% { opacity:.9 } 100% { left:130%; opacity:0 } }
+@keyframes yb-bus-float { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-5px) } }
+@keyframes yb-wheel-spin { to { transform: rotate(360deg) } }
+@media (prefers-reduced-motion: reduce) {
+  .yb-bus-float, .yb-bus-wheel, .yb-brand-mark::after, .live-pulse-badge { animation: none !important; }
+  .yatribus-theme main .rounded-3xl, .yatribus-theme header nav a { transition: none !important; }
+}
