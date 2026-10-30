@@ -120,15 +120,7 @@ export class TransitRepository {
       this.automationRules.set(rule.id, rule);
     }
 
-    // Seed default Admin User
-    this.adminUsers.set('admin-default', {
-      id: 'admin-default',
-      email: 'admin@yatribus.in',
-      name: 'Central Transit Verifier',
-      role: 'SUPER_ADMIN',
-      isActive: true,
-      createdAt: '2026-01-01T00:00:00Z',
-    });
+    // The sole Super Admin is provisioned from the deployment's ADMIN_EMAIL at server startup.
   }
 
   // ==================== PLACES ====================
@@ -360,6 +352,24 @@ export class TransitRepository {
   }
 
   // ==================== ADMIN & HEALTH ====================
+  public ensureSuperAdmin(email: string): AdminUser | undefined {
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!normalizedEmail) return undefined;
+
+    // Enforce a single owner account; never retain seeded or additional admin identities.
+    this.adminUsers.clear();
+    const owner: AdminUser = {
+      id: 'owner-super-admin',
+      email: normalizedEmail,
+      name: 'YatraBus Owner',
+      role: 'SUPER_ADMIN',
+      isActive: true,
+      createdAt: new Date().toISOString(),
+    };
+    this.adminUsers.set(owner.id, owner);
+    return owner;
+  }
+
   public getAdminByEmail(email: string): AdminUser | undefined {
     for (const u of this.adminUsers.values()) {
       if (u.email.toLowerCase() === email.toLowerCase()) {
