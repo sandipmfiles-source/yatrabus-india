@@ -333,7 +333,7 @@ export const ContributePage: React.FC = () => {
                 className="w-full py-3 bg-yatribrand-900 hover:bg-yatribrand-950 text-white font-bold text-sm rounded-xl transition-all shadow-subtle flex items-center justify-center gap-2"
               >
                 <PlusCircle className="w-4 h-4" />
-                {isSubmitting ? '{t('submitting')}' : '{t('submit_contribution')}'}
+                {isSubmitting ? t('submitting') : t('submit_contribution')}
               </button>
             </form>
           )}
