@@ -65,18 +65,9 @@ export const SearchResultsPage: React.FC = () => {
         : exactCount
           ? (exactCount.min === exactCount.max ? String(exactCount.min) : `${exactCount.min}–${exactCount.max}`)
           : t('not_verified');
-    const estimatedSlots = estimate && route.frequencyMinutes
-      ? Array.from({ length: Math.min(estimate, 30) }, (_, index) => {
-          const [hours, minutes] = route.firstDepartureTime.split(':').map(Number);
-          const total = hours * 60 + minutes + index * route.frequencyMinutes!;
-          return { key: `estimated-${index}`, time: `${String(Math.floor(total / 60) % 24).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`, busIdentifier: '', days: route.operatingDays?.join(', ') || '' };
-        })
-      : [];
     const departureSlots = departures.length
       ? departures.slice(0, 30).map(item => ({ key: item.id, time: item.departureTime, busIdentifier: item.busIdentifier || '', days: item.operatingDays?.join(', ') || '' }))
-      : exactTimes.length
-        ? exactTimes.slice(0, 30).map((time, index) => ({ key: `exact-time-${index}`, time, busIdentifier: '', days: route.operatingDays?.join(', ') || '' }))
-        : estimatedSlots;
+      : exactTimes.slice(0, 30).map((time, index) => ({ key: `exact-time-${index}`, time, busIdentifier: '', days: route.operatingDays?.join(', ') || '' }));
     const firstIndex = route.stops.findIndex(stop => stop.id === journey.boardingStop.id);
     const lastIndex = route.stops.findIndex(stop => stop.id === journey.alightingStop.id);
     const segmentStops = firstIndex >= 0 && lastIndex >= firstIndex
@@ -100,13 +91,13 @@ export const SearchResultsPage: React.FC = () => {
         </div>
         <p className="flex items-center gap-1 text-[11px] text-yatriwarm-500"><CalendarDays className="w-3.5 h-3.5" />{t('operating_days')}: {route.operatingDays?.join(', ') || t('not_provided')}</p>
         {departureSlots.length > 0 && <div>
-          <div className="text-[11px] font-semibold text-yatriwarm-700">{exactDepartures ? t('scheduled_departures') : t('estimated_departures')}</div>
+          <div className="text-[11px] font-semibold text-yatriwarm-700">{t('scheduled_departures')}</div>
           <div className="mt-2 flex flex-wrap gap-1.5">
             {departureSlots.map(item => <span key={item.key} className="rounded-lg bg-yatriwarm-100 px-2 py-1 text-[11px] tabular-nums text-yatriwarm-800">
               {item.time}{item.busIdentifier ? ` · ${item.busIdentifier}` : ''}{item.days ? <span className="ml-1 text-[9px] text-yatriwarm-500">({item.days})</span> : ''}
             </span>)}
           </div>
-          {(exactDepartures ? departures.length : estimate || 0) > 30 && <p className="mt-1 text-[10px] text-yatriwarm-500">{t('showing_first')} 30 {exactDepartures ? t('of_total') : t('of_approximately')} {exactDepartures ? departures.length : estimate} {t('departures')}</p>}
+          {exactDepartures && (departures.length || exactTimes.length) > 30 && <p className="mt-1 text-[10px] text-yatriwarm-500">{t('showing_first')} 30 {t('of_total')} {departures.length || exactTimes.length} {t('departures')}</p>}
         </div>}
         <div>
           <div className="mb-2 flex items-center gap-2 text-xs font-bold text-yatriwarm-800"><MapPin className="w-3.5 h-3.5 text-yatribrand-800" />{t('stops_between')} {journey.boardingStop.stopName} → {journey.alightingStop.stopName}</div>
