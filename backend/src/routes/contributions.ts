@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { repository } from '../db/repository.js';
+import { repository } from '../db/persistentRepository.js';
 import { checkDuplicateStop, checkDuplicateRoute } from '../../../packages/shared/src/engine/duplicateDetector.js';
 import { contributionLimiter } from '../middleware/rateLimiter.js';
 
