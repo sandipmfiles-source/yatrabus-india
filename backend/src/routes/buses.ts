@@ -30,9 +30,10 @@ busesRouter.get('/:id', (req: Request, res: Response) => {
   const routes = repository.getAllRoutes();
   const requestedRouteId = typeof req.query.routeId === 'string' ? req.query.routeId : '';
   const requestedRoute = requestedRouteId ? repository.getRouteById(requestedRouteId) : undefined;
-  const route = requestedRoute?.operatorId === bus.operatorId
-    ? requestedRoute
-    : routes.find(r => r.id === bus.routeId) || routes.find(r => r.operatorId === bus.operatorId) || routes[0];
+  if (requestedRouteId && (!requestedRoute || bus.routeId !== requestedRouteId)) {
+    return res.status(404).json({ error: 'This bus is not linked to the requested route.' });
+  }
+  const route = requestedRoute || routes.find(r => r.id === bus.routeId);
   if (!route) return res.status(404).json({ error: 'Route not found for this bus' });
 
   // Calculate stop ETAs
