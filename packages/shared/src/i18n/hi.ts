@@ -64,6 +64,9 @@ export const hi = {
   journey_prompt_no: 'नहीं',
   journey_prompt_not_now: 'अभी नहीं',
   tracking_active: 'बस के लिए स्थान साझा किया जा रहा है',
+  tracking_service_not_active: 'GPS सेवा सक्रिय नहीं है',
+  tracking_waiting_for_gps: 'पहली GPS लोकेशन की प्रतीक्षा है। ऐप कुछ देर खुला रखें और स्थान अनुमति जाँचें।',
+
   tracking_stop: 'साझा करना बंद करें',
   consent_title: 'यात्री स्थान अनुमति एवं गोपनीयता',
   consent_desc: 'यात्रीबस कभी भी गुप्त रूप से जीपीएस डेटा एकत्र नहीं करता है। स्थान पूरी तरह से अनाम रहता है और व्यक्तिगत यात्रा इतिहास नहीं बनता।',
