@@ -152,7 +152,7 @@ export const en = {
   privacy_nearby_item: "Find nearby bus stops based on your current physical vicinity.",
   privacy_tracking_item: "Explicitly opt into passenger-assisted journey tracking to help other commuters.",
   privacy_aggregation_title: "3. Bus-Level Location Aggregation",
-  privacy_aggregation_body: "When passengers contribute GPS observations during a confirmed bus trip, individual coordinates are stripped of device identifiers and aggregated onto the transit corridor. Public users see only the estimated bus location, never an individual passenger's path or history.",
+  privacy_aggregation_body: "While a journey is active, GPS observations are used to validate route confidence. When the session ends or reaches the 12-hour limit, per-session coordinate observations are deleted. Public users see only the latest bus-level location, not an individual passenger's path or history.",
   privacy_session_title: "4. 12-Hour Maximum Safety Limit & Instant Stop",
   privacy_session_body: "A journey session terminates immediately when you tap Stop Sharing. An automated safety rule also terminates all sessions after a maximum of 12 hours.",
   privacy_contact_title: "5. Contact & Data Deletion Requests",
