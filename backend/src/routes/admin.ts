@@ -3,11 +3,12 @@ import { CONFIG } from '../config.js';
 import { TimetableDeparture, Route, RouteStop, Operator } from '../../../packages/shared/src/types/bus.js';
 import { repository } from '../db/repository.js';
 import { createAdminSessionToken, requireAdminAuth, verifyAdminPassword } from '../middleware/auth.js';
+import { adminLoginLimiter } from '../middleware/rateLimiter.js';
 
 export const adminRouter = Router();
 
 // POST /api/admin/login — one configured Super Admin only.
-adminRouter.post('/login', (req: Request, res: Response) => {
+adminRouter.post('/login', adminLoginLimiter, (req: Request, res: Response) => {
   const email = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : '';
   const password = typeof req.body?.password === 'string' ? req.body.password : '';
 
