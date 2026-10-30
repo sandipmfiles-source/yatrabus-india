@@ -18,6 +18,7 @@ export const BusDetailPage: React.FC = () => {
 
   const [isLoading, setIsLoading] = useState(true);
   const [route, setRoute] = useState<Route | null>(null);
+  const [trackedBusId, setTrackedBusId] = useState<string | null>(null);
   const [location, setLocation] = useState<AggregatedBusLocation | null>(null);
   const [stopETAs, setStopETAs] = useState<ETAResult[]>([]);
 
@@ -30,6 +31,7 @@ export const BusDetailPage: React.FC = () => {
         setRoute(res.route);
         // Also fetch bus location if bus exists
         if (res.buses && res.buses.length > 0) {
+          setTrackedBusId(res.buses[0].id);
           api.getBusById(res.buses[0].id).then(busRes => {
             setLocation(busRes.location);
             setStopETAs(busRes.stopETAs);
@@ -94,7 +96,7 @@ export const BusDetailPage: React.FC = () => {
 
       {/* Journey Confirmation Prompt */}
       <JourneyConfirmBanner
-        busId={route.id}
+        busId={trackedBusId || route.id}
         routeId={route.id}
         routeNumber={route.routeNumber}
       />
