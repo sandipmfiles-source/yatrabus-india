@@ -85,7 +85,7 @@ export const BusDetailPage: React.FC = () => {
   // Project a fresh GPS fix onto the ordered stop-to-stop corridor.
   // The timeline marker is intentionally hidden unless GPS is genuinely live.
   const liveBusProgress = (() => {
-    if (!route || !location?.isLive || typeof location.latitude !== 'number' || typeof location.longitude !== 'number' || route.stops.length < 2) return null;
+    if (!route || !(location?.isLive || location?.displayState === 'LAST_KNOWN') || typeof location.latitude !== 'number' || typeof location.longitude !== 'number' || route.stops.length < 2) return null;
     const stops = route.stops;
     let best: { ratio: number; error: number } | null = null;
     for (let i = 0; i < stops.length - 1; i++) {
@@ -103,7 +103,7 @@ export const BusDetailPage: React.FC = () => {
       if (!best || error < best.error) best = { ratio: Math.max(0, Math.min(1, ratio)), error };
     }
     // Do not place a bus on this route when its GPS fix is far off the corridor.
-    return best && best.error < 0.08 ? best.ratio : null;
+    // Only show the timeline bus when its GPS fix is close to the actual stop corridor (about 220 m).\n    return best && best.error < 0.002 ? best.ratio : null;
   })();
 
   const refreshCorrections = async () => {
