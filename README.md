@@ -1,7 +1,7 @@
 # YatriBus (यात्रीबस / যাত্রীবাস)
 ### India-Wide Smart Bus Directory, Community-Powered Live Tracking & Android App
 
-[![Build Android Debug APK](https://github.com/your-username/india-smart-bus/actions/workflows/android-apk.yml/badge.svg)](https://github.com/your-username/india-smart-bus/actions/workflows/android-apk.yml)
+[![Build Android Debug APK](https://github.com/sandipmfiles-source/yatrabus-india/actions/workflows/android-apk.yml/badge.svg)](https://github.com/sandipmfiles-source/yatrabus-india/actions/workflows/android-apk.yml)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Target Budget](https://img.shields.io/badge/Cost_Target-₹0_Initial_Budget-emerald.svg)](#)
 
@@ -41,7 +41,7 @@
 
 ### 1. Clone & Install Dependencies
 ```bash
-git clone https://github.com/your-username/india-smart-bus.git
+git clone https://github.com/sandipmfiles-source/yatrabus-india.git
 cd india-smart-bus
 npm install
 ```
