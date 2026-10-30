@@ -97,4 +97,15 @@ export const en = {
   requesting_permission: 'Requesting permission…',
   location_permission_denied: 'Location permission was not granted. You can still search buses; live GPS needs permission.',
   location_permission_error: 'Could not request location permission. Please check Android app permissions in Settings.',
+
+  tracking_updates_sent: 'location updates sent',
+  privacy_preserved: 'Privacy preserved',
+  tracking_stop_title: 'Stop sharing location immediately',
+  tracking_background_note: 'Android may show a persistent notification while your trip is being tracked in the background.',
+  tracking_bus_confirmed: 'Confirming journey on:',
+  tracking_consent_message: 'With your explicit permission, your device shares anonymous location observations while you travel on this bus. You can keep searching without sharing your location.',
+  tracking_privacy_detail: 'Your location is aggregated at bus level. Personal movement history is not published.',
+  tracking_expiry_detail: 'You can stop sharing anytime. A session expires automatically after 12 hours.',
+  tracking_enable_button: 'Enable Location & Assist Passengers',
+  tracking_not_now: 'Not Now (Keep Searching)',
 };
