@@ -195,6 +195,22 @@ adminRouter.post('/submissions/:id/review', requireAdminAuth('SUPER_ADMIN'), (re
     repository.addRoute(updatedRoute);
   }
 
+  if (decision === 'ADMIN_VERIFIED' && pendingSubmission?.proposedData?.action === 'CORRECT_STOP_NAME') {
+    const data = pendingSubmission.proposedData;
+    const route = typeof data.routeNumber === 'string' ? repository.getRouteByNumber(data.routeNumber) : undefined;
+    const value = typeof data.value === 'string' ? data.value.trim().slice(0, 120) : '';
+    if (!route || value.length < 2) return res.status(422).json({ error: 'A valid route and stop name are required.' });
+    const stopExists = route.stops.some(stop => stop.id === data.stopId || stop.stopId === data.stopId);
+    if (!stopExists) return res.status(404).json({ error: 'The selected stop is not part of this route.' });
+    repository.addRoute({
+      ...route,
+      stops: route.stops.map(stop => (stop.id === data.stopId || stop.stopId === data.stopId)
+        ? { ...stop, stopName: value }
+        : stop),
+      updatedAt: new Date().toISOString(),
+    });
+  }
+
   if (decision === 'ADMIN_VERIFIED' && pendingSubmission?.proposedData?.action === 'UPDATE_BUS_TIMETABLE') {
     const data = pendingSubmission.proposedData;
     const route = typeof data.routeNumber === 'string' ? repository.getRouteByNumber(data.routeNumber) : undefined;
