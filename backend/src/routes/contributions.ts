@@ -149,7 +149,7 @@ contributionsRouter.post('/operator-submit', contributionLimiter, (req: Request,
   const contactPhone = typeof req.body?.contactPhone === 'string' ? req.body.contactPhone.trim().slice(0, 30) : '';
   const operatorName = typeof req.body?.operatorName === 'string' ? req.body.operatorName.trim().slice(0, 120) : '';
   const officialEmail = typeof req.body?.officialEmail === 'string' ? req.body.officialEmail.trim().slice(0, 160) : '';
-  const allowed: string[] = ['ADD_BUS', 'ADD_STOP', 'SUGGEST_ROUTE', 'CORRECT_TIMETABLE', 'REPORT_CHANGED_ROUTE', 'REPORT_DISCONTINUED', 'ADD_INTERMEDIATE_STOP', 'DELETE_BUS'];
+  const allowed: string[] = ['ADD_BUS', 'ADD_STOP', 'SUGGEST_ROUTE', 'UPDATE_ROUTE', 'CORRECT_TIMETABLE', 'REPORT_CHANGED_ROUTE', 'REPORT_DISCONTINUED', 'ADD_INTERMEDIATE_STOP', 'DELETE_BUS'];
   if (!allowed.includes(submissionType) || !['BUS', 'ROUTE', 'TIMETABLE', 'STOP'].includes(entityType) ||
       !proposedData || typeof proposedData !== 'object' || Array.isArray(proposedData) ||
       contactName.length < 2 || operatorName.length < 2 || contactPhone.replace(/\D/g, '').length < 10) {
