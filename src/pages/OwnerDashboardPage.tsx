@@ -45,6 +45,9 @@ export const OwnerDashboardPage: React.FC = () => {
   const [arrivalTime, setArrivalTime] = useState('');
   const [firstDepartureTime, setFirstDepartureTime] = useState('');
   const [lastDepartureTime, setLastDepartureTime] = useState('');
+  const [frequencyMinutes, setFrequencyMinutes] = useState('');
+  const [departureTimes, setDepartureTimes] = useState('');
+  const [operatingDays, setOperatingDays] = useState('Daily');
   const [distanceKm, setDistanceKm] = useState('');
   const [durationMinutes, setDurationMinutes] = useState('');
   const [stopsText, setStopsText] = useState('');
@@ -187,6 +190,9 @@ export const OwnerDashboardPage: React.FC = () => {
     setDestination(String(data.destination || ''));
     setFirstDepartureTime(String(data.firstDepartureTime || ''));
     setLastDepartureTime(String(data.lastDepartureTime || ''));
+    setFrequencyMinutes(String(data.frequencyMinutes || ''));
+    setDepartureTimes(Array.isArray(data.departureTimes) ? data.departureTimes.join(', ') : '');
+    setOperatingDays(Array.isArray(data.operatingDays) ? data.operatingDays.join(',') : 'Daily');
     setDistanceKm(String(data.distanceKm || ''));
     setDurationMinutes(String(data.typicalDurationMinutes || ''));
     setStopsText((Array.isArray(data.stops) ? data.stops.slice(1, -1) : []).map((stop: any) =>
@@ -255,6 +261,9 @@ export const OwnerDashboardPage: React.FC = () => {
         arrivalTime,
         firstDepartureTime,
         lastDepartureTime,
+        frequencyMinutes: frequencyMinutes ? Number(frequencyMinutes) : undefined,
+        departureTimes: departureTimes.split(',').map(time => time.trim()).filter(Boolean),
+        operatingDays: operatingDays.split(',').map(day => day.trim()).filter(Boolean),
         distanceKm: distanceKm ? Number(distanceKm) : undefined,
         typicalDurationMinutes: durationMinutes ? Number(durationMinutes) : undefined,
         stops,
@@ -330,6 +339,9 @@ export const OwnerDashboardPage: React.FC = () => {
                 <label className="text-xs text-yatriwarm-700">Last departure<input required type="time" value={lastDepartureTime} onChange={e => setLastDepartureTime(e.target.value)} className="mt-1 w-full px-3 py-2 rounded-xl border border-yatriwarm-200 bg-white" /></label>
                 <label className="text-xs text-yatriwarm-700">Route distance (km)<input required type="number" min="1" value={distanceKm} onChange={e => setDistanceKm(e.target.value)} className="mt-1 w-full px-3 py-2 rounded-xl border border-yatriwarm-200 bg-white" /></label>
                 <label className="text-xs text-yatriwarm-700">Journey duration (minutes)<input required type="number" min="1" value={durationMinutes} onChange={e => setDurationMinutes(e.target.value)} className="mt-1 w-full px-3 py-2 rounded-xl border border-yatriwarm-200 bg-white" /></label>
+                <label className="text-xs text-yatriwarm-700">Frequency (minutes, optional)<input type="number" min="1" max="1440" value={frequencyMinutes} onChange={e => setFrequencyMinutes(e.target.value)} className="mt-1 w-full px-3 py-2 rounded-xl border border-yatriwarm-200 bg-white" /></label>
+                <label className="text-xs text-yatriwarm-700">Exact departure times (optional)<input value={departureTimes} onChange={e => setDepartureTimes(e.target.value)} placeholder="05:45, 06:15, 06:45" className="mt-1 w-full px-3 py-2 rounded-xl border border-yatriwarm-200 bg-white" /></label>
+                <label className="text-xs text-yatriwarm-700">Operating days<input value={operatingDays} onChange={e => setOperatingDays(e.target.value)} placeholder="Daily or MON,TUE,WED..." className="mt-1 w-full px-3 py-2 rounded-xl border border-yatriwarm-200 bg-white" /></label>
               </>}
               <label className="sm:col-span-2 text-xs text-yatriwarm-700">Stops in order (one per line: Name | latitude | longitude | arrival HH:MM | departure HH:MM)<textarea required={kind === 'ROUTE'} rows={5} value={stopsText} onChange={e => setStopsText(e.target.value)} placeholder={'Esplanade | 22.56 | 88.35 | 06:55 | 07:00\nPark Street | 22.55 | 88.35 | 07:25 | 07:30'}  className="mt-1 w-full px-3 py-2 rounded-xl border border-yatriwarm-200 bg-white" /></label>
               <section className="sm:col-span-2 yb-premium-panel rounded-3xl p-5 sm:p-6 text-white space-y-4">
