@@ -31,13 +31,20 @@ export function createRateLimiter(options: RateLimitOptions) {
 }
 
 export const publicSearchLimiter = createRateLimiter({
-  windowMs: 60 * 1000, // 1 minute
+  windowMs: 60 * 1000,
   maxRequests: 120,
   message: 'Search query rate limit reached. Please wait a moment before trying again.',
 });
 
 export const contributionLimiter = createRateLimiter({
-  windowMs: 60 * 60 * 1000, // 1 hour
+  windowMs: 60 * 60 * 1000,
   maxRequests: 20,
   message: 'Contribution submission limit reached to prevent automated spam. Please try again later.',
+});
+
+// Slow down password guessing against the single-owner administrator account.
+export const adminLoginLimiter = createRateLimiter({
+  windowMs: 15 * 60 * 1000,
+  maxRequests: 5,
+  message: 'Too many administrator login attempts. Please wait 15 minutes before trying again.',
 });

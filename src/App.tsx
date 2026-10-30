@@ -6,6 +6,8 @@ import { Navbar } from './components/Navbar.js';
 import { Footer } from './components/Footer.js';
 import { LocationConsentModal } from './components/LocationConsentModal.js';
 import { ActiveTrackingWidget } from './components/ActiveTrackingWidget.js';
+import { FirstLaunchLanguagePrompt } from './components/FirstLaunchLanguagePrompt.js';
+import { StartupLocationPermission } from './components/StartupLocationPermission.js';
 
 import { HomePage } from './pages/HomePage.js';
 import { SearchResultsPage } from './pages/SearchResultsPage.js';
@@ -55,6 +57,8 @@ export const App: React.FC = () => {
             <Footer />
 
             {/* Persistent Global Modals & Widgets */}
+            <FirstLaunchLanguagePrompt />
+            <StartupLocationPermission />
             <LocationConsentModal />
             <ActiveTrackingWidget />
           </div>

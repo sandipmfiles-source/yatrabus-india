@@ -63,3 +63,7 @@ android/app/build
 android/local.properties
 *.keystore
 *.jks
+
+# Local backend persistent runtime state (keep private)
+data/yatribus-state.json
+data/yatribus-state.json.tmp

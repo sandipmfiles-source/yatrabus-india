@@ -8,6 +8,26 @@ export interface RouteSearchResult {
 }
 
 /**
+ * Counts departures from a published first/last departure window.
+ * This is an estimate when the operator publishes only a frequency, not a trip-by-trip timetable.
+ */
+export function estimateDailyTripCount(firstDeparture: string, lastDeparture: string, frequencyMinutes?: number): number | undefined {
+  if (!frequencyMinutes || !Number.isFinite(frequencyMinutes) || frequencyMinutes <= 0) return undefined;
+  const toMinutes = (value: string): number | undefined => {
+    const match = /^(\d{2}):(\d{2})$/.exec(value);
+    if (!match) return undefined;
+    const hours = Number(match[1]);
+    const minutes = Number(match[2]);
+    if (hours > 23 || minutes > 59) return undefined;
+    return hours * 60 + minutes;
+  };
+  const first = toMinutes(firstDeparture);
+  const last = toMinutes(lastDeparture);
+  if (first === undefined || last === undefined || last < first) return undefined;
+  return Math.floor((last - first) / frequencyMinutes) + 1;
+}
+
+/**
  * Searches transit network for direct and 1-transfer bus journeys between origin and destination stops.
  */
 export function discoverJourneys(
@@ -53,8 +73,8 @@ export function discoverJourneys(
         (stopsCount / Math.max(1, route.stops.length - 1)) * route.typicalDurationMinutes
       );
 
-      const depTime = boardingStop.scheduledArrivalTime || route.firstDepartureTime;
-      const arrTime = alightingStop.scheduledArrivalTime || route.lastDepartureTime;
+      const depTime = boardingStop.scheduledDepartureTime || boardingStop.scheduledArrivalTime || route.firstDepartureTime;
+      const arrTime = alightingStop.scheduledArrivalTime || alightingStop.scheduledDepartureTime || route.lastDepartureTime;
 
       directCandidates.push({
         id: `journey-direct-${route.id}-${originIndex}-${destIndex}`,
@@ -69,6 +89,10 @@ export function discoverJourneys(
         confidenceScore: 85,
         serviceStatus: route.serviceStatus,
         locationStatus: 'ESTIMATED',
+        dailyTripCount: estimateDailyTripCount(route.firstDepartureTime, route.lastDepartureTime, route.frequencyMinutes),
+        frequencyMinutes: route.frequencyMinutes,
+        intermediateStops: route.stops.slice(originIndex + 1, destIndex),
+        timetableDepartures: (route.departures || []).filter(item => !item.isCancelled),
       });
     }
   }

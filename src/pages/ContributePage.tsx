@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
+import { useLanguage } from '../context/LanguageContext.js';
 import { useSearchParams } from 'react-router-dom';
 import { api } from '../services/api.js';
 import { SubmissionType } from '@shared/types/contribution.js';
 import { PlusCircle, Search, CheckCircle, AlertTriangle, ShieldCheck, ArrowRight } from 'lucide-react';
 
 export const ContributePage: React.FC = () => {
+  const { t } = useLanguage();
   const [searchParams] = useSearchParams();
   const initialType = (searchParams.get('type') as SubmissionType) || 'ADD_BUS';
 
@@ -16,8 +18,24 @@ export const ContributePage: React.FC = () => {
   const [routeNumber, setRouteNumber] = useState('');
   const [origin, setOrigin] = useState('');
   const [destination, setDestination] = useState('');
-  const [stateName, setStateName] = useState('Delhi');
+  const [stateName, setStateName] = useState('West Bengal');
   const [departureTime, setDepartureTime] = useState('');
+  const [arrivalTime, setArrivalTime] = useState('');
+  const [busIdentifier, setBusIdentifier] = useState('');
+  const [frequencyMinutes, setFrequencyMinutes] = useState('');
+  const [routeName, setRouteName] = useState('');
+  const [operatorName, setOperatorName] = useState('');
+  const [routeDistanceKm, setRouteDistanceKm] = useState('');
+  const [routeDurationMinutes, setRouteDurationMinutes] = useState('');
+  const [firstDepartureTime, setFirstDepartureTime] = useState('');
+  const [lastDepartureTime, setLastDepartureTime] = useState('');
+  const [routeStops, setRouteStops] = useState([
+    { name: '', latitude: '', longitude: '', arrivalTime: '', departureTime: '' },
+    { name: '', latitude: '', longitude: '', arrivalTime: '', departureTime: '' },
+  ]);
+  const updateRouteStop = (index: number, field: string, value: string) => {
+    setRouteStops(current => current.map((stop, i) => i === index ? { ...stop, [field]: value } : stop));
+  };
   const [notes, setNotes] = useState('');
 
   // Status check state
@@ -28,15 +46,17 @@ export const ContributePage: React.FC = () => {
   // Submission result
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedRefId, setSubmittedRefId] = useState<string | null>(null);
+  const [submissionError, setSubmissionError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setSubmissionError('');
 
     try {
       const res = await api.submitContribution({
         submissionType,
-        entityType: submissionType === 'ADD_STOP' ? 'STOP' : 'BUS',
+        entityType: submissionType === 'SUGGEST_ROUTE' ? 'ROUTE' : submissionType === 'ADD_STOP' ? 'STOP' : (submissionType === 'ADD_BUS' || submissionType === 'CORRECT_TIMETABLE') ? 'TIMETABLE' : 'BUS',
         contributorNote: notes,
         proposedData: {
           name: name || routeNumber,
@@ -45,12 +65,29 @@ export const ContributePage: React.FC = () => {
           destination,
           state: stateName,
           departureTime,
+          arrivalTime,
+          busIdentifier,
+          frequencyMinutes: frequencyMinutes ? Number(frequencyMinutes) : undefined,
+          timetableEntry: submissionType === 'ADD_BUS' || submissionType === 'CORRECT_TIMETABLE',
+          routeName,
+          operatorName,
+          distanceKm: routeDistanceKm ? Number(routeDistanceKm) : undefined,
+          typicalDurationMinutes: routeDurationMinutes ? Number(routeDurationMinutes) : undefined,
+          firstDepartureTime,
+          lastDepartureTime,
+          stops: routeStops.map(stop => ({
+            ...stop,
+            latitude: stop.latitude === '' ? undefined : Number(stop.latitude),
+            longitude: stop.longitude === '' ? undefined : Number(stop.longitude),
+          })),
+          operatingDays: ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'],
         },
       });
 
       setSubmittedRefId(res.referenceId);
       setIsSubmitting(false);
-    } catch {
+    } catch (error) {
+      setSubmissionError(error instanceof Error ? error.message : t('contribution_backend_error'));
       setIsSubmitting(false);
     }
   };
@@ -73,13 +110,13 @@ export const ContributePage: React.FC = () => {
       <div className="text-center space-y-2">
         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-yatribrand-100 text-yatribrand-900 text-xs font-semibold">
           <ShieldCheck className="w-3.5 h-3.5 text-yatribrand-700" />
-          <span>No Passenger Account Required</span>
+          <span>{t('contribute_no_account')}</span>
         </div>
         <h1 className="text-2xl sm:text-3xl font-bold text-yatriwarm-950">
-          Community Transport Contribution
+          {t('contribute_heading')}
         </h1>
         <p className="text-xs sm:text-sm text-yatriwarm-600 max-w-lg mx-auto">
-          Help fellow commuters keep public transport data accurate. Submit updates, verify schedules, or check previous submissions with your Reference ID.
+          {t('contribute_intro')}
         </p>
       </div>
 
@@ -94,7 +131,7 @@ export const ContributePage: React.FC = () => {
               : 'border-transparent text-yatriwarm-500 hover:text-yatriwarm-800'
           }`}
         >
-          Submit Missing Info
+          {t('contribute_submit_tab')}
         </button>
         <button
           type="button"
@@ -105,7 +142,7 @@ export const ContributePage: React.FC = () => {
               : 'border-transparent text-yatriwarm-500 hover:text-yatriwarm-800'
           }`}
         >
-          Check Submission Status
+          {t('contribute_status_tab')}
         </button>
       </div>
 
@@ -118,19 +155,19 @@ export const ContributePage: React.FC = () => {
                 <CheckCircle className="w-8 h-8" />
               </div>
               <div className="space-y-1">
-                <h3 className="text-xl font-bold text-yatriwarm-900">Contribution Received!</h3>
+                <h3 className="text-xl font-bold text-yatriwarm-900">{t('contribution_received')}</h3>
                 <p className="text-xs text-yatriwarm-600">
-                  Your update has been placed in the verifier review queue.
+                  {t('contribution_queued')}
                 </p>
               </div>
 
               <div className="p-4 bg-yatriwarm-50 rounded-2xl border border-yatriwarm-200 max-w-sm mx-auto">
-                <div className="text-xs text-yatriwarm-500 font-medium">Your Tracking Reference ID</div>
+                <div className="text-xs text-yatriwarm-500 font-medium">{t('contribution_reference')}</div>
                 <div className="text-lg font-mono font-bold text-yatribrand-900 mt-1 select-all">
                   {submittedRefId}
                 </div>
                 <div className="text-[11px] text-yatriwarm-400 mt-1">
-                  Save this code to check verification status without creating an account.
+                  {t('contribution_save_reference')}
                 </div>
               </div>
 
@@ -141,26 +178,32 @@ export const ContributePage: React.FC = () => {
                     setSubmittedRefId(null);
                     setName('');
                     setRouteNumber('');
+                    setBusIdentifier('');
+                    setDepartureTime('');
+                    setArrivalTime('');
+                    setFrequencyMinutes('');
                     setNotes('');
                   }}
                   className="px-5 py-2.5 bg-yatribrand-900 text-white rounded-xl text-xs font-semibold shadow-subtle hover:bg-yatribrand-950 transition-colors"
                 >
-                  Submit Another Contribution
+                  {t('contribution_submit_another')}
                 </button>
               </div>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-5">
+              {submissionError && <div role="alert" className="mb-4 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800">{submissionError}</div>}
               {/* Type selection */}
               <div>
                 <label className="block text-xs font-bold text-yatriwarm-700 uppercase tracking-wider mb-2">
                   What would you like to contribute?
                 </label>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
                   {[
-                    { id: 'ADD_BUS' as SubmissionType, label: 'Add Bus' },
+                    { id: 'ADD_BUS' as SubmissionType, label: 'Add Bus to Route' },
+                    { id: 'SUGGEST_ROUTE' as SubmissionType, label: 'Add New Route' },
                     { id: 'ADD_STOP' as SubmissionType, label: 'Add Stop' },
-                    { id: 'CORRECT_TIMETABLE' as SubmissionType, label: 'Fix Schedule' },
+                    { id: 'CORRECT_TIMETABLE' as SubmissionType, label: 'Add / Fix Timetable' },
                     { id: 'REPORT_CHANGED_ROUTE' as SubmissionType, label: 'Report Issue' },
                   ].map(t => (
                     <button
@@ -181,17 +224,17 @@ export const ContributePage: React.FC = () => {
 
               {/* Dynamic form fields */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {submissionType === 'ADD_BUS' && (
+                {(submissionType === 'ADD_BUS' || submissionType === 'CORRECT_TIMETABLE') && (
                   <div>
                     <label className="block text-xs font-medium text-yatriwarm-700 mb-1">
-                      Bus Route Number
+                      Existing Route Number
                     </label>
                     <input
                       type="text"
                       required
                       value={routeNumber}
                       onChange={e => setRouteNumber(e.target.value)}
-                      placeholder="e.g. 534, AC-105, 500D"
+                      placeholder="Enter an existing route number"
                       className="w-full px-3.5 py-2.5 bg-yatriwarm-50 border border-yatriwarm-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-yatribrand-800 focus:bg-white"
                     />
                   </div>
@@ -222,17 +265,17 @@ export const ContributePage: React.FC = () => {
                     onChange={e => setStateName(e.target.value)}
                     className="w-full px-3.5 py-2.5 bg-yatriwarm-50 border border-yatriwarm-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-yatribrand-800 focus:bg-white"
                   >
+                    <option value="West Bengal">West Bengal</option>
                     <option value="Delhi">Delhi</option>
                     <option value="Maharashtra">Maharashtra</option>
                     <option value="Karnataka">Karnataka</option>
-                    <option value="West Bengal">West Bengal</option>
                     <option value="Tamil Nadu">Tamil Nadu</option>
                     <option value="Uttar Pradesh">Uttar Pradesh</option>
                     <option value="Gujarat">Gujarat</option>
                   </select>
                 </div>
 
-                <div>
+                {submissionType !== 'SUGGEST_ROUTE' && <div>
                   <label className="block text-xs font-medium text-yatriwarm-700 mb-1">
                     Origin Terminal
                   </label>
@@ -244,9 +287,9 @@ export const ContributePage: React.FC = () => {
                     placeholder="e.g. Anand Vihar ISBT"
                     className="w-full px-3.5 py-2.5 bg-yatriwarm-50 border border-yatriwarm-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-yatribrand-800 focus:bg-white"
                   />
-                </div>
+                </div>}
 
-                <div>
+                {submissionType !== 'SUGGEST_ROUTE' && <div>
                   <label className="block text-xs font-medium text-yatriwarm-700 mb-1">
                     Destination Terminal
                   </label>
@@ -258,22 +301,88 @@ export const ContributePage: React.FC = () => {
                     placeholder="e.g. Mehrauli Terminal"
                     className="w-full px-3.5 py-2.5 bg-yatriwarm-50 border border-yatriwarm-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-yatribrand-800 focus:bg-white"
                   />
-                </div>
+                </div>}
               </div>
 
-              {/* Departure time if schedule correction */}
-              {submissionType === 'CORRECT_TIMETABLE' && (
-                <div>
-                  <label className="block text-xs font-medium text-yatriwarm-700 mb-1">
-                    Correct Departure Time (IST)
-                  </label>
-                  <input
-                    type="time"
-                    required
-                    value={departureTime}
-                    onChange={e => setDepartureTime(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-yatriwarm-50 border border-yatriwarm-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-yatribrand-800 focus:bg-white"
-                  />
+              {submissionType === 'SUGGEST_ROUTE' && (
+                <section className="rounded-2xl border border-amber-300 bg-amber-50/70 p-4 space-y-4">
+                  <div>
+                    <h3 className="text-sm font-bold text-yatriwarm-900">New route details</h3>
+                    <p className="text-[11px] text-yatriwarm-600 mt-1">Add stops in travel order. Latitude and longitude are required for every stop. The route stays private until Super Admin approval.</p>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <label className="text-xs font-medium text-yatriwarm-700">Route number
+                      <input required value={routeNumber} onChange={e => setRouteNumber(e.target.value)} placeholder="e.g. JGM-01" className="mt-1 w-full px-3 py-2.5 bg-white border border-yatriwarm-300 rounded-xl" />
+                    </label>
+                    <label className="text-xs font-medium text-yatriwarm-700">Route name
+                      <input required value={routeName} onChange={e => setRouteName(e.target.value)} placeholder="e.g. Jhargram to Gopiballavpur" className="mt-1 w-full px-3 py-2.5 bg-white border border-yatriwarm-300 rounded-xl" />
+                    </label>
+                    <label className="text-xs font-medium text-yatriwarm-700">Bus operator / service name
+                      <input required value={operatorName} onChange={e => setOperatorName(e.target.value)} placeholder="Operator name" className="mt-1 w-full px-3 py-2.5 bg-white border border-yatriwarm-300 rounded-xl" />
+                    </label>
+                    <label className="text-xs font-medium text-yatriwarm-700">Total route distance (km)
+                      <input required type="number" min="0.1" step="0.1" value={routeDistanceKm} onChange={e => setRouteDistanceKm(e.target.value)} placeholder="e.g. 42" className="mt-1 w-full px-3 py-2.5 bg-white border border-yatriwarm-300 rounded-xl" />
+                    </label>
+                    <label className="text-xs font-medium text-yatriwarm-700">Typical journey duration (minutes)
+                      <input required type="number" min="1" value={routeDurationMinutes} onChange={e => setRouteDurationMinutes(e.target.value)} placeholder="e.g. 90" className="mt-1 w-full px-3 py-2.5 bg-white border border-yatriwarm-300 rounded-xl" />
+                    </label>
+                    <label className="text-xs font-medium text-yatriwarm-700">First departure (IST)
+                      <input required type="time" value={firstDepartureTime} onChange={e => setFirstDepartureTime(e.target.value)} className="mt-1 w-full px-3 py-2.5 bg-white border border-yatriwarm-300 rounded-xl" />
+                    </label>
+                    <label className="text-xs font-medium text-yatriwarm-700">Last departure (IST)
+                      <input required type="time" value={lastDepartureTime} onChange={e => setLastDepartureTime(e.target.value)} className="mt-1 w-full px-3 py-2.5 bg-white border border-yatriwarm-300 rounded-xl" />
+                    </label>
+                    <label className="text-xs font-medium text-yatriwarm-700">Frequency in minutes (optional)
+                      <input type="number" min="1" max="1440" value={frequencyMinutes} onChange={e => setFrequencyMinutes(e.target.value)} placeholder="e.g. 30" className="mt-1 w-full px-3 py-2.5 bg-white border border-yatriwarm-300 rounded-xl" />
+                    </label>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-xs font-bold text-yatriwarm-800">Ordered route stops</h4>
+                      <button type="button" onClick={() => setRouteStops(current => [...current, { name: '', latitude: '', longitude: '', arrivalTime: '', departureTime: '' }])} className="text-xs font-semibold text-red-700">+ Add stop</button>
+                    </div>
+                    {routeStops.map((stop, index) => (
+                      <div key={index} className="rounded-xl border border-yatriwarm-200 bg-white p-3 space-y-2">
+                        <div className="flex items-center justify-between"><span className="text-xs font-bold text-yatriwarm-800">Stop {index + 1} {index === 0 ? '(Origin)' : index === routeStops.length - 1 ? '(Destination)' : '(Intermediate)'}</span>
+                          {routeStops.length > 2 && <button type="button" onClick={() => setRouteStops(current => current.filter((_, i) => i !== index))} className="text-[11px] text-red-700">Remove</button>}
+                        </div>
+                        <input required value={stop.name} onChange={e => updateRouteStop(index, 'name', e.target.value)} placeholder="Stop / place name" className="w-full px-3 py-2 bg-yatriwarm-50 border border-yatriwarm-200 rounded-lg text-xs" />
+                        <div className="grid grid-cols-2 gap-2">
+                          <input required type="number" min="-90" max="90" step="any" value={stop.latitude} onChange={e => updateRouteStop(index, 'latitude', e.target.value)} placeholder="Latitude" className="w-full px-3 py-2 bg-yatriwarm-50 border border-yatriwarm-200 rounded-lg text-xs" />
+                          <input required type="number" min="-180" max="180" step="any" value={stop.longitude} onChange={e => updateRouteStop(index, 'longitude', e.target.value)} placeholder="Longitude" className="w-full px-3 py-2 bg-yatriwarm-50 border border-yatriwarm-200 rounded-lg text-xs" />
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <label className="text-[10px] text-yatriwarm-600">Arrival (optional)<input type="time" value={stop.arrivalTime} onChange={e => updateRouteStop(index, 'arrivalTime', e.target.value)} className="mt-1 w-full px-2 py-2 bg-yatriwarm-50 border border-yatriwarm-200 rounded-lg text-xs" /></label>
+                          <label className="text-[10px] text-yatriwarm-600">Departure (optional)<input type="time" value={stop.departureTime} onChange={e => updateRouteStop(index, 'departureTime', e.target.value)} className="mt-1 w-full px-2 py-2 bg-yatriwarm-50 border border-yatriwarm-200 rounded-lg text-xs" /></label>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {(submissionType === 'ADD_BUS' || submissionType === 'CORRECT_TIMETABLE') && (
+                <div className="rounded-2xl border border-amber-300 bg-amber-50/70 p-4 space-y-3 sm:col-span-2">
+                  <div className="text-xs font-bold uppercase tracking-wider text-yatriwarm-800">Bus timetable details</div>
+                  <p className="text-[11px] text-yatriwarm-600">Use an existing route number. Your bus and time will appear in public search only after Super Admin verification.</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-yatriwarm-700 mb-1">Bus name / number</label>
+                      <input type="text" required value={busIdentifier} onChange={e => setBusIdentifier(e.target.value)} placeholder="e.g. Jhargram Express / WB-xx" className="w-full px-3.5 py-2.5 bg-white border border-yatriwarm-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-red-500" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-yatriwarm-700 mb-1">Departure time (IST)</label>
+                      <input type="time" required value={departureTime} onChange={e => setDepartureTime(e.target.value)} className="w-full px-3.5 py-2.5 bg-white border border-yatriwarm-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-red-500" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-yatriwarm-700 mb-1">Arrival time (IST)</label>
+                      <input type="time" required value={arrivalTime} onChange={e => setArrivalTime(e.target.value)} className="w-full px-3.5 py-2.5 bg-white border border-yatriwarm-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-red-500" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-yatriwarm-700 mb-1">Frequency in minutes (optional)</label>
+                      <input type="number" min="1" max="1440" value={frequencyMinutes} onChange={e => setFrequencyMinutes(e.target.value)} placeholder="e.g. 30" className="w-full px-3.5 py-2.5 bg-white border border-yatriwarm-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-red-500" />
+                    </div>
+                  </div>
                 </div>
               )}
 

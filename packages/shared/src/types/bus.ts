@@ -92,6 +92,8 @@ export interface Route {
   firstDepartureTime: string; // HH:MM
   lastDepartureTime: string;  // HH:MM
   frequencyMinutes?: number;
+  /** Individually scheduled and admin-approved departures for this route. */
+  departures?: TimetableDeparture[];
   stops: RouteStop[];
   geometry?: RouteGeometryPoint[];
   verificationStatus: 'UNVERIFIED' | 'COMMUNITY_CORROBORATED' | 'ADMIN_VERIFIED';
@@ -146,4 +148,11 @@ export interface JourneyCandidate {
   serviceStatus: ServiceStatus;
   locationStatus: 'LIVE' | 'LAST_KNOWN' | 'ESTIMATED' | 'UNAVAILABLE';
   lastKnownLocationTime?: string;
+  /** Estimated number of daily departures derived from the published service window and frequency. */
+  dailyTripCount?: number;
+  /** Published interval between departures; this is not a real-time guarantee. */
+  frequencyMinutes?: number;
+  /** Stops between the selected boarding and alighting points. */
+  intermediateStops?: RouteStop[];
+  timetableDepartures?: TimetableDeparture[];
 }

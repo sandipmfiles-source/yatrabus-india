@@ -24,7 +24,7 @@ export const ActiveTrackingWidget: React.FC = () => {
               </span>
             </div>
             <p className="text-[11px] text-emerald-200/80">
-              {observationsCount} location updates sent • Privacy preserved
+              {observationsCount} {t('tracking_updates_sent')} • {t('privacy_preserved')}
             </p>
           </div>
         </div>
@@ -33,7 +33,7 @@ export const ActiveTrackingWidget: React.FC = () => {
           type="button"
           onClick={stopSharing}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-rose-600/90 hover:bg-rose-600 text-white text-xs font-semibold rounded-xl transition-colors shadow-xs"
-          title="Stop sharing location immediately"
+          title={t('tracking_stop_title')}
         >
           <StopCircle className="w-3.5 h-3.5" />
           {t('tracking_stop')}

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLanguage } from '../context/LanguageContext.js';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { api } from '../services/api.js';
 import { JourneyCandidate } from '@shared/types/bus.js';
@@ -8,6 +9,7 @@ import { ArrowLeft, Filter, AlertCircle, PlusCircle, RefreshCw } from 'lucide-re
 export const SearchResultsPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const from = searchParams.get('from') || '';
   const to = searchParams.get('to') || '';
@@ -43,14 +45,14 @@ export const SearchResultsPage: React.FC = () => {
         <button
           onClick={() => navigate('/')}
           className="p-2 rounded-xl bg-white hover:bg-yatriwarm-100 border border-yatriwarm-200 text-yatriwarm-700 transition-colors shadow-subtle"
-          aria-label="Back to search"
+          aria-label={t('back_to_search')}
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
 
         <div className="flex-1">
           <div className="text-xs font-semibold text-yatriwarm-500 uppercase tracking-wider">
-            Route Search Results
+            {t('route_search_results')}
           </div>
           <h2 className="text-lg sm:text-xl font-bold text-yatriwarm-900 line-clamp-1">
             {from} <span className="text-yatribrand-800">→</span> {to}
@@ -70,7 +72,7 @@ export const SearchResultsPage: React.FC = () => {
                 : 'text-yatriwarm-700 hover:bg-yatriwarm-100'
             }`}
           >
-            All Buses ({allJourneys.length})
+            {t('filter_all_buses')} ({allJourneys.length})
           </button>
           <button
             type="button"
@@ -81,7 +83,7 @@ export const SearchResultsPage: React.FC = () => {
                 : 'text-yatriwarm-700 hover:bg-yatriwarm-100'
             }`}
           >
-            Direct ({directRoutes.length})
+            {t('filter_direct')} ({directRoutes.length})
           </button>
           <button
             type="button"
@@ -92,12 +94,12 @@ export const SearchResultsPage: React.FC = () => {
                 : 'text-yatriwarm-700 hover:bg-yatriwarm-100'
             }`}
           >
-            Live GPS ({allJourneys.filter(j => j.locationStatus === 'LIVE').length})
+            {t('filter_live_gps')} ({allJourneys.filter(j => j.locationStatus === 'LIVE').length})
           </button>
         </div>
 
         <span className="text-xs text-yatriwarm-500">
-          Showing {filteredJourneys.length} candidate services
+          {t('showing_services')}: {filteredJourneys.length}
         </span>
       </div>
 
@@ -131,10 +133,10 @@ export const SearchResultsPage: React.FC = () => {
           </div>
           <div>
             <h3 className="text-base font-bold text-yatriwarm-900">
-              No verified bus found for this route yet
+              {t('no_verified_bus')}
             </h3>
             <p className="text-xs text-yatriwarm-600 max-w-md mx-auto mt-1">
-              YatriBus is community-powered. You can help fellow commuters by submitting a bus, route, or schedule that runs on this corridor without creating an account.
+              {t('no_verified_bus_desc')}
             </p>
           </div>
 
@@ -144,13 +146,13 @@ export const SearchResultsPage: React.FC = () => {
               className="inline-flex items-center gap-1.5 px-4 py-2 bg-yatribrand-900 hover:bg-yatribrand-950 text-white text-xs font-semibold rounded-xl shadow-subtle transition-colors"
             >
               <PlusCircle className="w-4 h-4" />
-              Add Missing Bus / Route
+              {t('add_missing_bus_route')}
             </Link>
             <Link
               to="/"
               className="inline-flex items-center gap-1.5 px-4 py-2 bg-yatriwarm-100 hover:bg-yatriwarm-200 text-yatriwarm-800 text-xs font-medium rounded-xl transition-colors"
             >
-              Search Different Stops
+              {t('search_different_stops')}
             </Link>
           </div>
         </div>

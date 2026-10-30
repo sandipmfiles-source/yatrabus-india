@@ -120,15 +120,7 @@ export class TransitRepository {
       this.automationRules.set(rule.id, rule);
     }
 
-    // Seed default Admin User
-    this.adminUsers.set('admin-default', {
-      id: 'admin-default',
-      email: 'admin@yatribus.in',
-      name: 'Central Transit Verifier',
-      role: 'SUPER_ADMIN',
-      isActive: true,
-      createdAt: '2026-01-01T00:00:00Z',
-    });
+    // The sole Super Admin is provisioned from the deployment's ADMIN_EMAIL at server startup.
   }
 
   // ==================== PLACES ====================
@@ -167,6 +159,39 @@ export class TransitRepository {
 
   public getRouteById(id: string): Route | undefined {
     return this.routes.get(id);
+  }
+
+  public getRouteByNumber(routeNumber: string): Route | undefined {
+    const normalized = routeNumber.trim().toLowerCase();
+    return Array.from(this.routes.values()).find(route => route.routeNumber.trim().toLowerCase() === normalized);
+  }
+
+  public getOperatorByName(name: string): Operator | undefined {
+    const normalized = name.trim().toLowerCase();
+    return Array.from(this.operators.values()).find(operator => operator.name.trim().toLowerCase() === normalized);
+  }
+
+  public addOperator(operator: Operator): Operator {
+    this.operators.set(operator.id, operator);
+    return operator;
+  }
+
+  public addRoute(route: Route): Route {
+    this.routes.set(route.id, route);
+    return route;
+  }
+
+  public addTimetableDeparture(routeId: string, departure: NonNullable<Route['departures']>[number], frequencyMinutes?: number): boolean {
+    const route = this.routes.get(routeId);
+    if (!route) return false;
+    const current = route.departures || [];
+    const duplicate = current.some(item => item.departureTime === departure.departureTime &&
+      (item.busIdentifier || '').toLowerCase() === (departure.busIdentifier || '').toLowerCase() && !item.isCancelled);
+    if (duplicate) return false;
+    route.departures = [...current, departure].sort((a, b) => a.departureTime.localeCompare(b.departureTime));
+    if (Number.isFinite(frequencyMinutes) && frequencyMinutes && frequencyMinutes > 0) route.frequencyMinutes = frequencyMinutes;
+    route.updatedAt = new Date().toISOString();
+    return true;
   }
 
   public getBusById(id: string): Bus | undefined {
@@ -326,7 +351,67 @@ export class TransitRepository {
     return this.auditLogs.slice(0, limit);
   }
 
+  public exportState(): Record<string, unknown> {
+    return {
+      places: Array.from(this.places.values()),
+      operators: Array.from(this.operators.values()),
+      routes: Array.from(this.routes.values()),
+      buses: Array.from(this.buses.values()),
+      consentRecords: Array.from(this.consentRecords.values()),
+      journeySessions: Array.from(this.journeySessions.values()),
+      observations: this.observations.slice(-10000),
+      busLocations: Array.from(this.busLocations.values()),
+      submissions: Array.from(this.submissions.values()),
+      duplicateCandidates: Array.from(this.duplicateCandidates.values()),
+      operatorClaims: Array.from(this.operatorClaims.values()),
+      automationRules: Array.from(this.automationRules.values()),
+      auditLogs: this.auditLogs.slice(0, 500),
+      adminUsers: Array.from(this.adminUsers.values()),
+    };
+  }
+
+  public importState(snapshot: Record<string, unknown>): void {
+    const restore = <T,>(target: Map<string, T>, values: unknown, key: (item: T) => string) => {
+      if (!Array.isArray(values)) return;
+      for (const item of values as T[]) {
+        const id = key(item);
+        if (id) target.set(id, item);
+      }
+    };
+    restore(this.places, snapshot.places, item => (item as any).id);
+    restore(this.operators, snapshot.operators, item => (item as any).id);
+    restore(this.routes, snapshot.routes, item => (item as any).id);
+    restore(this.buses, snapshot.buses, item => (item as any).id);
+    restore(this.consentRecords, snapshot.consentRecords, item => (item as any).sessionId);
+    restore(this.journeySessions, snapshot.journeySessions, item => (item as any).sessionId);
+    restore(this.busLocations, snapshot.busLocations, item => (item as any).busId);
+    restore(this.submissions, snapshot.submissions, item => (item as any).id);
+    restore(this.duplicateCandidates, snapshot.duplicateCandidates, item => (item as any).id);
+    restore(this.operatorClaims, snapshot.operatorClaims, item => (item as any).id);
+    restore(this.automationRules, snapshot.automationRules, item => (item as any).id);
+    restore(this.adminUsers, snapshot.adminUsers, item => (item as any).id);
+    if (Array.isArray(snapshot.observations)) this.observations = (snapshot.observations as LocationObservation[]).slice(-10000);
+    if (Array.isArray(snapshot.auditLogs)) this.auditLogs = (snapshot.auditLogs as AuditLogEntry[]).slice(0, 500);
+  }
+
   // ==================== ADMIN & HEALTH ====================
+  public ensureSuperAdmin(email: string): AdminUser | undefined {
+    const normalizedEmail = email.trim().toLowerCase();
+    // Enforce a single owner account; never retain seeded or additional admin identities.
+    this.adminUsers.clear();
+    if (!normalizedEmail) return undefined;
+    const owner: AdminUser = {
+      id: 'owner-super-admin',
+      email: normalizedEmail,
+      name: 'YatraBus Owner',
+      role: 'SUPER_ADMIN',
+      isActive: true,
+      createdAt: new Date().toISOString(),
+    };
+    this.adminUsers.set(owner.id, owner);
+    return owner;
+  }
+
   public getAdminByEmail(email: string): AdminUser | undefined {
     for (const u of this.adminUsers.values()) {
       if (u.email.toLowerCase() === email.toLowerCase()) {

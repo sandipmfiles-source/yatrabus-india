@@ -1,4 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import { Capacitor, registerPlugin } from '@capacitor/core';
+import { LocalNotifications } from '@capacitor/local-notifications';
 import { api } from '../services/api.js';
 import { storage } from '../services/storage.js';
 
@@ -24,6 +26,7 @@ interface TrackingContextType {
   observationsCount: number;
 }
 
+const BackgroundGeolocation = registerPlugin<any>('BackgroundGeolocation');
 const TrackingContext = createContext<TrackingContextType | undefined>(undefined);
 
 export const TrackingProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -31,61 +34,104 @@ export const TrackingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [isConsentModalOpen, setIsConsentModalOpen] = useState(false);
   const [pendingBusForTracking, setPendingBus] = useState<{ busId: string; routeId: string; routeNumber?: string } | null>(null);
   const [observationsCount, setObservationsCount] = useState(0);
+  const nativeWatcherIdRef = useRef<string | null>(null);
+  const webWatchIdRef = useRef<number | null>(null);
 
-  const watchIdRef = useRef<number | null>(null);
-
-  // Restore active session from local storage on mount
   useEffect(() => {
     const saved = storage.getActiveSession();
-    if (saved) {
-      // Check 12-hour expiry
-      const started = new Date(saved.startedAt).getTime();
-      const now = Date.now();
-      if (now - started < 12 * 3600 * 1000) {
-        setActiveSession(saved);
-      } else {
-        storage.clearActiveSession();
-      }
+    if (!saved) return;
+    const started = new Date(saved.startedAt).getTime();
+    if (Number.isFinite(started) && Date.now() - started < 12 * 3600 * 1000) {
+      setActiveSession(saved);
+    } else {
+      storage.clearActiveSession();
     }
   }, []);
 
-  // Periodic location updater when session is active
   useEffect(() => {
+    let cancelled = false;
+    const sendLocation = (location: any) => {
+      if (!location || !activeSession) return;
+      const latitude = Number(location.latitude);
+      const longitude = Number(location.longitude);
+      const accuracyMeters = Number(location.accuracy);
+      if (!Number.isFinite(latitude) || !Number.isFinite(longitude) || !Number.isFinite(accuracyMeters)) return;
+      void api.sendObservation({
+        sessionId: activeSession.sessionId,
+        busId: activeSession.busId,
+        routeId: activeSession.routeId,
+        latitude,
+        longitude,
+        accuracyMeters,
+        speedKmh: Number.isFinite(location.speed) && location.speed !== null ? location.speed * 3.6 : undefined,
+        headingDegrees: Number.isFinite(location.bearing) ? location.bearing : undefined,
+      }).then(result => {
+        if (result?.accepted) setObservationsCount(count => count + 1);
+      });
+    };
+
     if (!activeSession) {
-      if (watchIdRef.current !== null) {
-        navigator.geolocation?.clearWatch?.(watchIdRef.current);
-        watchIdRef.current = null;
+      if (nativeWatcherIdRef.current) {
+        void BackgroundGeolocation.removeWatcher({ id: nativeWatcherIdRef.current }).catch(() => undefined);
+        nativeWatcherIdRef.current = null;
+      }
+      if (webWatchIdRef.current !== null && navigator.geolocation) {
+        navigator.geolocation.clearWatch(webWatchIdRef.current);
+        webWatchIdRef.current = null;
       }
       return;
     }
 
-    if ('geolocation' in navigator) {
-      const id = window.setInterval(() => {
-        navigator.geolocation.getCurrentPosition(
-          pos => {
-            const { latitude, longitude, accuracy, speed, heading } = pos.coords;
-            api.sendObservation({
-              sessionId: activeSession.sessionId,
-              busId: activeSession.busId,
-              routeId: activeSession.routeId,
-              latitude,
-              longitude,
-              accuracyMeters: accuracy,
-              speedKmh: speed ? speed * 3.6 : undefined,
-              headingDegrees: heading || undefined,
-            });
-            setObservationsCount(prev => prev + 1);
-          },
-          err => {
-            // eslint-disable-next-line no-console
-            console.warn('Geolocation observation error:', err.message);
-          },
-          { enableHighAccuracy: true, timeout: 10000, maximumAge: 10000 }
-        );
-      }, 25000);
-
-      return () => clearInterval(id);
+    if (Capacitor.isNativePlatform()) {
+      BackgroundGeolocation.addWatcher(
+        {
+          backgroundMessage: 'YatriBus is sharing anonymous bus location. Tap Stop Sharing in the app to end.',
+          backgroundTitle: 'YatriBus live bus tracking',
+          requestPermissions: true,
+          stale: false,
+          distanceFilter: 50,
+        },
+        (location: any, error: any) => {
+          if (error) {
+            console.warn('Background location error:', error.message || error.code);
+            return;
+          }
+          sendLocation(location);
+        }
+      ).then((watcherId: string) => {
+        if (cancelled) {
+          void BackgroundGeolocation.removeWatcher({ id: watcherId });
+        } else {
+          nativeWatcherIdRef.current = watcherId;
+        }
+      }).catch((error: unknown) => {
+        console.error('Unable to start native background tracking:', error);
+      });
+    } else if (navigator.geolocation) {
+      webWatchIdRef.current = navigator.geolocation.watchPosition(
+        position => sendLocation({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          accuracy: position.coords.accuracy,
+          speed: position.coords.speed,
+          bearing: position.coords.heading,
+        }),
+        error => console.warn('Browser location error:', error.message),
+        { enableHighAccuracy: true, maximumAge: 10000, timeout: 20000 }
+      );
     }
+
+    return () => {
+      cancelled = true;
+      if (nativeWatcherIdRef.current) {
+        void BackgroundGeolocation.removeWatcher({ id: nativeWatcherIdRef.current }).catch(() => undefined);
+        nativeWatcherIdRef.current = null;
+      }
+      if (webWatchIdRef.current !== null && navigator.geolocation) {
+        navigator.geolocation.clearWatch(webWatchIdRef.current);
+        webWatchIdRef.current = null;
+      }
+    };
   }, [activeSession]);
 
   const openConsentModalForBus = (bus: { busId: string; routeId: string; routeNumber?: string }) => {
@@ -100,13 +146,22 @@ export const TrackingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const grantConsentAndStartTracking = async () => {
     if (!pendingBusForTracking) return;
-
     try {
+      if (Capacitor.isNativePlatform()) {
+        try {
+          await LocalNotifications.requestPermissions();
+        } catch (permissionError) {
+          console.warn('Notification permission was not granted; Android may limit visible tracking notices.', permissionError);
+        }
+      }
       const res = await api.startJourneySession(pendingBusForTracking.busId, pendingBusForTracking.routeId);
       const session = res.session;
-
-      await api.recordConsent(session.sessionId, 'GRANTED', true);
-
+      try {
+        await api.recordConsent(session.sessionId, 'GRANTED', true);
+      } catch (consentError) {
+        await api.stopJourneySession(session.sessionId, 'USER_STOPPED');
+        throw consentError;
+      }
       const sessionData: ActiveSessionData = {
         sessionId: session.sessionId,
         busId: pendingBusForTracking.busId,
@@ -114,46 +169,32 @@ export const TrackingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         routeNumber: pendingBusForTracking.routeNumber,
         startedAt: new Date().toISOString(),
       };
-
       setActiveSession(sessionData);
       storage.setActiveSession(sessionData);
       closeConsentModal();
     } catch (e) {
-      // eslint-disable-next-line no-console
       console.error('Failed to start tracking session', e);
     }
   };
 
   const declineConsent = () => {
-    if (pendingBusForTracking) {
-      storage.recordPromptDismissal(pendingBusForTracking.routeId);
-    }
+    if (pendingBusForTracking) storage.recordPromptDismissal(pendingBusForTracking.routeId);
     closeConsentModal();
   };
 
   const stopSharing = async () => {
-    if (activeSession) {
-      await api.stopJourneySession(activeSession.sessionId, 'USER_STOPPED');
-      storage.clearActiveSession();
-      setActiveSession(null);
-      setObservationsCount(0);
-    }
+    if (!activeSession) return;
+    await api.stopJourneySession(activeSession.sessionId, 'USER_STOPPED');
+    storage.clearActiveSession();
+    setActiveSession(null);
+    setObservationsCount(0);
   };
 
   return (
-    <TrackingContext.Provider
-      value={{
-        activeSession,
-        isConsentModalOpen,
-        pendingBusForTracking,
-        openConsentModalForBus,
-        closeConsentModal,
-        grantConsentAndStartTracking,
-        declineConsent,
-        stopSharing,
-        observationsCount,
-      }}
-    >
+    <TrackingContext.Provider value={{
+      activeSession, isConsentModalOpen, pendingBusForTracking, openConsentModalForBus,
+      closeConsentModal, grantConsentAndStartTracking, declineConsent, stopSharing, observationsCount,
+    }}>
       {children}
     </TrackingContext.Provider>
   );

@@ -9,17 +9,17 @@ export default {
     extend: {
       colors: {
         yatribrand: {
-          50: '#F0FDF4',
-          100: '#DCFCE7',
-          200: '#BBF7D0',
-          300: '#86EFAC',
-          400: '#4ADE80',
-          500: '#22C55E',
-          600: '#16A34A',
-          700: '#15803D',
-          800: '#166534',
-          900: '#0E4D34',  // Primary Brand Deep Green
-          950: '#072E20',
+          50: '#F5F5F4',
+          100: '#E7E5E4',
+          200: '#D6D3D1',
+          300: '#A8A29E',
+          400: '#78716C',
+          500: '#57534E',
+          600: '#44403C',
+          700: '#292524',
+          800: '#1C1917',
+          900: '#171717',  // Futuristic charcoal brand
+          950: '#0A0A0A',
         },
         yatriwarm: {
           50: '#FCFCFA',  // Background Warm Off-White
@@ -33,6 +33,11 @@ export default {
           800: '#3D3D35',
           900: '#262621',
           950: '#161613',
+        },
+        signal: {
+          yellow: { 50: '#FFFCEB', 100: '#FEF3C7', 200: '#FDE68A', 400: '#FACC15', 500: '#EAB308' },
+          red: { 50: '#FEF2F2', 100: '#FEE2E2', 500: '#EF4444', 600: '#DC2626', 700: '#B91C1C' },
+          charcoal: { 50: '#F5F5F4', 100: '#E7E5E4', 700: '#292524', 800: '#1C1917', 900: '#171717', 950: '#0A0A0A' },
         },
         transit: {
           live: '#059669',     // Confirmed live GPS

@@ -1,7 +1,11 @@
 export const CONFIG = {
   PORT: process.env.PORT ? parseInt(process.env.PORT, 10) : 5000,
   NODE_ENV: process.env.NODE_ENV || 'development',
-  ADMIN_JWT_SECRET: process.env.ADMIN_JWT_SECRET || 'yatribus_super_secret_dev_key_12345',
+  // Admin access is disabled until strong secrets are configured in the hosting environment.
+  ADMIN_EMAIL: (process.env.ADMIN_EMAIL || '').trim().toLowerCase(),
+  ADMIN_PASSWORD_HASH: process.env.ADMIN_PASSWORD_HASH || '',
+  ADMIN_JWT_SECRET: process.env.ADMIN_JWT_SECRET || '',
+  ADMIN_SESSION_TTL_SECONDS: 8 * 60 * 60,
   MAX_JOURNEY_SESSION_HOURS: 12,
   GPS_ACCURACY_THRESHOLD_METERS: 100,
   GPS_FRESHNESS_LIVE_SECONDS: 120,

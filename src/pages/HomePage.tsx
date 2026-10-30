@@ -77,7 +77,7 @@ export const HomePage: React.FC = () => {
 
   const handleFindNearbyStops = () => {
     if (!('geolocation' in navigator)) {
-      alert('Geolocation is not supported by your browser.');
+      alert(t('location_error_nearby'));
       return;
     }
 
@@ -91,8 +91,8 @@ export const HomePage: React.FC = () => {
       err => {
         // Respectful error handling without guilt
         setIsLocating(false);
-        // Fallback to default central Delhi stops for demo preview
-        api.getNearbyStops(28.6469, 77.3160, 5000).then(stops => setNearbyStops(stops));
+        setNearbyStops([]);
+        alert(t('location_error_nearby'));
       },
       { timeout: 8000 }
     );
@@ -104,13 +104,13 @@ export const HomePage: React.FC = () => {
       <div className="text-center space-y-3">
         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-yatribrand-100 text-yatribrand-900 text-xs font-semibold">
           <Sparkles className="w-3.5 h-3.5 text-yatribrand-700" />
-          <span>India-Wide Smart Bus Directory</span>
+          <span>{t('home_hero_badge')}</span>
         </div>
         <h1 className="text-3xl sm:text-4xl font-extrabold text-yatriwarm-950 tracking-tight">
-          Find Buses, Routes & Live GPS Tracking
+          {t('home_hero_title')}
         </h1>
         <p className="text-sm sm:text-base text-yatriwarm-600 max-w-xl mx-auto">
-          Community-powered public transport across Indian cities and states. Discover timetables, stops, and live passenger observations with zero account required.
+          {t('home_hero_description')}
         </p>
       </div>
 
@@ -122,7 +122,7 @@ export const HomePage: React.FC = () => {
             <div className="relative">
               <label htmlFor="from-input" className="block text-xs font-bold text-yatriwarm-700 uppercase tracking-wider mb-1.5 flex items-center gap-1">
                 <MapPin className="w-3.5 h-3.5 text-yatribrand-700" />
-                From / Origin
+                {t('label_from')}
               </label>
               <input
                 id="from-input"
@@ -179,7 +179,7 @@ export const HomePage: React.FC = () => {
             <div className="relative">
               <label htmlFor="to-input" className="block text-xs font-bold text-yatriwarm-700 uppercase tracking-wider mb-1.5 flex items-center gap-1">
                 <MapPin className="w-3.5 h-3.5 text-emerald-600" />
-                To / Destination
+                {t('label_to')}
               </label>
               <input
                 id="to-input"
@@ -234,17 +234,17 @@ export const HomePage: React.FC = () => {
         <div className="mt-4 pt-4 border-t border-yatriwarm-100 flex flex-wrap items-center justify-center gap-4 text-xs text-yatriwarm-500">
           <span className="flex items-center gap-1">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-            No account required
+            {t('feature_no_account')}
           </span>
           <span>•</span>
           <span className="flex items-center gap-1">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-            Transparent GPS confidence
+            {t('feature_gps_confidence')}
           </span>
           <span>•</span>
           <span className="flex items-center gap-1">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-            ₹0 Paid AI APIs
+            {t('feature_free_ai')}
           </span>
         </div>
       </div>
@@ -290,7 +290,7 @@ export const HomePage: React.FC = () => {
               {t('nearby_stops')}
             </h3>
             <p className="text-xs text-yatriwarm-500">
-              Locate verified bus terminals and stops near your current location.
+              {t('nearby_stops_desc')}
             </p>
           </div>
 
@@ -300,7 +300,7 @@ export const HomePage: React.FC = () => {
             className="px-3 py-1.5 bg-yatribrand-50 hover:bg-yatribrand-100 text-yatribrand-900 text-xs font-semibold rounded-xl border border-yatribrand-200 transition-colors flex items-center gap-1 shrink-0"
           >
             <Navigation className={`w-3.5 h-3.5 ${isLocating ? 'animate-spin' : ''}`} />
-            {isLocating ? 'Locating...' : t('find_nearby_stops')}
+            {isLocating ? t('location_searching') : t('find_nearby_stops')}
           </button>
         </div>
 
