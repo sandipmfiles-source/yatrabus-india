@@ -4,7 +4,7 @@ import { useLanguage } from '../context/LanguageContext.js';
 import { storage, RecentSearchItem } from '../services/storage.js';
 import { api } from '../services/api.js';
 import { PlaceSearchResult } from '@shared/types/places.js';
-import { Search, ArrowUpDown, Clock, BusFront, MapPin, PlusCircle, ShieldCheck, Sparkles, Navigation } from 'lucide-react';
+import { Search, ArrowUpDown, Clock, BusFront, PlusCircle, ShieldCheck, Sparkles, Navigation } from 'lucide-react';
 
 export const HomePage: React.FC = () => {
   const { t } = useLanguage();
