@@ -3,18 +3,28 @@ import { discoverJourneys } from '../../packages/shared/src/engine/routeGraph.js
 import { calculateStopETAs } from '../../packages/shared/src/engine/etaCalculator.js';
 import { evaluateJourneyPrompt } from '../../packages/shared/src/engine/journeyConfirmationEngine.js';
 
+const remoteApiConfigured = Boolean(import.meta.env.VITE_API_BASE_URL);
 const API_BASE = import.meta.env.VITE_API_BASE_URL ? `${import.meta.env.VITE_API_BASE_URL.replace(/\/$/, '')}/api` : '/api';
+
+async function apiFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+  const response = await fetch(input, init);
+  if (remoteApiConfigured && !response.ok) {
+    const payload = await response.clone().json().catch(() => ({}));
+    throw new Error(payload.error || `YatriBus API request failed (${response.status}).`);
+  }
+  return response;
+}
 
 export const api = {
   // Search places / autocomplete
   async searchPlaces(query: string, limit = 8) {
     try {
-      const res = await fetch(`${API_BASE}/places/search?q=${encodeURIComponent(query)}&limit=${limit}`);
+      const res = await apiFetch(`${API_BASE}/places/search?q=${encodeURIComponent(query)}&limit=${limit}`);
       if (res.ok) {
         const data = await res.json();
         return data.results || [];
       }
-    } catch {}
+    } catch (error) { if (remoteApiConfigured) throw error; }
     // Fallback to in-memory repository
     return repository.searchPlaces(query, limit);
   },
@@ -22,23 +32,23 @@ export const api = {
   // Nearby stops
   async getNearbyStops(lat: number, lon: number, radius = 3000) {
     try {
-      const res = await fetch(`${API_BASE}/places/nearby?lat=${lat}&lon=${lon}&radius=${radius}`);
+      const res = await apiFetch(`${API_BASE}/places/nearby?lat=${lat}&lon=${lon}&radius=${radius}`);
       if (res.ok) {
         const data = await res.json();
         return data.stops || [];
       }
-    } catch {}
+    } catch (error) { if (remoteApiConfigured) throw error; }
     return repository.findNearbyStops(lat, lon, radius);
   },
 
   // Search routes from A to B
   async searchRoutes(from: string, to: string) {
     try {
-      const res = await fetch(`${API_BASE}/routes/search?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`);
+      const res = await apiFetch(`${API_BASE}/routes/search?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`);
       if (res.ok) {
         return await res.json();
       }
-    } catch {}
+    } catch (error) { if (remoteApiConfigured) throw error; }
     const all = repository.getAllRoutes();
     const result = discoverJourneys(from, to, all);
     return {
@@ -54,9 +64,9 @@ export const api = {
   // Get Route Details
   async getRouteById(id: string) {
     try {
-      const res = await fetch(`${API_BASE}/routes/${id}`);
+      const res = await apiFetch(`${API_BASE}/routes/${id}`);
       if (res.ok) return await res.json();
-    } catch {}
+    } catch (error) { if (remoteApiConfigured) throw error; }
     const route = repository.getRouteById(id);
     const buses = repository.getBusesForRoute(id);
     return { route, stopsCount: route?.stops.length || 0, buses };
@@ -65,9 +75,9 @@ export const api = {
   // Get Bus Details & Stop ETAs
   async getBusById(id: string) {
     try {
-      const res = await fetch(`${API_BASE}/buses/${id}`);
+      const res = await apiFetch(`${API_BASE}/buses/${id}`);
       if (res.ok) return await res.json();
-    } catch {}
+    } catch (error) { if (remoteApiConfigured) throw error; }
     const bus = repository.getBusById(id);
     const loc = repository.getBusLocation(id);
     const routes = repository.getAllRoutes();
@@ -83,13 +93,13 @@ export const api = {
   // Evaluate Journey Confirmation Prompt
   async evaluateJourneyPrompt(routeId: string, isAlreadyTracking: boolean, dismissedCount: number) {
     try {
-      const res = await fetch(`${API_BASE}/tracking/evaluate-prompt`, {
+      const res = await apiFetch(`${API_BASE}/tracking/evaluate-prompt`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ routeId, isAlreadyTracking, dismissedCount }),
       });
       if (res.ok) return await res.json();
-    } catch {}
+    } catch (error) { if (remoteApiConfigured) throw error; }
     const route = repository.getRouteById(routeId);
     if (!route) return { shouldPrompt: false };
     return evaluateJourneyPrompt(route, {
@@ -102,12 +112,12 @@ export const api = {
   // Record Consent
   async recordConsent(sessionId: string, status: string, disclosuresAccepted: boolean) {
     try {
-      await fetch(`${API_BASE}/tracking/consent`, {
+      await apiFetch(`${API_BASE}/tracking/consent`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sessionId, status, disclosuresAccepted }),
       });
-    } catch {}
+    } catch (error) { if (remoteApiConfigured) throw error; }
     repository.recordConsent({
       sessionId,
       scope: 'JOURNEY_TRACKING',
@@ -119,13 +129,13 @@ export const api = {
   // Start Journey Tracking Session
   async startJourneySession(busId: string, routeId: string) {
     try {
-      const res = await fetch(`${API_BASE}/tracking/session/start`, {
+      const res = await apiFetch(`${API_BASE}/tracking/session/start`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ busId, routeId }),
       });
       if (res.ok) return await res.json();
-    } catch {}
+    } catch (error) { if (remoteApiConfigured) throw error; }
     const sessionId = `sess-${Date.now()}`;
     const session = repository.createJourneySession({
       sessionId,
@@ -144,12 +154,12 @@ export const api = {
   // Stop Journey Tracking Session
   async stopJourneySession(sessionId: string, reason = 'USER_STOPPED') {
     try {
-      await fetch(`${API_BASE}/tracking/session/stop`, {
+      await apiFetch(`${API_BASE}/tracking/session/stop`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sessionId, reason }),
       });
-    } catch {}
+    } catch (error) { if (remoteApiConfigured) throw error; }
     repository.stopJourneySession(sessionId, reason as any);
   },
 
@@ -165,13 +175,13 @@ export const api = {
     headingDegrees?: number;
   }) {
     try {
-      const res = await fetch(`${API_BASE}/tracking/observation`, {
+      const res = await apiFetch(`${API_BASE}/tracking/observation`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(obs),
       });
       if (res.ok) return await res.json();
-    } catch {}
+    } catch (error) { if (remoteApiConfigured) throw error; }
     return { accepted: true };
   },
 
@@ -184,13 +194,13 @@ export const api = {
     proposedData: Record<string, any>;
   }) {
     try {
-      const res = await fetch(`${API_BASE}/contributions/submit`, {
+      const res = await apiFetch(`${API_BASE}/contributions/submit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
       if (res.ok) return await res.json();
-    } catch {}
+    } catch (error) { if (remoteApiConfigured) throw error; }
     const ref = `YB-SUB-2026-${Math.floor(1000 + Math.random() * 9000)}`;
     const sub = repository.createSubmission({
       id: `sub-${Date.now()}`,
@@ -215,9 +225,9 @@ export const api = {
   // Check Submission Status
   async getSubmissionStatus(refId: string) {
     try {
-      const res = await fetch(`${API_BASE}/contributions/status/${encodeURIComponent(refId)}`);
+      const res = await apiFetch(`${API_BASE}/contributions/status/${encodeURIComponent(refId)}`);
       if (res.ok) return await res.json();
-    } catch {}
+    } catch (error) { if (remoteApiConfigured) throw error; }
     const sub = repository.getSubmissionByReference(refId);
     if (!sub) throw new Error('Reference ID not found');
     return sub;
@@ -226,19 +236,19 @@ export const api = {
   // Submit Operator Claim
   async submitOperatorClaim(data: any) {
     try {
-      const res = await fetch(`${API_BASE}/contributions/operator-claim`, {
+      const res = await apiFetch(`${API_BASE}/contributions/operator-claim`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
       if (res.ok) return await res.json();
-    } catch {}
+    } catch (error) { if (remoteApiConfigured) throw error; }
     return { success: true, message: 'Operator claim received' };
   },
 
   // Admin APIs: no client-side development-token fallback is permitted.
   async adminLogin(email: string, password: string) {
-    const res = await fetch(`${API_BASE}/admin/login`, {
+    const res = await apiFetch(`${API_BASE}/admin/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
@@ -248,7 +258,7 @@ export const api = {
   },
 
   async getAdminOverview(token: string) {
-    const res = await fetch(`${API_BASE}/admin/overview`, {
+    const res = await apiFetch(`${API_BASE}/admin/overview`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (!res.ok) throw new Error('Could not load administrator overview. Please sign in again.');
@@ -257,7 +267,7 @@ export const api = {
 
   async getAdminSubmissions(token: string, status?: string) {
     const query = status ? `?status=${encodeURIComponent(status)}` : '';
-    const res = await fetch(`${API_BASE}/admin/submissions${query}`, {
+    const res = await apiFetch(`${API_BASE}/admin/submissions${query}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (!res.ok) throw new Error('Could not load community submissions. Please sign in again.');
@@ -265,7 +275,7 @@ export const api = {
   },
 
   async reviewSubmission(token: string, id: string, decision: 'ADMIN_VERIFIED' | 'COMMUNITY_CORROBORATED' | 'REJECTED', reason: string) {
-    const res = await fetch(`${API_BASE}/admin/submissions/${encodeURIComponent(id)}/review`, {
+    const res = await apiFetch(`${API_BASE}/admin/submissions/${encodeURIComponent(id)}/review`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({ decision, reason }),
