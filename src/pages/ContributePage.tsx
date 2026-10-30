@@ -349,7 +349,7 @@ export const ContributePage: React.FC = () => {
                     { id: 'ADD_STOP' as SubmissionType, label: 'Add Stop' },
                     { id: 'CORRECT_TIMETABLE' as SubmissionType, label: 'Add / Fix Timetable' },
                     { id: 'REPORT_CHANGED_ROUTE' as SubmissionType, label: 'Report Issue' },
-                    { id: 'DELETE_BUS' as SubmissionType, label: 'Request Bus Removal' },
+                    { id: 'DELETE_BUS' as SubmissionType, label: t('request_bus_removal') },
                   ].map(t => (
                     <button
                       key={t.id}
@@ -387,11 +387,11 @@ export const ContributePage: React.FC = () => {
 
                 {submissionType === 'DELETE_BUS' && <>
                   <div>
-                    <label className="block text-xs font-medium text-yatriwarm-700 mb-1">Existing route number</label>
+                    <label className="block text-xs font-medium text-yatriwarm-700 mb-1">{t('existing_route_number')}</label>
                     <input required value={routeNumber} onChange={e => setRouteNumber(e.target.value)} placeholder="e.g. DTC-534" className="w-full px-3.5 py-2.5 bg-yatriwarm-50 border border-yatriwarm-200 rounded-xl text-xs" />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-yatriwarm-700 mb-1">Bus name / number to remove</label>
+                    <label className="block text-xs font-medium text-yatriwarm-700 mb-1">{t('bus_name_number_to_remove')}</label>
                     <input required value={busIdentifier} onChange={e => setBusIdentifier(e.target.value)} placeholder="e.g. DTC 534 / DL-1P-xxxx" className="w-full px-3.5 py-2.5 bg-yatriwarm-50 border border-yatriwarm-200 rounded-xl text-xs" />
                   </div>
                 </>}
