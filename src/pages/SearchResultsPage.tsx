@@ -58,9 +58,13 @@ export const SearchResultsPage: React.FC = () => {
         ? (dayCounts.length ? { min: Math.min(...dayCounts), max: Math.max(...dayCounts) } : { min: departures.length, max: departures.length })
         : { min: exactTimes.length, max: exactTimes.length }
       : null;
-    const countLabel = exactCount
-      ? (exactCount.min === exactCount.max ? String(exactCount.min) : `${exactCount.min}–${exactCount.max}`)
-      : estimate !== undefined ? `~${estimate}` : t('not_verified');
+    const countLabel = exactTimes.length
+      ? String(exactTimes.length)
+      : estimate !== undefined
+        ? `~${estimate}`
+        : exactCount
+          ? (exactCount.min === exactCount.max ? String(exactCount.min) : `${exactCount.min}–${exactCount.max}`)
+          : t('not_verified');
     const estimatedSlots = estimate && route.frequencyMinutes
       ? Array.from({ length: Math.min(estimate, 30) }, (_, index) => {
           const [hours, minutes] = route.firstDepartureTime.split(':').map(Number);
