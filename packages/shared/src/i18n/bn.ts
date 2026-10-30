@@ -7,6 +7,8 @@ export const bn = {
   last_bus: 'শেষ বাস',
   frequency: 'বাসের ব্যবধান',
   not_provided: 'দেওয়া হয়নি',
+  not_verified: 'যাচাই করা হয়নি',
+
   trips_per_day: 'প্রতি চলাচলের দিনে ট্রিপ',
   every: 'প্রতি',
   minutes: 'মিনিট',
