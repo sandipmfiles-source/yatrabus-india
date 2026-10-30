@@ -133,13 +133,20 @@ function publishVerifiedBus(submission: CommunitySubmission): Bus {
   const data = submission.proposedData || {};
   const publicIdentifier = String(data.name || data.routeNumber || '').trim();
   if (!publicIdentifier) throw new Error('Bus name or route number is required before publishing.');
+  const route = repository.getAllRoutes().find(candidate =>
+    candidate.routeNumber.toLowerCase() === String(data.routeNumber || '').trim().toLowerCase() &&
+    candidate.originStopName.toLowerCase() === String(data.origin || '').trim().toLowerCase() &&
+    candidate.destinationStopName.toLowerCase() === String(data.destination || '').trim().toLowerCase()
+  );
+  if (!route) throw new Error('Approve the matching route and timetable before publishing this bus.');
   const operator = communityOperator(String(data.state || 'West Bengal'));
   const now = new Date().toISOString();
   return repository.addBus({
     id: `bus-community-${submission.id}`,
     publicIdentifier,
-    operatorId: operator.id,
-    operatorName: operator.name,
+    operatorId: route.operatorId,
+    routeId: route.id,
+    operatorName: route.operatorName || operator.name,
     vehicleType: 'ORDINARY',
     hasCustomSvgIllustration: true,
     serviceStatus: 'SCHEDULE_UNVERIFIED',
