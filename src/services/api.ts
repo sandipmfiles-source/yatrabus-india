@@ -17,6 +17,13 @@ export const api = {
     return repository.searchPlaces(query, limit);
   },
 
+  async searchMapPlaces(query: string) {
+    const res = await fetch(`${API_BASE}/places/geocode-search?q=${encodeURIComponent(query)}`);
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.message || 'Place search is temporarily unavailable.');
+    return data.results || [];
+  },
+
   async previewRoadRoute(origin: string, destination: string, stops: string[] = []) {
     const res = await fetch(`${API_BASE}/places/route-preview`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ origin, destination, stops }) });
     const data = await res.json().catch(() => ({}));
