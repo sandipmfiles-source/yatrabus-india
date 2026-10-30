@@ -469,10 +469,10 @@ export const ContributePage: React.FC = () => {
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <label className="text-xs font-medium text-yatriwarm-700">Route number
-                      <input required value={routeNumber} onChange={e => setRouteNumber(e.target.value)} placeholder="e.g. JGM-01" className="mt-1 w-full px-3 py-2.5 bg-white border border-yatriwarm-300 rounded-xl" />
+                      <input required value={routeNumber} onChange={e => setRouteNumber(e.target.value)} placeholder="e.g. DTC-534" className="mt-1 w-full px-3 py-2.5 bg-white border border-yatriwarm-300 rounded-xl" />
                     </label>
                     <label className="text-xs font-medium text-yatriwarm-700">Route name
-                      <input required value={routeName} onChange={e => setRouteName(e.target.value)} placeholder="e.g. Jhargram to Gopiballavpur" className="mt-1 w-full px-3 py-2.5 bg-white border border-yatriwarm-300 rounded-xl" />
+                      <input required value={routeName} onChange={e => setRouteName(e.target.value)} placeholder="e.g. Kashmere Gate to Mehrauli" className="mt-1 w-full px-3 py-2.5 bg-white border border-yatriwarm-300 rounded-xl" />
                     </label>
                     <label className="text-xs font-medium text-yatriwarm-700">{t('route_direction_label')}<select value={direction} onChange={e => setDirection(e.target.value as 'UP' | 'DOWN')} className="mt-1 w-full px-3 py-2.5 bg-white border border-yatriwarm-300 rounded-xl"><option value="UP">{t('route_direction_outbound')}</option><option value="DOWN">{t('route_direction_return')}</option></select></label>
                     <label className="text-xs font-medium text-yatriwarm-700">Bus operator / service name
@@ -553,7 +553,7 @@ export const ContributePage: React.FC = () => {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-medium text-yatriwarm-700 mb-1">Bus name / number</label>
-                      <input type="text" required value={busIdentifier} onChange={e => setBusIdentifier(e.target.value)} placeholder="e.g. Jhargram Express / WB-xx" className="w-full px-3.5 py-2.5 bg-white border border-yatriwarm-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-red-500" />
+                      <input type="text" required value={busIdentifier} onChange={e => setBusIdentifier(e.target.value)} placeholder="e.g. DTC 534 / DL-1P-xxxx" className="w-full px-3.5 py-2.5 bg-white border border-yatriwarm-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-red-500" />
                     </div>
                     <div>
                       <label className="block text-xs font-medium text-yatriwarm-700 mb-1">Departure time (IST)</label>
