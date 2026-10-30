@@ -23,6 +23,8 @@ export const BusDetailPage: React.FC = () => {
   const [stopETAs, setStopETAs] = useState<ETAResult[]>([]);
   const [corrections, setCorrections] = useState<any[]>([]);
   const [editingStopId, setEditingStopId] = useState<string | null>(null);
+  const [editingPlaceStopId, setEditingPlaceStopId] = useState<string | null>(null);
+  const [editPlaceName, setEditPlaceName] = useState('');
   const [editTime, setEditTime] = useState('');
   const [correctionBusy, setCorrectionBusy] = useState(false);
   const [correctionMessage, setCorrectionMessage] = useState('');
@@ -97,6 +99,36 @@ export const BusDetailPage: React.FC = () => {
     } finally {
       setCorrectionBusy(false);
     }
+  };
+
+  const submitPlaceCorrection = async (stop: RouteStop) => {
+    if (!route || !editPlaceName.trim() || correctionBusy) return;
+    setCorrectionBusy(true);
+    setCorrectionMessage('');
+    try {
+      const result = await api.submitContribution({
+        submissionType: 'CORRECT_TIMETABLE',
+        entityType: 'TIMETABLE',
+        targetEntityId: route.id,
+        contributorNote: 'Passenger suggested a bus stop name correction',
+        proposedData: {
+          routeNumber: route.routeNumber,
+          timetableEntry: false,
+          action: 'CORRECT_STOP_NAME',
+          stopId: stop.id,
+          stopName: stop.stopName,
+          field: 'stopName',
+          value: editPlaceName.trim().slice(0, 120),
+          originalValue: stop.stopName,
+        },
+      });
+      setCorrectionMessage('Stop name correction submitted. Reference: ' + result.referenceId);
+      setEditingPlaceStopId(null);
+      setEditPlaceName('');
+      await refreshCorrections();
+    } catch (error) {
+      setCorrectionMessage(error instanceof Error ? error.message : 'Could not submit stop correction.');
+    } finally { setCorrectionBusy(false); }
   };
 
   const voteForCorrection = async (correction: any) => {
@@ -268,7 +300,17 @@ export const BusDetailPage: React.FC = () => {
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-bold text-yatriwarm-400">#{stop.stopSequence}</span>
-                    <h4 className="text-sm font-semibold text-yatriwarm-900">{stop.stopName}</h4>
+                    {(() => {
+                      const related = corrections.filter(item => item.proposedData?.stopId === stop.id && item.proposedData?.field === 'stopName');
+                      const totals: Record<string, number> = {};
+                      related.forEach(item => Object.entries(item.communityVotes || {}).forEach(([key, count]) => {
+                        const split = key.indexOf(':');
+                        if (split >= 0) { const value = key.slice(split + 1); totals[value] = (totals[value] || 0) + Number(count || 0); }
+                      }));
+                      const winner = Object.entries(totals).sort((a, b) => b[1] - a[1])[0];
+                      return <h4 className="text-sm font-semibold text-yatriwarm-900">{winner && winner[1] >= 2 ? winner[0] : stop.stopName}</h4>;
+                    })()}
+                    <button type="button" onClick={() => { setEditingPlaceStopId(editingPlaceStopId === stop.id ? null : stop.id); setEditPlaceName(stop.stopName); }} className="text-yatribrand-900" aria-label={`Suggest stop name correction for ${stop.stopName}`}><Edit3 className="w-3 h-3" /></button>
                   </div>
                   <div className="text-[11px] text-yatriwarm-500 mt-0.5">
                     {stop.distanceFromStartKm} km from start
@@ -305,6 +347,13 @@ export const BusDetailPage: React.FC = () => {
             );
           })}
         </div>
+        {editingPlaceStopId && (
+          <div className="mt-4 p-3 rounded-xl border border-yatriwarm-200 bg-yatriwarm-50 flex flex-wrap items-end gap-3">
+            <div className="flex-1 min-w-[180px]"><label className="block text-xs font-semibold text-yatriwarm-700 mb-1">Correct bus stop name</label><input type="text" value={editPlaceName} onChange={event => setEditPlaceName(event.target.value)} className="w-full px-3 py-2 rounded-lg border border-yatriwarm-200 bg-white text-sm" /></div>
+            <button type="button" disabled={correctionBusy || !editPlaceName.trim()} onClick={() => { const stop = route.stops.find(item => item.id === editingPlaceStopId); if (stop) void submitPlaceCorrection(stop); }} className="px-4 py-2 rounded-lg bg-yatribrand-900 text-white text-xs font-semibold disabled:opacity-50">{correctionBusy ? 'Sending…' : 'Submit place correction'}</button>
+            <button type="button" onClick={() => setEditingPlaceStopId(null)} className="px-3 py-2 rounded-lg border border-yatriwarm-200 text-xs">Cancel</button>
+          </div>
+        )}
         {editingStopId && (
           <div className="mt-4 p-3 rounded-xl border border-yatriwarm-200 bg-yatriwarm-50 flex flex-wrap items-end gap-3">
             <div className="flex-1 min-w-[150px]">
