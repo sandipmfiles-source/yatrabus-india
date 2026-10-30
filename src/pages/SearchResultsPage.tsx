@@ -3,7 +3,7 @@ import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { api } from '../services/api.js';
 import { JourneyCandidate } from '@shared/types/bus.js';
 import { BusCard } from '../components/BusCard.js';
-import { ArrowLeft, Filter, AlertCircle, PlusCircle, RefreshCw } from 'lucide-react';
+import { ArrowLeft, AlertCircle, PlusCircle, Clock3, MapPin, CalendarDays, BusFront } from 'lucide-react';
 
 export const SearchResultsPage: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -16,19 +16,52 @@ export const SearchResultsPage: React.FC = () => {
   const [directRoutes, setDirectRoutes] = useState<JourneyCandidate[]>([]);
   const [transferRoutes, setTransferRoutes] = useState<JourneyCandidate[]>([]);
   const [filterType, setFilterType] = useState<'ALL' | 'DIRECT' | 'LIVE'>('ALL');
+  const [returnJourneys, setReturnJourneys] = useState<JourneyCandidate[]>([]);
 
   useEffect(() => {
     if (!from || !to) return;
 
     setIsLoading(true);
-    api.searchRoutes(from, to).then(res => {
+    Promise.all([api.searchRoutes(from, to), api.searchRoutes(to, from)]).then(([res, reverse]) => {
       setDirectRoutes(res.directRoutes || []);
       setTransferRoutes(res.transferRoutes || []);
+      setReturnJourneys([...(reverse.directRoutes || []), ...(reverse.transferRoutes || [])]);
       setIsLoading(false);
-    });
+    }).catch(() => setIsLoading(false));
   }, [from, to]);
 
   const allJourneys = [...directRoutes, ...transferRoutes];
+
+  const timetablePanel = (journey: JourneyCandidate) => {
+    const route = journey.route;
+    const first = route.stops.findIndex(stop => stop.id === journey.boardingStop.id);
+    const last = route.stops.findIndex(stop => stop.id === journey.alightingStop.id);
+    const segmentStops = first >= 0 && last >= first ? route.stops.slice(first, last + 1) : [journey.boardingStop, journey.alightingStop];
+    const toMinutes = (value: string) => { const [h, m] = value.split(':').map(Number); return h * 60 + m; };
+    const frequency = route.frequencyMinutes;
+    const span = toMinutes(route.lastDepartureTime) - toMinutes(route.firstDepartureTime);
+    const trips = frequency && frequency > 0 && span >= 0 ? Math.floor(span / frequency) + 1 : null;
+    return <section key={journey.id + '-timetable'} className="mt-3 rounded-2xl border border-yatriwarm-200 bg-white p-4">
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="flex items-center gap-2 text-sm font-bold text-yatriwarm-900"><Clock3 className="w-4 h-4 text-yatribrand-800" /> Bus timetable</h3>
+        <span className={`text-[10px] rounded-full px-2 py-1 font-semibold ${route.verificationStatus === 'ADMIN_VERIFIED' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-800'}`}>{route.verificationStatus === 'ADMIN_VERIFIED' ? 'Admin verified' : 'Awaiting verification'}</span>
+      </div>
+      <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <div className="rounded-xl bg-yatriwarm-50 p-2"><div className="text-[10px] text-yatriwarm-500">First bus</div><div className="text-sm font-bold text-yatriwarm-900">{route.firstDepartureTime}</div></div>
+        <div className="rounded-xl bg-yatriwarm-50 p-2"><div className="text-[10px] text-yatriwarm-500">Last bus</div><div className="text-sm font-bold text-yatriwarm-900">{route.lastDepartureTime}</div></div>
+        <div className="rounded-xl bg-yatriwarm-50 p-2"><div className="text-[10px] text-yatriwarm-500">Frequency</div><div className="text-sm font-bold text-yatriwarm-900">{frequency ? `Every ${frequency} min` : 'Not provided'}</div></div>
+        <div className="rounded-xl bg-yatriwarm-50 p-2"><div className="text-[10px] text-yatriwarm-500">Trips / day</div><div className="text-sm font-bold text-yatriwarm-900">{trips === null ? 'Not verified' : `~${trips}`}</div></div>
+      </div>
+      <p className="mt-2 flex items-center gap-1 text-[11px] text-yatriwarm-500"><CalendarDays className="w-3.5 h-3.5" /> Operating days: {route.operatingDays?.join(', ') || 'Not provided'} {trips !== null ? '• Trip count calculated from frequency, not a live count' : ''}</p>
+      <div className="mt-4">
+        <div className="mb-2 flex items-center gap-2 text-xs font-bold text-yatriwarm-800"><MapPin className="w-3.5 h-3.5 text-yatribrand-800" /> Stops from {journey.boardingStop.stopName} to {journey.alightingStop.stopName}</div>
+        <ol className="relative ml-2 border-l-2 border-yatribrand-200 pl-4 space-y-3">
+          {segmentStops.map((stop, index) => <li key={stop.id} className="relative"><span className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full border-2 border-yatribrand-700 bg-white" /><div className="flex items-center justify-between gap-3"><span className="text-xs font-medium text-yatriwarm-800">{stop.stopName}</span><span className="text-[11px] tabular-nums text-yatriwarm-500">{stop.scheduledArrivalTime || stop.scheduledDepartureTime || 'Time not listed'}</span></div></li>)}
+        </ol>
+      </div>
+      <p className="mt-3 text-[10px] text-yatriwarm-500">{route.verificationStatus === 'ADMIN_VERIFIED' ? 'Schedule verified by YatriBus administrator.' : 'Community schedule is not yet verified. Please confirm timings locally before travel.'}</p>
+    </section>;
+  };
 
   const filteredJourneys = allJourneys.filter(j => {
     if (filterType === 'DIRECT') return j.isDirect;
@@ -121,6 +154,13 @@ export const SearchResultsPage: React.FC = () => {
             <BusCard key={j.id} journey={j} />
           ))}
         </div>
+      )}
+
+      {!isLoading && returnJourneys.length > 0 && (
+        <section className="space-y-3 pt-3">
+          <div className="flex items-center gap-2"><BusFront className="w-5 h-5 text-yatribrand-800" /><h3 className="text-base font-bold text-yatriwarm-900">Return buses: {to} → {from}</h3></div>
+          {returnJourneys.map(j => <div key={'return-' + j.id}><BusCard journey={j} />{timetablePanel(j)}</div>)}
+        </section>
       )}
 
       {/* Empty State */}
