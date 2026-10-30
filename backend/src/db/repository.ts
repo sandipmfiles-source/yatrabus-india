@@ -169,6 +169,23 @@ export class TransitRepository {
     return this.routes.get(id);
   }
 
+  public getRouteByNumber(routeNumber: string): Route | undefined {
+    const normalized = routeNumber.trim().toLowerCase();
+    return Array.from(this.routes.values()).find(route => route.routeNumber.trim().toLowerCase() === normalized);
+  }
+
+  public addTimetableDeparture(routeId: string, departure: NonNullable<Route['departures']>[number]): boolean {
+    const route = this.routes.get(routeId);
+    if (!route) return false;
+    const current = route.departures || [];
+    const duplicate = current.some(item => item.departureTime === departure.departureTime &&
+      (item.busIdentifier || '').toLowerCase() === (departure.busIdentifier || '').toLowerCase() && !item.isCancelled);
+    if (duplicate) return false;
+    route.departures = [...current, departure].sort((a, b) => a.departureTime.localeCompare(b.departureTime));
+    route.updatedAt = new Date().toISOString();
+    return true;
+  }
+
   public getBusById(id: string): Bus | undefined {
     return this.buses.get(id);
   }
