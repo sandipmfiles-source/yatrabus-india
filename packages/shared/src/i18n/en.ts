@@ -154,6 +154,10 @@ export const en = {
   owner_account_free_description: 'Your submission goes to a separate Super Admin review queue. Contact details are used only to verify the operator claim.',
   owner_contact_person: 'Your name / contact person',
   owner_submission_contact_error: 'Bus owners: enter your operator / fleet name, contact person and a valid 10-digit phone number. No account or Google sign-in is required.',
+  request_bus_removal: 'Request Bus Removal',
+  existing_route_number: 'Existing route number',
+  bus_name_number_to_remove: 'Bus name / number to remove',
+
 
   contribute_submit_tab: 'Submit Missing Info',
   contribute_status_tab: 'Check Submission Status',
