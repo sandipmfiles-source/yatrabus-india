@@ -104,6 +104,7 @@ export const AdminSubmissionsPage: React.FC = () => {
                 <pre className="p-3 bg-yatriwarm-50 rounded-xl border border-yatriwarm-200 text-xs font-mono text-yatriwarm-800 overflow-x-auto">{JSON.stringify(selectedSub.proposedData, null, 2)}</pre>
               </div>
               {selectedSub.contributorNote && <div><h4 className="text-xs font-bold text-yatriwarm-700 uppercase tracking-wider mb-1">Contributor Note</h4><p className="text-xs text-yatriwarm-700 p-3 bg-yatriwarm-50 rounded-xl border border-yatriwarm-200">{selectedSub.contributorNote}</p></div>}
+              {typeof selectedSub.proposedData?.evidenceUrl === 'string' && /^https?:\/\//i.test(selectedSub.proposedData.evidenceUrl) && <div><h4 className="text-xs font-bold text-yatriwarm-700 uppercase tracking-wider mb-1">Evidence link</h4><a href={selectedSub.proposedData.evidenceUrl} target="_blank" rel="noreferrer" className="text-xs text-yatribrand-900 underline break-all">Open submitted timetable / operator evidence</a></div>}
               <div className="space-y-3 pt-4 border-t border-yatriwarm-200">
                 <label className="block text-xs font-medium text-yatriwarm-700">Verification Note / Reason for Decision
                   <textarea rows={2} value={decisionReason} onChange={e => setDecisionReason(e.target.value)} placeholder="e.g. Checked against the operator's official timetable or depot notice." className="mt-1 w-full px-3 py-2 bg-yatriwarm-50 border border-yatriwarm-200 rounded-xl text-xs" />
