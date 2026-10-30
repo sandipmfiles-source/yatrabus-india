@@ -411,6 +411,20 @@ export const BusDetailPage: React.FC = () => {
             Suggest Correction
           </Link>
           <Link
+            to={`/contribute?routeId=${route.id}&type=UPDATE_ROUTE&source=OPERATOR`}
+            className="px-3 py-1.5 bg-white hover:bg-yatribrand-50 text-yatribrand-900 font-semibold rounded-xl border border-yatriwarm-300 transition-colors flex items-center gap-1.5"
+          >
+            <Edit3 className="w-3.5 h-3.5" />
+            {t('owner_route_update')}
+          </Link>
+          {activeBusId && <Link
+            to={`/contribute?routeId=${route.id}&busId=${activeBusId}&type=CORRECT_TIMETABLE&source=OPERATOR`}
+            className="px-3 py-1.5 bg-white hover:bg-yatribrand-50 text-yatribrand-900 font-semibold rounded-xl border border-yatriwarm-300 transition-colors flex items-center gap-1.5"
+          >
+            <Edit3 className="w-3.5 h-3.5" />
+            {t('owner_timetable_update')}
+          </Link>}
+          <Link
             to={`/contribute?routeId=${route.id}&type=REPORT_CHANGED_ROUTE`}
             className="px-3 py-1.5 bg-white hover:bg-rose-50 text-rose-700 font-semibold rounded-xl border border-yatriwarm-300 transition-colors flex items-center gap-1.5"
           >
