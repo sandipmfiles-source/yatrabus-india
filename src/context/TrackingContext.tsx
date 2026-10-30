@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { api } from '../services/api.js';
 import { storage } from '../services/storage.js';
+import { startNativeTracking, stopNativeTracking } from '../services/nativeTracking.js';
 
 interface ActiveSessionData {
   sessionId: string;
@@ -22,6 +23,8 @@ interface TrackingContextType {
   declineConsent: () => void;
   stopSharing: () => Promise<void>;
   observationsCount: number;
+  isBackgroundTrackingActive: boolean;
+  trackingWarning: string;
 }
 
 const TrackingContext = createContext<TrackingContextType | undefined>(undefined);
@@ -31,6 +34,8 @@ export const TrackingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [isConsentModalOpen, setIsConsentModalOpen] = useState(false);
   const [pendingBusForTracking, setPendingBus] = useState<{ busId: string; routeId: string; routeNumber?: string } | null>(null);
   const [observationsCount, setObservationsCount] = useState(0);
+  const [isBackgroundTrackingActive, setIsBackgroundTrackingActive] = useState(false);
+  const [trackingWarning, setTrackingWarning] = useState('');
 
   const watchIdRef = useRef<number | null>(null);
 
@@ -43,8 +48,10 @@ export const TrackingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const now = Date.now();
       if (now - started < 12 * 3600 * 1000) {
         setActiveSession(saved);
+        startNativeTracking(saved).then(setIsBackgroundTrackingActive).catch(error => setTrackingWarning(error?.message || 'Background tracking is not configured.'));
       } else {
         storage.clearActiveSession();
+        stopNativeTracking().catch(() => undefined);
       }
     }
   }, []);
@@ -117,6 +124,15 @@ export const TrackingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
       setActiveSession(sessionData);
       storage.setActiveSession(sessionData);
+      try {
+        const started = await startNativeTracking({ sessionId: session.sessionId, busId: pendingBusForTracking.busId, routeId: pendingBusForTracking.routeId, startedAt: sessionData.startedAt });
+        setIsBackgroundTrackingActive(started);
+        setTrackingWarning(started ? '' : 'Background GPS is available only in the Android app.');
+      } catch (nativeError: any) {
+        setIsBackgroundTrackingActive(false);
+        setTrackingWarning(nativeError?.message || 'Background GPS could not start.');
+        console.warn('Native background tracking could not start; foreground tracking remains available.', nativeError);
+      }
       closeConsentModal();
     } catch (e) {
       // eslint-disable-next-line no-console
@@ -132,6 +148,9 @@ export const TrackingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const stopSharing = async () => {
+    try { await stopNativeTracking(); } catch (nativeError) { console.warn('Could not stop native tracking service', nativeError); }
+    setIsBackgroundTrackingActive(false);
+    setTrackingWarning('');
     if (activeSession) {
       await api.stopJourneySession(activeSession.sessionId, 'USER_STOPPED');
       storage.clearActiveSession();
@@ -152,6 +171,8 @@ export const TrackingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         declineConsent,
         stopSharing,
         observationsCount,
+        isBackgroundTrackingActive,
+        trackingWarning,
       }}
     >
       {children}

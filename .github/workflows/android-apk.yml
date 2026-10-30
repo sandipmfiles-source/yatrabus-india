@@ -4,7 +4,6 @@ on:
   push:
     branches: [main, master]
   pull_request:
-    branches: [main, master]
   workflow_dispatch:
 
 jobs:
@@ -29,19 +28,28 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
+      - name: Setup Gradle 8.7
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
         with:
-          packages: platform-tools
+          packages: platform-tools platforms;android-34 build-tools;34.0.0
           accept-android-sdk-licenses: true
 
       - name: Install NPM Dependencies
         run: npm ci || npm install
 
       - name: Run Automated Test Suites
+        env:
+          TS_NODE_TRANSPILE_ONLY: 'true'
         run: npm test
 
       - name: Build Web Application
+        env:
+          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
         run: npm run build
 
       - name: Sync Capacitor Android Assets

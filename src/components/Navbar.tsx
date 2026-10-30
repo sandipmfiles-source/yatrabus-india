@@ -3,9 +3,11 @@ import { Link, useLocation } from 'react-router-dom';
 import { BusIllustration } from '../assets/BusIllustration.js';
 import { LanguageSwitcher } from './LanguageSwitcher.js';
 import { ShieldCheck, PlusCircle, Search, UserCheck } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext.js';
 
 export const Navbar: React.FC = () => {
   const location = useLocation();
+  const { t } = useLanguage();
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -27,7 +29,7 @@ export const Navbar: React.FC = () => {
               </span>
             </div>
             <p className="text-[10px] text-yatriwarm-500 font-medium hidden sm:block">
-              Community Transit Directory
+              {t('community_directory')}
             </p>
           </div>
         </Link>
@@ -41,7 +43,7 @@ export const Navbar: React.FC = () => {
             }`}
           >
             <Search className="w-4 h-4" />
-            Find Buses
+            {t('find_buses')}
           </Link>
           <Link
             to="/contribute"
@@ -50,7 +52,7 @@ export const Navbar: React.FC = () => {
             }`}
           >
             <PlusCircle className="w-4 h-4" />
-            Contribute Info
+            {t('contribute_info')}
           </Link>
           <Link
             to="/operator-claim"
@@ -59,7 +61,7 @@ export const Navbar: React.FC = () => {
             }`}
           >
             <UserCheck className="w-4 h-4" />
-            Operator Portal
+            {t('operator_portal')}
           </Link>
         </nav>
 
@@ -73,7 +75,7 @@ export const Navbar: React.FC = () => {
             title="Transit Verifier & Administrator Portal"
           >
             <ShieldCheck className="w-4 h-4" />
-            <span className="hidden sm:inline">Admin</span>
+            <span className="hidden sm:inline">{t('admin')}</span>
           </Link>
         </div>
       </div>

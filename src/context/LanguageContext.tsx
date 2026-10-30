@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 import { LanguageCode, getTranslation, SUPPORTED_LANGUAGES } from '@shared/i18n/index.js';
 import { storage } from '../services/storage.js';
 import { en } from '@shared/i18n/en.js';
@@ -13,12 +13,7 @@ interface LanguageContextType {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [language, setLangState] = useState<LanguageCode>('en');
-
-  useEffect(() => {
-    const saved = storage.getLanguage();
-    setLangState(saved);
-  }, []);
+  const [language, setLangState] = useState<LanguageCode>(() => storage.getLanguage());
 
   const setLanguage = (lang: LanguageCode) => {
     setLangState(lang);

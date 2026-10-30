@@ -161,6 +161,25 @@ export class TransitRepository {
   }
 
   // ==================== ROUTES & BUSES ====================
+  public getAllOperators(): Operator[] {
+    return Array.from(this.operators.values());
+  }
+
+  public addOperator(operator: Operator): Operator {
+    this.operators.set(operator.id, operator);
+    return operator;
+  }
+
+  public addRoute(route: Route): Route {
+    this.routes.set(route.id, route);
+    return route;
+  }
+
+  public updateRoute(route: Route): Route {
+    this.routes.set(route.id, route);
+    return route;
+  }
+
   public getAllRoutes(): Route[] {
     return Array.from(this.routes.values());
   }
@@ -176,7 +195,7 @@ export class TransitRepository {
   public getBusesForRoute(routeId: string): Bus[] {
     const route = this.routes.get(routeId);
     if (!route) return [];
-    return Array.from(this.buses.values()).filter(b => b.operatorId === route.operatorId);
+    return Array.from(this.buses.values()).filter(b => b.routeId ? b.routeId === routeId : b.operatorId === route.operatorId);
   }
 
   public addBus(bus: Bus): Bus {
@@ -244,6 +263,10 @@ export class TransitRepository {
   public createSubmission(submission: CommunitySubmission): CommunitySubmission {
     this.submissions.set(submission.id, submission);
     return submission;
+  }
+
+  public getSubmissionById(id: string): CommunitySubmission | undefined {
+    return this.submissions.get(id);
   }
 
   public getSubmissionByReference(refId: string): CommunitySubmission | undefined {
@@ -327,6 +350,15 @@ export class TransitRepository {
   }
 
   // ==================== ADMIN & HEALTH ====================
+  public getAllAdminUsers(): AdminUser[] {
+    return Array.from(this.adminUsers.values());
+  }
+
+  public addAdminUser(admin: AdminUser): AdminUser {
+    this.adminUsers.set(admin.id, admin);
+    return admin;
+  }
+
   public getAdminByEmail(email: string): AdminUser | undefined {
     for (const u of this.adminUsers.values()) {
       if (u.email.toLowerCase() === email.toLowerCase()) {
@@ -334,6 +366,44 @@ export class TransitRepository {
       }
     }
     return undefined;
+  }
+
+  // Snapshot hooks used by the backend's durable file-backed repository.
+  // Raw passenger GPS observations are intentionally excluded; only bus-level aggregates persist.
+  public exportPersistentState(): Record<string, unknown> {
+    return {
+      places: Array.from(this.places.values()),
+      operators: Array.from(this.operators.values()),
+      routes: Array.from(this.routes.values()),
+      buses: Array.from(this.buses.values()),
+      consentRecords: Array.from(this.consentRecords.values()),
+      journeySessions: Array.from(this.journeySessions.values()),
+      busLocations: Array.from(this.busLocations.values()),
+      submissions: Array.from(this.submissions.values()),
+      duplicateCandidates: Array.from(this.duplicateCandidates.values()),
+      operatorClaims: Array.from(this.operatorClaims.values()),
+      automationRules: Array.from(this.automationRules.values()),
+      auditLogs: this.auditLogs,
+      adminUsers: Array.from(this.adminUsers.values()),
+    };
+  }
+
+  public restorePersistentState(snapshot: Record<string, any>): void {
+    const mapBy = <T>(items: T[] | undefined, key: keyof T): Map<any, T> =>
+      new Map((Array.isArray(items) ? items : []).map(item => [item[key], item]));
+    if (Array.isArray(snapshot.places)) this.places = mapBy([...this.places.values(), ...snapshot.places], 'id');
+    if (Array.isArray(snapshot.operators)) this.operators = mapBy([...this.operators.values(), ...snapshot.operators], 'id');
+    if (Array.isArray(snapshot.routes)) this.routes = mapBy([...this.routes.values(), ...snapshot.routes], 'id');
+    if (Array.isArray(snapshot.buses)) this.buses = mapBy([...this.buses.values(), ...snapshot.buses], 'id');
+    if (Array.isArray(snapshot.consentRecords)) this.consentRecords = mapBy([...this.consentRecords.values(), ...snapshot.consentRecords], 'sessionId');
+    if (Array.isArray(snapshot.journeySessions)) this.journeySessions = mapBy([...this.journeySessions.values(), ...snapshot.journeySessions], 'sessionId');
+    if (Array.isArray(snapshot.busLocations)) this.busLocations = mapBy([...this.busLocations.values(), ...snapshot.busLocations], 'busId');
+    if (Array.isArray(snapshot.submissions)) this.submissions = mapBy([...this.submissions.values(), ...snapshot.submissions], 'id');
+    if (Array.isArray(snapshot.duplicateCandidates)) this.duplicateCandidates = mapBy([...this.duplicateCandidates.values(), ...snapshot.duplicateCandidates], 'id');
+    if (Array.isArray(snapshot.operatorClaims)) this.operatorClaims = mapBy([...this.operatorClaims.values(), ...snapshot.operatorClaims], 'id');
+    if (Array.isArray(snapshot.automationRules)) this.automationRules = mapBy([...this.automationRules.values(), ...snapshot.automationRules], 'id');
+    if (Array.isArray(snapshot.auditLogs)) this.auditLogs = snapshot.auditLogs;
+    if (Array.isArray(snapshot.adminUsers)) this.adminUsers = mapBy([...this.adminUsers.values(), ...snapshot.adminUsers], 'id');
   }
 
   public getSystemHealthStats(): SystemHealthStats {

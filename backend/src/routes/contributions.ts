@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { repository } from '../db/repository.js';
+import { repository } from '../db/persistentRepository.js';
 import { checkDuplicateStop, checkDuplicateRoute } from '../../../packages/shared/src/engine/duplicateDetector.js';
 import { contributionLimiter } from '../middleware/rateLimiter.js';
 
@@ -23,11 +23,13 @@ contributionsRouter.post('/submit', contributionLimiter, (req: Request, res: Res
   const duplicateCandidateIds: string[] = [];
 
   // Check for potential duplicates
-  if (entityType === 'STOP' && proposedData.name && proposedData.latitude && proposedData.longitude) {
-    const nearby = repository.findNearbyStops(proposedData.latitude, proposedData.longitude, 500);
+  const submittedLatitude = Number(proposedData.latitude ?? proposedData.originLatitude);
+  const submittedLongitude = Number(proposedData.longitude ?? proposedData.originLongitude);
+  if (entityType === 'STOP' && proposedData.name && Number.isFinite(submittedLatitude) && Number.isFinite(submittedLongitude)) {
+    const nearby = repository.findNearbyStops(submittedLatitude, submittedLongitude, 500);
     for (const item of nearby) {
       const dupCheck = checkDuplicateStop(
-        { name: proposedData.name, latitude: proposedData.latitude, longitude: proposedData.longitude },
+        { name: proposedData.name, latitude: submittedLatitude, longitude: submittedLongitude },
         { name: item.place.canonicalName, latitude: item.place.latitude || 0, longitude: item.place.longitude || 0 }
       );
 

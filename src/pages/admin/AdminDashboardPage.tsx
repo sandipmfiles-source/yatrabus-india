@@ -18,17 +18,23 @@ import {
 
 export const AdminDashboardPage: React.FC = () => {
   const navigate = useNavigate();
-  const token = localStorage.getItem('yatribus_admin_token') || 'yatribus_admin_dev_token';
+  const token = localStorage.getItem('yatribus_admin_token') || '';
 
   const [stats, setStats] = useState<SystemHealthStats | null>(null);
   const [recentSubmissions, setRecentSubmissions] = useState<any[]>([]);
+  const [loadError, setLoadError] = useState('');
 
   useEffect(() => {
+    if (!token) { navigate('/admin'); return; }
     api.getAdminOverview(token).then(res => {
       setStats(res.stats);
       setRecentSubmissions(res.recentSubmissions || []);
+    }).catch(error => {
+      setLoadError(error.message || 'Admin session expired. Please sign in again.');
+      localStorage.removeItem('yatribus_admin_token');
+      navigate('/admin');
     });
-  }, [token]);
+  }, [token, navigate]);
 
   const handleLogout = () => {
     localStorage.removeItem('yatribus_admin_token');
@@ -109,6 +115,8 @@ export const AdminDashboardPage: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {loadError && <p role="alert" className="rounded-xl bg-rose-50 p-3 text-xs text-rose-800">{loadError}</p>}
 
       {/* Metrics Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">

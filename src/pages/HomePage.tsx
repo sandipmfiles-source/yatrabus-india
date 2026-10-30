@@ -4,7 +4,7 @@ import { useLanguage } from '../context/LanguageContext.js';
 import { storage, RecentSearchItem } from '../services/storage.js';
 import { api } from '../services/api.js';
 import { PlaceSearchResult } from '@shared/types/places.js';
-import { Search, ArrowUpDown, Clock, MapPin, PlusCircle, ShieldCheck, Sparkles, Navigation } from 'lucide-react';
+import { Search, ArrowUpDown, Clock, BusFront, PlusCircle, ShieldCheck, Sparkles, Navigation } from 'lucide-react';
 
 export const HomePage: React.FC = () => {
   const { t } = useLanguage();
@@ -104,13 +104,13 @@ export const HomePage: React.FC = () => {
       <div className="text-center space-y-3">
         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-yatribrand-100 text-yatribrand-900 text-xs font-semibold">
           <Sparkles className="w-3.5 h-3.5 text-yatribrand-700" />
-          <span>India-Wide Smart Bus Directory</span>
+          <span>{t('india_smart_bus_directory')}</span>
         </div>
         <h1 className="text-3xl sm:text-4xl font-extrabold text-yatriwarm-950 tracking-tight">
-          Find Buses, Routes & Live GPS Tracking
+          {t('find_buses_routes_live_tracking')}
         </h1>
         <p className="text-sm sm:text-base text-yatriwarm-600 max-w-xl mx-auto">
-          Community-powered public transport across Indian cities and states. Discover timetables, stops, and live passenger observations with zero account required.
+          {t('community_powered_description')}
         </p>
       </div>
 
@@ -121,8 +121,8 @@ export const HomePage: React.FC = () => {
             {/* Origin Input */}
             <div className="relative">
               <label htmlFor="from-input" className="block text-xs font-bold text-yatriwarm-700 uppercase tracking-wider mb-1.5 flex items-center gap-1">
-                <MapPin className="w-3.5 h-3.5 text-yatribrand-700" />
-                From / Origin
+                <BusFront className="w-4 h-4 text-yatribrand-700" />
+                {t('from_origin')}
               </label>
               <input
                 id="from-input"
@@ -178,8 +178,8 @@ export const HomePage: React.FC = () => {
             {/* Destination Input */}
             <div className="relative">
               <label htmlFor="to-input" className="block text-xs font-bold text-yatriwarm-700 uppercase tracking-wider mb-1.5 flex items-center gap-1">
-                <MapPin className="w-3.5 h-3.5 text-emerald-600" />
-                To / Destination
+                <BusFront className="w-4 h-4 text-yatribrand-700" />
+                {t('to_destination')}
               </label>
               <input
                 id="to-input"

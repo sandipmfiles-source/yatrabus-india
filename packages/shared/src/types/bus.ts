@@ -42,6 +42,7 @@ export interface Bus {
   id: string;
   publicIdentifier: string; // Public bus name or number shown on front LED/board
   operatorId: string;
+  routeId?: string;
   operatorName?: string;
   fleetRegistrationNumber?: string; // Optional (e.g. DL 1PC 4432)
   vehicleType: VehicleType;
@@ -92,6 +93,7 @@ export interface Route {
   firstDepartureTime: string; // HH:MM
   lastDepartureTime: string;  // HH:MM
   frequencyMinutes?: number;
+  departureTimes?: string[]; // Exact published departures when the operator provides them
   stops: RouteStop[];
   geometry?: RouteGeometryPoint[];
   verificationStatus: 'UNVERIFIED' | 'COMMUNITY_CORROBORATED' | 'ADMIN_VERIFIED';

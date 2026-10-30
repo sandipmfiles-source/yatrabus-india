@@ -63,3 +63,6 @@ android/app/build
 android/local.properties
 *.keystore
 *.jks
+
+# Durable runtime backend store (keep private; back up the mounted data volume)
+backend/data/*.json

@@ -5,12 +5,14 @@ import { StatusBadge } from './StatusBadge.js';
 import { ConfidenceBadge } from './ConfidenceBadge.js';
 import { BusIllustration } from '../assets/BusIllustration.js';
 import { Clock, ArrowRight, MapPin, Split } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext.js';
 
 interface BusCardProps {
   journey: JourneyCandidate;
 }
 
 export const BusCard: React.FC<BusCardProps> = ({ journey }) => {
+  const { t } = useLanguage();
   const { route, isDirect, transfers, departureTime, arrivalTime, durationMinutes, boardingStop, alightingStop, locationStatus, serviceStatus } = journey;
 
   return (
@@ -24,7 +26,7 @@ export const BusCard: React.FC<BusCardProps> = ({ journey }) => {
                 {route.routeNumber}
               </span>
               <span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-yatriwarm-100 text-yatriwarm-700">
-                {route.operatorName?.split(' ')[0] || 'Transit'}
+                {route.operatorName?.split(' ')[0] || t('transit')}
               </span>
               {isDirect ? (
                 <span className="text-[11px] font-medium text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
@@ -59,14 +61,14 @@ export const BusCard: React.FC<BusCardProps> = ({ journey }) => {
             <div className="flex flex-col items-center px-3">
               <span className="text-[10px] font-medium text-yatriwarm-500 flex items-center gap-1">
                 <Clock className="w-3 h-3" />
-                {durationMinutes} min
+                {durationMinutes} {t('minutes')}
               </span>
               <div className="w-20 sm:w-28 h-0.5 bg-yatriwarm-300 relative my-1">
                 <div className="absolute w-2 h-2 rounded-full bg-yatribrand-700 -top-[3px] left-0"></div>
                 <div className="absolute w-2 h-2 rounded-full bg-emerald-500 -top-[3px] right-0"></div>
               </div>
               <span className="text-[9px] text-yatriwarm-400">
-                {route.stops.length} stops
+                {route.stops.length} {t('stops_count')}
               </span>
             </div>
 
@@ -82,8 +84,8 @@ export const BusCard: React.FC<BusCardProps> = ({ journey }) => {
           {/* Transfer notice if applicable */}
           {!isDirect && transfers.length > 0 && (
             <div className="mt-2.5 pt-2 border-t border-yatriwarm-200 text-[11px] text-purple-900 flex items-center justify-between">
-              <span>Change bus at <strong>{transfers[0].transferStop.stopName}</strong></span>
-              <span className="text-yatriwarm-500">Wait ~{transfers[0].expectedWaitMinutes}m</span>
+              <span>{t('change_bus_at')} <strong>{transfers[0].transferStop.stopName}</strong></span>
+              <span className="text-yatriwarm-500">{t('wait')} ~{transfers[0].expectedWaitMinutes}{t('minutes')}</span>
             </div>
           )}
         </div>
@@ -107,7 +109,7 @@ export const BusCard: React.FC<BusCardProps> = ({ journey }) => {
           to={`/routes/${route.id}`}
           className="inline-flex items-center gap-1 text-xs font-semibold text-yatribrand-900 hover:text-yatribrand-700 transition-colors"
         >
-          View Route Details
+          {t('view_route_details')}
           <ArrowRight className="w-3.5 h-3.5" />
         </Link>
       </div>
