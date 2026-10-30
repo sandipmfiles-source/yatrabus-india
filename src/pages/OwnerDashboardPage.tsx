@@ -56,6 +56,7 @@ export const OwnerDashboardPage: React.FC = () => {
   const [routePreviewError, setRoutePreviewError] = useState('');
   const [routePreviewLoading, setRoutePreviewLoading] = useState(false);
   const [note, setNote] = useState('');
+  const [evidenceUrl, setEvidenceUrl] = useState('');
 
   const loadSubmissions = useCallback(async (sessionToken: string) => {
     try {
@@ -166,6 +167,7 @@ export const OwnerDashboardPage: React.FC = () => {
     setRouteNumber(String(data.routeNumber || ''));
     setDirection(data.direction === 'DOWN' ? 'DOWN' : 'UP');
     setRouteName(String(data.routeName || ''));
+    setEvidenceUrl(String(data.evidenceUrl || ''));
     setOrigin(String(data.origin || ''));
     setDestination(String(data.destination || ''));
     setDepartureTime(String(data.departureTime || ''));
@@ -267,6 +269,7 @@ export const OwnerDashboardPage: React.FC = () => {
         distanceKm: distanceKm ? Number(distanceKm) : undefined,
         typicalDurationMinutes: durationMinutes ? Number(durationMinutes) : undefined,
         stops,
+        evidenceUrl: evidenceUrl.trim() || undefined,
         timetableEntry: kind === 'TIMETABLE',
         operatingDays: ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'],
       };
@@ -399,6 +402,7 @@ export const OwnerDashboardPage: React.FC = () => {
                   {routePreview?.attribution && <div className="mt-2 text-[10px] text-slate-400">{routePreview.attribution}</div>}{routePreview?.disclaimer && <div className="mt-2 text-[10px] text-slate-400">{routePreview.disclaimer}</div>}
                 </div>
               </section>
+              <label className="sm:col-span-2 text-xs text-yatriwarm-700">Official timetable / operator evidence link (optional)<input type="url" value={evidenceUrl} onChange={e => setEvidenceUrl(e.target.value)} placeholder="https://official-operator-site.example/timetable" className="mt-1 w-full px-3 py-2 rounded-xl border border-yatriwarm-200 bg-white" /></label>
               <label className="sm:col-span-2 text-xs text-yatriwarm-700">“Helped by” note / source details<textarea rows={2} value={note} onChange={e => setNote(e.target.value)} placeholder="Name to show as contributor, or source of timetable" className="mt-1 w-full px-3 py-2 rounded-xl border border-yatriwarm-200 bg-white" /></label>
               <button disabled={loading} type="submit" className="sm:col-span-2 px-5 py-3 rounded-xl bg-yatribrand-900 text-white text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2"><PlusCircle className="w-4 h-4" />{loading ? 'Submitting…' : editingSubmissionId ? 'Send update for approval' : 'Send for approval'}</button>
             </form>
