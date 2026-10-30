@@ -12,6 +12,14 @@ export const CONFIG = {
   MAX_SPEED_KMPH: 110,
 };
 
-if (CONFIG.NODE_ENV === 'production' && (!process.env.ADMIN_JWT_SECRET || process.env.ADMIN_JWT_SECRET.length < 32)) {
-  throw new Error('ADMIN_JWT_SECRET must be configured with at least 32 characters in production.');
+if (CONFIG.NODE_ENV === 'production') {
+  const signingSecret = process.env.ADMIN_JWT_SECRET || '';
+  const adminPassword = process.env.INITIAL_ADMIN_PASSWORD || '';
+  if (signingSecret.length < 32 || signingSecret === 'super_secret_jwt_key_at_least_32_characters_long_for_security' || signingSecret.startsWith('development-only-')) {
+    throw new Error('Set a unique, random ADMIN_JWT_SECRET of at least 32 characters before production deployment.');
+  }
+  if (adminPassword.length < 12 || adminPassword === 'replace_with_a_unique_strong_password') {
+    throw new Error('Set INITIAL_ADMIN_PASSWORD to a unique password of at least 12 characters before production deployment.');
+  }
 }
+
