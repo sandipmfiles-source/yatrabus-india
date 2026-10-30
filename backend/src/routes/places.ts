@@ -1,44 +1,17 @@
 import { Router, Request, Response } from 'express';
 import { repository } from '../db/repository.js';
 import { publicSearchLimiter } from '../middleware/rateLimiter.js';
-import { searchGooglePlaces } from '../services/googlePlaces.js';
 
 export const placesRouter = Router();
 
-// Local YatraBus data is authoritative and appears first. Google Places is queried
-// only when the local catalogue cannot fill the requested suggestion list.
-placesRouter.get('/search', publicSearchLimiter, async (req: Request, res: Response) => {
+// Free local catalogue search. External paid geocoding is deliberately not required.
+placesRouter.get('/search', publicSearchLimiter, (req: Request, res: Response) => {
   const query = typeof req.query.q === 'string' ? req.query.q.trim() : '';
   const requestedLimit = req.query.limit ? Number.parseInt(String(req.query.limit), 10) : 8;
   const limit = Number.isFinite(requestedLimit) ? Math.max(1, Math.min(12, requestedLimit)) : 8;
-
-  if (query.length < 2) return res.json({ query, count: 0, results: [] });
-
-  const localResults = repository.searchPlaces(query, limit);
-  let externalResults = [] as Awaited<ReturnType<typeof searchGooglePlaces>>;
-  if (localResults.length < limit) {
-    try {
-      externalResults = await searchGooglePlaces(query, limit - localResults.length);
-    } catch (error) {
-      // Google Places is an optional fallback; local search must remain available.
-      console.warn('Google Places autocomplete unavailable:', error instanceof Error ? error.message : 'unknown error');
-    }
-  }
-
-  const seen = new Set(localResults.map(item => item.place.canonicalName.trim().toLowerCase()));
-  const merged = [...localResults, ...externalResults.filter(item => {
-    const key = item.place.canonicalName.trim().toLowerCase();
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  })].slice(0, limit);
-
-  return res.json({
-    query,
-    count: merged.length,
-    results: merged,
-    sources: { local: localResults.length, googlePlaces: merged.length - localResults.length },
-  });
+  if (query.length < 2) return res.json({ query, count: 0, results: [], sources: { local: 0 } });
+  const results = repository.searchPlaces(query, limit);
+  return res.json({ query, count: results.length, results, sources: { local: results.length } });
 });
 
 // GET /api/places/nearby?lat=28.6675&lon=77.2285&radius=3000
@@ -69,21 +42,84 @@ placesRouter.get('/:id', (req: Request, res: Response) => {
 });
 
 
+
+function resolveRoutePoint(value: unknown): { name: string; latitude: number; longitude: number } | null {
+  if (typeof value !== 'string') return null;
+  const parts = value.split('|').map(part => part.trim());
+  const name = parts[0] || '';
+  if (name.length < 2 || name.length > 180) return null;
+  if (parts.length >= 3 && parts[1] && parts[2]) {
+    const latitude = Number(parts[1]);
+    const longitude = Number(parts[2]);
+    if (Number.isFinite(latitude) && Number.isFinite(longitude) && latitude >= 6 && latitude <= 38 && longitude >= 68 && longitude <= 98) {
+      return { name, latitude, longitude };
+    }
+    return null;
+  }
+  const matches = repository.searchPlaces(name, 8)
+    .filter(item => item.matchScore >= 95 && Number.isFinite(item.place.latitude) && Number.isFinite(item.place.longitude));
+  if (matches.length !== 1) return null;
+  const place = matches[0].place;
+  return { name: place.canonicalName, latitude: place.latitude!, longitude: place.longitude! };
+}
+
+const osrmRouteCache = new Map<string, { expiresAt: number; payload: Record<string, unknown> }>();
+let lastOsrmRequestAt = 0;
+
 placesRouter.post('/route-preview', publicSearchLimiter, async (req: Request, res: Response) => {
-  const key = process.env.GOOGLE_MAPS_API_KEY;
-  if (!key) return res.status(503).json({ error: 'MAPS_NOT_CONFIGURED', message: 'Google Maps Routes API is not configured on the YatraBus backend.' });
-  const origin = typeof req.body?.origin === 'string' ? req.body.origin.trim() : '';
-  const destination = typeof req.body?.destination === 'string' ? req.body.destination.trim() : '';
-  const stops = (Array.isArray(req.body?.stops) ? req.body.stops : []).filter((v: unknown): v is string => typeof v === 'string').map((v: string) => v.trim()).filter(Boolean);
-  if (origin.length < 2 || destination.length < 2 || origin.length > 180 || destination.length > 180 || stops.length > 23 || stops.some((v: string) => v.length > 180)) return res.status(400).json({ error: 'INVALID_ROUTE', message: 'Enter a valid origin, destination and up to 23 stops.' });
-  if (new Set([origin, ...stops, destination].map((v: string) => v.toLowerCase())).size !== stops.length + 2) return res.status(400).json({ error: 'DUPLICATE_STOPS', message: 'A place appears more than once. Check the stop sequence.' });
+  const originRaw = typeof req.body?.origin === 'string' ? req.body.origin.trim() : '';
+  const destinationRaw = typeof req.body?.destination === 'string' ? req.body.destination.trim() : '';
+  const stopsRaw = (Array.isArray(req.body?.stops) ? req.body.stops : [])
+    .filter((value: unknown): value is string => typeof value === 'string')
+    .map((value: string) => value.trim()).filter(Boolean);
+  if (stopsRaw.length > 23) return res.status(400).json({ error: 'TOO_MANY_STOPS', message: 'A route can contain at most 23 intermediate stops.' });
+  const points = [originRaw, ...stopsRaw, destinationRaw].map(resolveRoutePoint);
+  const missingIndex = points.findIndex(point => point === null);
+  if (missingIndex >= 0) {
+    const field = missingIndex === 0 ? 'starting place' : missingIndex === points.length - 1 ? 'destination' : 'intermediate stop';
+    return res.status(422).json({
+      error: 'PLACE_COORDINATES_REQUIRED',
+      message: 'Could not find exact coordinates for the ' + field + '. Use a saved YatraBus place or enter it as Name | latitude | longitude.',
+    });
+  }
+  const resolved = points as { name: string; latitude: number; longitude: number }[];
+  const names = resolved.map(point => point.name.toLocaleLowerCase());
+  if (new Set(names).size !== names.length) return res.status(400).json({ error: 'DUPLICATE_STOPS', message: 'A place appears more than once. Check the stop sequence.' });
+  const coordinates = resolved.map(point => point.longitude + ',' + point.latitude).join(';');
+  const cached = osrmRouteCache.get(coordinates);
+  if (cached && cached.expiresAt > Date.now()) return res.json({ ...cached.payload, cache: 'HIT' });
+  if (Date.now() - lastOsrmRequestAt < 1100) return res.status(429).json({ error: 'ROUTE_RATE_LIMIT', message: 'Please wait a moment before checking another route.' });
+  lastOsrmRequestAt = Date.now();
   try {
-    const response = await fetch('https://routes.googleapis.com/directions/v2:computeRoutes', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Goog-Api-Key': key, 'X-Goog-FieldMask': 'routes.distanceMeters,routes.duration,routes.polyline.encodedPolyline,routes.optimizedIntermediateWaypointIndex,routes.legs.distanceMeters,routes.legs.duration' }, body: JSON.stringify({ origin: { address: origin + ', India' }, destination: { address: destination + ', India' }, intermediates: stops.map((v: string) => ({ address: v + ', India' })), travelMode: 'DRIVE', routingPreference: 'TRAFFIC_AWARE', optimizeWaypointOrder: stops.length > 1, languageCode: 'en', regionCode: 'IN' }), signal: AbortSignal.timeout(9000) });
+    const url = 'https://router.project-osrm.org/route/v1/driving/' + coordinates + '?overview=full&geometries=polyline&steps=false&alternatives=false';
+    const response = await fetch(url, {
+      headers: { 'User-Agent': 'YatraBusIndia/1.0 (+https://github.com/sandipmfiles-source/yatrabus-india)' },
+      signal: AbortSignal.timeout(12000),
+    });
     const data = await response.json() as any;
     const route = data.routes?.[0];
-    if (!response.ok || !route) return res.status(502).json({ error: 'MAPS_ROUTE_FAILED', message: data.error?.message || 'Google Maps could not calculate this road route.' });
-    const indexes: number[] = route.optimizedIntermediateWaypointIndex || stops.map((_: string, i: number) => i);
-    const suggestedStops = indexes.map((i: number) => stops[i]).filter(Boolean);
-    return res.json({ provider: 'GOOGLE_MAPS_ROUTES', routeStatus: suggestedStops.some((v: string, i: number) => v !== stops[i]) ? 'ORDER_SUGGESTION' : 'ROAD_ROUTE_FOUND', distanceKm: typeof route.distanceMeters === 'number' ? Math.round(route.distanceMeters / 100) / 10 : null, durationSeconds: route.duration ? Number.parseInt(route.duration, 10) : null, encodedPolyline: route.polyline?.encodedPolyline || null, submittedStops: stops, suggestedStops, orderChanged: suggestedStops.some((v: string, i: number) => v !== stops[i]), disclaimer: 'Google driving-route estimate; it does not independently prove that a public bus operates on this road.' });
-  } catch (error) { return res.status(502).json({ error: 'MAPS_UNAVAILABLE', message: error instanceof Error ? error.message : 'Google Maps route service is temporarily unavailable.' }); }
+    if (!response.ok || data.code !== 'Ok' || !route) {
+      return res.status(502).json({ error: 'OSRM_ROUTE_FAILED', message: 'OpenStreetMap routing could not connect every stop in the submitted order. Check the coordinates and stop sequence.' });
+    }
+    const payload = {
+      provider: 'OPENSTREETMAP_OSRM',
+      routeStatus: 'ROAD_ROUTE_FOUND_IN_SUBMITTED_ORDER',
+      distanceKm: Math.round(route.distance / 100) / 10,
+      durationSeconds: Math.round(route.duration),
+      encodedPolyline: route.geometry || null,
+      submittedStops: resolved.slice(1, -1).map(point => point.name),
+      points: resolved.map(point => ({ name: point.name, latitude: point.latitude, longitude: point.longitude })),
+      orderChanged: false,
+      disclaimer: 'OpenStreetMap road-network estimate via OSRM. It confirms a drivable road path in the submitted order, not that a public bus operates on it. Timetable and route publication still require Super Admin review.',
+      attribution: '© OpenStreetMap contributors · Routing by OSRM',
+    };
+    if (osrmRouteCache.size > 200) {
+      const firstKey = osrmRouteCache.keys().next().value;
+      if (firstKey) osrmRouteCache.delete(firstKey);
+    }
+    osrmRouteCache.set(coordinates, { expiresAt: Date.now() + 10 * 60 * 1000, payload });
+    return res.json({ ...payload, cache: 'MISS' });
+  } catch {
+    return res.status(502).json({ error: 'OSRM_UNAVAILABLE', message: 'The free OpenStreetMap routing demo is temporarily unavailable. You can still enter the route details manually.' });
+  }
 });
