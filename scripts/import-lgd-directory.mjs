@@ -15,7 +15,7 @@ function parseCsv(text) {
       else if (ch === '"') quoted = false;
       else field += ch;
     } else if (ch === '"') quoted = true;
-    else if (ch === ',') { row.push(field); field = ''; }
+    else if (ch === ';') { row.push(field); field = ''; }
     else if (ch === '\n') { row.push(field.replace(/\r$/, '')); if (row.some(v => v.trim())) rows.push(row); row = []; field = ''; }
     else field += ch;
   }
@@ -58,7 +58,7 @@ const vi = {
   stateCode: column(vh, ['State Code']), state: column(vh, ['State Name (In English)', 'State Name']),
   districtCode: column(vh, ['District Code']), district: column(vh, ['District Name (In English)', 'District Name']),
   subCode: column(vh, ['Sub-District Code', 'Subdistrict Code']), sub: column(vh, ['Sub-District Name (In English)', 'Sub-District Name', 'Subdistrict Name']),
-  villageCode: column(vh, ['Village Code']), village: column(vh, ['Village Name (In English)', 'Village Name']),
+  villageCode: column(vh, ['Village Code']), village: column(vh, ['Village Name (In Englsih)', 'Village Name (In English)', 'Village Name']),
 };
 for (const [key, idx] of Object.entries(vi)) if (idx < 0) throw new Error('Village CSV missing required column: ' + key + ' headers=' + vh.join('|'));
 const states = new Map(), districts = new Map(), subs = new Map();
