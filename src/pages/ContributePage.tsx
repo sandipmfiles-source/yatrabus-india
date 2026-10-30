@@ -538,6 +538,10 @@ export const ContributePage: React.FC = () => {
                       <label className="block text-xs font-medium text-yatriwarm-700 mb-1">Frequency in minutes (optional)</label>
                       <input type="number" min="1" max="1440" value={frequencyMinutes} onChange={e => setFrequencyMinutes(e.target.value)} placeholder="e.g. 30" className="w-full px-3.5 py-2.5 bg-white border border-yatriwarm-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-red-500" />
                     </div>
+                    <div>
+                      <label className="block text-xs font-medium text-yatriwarm-700 mb-1">Operating days (optional)</label>
+                      <input value={operatingDays} onChange={e => setOperatingDays(e.target.value)} placeholder="Daily or MON,TUE,WED..." className="w-full px-3.5 py-2.5 bg-white border border-yatriwarm-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-red-500" />
+                    </div>
                   </div>
                 </div>
               )}
