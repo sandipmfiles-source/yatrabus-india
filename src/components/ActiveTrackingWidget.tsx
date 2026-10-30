@@ -4,7 +4,7 @@ import { useLanguage } from '../context/LanguageContext.js';
 import { Radio, StopCircle } from 'lucide-react';
 
 export const ActiveTrackingWidget: React.FC = () => {
-  const { activeSession, stopSharing, observationsCount } = useTracking();
+  const { activeSession, stopSharing, observationsCount, isBackgroundTrackingActive, trackingWarning } = useTracking();
   const { t } = useLanguage();
 
   if (!activeSession) return null;
@@ -20,11 +20,11 @@ export const ActiveTrackingWidget: React.FC = () => {
           <div>
             <div className="flex items-center gap-1.5">
               <span className="text-xs font-bold text-white tracking-wide">
-                {t('tracking_active')}: {activeSession.routeNumber || 'Bus'}
+                {isBackgroundTrackingActive ? t('tracking_active') : t('tracking_service_not_active')}: {activeSession.routeNumber || 'Bus'}
               </span>
             </div>
             <p className="text-[11px] text-emerald-200/80">
-              {observationsCount} {t('tracking_updates_sent')} • {t('privacy_preserved')}
+              {isBackgroundTrackingActive ? `${observationsCount} ${t('tracking_updates_sent')} • ${t('privacy_preserved')}` : trackingWarning || t('tracking_waiting_for_gps')}
             </p>
           </div>
         </div>
