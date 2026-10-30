@@ -49,8 +49,12 @@ function publishVerifiedRoute(submission: CommunitySubmission): Route {
   const origin = String(data.origin || '').trim();
   const destination = String(data.destination || '').trim();
   const routeNumber = String(data.routeNumber || '').trim();
-  const firstDepartureTime = String(data.firstDepartureTime || '').trim();
-  const lastDepartureTime = String(data.lastDepartureTime || '').trim();
+  const exactDepartureTimes = Array.isArray(data.departureTimes) ? data.departureTimes.map((time: unknown) => String(time).trim()).filter(Boolean).sort() : [];
+  if (exactDepartureTimes.some((time: string) => !/^([01]\\d|2[0-3]):[0-5]\\d$/.test(time))) {
+    throw new Error('Exact departures must use 24-hour HH:MM format.');
+  }
+  const firstDepartureTime = exactDepartureTimes[0] || String(data.firstDepartureTime || '').trim();
+  const lastDepartureTime = exactDepartureTimes[exactDepartureTimes.length - 1] || String(data.lastDepartureTime || '').trim();
   const originLatitude = Number(data.originLatitude);
   const originLongitude = Number(data.originLongitude);
   const destinationLatitude = Number(data.destinationLatitude);
@@ -119,6 +123,7 @@ function publishVerifiedRoute(submission: CommunitySubmission): Route {
     firstDepartureTime,
     lastDepartureTime,
     frequencyMinutes: Number(data.frequencyMinutes) > 0 ? Number(data.frequencyMinutes) : undefined,
+    departureTimes: exactDepartureTimes.length ? exactDepartureTimes : undefined,
     stops,
     geometry: stops.map(stop => ({ latitude: stop.latitude, longitude: stop.longitude })),
     verificationStatus: 'ADMIN_VERIFIED',
