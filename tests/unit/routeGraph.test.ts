@@ -1,4 +1,4 @@
-import { discoverJourneys } from '../../packages/shared/src/engine/routeGraph.js';
+import { discoverJourneys, estimateDailyTripCount } from '../../packages/shared/src/engine/routeGraph.js';
 import { Route } from '../../packages/shared/src/types/bus.js';
 
 export function runRouteGraphTests(assert: (desc: string, pass: boolean) => void) {
@@ -56,10 +56,16 @@ export function runRouteGraphTests(assert: (desc: string, pass: boolean) => void
     },
   ];
 
+  assert('Counts departures from first/last service times and frequency', estimateDailyTripCount('06:00', '22:00', 20) === 49);
+  assert('Does not invent trip counts when frequency is missing', estimateDailyTripCount('06:00', '22:00') === undefined);
+  assert('Rejects invalid timetable windows', estimateDailyTripCount('22:00', '06:00', 20) === undefined);
+
   // Direct Search: Stop A to Stop C
   const directResult = discoverJourneys('Stop A', 'Stop C', routes);
   assert('Discovers direct route from Stop A to Stop C', directResult.directRoutes.length === 1);
   assert('Direct route has isDirect=true', directResult.directRoutes[0].isDirect);
+  assert('Direct route includes its intermediate stops', directResult.directRoutes[0].intermediateStops?.length === 1);
+  assert('Direct route exposes estimated daily trips from frequency', directResult.directRoutes[0].dailyTripCount === 49);
 
   // Transfer Search: Stop A to Stop D (via Interchange Stop B)
   const transferResult = discoverJourneys('Stop A', 'Stop D', routes);
