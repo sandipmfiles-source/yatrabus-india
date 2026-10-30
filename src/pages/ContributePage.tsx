@@ -66,6 +66,12 @@ export const ContributePage: React.FC = () => {
       setRoutePreviewError('Add a name and coordinates for the origin, every intermediate stop, and destination first.');
       return;
     }
+    const normalizedNames = routeStops.map(stop => stop.name.trim().toLocaleLowerCase());
+    const normalizedCoordinates = routeStops.map(stop => `${Number(stop.latitude).toFixed(5)},${Number(stop.longitude).toFixed(5)}`);
+    if (new Set(normalizedNames).size !== normalizedNames.length || new Set(normalizedCoordinates).size !== normalizedCoordinates.length) {
+      setRoutePreviewError('Duplicate stop names or coordinates were found. Keep each route stop unique and in travel order.');
+      return;
+    }
     const formatPoint = (stop: typeof routeStops[number]) => `${stop.name.trim()} | ${stop.latitude} | ${stop.longitude}`;
     setRoutePreviewLoading(true);
     setRoutePreviewError('');
