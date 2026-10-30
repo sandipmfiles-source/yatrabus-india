@@ -13,6 +13,7 @@ import {
 } from '../../../packages/shared/src/types/contribution.js';
 import { AdminUser, AuditLogEntry, AutomationRule, SystemHealthStats } from '../../../packages/shared/src/types/admin.js';
 import { SEED_PLACES, SEED_OPERATORS, SEED_ROUTES, SEED_BUSES } from './seedData.js';
+import { INDIA_ADMIN_AREA_PLACES } from './indiaAdminAreas.js';
 import { searchPlaces as runSearchPlaces } from '../../../packages/shared/src/search/typoSearch.js';
 import { haversineDistanceMeters } from '../../../packages/shared/src/engine/routeMatcher.js';
 
@@ -40,7 +41,7 @@ export class TransitRepository {
 
   private seedInitialData() {
     // Seed Places
-    for (const p of SEED_PLACES) {
+    for (const p of [...INDIA_ADMIN_AREA_PLACES, ...SEED_PLACES]) {
       this.places.set(p.id, p);
     }
     // Seed Operators
