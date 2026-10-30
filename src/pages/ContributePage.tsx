@@ -140,7 +140,7 @@ export const ContributePage: React.FC = () => {
   const [submissionError, setSubmissionError] = useState('');
 
   useEffect(() => {
-    if (!routeIdParam || submissionType !== 'UPDATE_ROUTE') return;
+    if (!routeIdParam || !['UPDATE_ROUTE', 'CORRECT_TIMETABLE', 'REPORT_CHANGED_ROUTE'].includes(submissionType)) return;
     let cancelled = false;
     setSubmissionError('');
     api.getRouteById(routeIdParam).then((result: any) => {
