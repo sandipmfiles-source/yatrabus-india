@@ -119,4 +119,5 @@ export const en = {
   submission_type: "Submission Type",
   submitted: "Submitted",
   reviewer_note: "Reviewer Note",
+  scheduled_departures: "Published departure times",
 };
