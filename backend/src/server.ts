@@ -1,4 +1,6 @@
 import express, { Request, Response, NextFunction } from 'express';
+import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { CONFIG } from './config.js';
 import { placesRouter } from './routes/places.js';
 import { routesRouter } from './routes/routes.js';
@@ -51,6 +53,16 @@ export function createServer() {
   app.use('/api/tracking', trackingRouter);
   app.use('/api/contributions', contributionsRouter);
   app.use('/api/admin', adminRouter);
+
+  // Serve the compiled Capacitor web app when this API is deployed as a single service.
+  const webDist = resolve(process.cwd(), 'dist');
+  const webIndex = resolve(webDist, 'index.html');
+  if (existsSync(webIndex)) {
+    app.use(express.static(webDist, { index: false }));
+    app.get(/^(?!\\/api(?:\\/|$)|\\/health$).*/, (_req: Request, res: Response) => {
+      res.sendFile(webIndex);
+    });
+  }
 
   // 404 handler
   app.use((req: Request, res: Response) => {
