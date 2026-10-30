@@ -267,7 +267,7 @@ export const ContributePage: React.FC = () => {
                     type="text"
                     required
                     value={origin}
-                    onChange={e => setOrigin(e.target.value)}
+                    onChange={e => { const value = e.target.value; setOrigin(value); if (/^jhargram new bus stand$/i.test(value.trim()) || /^jhargram bus stand$/i.test(value.trim())) { setOriginLatitude('22.43962'); setOriginLongitude('86.99267'); } }}
                     placeholder="e.g. Anand Vihar ISBT"
                     className="w-full px-3.5 py-2.5 bg-yatriwarm-50 border border-yatriwarm-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-yatribrand-800 focus:bg-white"
                   />
@@ -281,7 +281,7 @@ export const ContributePage: React.FC = () => {
                     type="text"
                     required
                     value={destination}
-                    onChange={e => setDestination(e.target.value)}
+                    onChange={e => { const value = e.target.value; setDestination(value); if (/^kgp bus stand$/i.test(value.trim()) || /^kharagpur bus stand$/i.test(value.trim()) || /^kharagpur central bus stand$/i.test(value.trim())) { setDestinationLatitude('22.34298'); setDestinationLongitude('87.32404'); } }}
                     placeholder="e.g. Mehrauli Terminal"
                     className="w-full px-3.5 py-2.5 bg-yatriwarm-50 border border-yatriwarm-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-yatribrand-800 focus:bg-white"
                   />
@@ -301,7 +301,7 @@ export const ContributePage: React.FC = () => {
                     <label className="text-xs font-medium text-yatriwarm-700">{t('frequency_minutes')}
                       <input type="number" min="1" max="1440" value={frequencyMinutes} onChange={e => setFrequencyMinutes(e.target.value)} placeholder="e.g. 30" className="mt-1 w-full px-3 py-2.5 bg-white border border-yatriwarm-200 rounded-xl" />
                     </label>
-                    <label className="text-xs font-medium text-yatriwarm-700 sm:col-span-3">Exact departures (optional, comma separated)
+                    <label className="text-xs font-medium text-yatriwarm-700 sm:col-span-3">{t('exact_departures')}
                       <input value={departureTimes} onChange={e => setDepartureTimes(e.target.value)} placeholder="05:45, 06:15, 06:45, 07:20" className="mt-1 w-full px-3 py-2.5 bg-white border border-yatriwarm-200 rounded-xl" />
                     </label>
                   </div>
@@ -309,16 +309,16 @@ export const ContributePage: React.FC = () => {
                     <input value={operatingDays} onChange={e => setOperatingDays(e.target.value)} placeholder="Daily or MON,TUE,WED..." className="mt-1 w-full px-3 py-2.5 bg-white border border-yatriwarm-200 rounded-xl" />
                   </label>
                   {submissionType === 'SUGGEST_ROUTE' && <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    <label className="text-xs font-medium text-yatriwarm-700">Origin latitude
+                    <label className="text-xs font-medium text-yatriwarm-700">{t('origin_latitude')}
                       <input type="number" step="any" min="-90" max="90" required value={originLatitude} onChange={e => setOriginLatitude(e.target.value)} placeholder="22.45" className="mt-1 w-full px-3 py-2.5 bg-white border border-yatriwarm-200 rounded-xl" />
                     </label>
-                    <label className="text-xs font-medium text-yatriwarm-700">Origin longitude
+                    <label className="text-xs font-medium text-yatriwarm-700">{t('origin_longitude')}
                       <input type="number" step="any" min="-180" max="180" required value={originLongitude} onChange={e => setOriginLongitude(e.target.value)} placeholder="86.98" className="mt-1 w-full px-3 py-2.5 bg-white border border-yatriwarm-200 rounded-xl" />
                     </label>
-                    <label className="text-xs font-medium text-yatriwarm-700">Destination latitude
+                    <label className="text-xs font-medium text-yatriwarm-700">{t('destination_latitude')}
                       <input type="number" step="any" min="-90" max="90" required value={destinationLatitude} onChange={e => setDestinationLatitude(e.target.value)} placeholder="22.33" className="mt-1 w-full px-3 py-2.5 bg-white border border-yatriwarm-200 rounded-xl" />
                     </label>
-                    <label className="text-xs font-medium text-yatriwarm-700">Destination longitude
+                    <label className="text-xs font-medium text-yatriwarm-700">{t('destination_longitude')}
                       <input type="number" step="any" min="-180" max="180" required value={destinationLongitude} onChange={e => setDestinationLongitude(e.target.value)} placeholder="87.32" className="mt-1 w-full px-3 py-2.5 bg-white border border-yatriwarm-200 rounded-xl" />
                     </label>
                   </div>}
