@@ -97,4 +97,15 @@ export const bn = {
   requesting_permission: 'অনুমতি চাওয়া হচ্ছে…',
   location_permission_denied: 'অবস্থানের অনুমতি দেওয়া হয়নি। বাস খুঁজতে পারবেন; লাইভ GPS-এর জন্য অনুমতি লাগবে।',
   location_permission_error: 'অবস্থানের অনুমতি চাওয়া যায়নি। Android Settings-এ অ্যাপের অনুমতি দেখুন।',
+
+  tracking_updates_sent: 'অবস্থানের আপডেট পাঠানো হয়েছে',
+  privacy_preserved: 'গোপনীয়তা সুরক্ষিত',
+  tracking_stop_title: 'অবস্থান ভাগ করা এখনই বন্ধ করুন',
+  tracking_background_note: 'যাত্রা ব্যাকগ্রাউন্ডে ট্র্যাক হলে Android একটি স্থায়ী বিজ্ঞপ্তি দেখাতে পারে।',
+  tracking_bus_confirmed: 'যাত্রার নিশ্চিতকরণ:',
+  tracking_consent_message: 'আপনার স্পষ্ট সম্মতিতে, এই বাসে ভ্রমণের সময় আপনার ফোন বেনামী অবস্থানের আপডেট ভাগ করবে। অবস্থান না দিয়েও বাস খুঁজতে পারবেন।',
+  tracking_privacy_detail: 'আপনার অবস্থান বাসের স্তরে একত্রিত হয়। ব্যক্তিগত যাত্রার ইতিহাস প্রকাশ করা হয় না।',
+  tracking_expiry_detail: 'যেকোনো সময় ভাগ করা বন্ধ করতে পারবেন। ১২ ঘণ্টা পরে সেশন নিজে থেকেই শেষ হবে।',
+  tracking_enable_button: 'অবস্থান চালু করুন ও যাত্রীদের সাহায্য করুন',
+  tracking_not_now: 'এখন নয় (অনুসন্ধান চালিয়ে যান)',
 };
