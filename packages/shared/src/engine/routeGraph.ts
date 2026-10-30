@@ -115,7 +115,7 @@ export function discoverJourneys(
           alightingStop,
           isDirect: true,
           transfers: [],
-          confidenceScore: service ? 95 : 85,
+          confidenceScore: timetableDepartures.length ? 95 : exactDepartureTimes.length ? (route.serviceStatus === 'SCHEDULE_UNVERIFIED' ? 75 : 90) : 85,
           serviceStatus: route.serviceStatus,
           locationStatus: 'ESTIMATED',
           dailyTripCount: exactDepartureTimes.length || estimateDailyTripCount(route.firstDepartureTime, route.lastDepartureTime, route.frequencyMinutes),
