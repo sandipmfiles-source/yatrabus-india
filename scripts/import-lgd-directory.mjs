@@ -61,6 +61,7 @@ const vi = {
   subCode: column(vh, ['Sub-District Code', 'Subdistrict Code']), sub: column(vh, ['Sub-District Name (In English)', 'Sub-District Name', 'Subdistrict Name']),
   villageCode: column(vh, ['Village Code']), village: column(vh, ['Village Name (In Englsih)', 'Village Name (In English)', 'Village Name']),
 };
+console.log('LGD village header sample:', JSON.stringify(vh), 'indexes:', JSON.stringify(vi), 'first row:', JSON.stringify(villages.rows[0]?.slice(0, 12)));
 for (const [key, idx] of Object.entries(vi)) if (idx < 0) throw new Error('Village CSV missing required column: ' + key + ' headers=' + vh.join('|'));
 const states = new Map(), districts = new Map(), subs = new Map();
 for (const row of villages.rows) {
@@ -72,6 +73,7 @@ for (const row of villages.rows) {
   if (subCode && sub) subs.set(subCode, { name: sub, state, district, districtCode });
   add('village', get(row, vi.villageCode), get(row, vi.village), state, district, sub);
 }
+if (states.size > 100 || districts.size > 1000 || subs.size > 10000) throw new Error('LGD CSV delimiter/header parsing produced impossible hierarchy counts: ' + JSON.stringify({ states: states.size, districts: districts.size, subdistricts: subs.size }));
 for (const [code, name] of states) add('state', code, name, '', '', '');
 for (const [code, item] of districts) add('district', code, item.name, item.state, '', '');
 for (const [code, item] of subs) add('subdistrict', code, item.name, item.state, item.district, '');
