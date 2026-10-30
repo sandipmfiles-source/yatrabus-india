@@ -7,6 +7,7 @@ import { Footer } from './components/Footer.js';
 import { LocationConsentModal } from './components/LocationConsentModal.js';
 import { ActiveTrackingWidget } from './components/ActiveTrackingWidget.js';
 import { StartupGate } from './components/StartupGate.js';
+import { AdminGuard } from './components/AdminGuard.js';
 
 import { HomePage } from './pages/HomePage.js';
 import { SearchResultsPage } from './pages/SearchResultsPage.js';
@@ -44,14 +45,14 @@ export const App: React.FC = () => {
 
                 {/* Admin routes */}
                 <Route path="/admin" element={<AdminLoginPage />} />
-                <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
-                <Route path="/admin/submissions" element={<AdminSubmissionsPage />} />
-                <Route path="/admin/duplicates" element={<AdminDuplicatesPage />} />
-                <Route path="/admin/tracking" element={<AdminTrackingPage />} />
-                <Route path="/admin/places" element={<AdminPlacesPage />} />
-                <Route path="/admin/buses" element={<AdminBusesPage />} />
-                <Route path="/admin/automation" element={<AdminAutomationPage />} />
-                <Route path="/admin/health" element={<AdminHealthPage />} />
+                <Route path="/admin/dashboard" element={<AdminGuard><AdminDashboardPage /></AdminGuard>} />
+                <Route path="/admin/submissions" element={<AdminGuard><AdminSubmissionsPage /></AdminGuard>} />
+                <Route path="/admin/duplicates" element={<AdminGuard><AdminDuplicatesPage /></AdminGuard>} />
+                <Route path="/admin/tracking" element={<AdminGuard><AdminTrackingPage /></AdminGuard>} />
+                <Route path="/admin/places" element={<AdminGuard><AdminPlacesPage /></AdminGuard>} />
+                <Route path="/admin/buses" element={<AdminGuard><AdminBusesPage /></AdminGuard>} />
+                <Route path="/admin/automation" element={<AdminGuard><AdminAutomationPage /></AdminGuard>} />
+                <Route path="/admin/health" element={<AdminGuard><AdminHealthPage /></AdminGuard>} />
               </Routes>
             </main>
             <Footer />
