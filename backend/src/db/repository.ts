@@ -382,19 +382,19 @@ export class TransitRepository {
   public restorePersistentState(snapshot: Record<string, any>): void {
     const mapBy = <T>(items: T[] | undefined, key: keyof T): Map<any, T> =>
       new Map((Array.isArray(items) ? items : []).map(item => [item[key], item]));
-    if (Array.isArray(snapshot.places)) this.places = mapBy(snapshot.places, 'id');
-    if (Array.isArray(snapshot.operators)) this.operators = mapBy(snapshot.operators, 'id');
-    if (Array.isArray(snapshot.routes)) this.routes = mapBy(snapshot.routes, 'id');
-    if (Array.isArray(snapshot.buses)) this.buses = mapBy(snapshot.buses, 'id');
-    if (Array.isArray(snapshot.consentRecords)) this.consentRecords = mapBy(snapshot.consentRecords, 'sessionId');
-    if (Array.isArray(snapshot.journeySessions)) this.journeySessions = mapBy(snapshot.journeySessions, 'sessionId');
-    if (Array.isArray(snapshot.busLocations)) this.busLocations = mapBy(snapshot.busLocations, 'busId');
-    if (Array.isArray(snapshot.submissions)) this.submissions = mapBy(snapshot.submissions, 'id');
-    if (Array.isArray(snapshot.duplicateCandidates)) this.duplicateCandidates = mapBy(snapshot.duplicateCandidates, 'id');
-    if (Array.isArray(snapshot.operatorClaims)) this.operatorClaims = mapBy(snapshot.operatorClaims, 'id');
-    if (Array.isArray(snapshot.automationRules)) this.automationRules = mapBy(snapshot.automationRules, 'id');
+    if (Array.isArray(snapshot.places)) this.places = mapBy([...this.places.values(), ...snapshot.places], 'id');
+    if (Array.isArray(snapshot.operators)) this.operators = mapBy([...this.operators.values(), ...snapshot.operators], 'id');
+    if (Array.isArray(snapshot.routes)) this.routes = mapBy([...this.routes.values(), ...snapshot.routes], 'id');
+    if (Array.isArray(snapshot.buses)) this.buses = mapBy([...this.buses.values(), ...snapshot.buses], 'id');
+    if (Array.isArray(snapshot.consentRecords)) this.consentRecords = mapBy([...this.consentRecords.values(), ...snapshot.consentRecords], 'sessionId');
+    if (Array.isArray(snapshot.journeySessions)) this.journeySessions = mapBy([...this.journeySessions.values(), ...snapshot.journeySessions], 'sessionId');
+    if (Array.isArray(snapshot.busLocations)) this.busLocations = mapBy([...this.busLocations.values(), ...snapshot.busLocations], 'busId');
+    if (Array.isArray(snapshot.submissions)) this.submissions = mapBy([...this.submissions.values(), ...snapshot.submissions], 'id');
+    if (Array.isArray(snapshot.duplicateCandidates)) this.duplicateCandidates = mapBy([...this.duplicateCandidates.values(), ...snapshot.duplicateCandidates], 'id');
+    if (Array.isArray(snapshot.operatorClaims)) this.operatorClaims = mapBy([...this.operatorClaims.values(), ...snapshot.operatorClaims], 'id');
+    if (Array.isArray(snapshot.automationRules)) this.automationRules = mapBy([...this.automationRules.values(), ...snapshot.automationRules], 'id');
     if (Array.isArray(snapshot.auditLogs)) this.auditLogs = snapshot.auditLogs;
-    if (Array.isArray(snapshot.adminUsers)) this.adminUsers = mapBy(snapshot.adminUsers, 'id');
+    if (Array.isArray(snapshot.adminUsers)) this.adminUsers = mapBy([...this.adminUsers.values(), ...snapshot.adminUsers], 'id');
   }
 
   public getSystemHealthStats(): SystemHealthStats {
