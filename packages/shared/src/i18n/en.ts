@@ -89,7 +89,7 @@ export const en = {
   nav_tagline: 'Community Transit Directory',
   home_hero_badge: 'India-Wide Smart Bus Directory',
   home_hero_title: 'Find Buses, Routes & Live GPS Tracking',
-  home_hero_description: 'Community-powered public transport across Indian cities and states. Discover timetables, stops, and live passenger observations with no account required.',
+  home_hero_description: 'Free to use across all 28 Indian States and 8 Union Territories. Search buses, routes and timetables, share GPS only with consent, and contribute corrections without signing in.',
   label_from: 'From / Origin',
   label_to: 'To / Destination',
   route_direction_label: 'Route direction',
