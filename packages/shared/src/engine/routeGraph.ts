@@ -81,7 +81,7 @@ export function discoverJourneys(
       );
 
       const timetableDepartures = (route.departures || []).filter(item => !item.isCancelled);
-      const exactDepartureTimes = (route.departureTimes || []).filter(time => /^([01]\\d|2[0-3]):[0-5]\\d$/.test(time));
+      const exactDepartureTimes = (route.departureTimes || []).filter(time => /^([01]\d|2[0-3]):[0-5]\d$/.test(time));
       const exactTimeServices = exactDepartureTimes.map((departureTime, index) => ({
         id: `exact-${route.id}-${index}`,
         departureTime,
