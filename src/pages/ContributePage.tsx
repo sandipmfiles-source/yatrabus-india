@@ -50,8 +50,31 @@ export const ContributePage: React.FC = () => {
     { name: '', latitude: '', longitude: '', arrivalTime: '', departureTime: '' },
   ]);
   const [routePreview, setRoutePreview] = useState<any>(null);
+  const [placeSearchQuery, setPlaceSearchQuery] = useState<{ index: number; query: string } | null>(null);
+  const [placeSuggestions, setPlaceSuggestions] = useState<{ index: number; items: any[] } | null>(null);
+  const [placeSearchLoading, setPlaceSearchLoading] = useState(false);
   const [routePreviewLoading, setRoutePreviewLoading] = useState(false);
   const [routePreviewError, setRoutePreviewError] = useState('');
+  useEffect(() => {
+    if (!placeSearchQuery || placeSearchQuery.query.trim().length < 3) {
+      setPlaceSuggestions(null);
+      return;
+    }
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      setPlaceSearchLoading(true);
+      try {
+        const items = await api.searchMapPlaces(placeSearchQuery.query.trim());
+        if (!cancelled) setPlaceSuggestions({ index: placeSearchQuery.index, items });
+      } catch {
+        if (!cancelled) setPlaceSuggestions({ index: placeSearchQuery.index, items: [] });
+      } finally {
+        if (!cancelled) setPlaceSearchLoading(false);
+      }
+    }, 750);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [placeSearchQuery]);
+
   useEffect(() => {
     setRoutePreview(null);
     setRoutePreviewError('');
@@ -582,7 +605,7 @@ export const ContributePage: React.FC = () => {
                 <section className="rounded-2xl border border-amber-300 bg-amber-50/70 p-4 space-y-4">
                   <div>
                     <h3 className="text-sm font-bold text-yatriwarm-900">New route details</h3>
-                    <p className="text-[11px] text-yatriwarm-600 mt-1">Enter the starting point at the top and destination at the bottom. Tap “Add stoppage between” to insert stops along the route. Place coordinates are matched automatically; use GPS if needed. Your route stays private until Super Admin approval.</p>
+                    <p className="text-[11px] text-yatriwarm-600 mt-1">Enter the starting point at the top and destination at the bottom. Tap “Add stoppage between” to add as many stops as this bus route needs. Search suggestions use OpenStreetMap place data; select the correct stop or use GPS. Add arrival and departure times for each stop. Your route stays private until Super Admin approval.</p>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <label className="text-xs font-medium text-yatriwarm-700">Route number
@@ -621,7 +644,7 @@ export const ContributePage: React.FC = () => {
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <h4 className="text-xs font-bold text-yatriwarm-800">Build your route visually</h4>
-                      <button type="button" disabled={routeStops.length >= 25} onClick={() => setRouteStops(current => current.length >= 25 ? current : [...current.slice(0, -1), { name: '', latitude: '', longitude: '', arrivalTime: '', departureTime: '' }, current[current.length - 1]])} className="text-xs font-semibold text-red-700 disabled:opacity-40">Top → Bottom</button>
+                      <button type="button" onClick={() => setRouteStops(current => [...current.slice(0, -1), { name: '', latitude: '', longitude: '', arrivalTime: '', departureTime: '' }, current[current.length - 1]])} className="text-xs font-semibold text-red-700 disabled:opacity-40">Top → Bottom</button>
                     </div>
                     {routeStops.map((stop, index) => (
                       <React.Fragment key={index}>
@@ -636,7 +659,18 @@ export const ContributePage: React.FC = () => {
                             </div>
                             {index > 0 && index < routeStops.length - 1 && <button type="button" onClick={() => setRouteStops(current => current.filter((_, i) => i !== index))} className="rounded-lg px-2 py-1 text-[11px] font-semibold text-rose-600 hover:bg-rose-50">Remove</button>}
                           </div>
-                          <input required value={stop.name} onChange={e => updateRouteStop(index, "name", e.target.value)} onBlur={e => void fillKnownStopCoordinates(index, e.target.value)} placeholder={index === 0 ? "Enter starting place / bus stand" : index === routeStops.length - 1 ? "Enter destination" : "Enter intermediate bus stop"} className="w-full rounded-xl border border-yatriwarm-200 bg-yatriwarm-50 px-3 py-3 text-sm focus:border-yatribrand-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-yatribrand-100" />
+                          <input required value={stop.name} onChange={e => { updateRouteStop(index, "name", e.target.value); updateRouteStop(index, "latitude", ""); updateRouteStop(index, "longitude", ""); setPlaceSearchQuery({ index, query: e.target.value }); }} onBlur={() => { window.setTimeout(() => { if (!placeSuggestions || placeSuggestions.index !== index) void fillKnownStopCoordinates(index, stop.name); }, 180); }} placeholder={index === 0 ? "Enter starting place / bus stand" : index === routeStops.length - 1 ? "Enter destination" : "Enter intermediate bus stop"} className="w-full rounded-xl border border-yatriwarm-200 bg-yatriwarm-50 px-3 py-3 text-sm focus:border-yatribrand-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-yatribrand-100" />
+                          {placeSuggestions?.index === index && placeSuggestions.items.length > 0 && (
+                            <div className="overflow-hidden rounded-xl border border-yatriwarm-200 bg-white shadow-lg">
+                              {placeSuggestions.items.map((item: any, suggestionIndex: number) => (
+                                <button key={item.id || suggestionIndex} type="button" onMouseDown={e => e.preventDefault()} onClick={() => { updateRouteStop(index, "name", item.name); updateRouteStop(index, "latitude", String(item.latitude)); updateRouteStop(index, "longitude", String(item.longitude)); setPlaceSuggestions(null); setPlaceSearchQuery(null); }} className="block w-full border-b border-yatriwarm-100 px-3 py-2.5 text-left last:border-0 hover:bg-yatribrand-50">
+                                  <span className="block text-xs font-semibold text-yatriwarm-900">{item.name}</span>
+                                  <span className="block text-[10px] text-yatriwarm-500">{item.address}</span>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                          {placeSearchLoading && placeSearchQuery?.index === index && <p className="text-[10px] text-yatriwarm-500">Searching nearby places…</p>}
                           <div className="flex items-center justify-between gap-2">
                             <span className={"text-[10px] " + (stop.latitude && stop.longitude ? "text-emerald-700" : "text-amber-700")}>
                               {stop.latitude && stop.longitude ? "✓ Place location matched" : "Location will match from place name"}
@@ -650,7 +684,7 @@ export const ContributePage: React.FC = () => {
                             <label className="text-[10px] text-yatriwarm-600">Departure time (optional)<input type="time" value={stop.departureTime} onChange={e => updateRouteStop(index, "departureTime", e.target.value)} className="mt-1 w-full rounded-lg border border-yatriwarm-200 bg-yatriwarm-50 px-2 py-2 text-xs" /></label>
                           </div>
                         </div>
-                        {index === 0 && <div className="flex justify-center py-1"><button type="button" disabled={routeStops.length >= 25} onClick={() => setRouteStops(current => current.length >= 25 ? current : [...current.slice(0, -1), { name: "", latitude: "", longitude: "", arrivalTime: "", departureTime: "" }, current[current.length - 1]])} className="inline-flex items-center gap-2 rounded-full border-2 border-dashed border-yatribrand-300 bg-yatribrand-50 px-4 py-2 text-xs font-bold text-yatribrand-900 hover:bg-yatribrand-100 disabled:opacity-40"><PlusCircle className="h-4 w-4" /> Add stoppage between</button></div>}
+                        {index === 0 && <div className="flex justify-center py-1"><button type="button" onClick={() => setRouteStops(current => [...current.slice(0, -1), { name: "", latitude: "", longitude: "", arrivalTime: "", departureTime: "" }, current[current.length - 1]])} className="inline-flex items-center gap-2 rounded-full border-2 border-dashed border-yatribrand-300 bg-yatribrand-50 px-4 py-2 text-xs font-bold text-yatribrand-900 hover:bg-yatribrand-100 disabled:opacity-40"><PlusCircle className="h-4 w-4" /> Add stoppage between</button></div>}
                       </React.Fragment>
                     ))}
                   </div>
