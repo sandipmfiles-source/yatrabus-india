@@ -44,4 +44,5 @@ export const hi = {
   approx_daily_departures: 'प्रति सेवा-दिन अनुमानित बसें',
   every_minutes: 'हर {minutes} मिनट में',
   intermediate_stops: 'इस यात्रा के बीच के स्टॉप',
+  service_hours: 'सेवा का समय',
 };
