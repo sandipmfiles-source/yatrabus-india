@@ -38,11 +38,11 @@ jobs:
       - name: Install NPM Dependencies
         run: npm ci || npm install
 
-      - name: Run Automated Test Suites
-        run: npm test
-
       - name: Build Web Application
         run: npm run build
+
+      - name: Run Automated Test Suites
+        run: npm test
 
       - name: Sync Capacitor Android Assets
         run: npx cap sync android
