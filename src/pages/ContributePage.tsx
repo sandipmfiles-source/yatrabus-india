@@ -165,7 +165,7 @@ export const ContributePage: React.FC = () => {
       const submissionData = {
         submissionType,
         entityType: submissionType === 'SUGGEST_ROUTE' ? 'ROUTE' : submissionType === 'ADD_STOP' ? 'STOP' : (submissionType === 'ADD_BUS' || submissionType === 'CORRECT_TIMETABLE') ? 'TIMETABLE' : 'BUS',
-        targetEntityId: searchParams.get('routeId') || undefined,
+        targetEntityId: searchParams.get('busId') || searchParams.get('routeId') || undefined,
         contributorNote: notes,
         proposedData: {
           name: name || routeNumber,
@@ -342,13 +342,14 @@ export const ContributePage: React.FC = () => {
                 <label className="block text-xs font-bold text-yatriwarm-700 uppercase tracking-wider mb-2">
                   What would you like to contribute?
                 </label>
-                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
                   {[
                     { id: 'ADD_BUS' as SubmissionType, label: 'Add Bus to Route' },
                     { id: 'SUGGEST_ROUTE' as SubmissionType, label: 'Add New Route' },
                     { id: 'ADD_STOP' as SubmissionType, label: 'Add Stop' },
                     { id: 'CORRECT_TIMETABLE' as SubmissionType, label: 'Add / Fix Timetable' },
                     { id: 'REPORT_CHANGED_ROUTE' as SubmissionType, label: 'Report Issue' },
+                    { id: 'DELETE_BUS' as SubmissionType, label: 'Request Bus Removal' },
                   ].map(t => (
                     <button
                       key={t.id}
