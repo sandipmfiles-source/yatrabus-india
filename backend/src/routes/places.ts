@@ -45,7 +45,7 @@ async function loadBlockDirectory() {
   if (!blockDirectoryPromise) {
     blockDirectoryPromise = (async () => {
       const response = await fetch('https://raw.githubusercontent.com/planemad/india-local-government-directory/main/administrative/blocks.csv', {
-        signal: AbortSignal.timeout(12000),
+        signal: AbortSignal.timeout(6000),
         headers: { 'User-Agent': 'YatraBusIndia/1.0' },
       });
       if (!response.ok) throw new Error('Block directory download failed');
@@ -63,23 +63,19 @@ async function fetchLgdDirectorySuggestions(query: string) {
   const key = query.toLocaleLowerCase('en-IN');
   const cached = lgdSuggestionCache.get(key);
   if (cached && cached.expiresAt > Date.now()) return cached.results;
-  let results: any[] = [];
-  try {
+  const apiPromise = (async () => {
     const url = 'https://lgd-json-api.vercel.app/api/search?q=' + encodeURIComponent(query) + '&limit=8';
     const response = await fetch(url, {
       headers: { 'User-Agent': 'YatraBusIndia/1.0', 'Accept': 'application/json' },
-      signal: AbortSignal.timeout(7000),
+      signal: AbortSignal.timeout(6000),
     });
-    if (response.ok) {
-      const payload = await response.json() as any;
-      results = normaliseDirectoryRows(payload, query);
-    }
-  } catch {
-    // The local GitHub block index and OpenStreetMap fallback remain available.
-  }
-  try {
-    const blocks = await loadBlockDirectory();
-    for (const block of blocks) {
+    if (!response.ok) return [];
+    return normaliseDirectoryRows(await response.json() as any, query);
+  })();
+  const [apiResult, blockResult] = await Promise.allSettled([apiPromise, loadBlockDirectory()]);
+  const results: any[] = apiResult.status === 'fulfilled' ? apiResult.value : [];
+  if (blockResult.status === 'fulfilled') {
+    for (const block of blockResult.value) {
       if (String(block.name).toLocaleLowerCase('en-IN').includes(key)) {
         results.push({
           id: 'lgd-block-' + block.code,
@@ -90,8 +86,6 @@ async function fetchLgdDirectorySuggestions(query: string) {
         });
       }
     }
-  } catch {
-    // Continue with state, district, sub-district and town matches if blocks are offline.
   }
   const unique = Array.from(new Map(results.map(item => [item.id, item])).values()).slice(0, 8);
   if (lgdSuggestionCache.size > 500) lgdSuggestionCache.delete(lgdSuggestionCache.keys().next().value as string);
