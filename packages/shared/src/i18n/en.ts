@@ -64,6 +64,9 @@ export const en = {
   journey_prompt_no: 'No',
   journey_prompt_not_now: 'Not now',
   tracking_active: 'Sharing Location for Bus',
+  tracking_service_not_active: 'GPS service not active',
+  tracking_waiting_for_gps: 'Waiting for the first GPS location. Keep the app open briefly and check location permission.',
+
   tracking_stop: 'Stop Sharing',
   consent_title: 'Passenger Location Consent',
   consent_desc: 'YatriBus never secretly collects GPS data. Observations are anonymized, aggregated at the bus level, and never stored as personal tracking history.',
