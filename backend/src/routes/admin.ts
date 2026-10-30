@@ -177,6 +177,24 @@ adminRouter.post('/submissions/:id/review', requireAdminAuth('SUPER_ADMIN'), (re
   }
 
   // Only an explicit, admin-approved timetable contribution becomes publicly searchable.
+  if (decision === 'ADMIN_VERIFIED' && pendingSubmission?.proposedData?.action === 'CORRECT_STOP_TIME') {
+    const data = pendingSubmission.proposedData;
+    const route = typeof data.routeNumber === 'string' ? repository.getRouteByNumber(data.routeNumber) : undefined;
+    const validTime = (value: unknown) => typeof value === 'string' && /^([01]\\d|2[0-3]):[0-5]\\d$/.test(value);
+    const field = data.field === 'scheduledDepartureTime' ? 'scheduledDepartureTime' : 'scheduledArrivalTime';
+    if (!route || !validTime(data.value)) return res.status(422).json({ error: 'A valid route and HH:MM stop time are required.' });
+    const stopExists = route.stops.some(stop => stop.id === data.stopId || stop.stopId === data.stopId);
+    if (!stopExists) return res.status(404).json({ error: 'The selected stop is not part of this route.' });
+    const updatedRoute: Route = {
+      ...route,
+      stops: route.stops.map(stop => (stop.id === data.stopId || stop.stopId === data.stopId)
+        ? { ...stop, [field]: data.value }
+        : stop),
+      updatedAt: new Date().toISOString(),
+    };
+    repository.addRoute(updatedRoute);
+  }
+
   if (decision === 'ADMIN_VERIFIED' && pendingSubmission?.proposedData?.timetableEntry === true) {
     const data = pendingSubmission.proposedData;
     const route = typeof data.routeNumber === 'string' ? repository.getRouteByNumber(data.routeNumber) : undefined;
