@@ -7,6 +7,14 @@ import { adminLoginLimiter } from '../middleware/rateLimiter.js';
 
 export const adminRouter = Router();
 
+const ALL_OPERATING_DAYS: Route['operatingDays'] = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+function normalizeOperatingDays(value: unknown): Route['operatingDays'] {
+  if (!Array.isArray(value) || value.length === 0 || value.some(day => String(day).trim().toLowerCase() === 'daily')) return ALL_OPERATING_DAYS;
+  const allowed = new Set<string>(ALL_OPERATING_DAYS);
+  const normalized = value.map(day => String(day).trim().slice(0, 3).toUpperCase()).filter(day => allowed.has(day));
+  return normalized.length ? Array.from(new Set(normalized)) as Route['operatingDays'] : ALL_OPERATING_DAYS;
+}
+
 // POST /api/admin/login — one configured Super Admin only.
 adminRouter.post('/login', adminLoginLimiter, (req: Request, res: Response) => {
   const email = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : '';
@@ -98,6 +106,12 @@ adminRouter.post('/submissions/:id/review', requireAdminAuth('SUPER_ADMIN'), (re
       return res.status(422).json({ error: 'Every route stop must have a name and valid coordinates.' });
     }
     let distanceFromStartKm = 0;
+    const requestedDepartureTimes = Array.isArray(data.departureTimes)
+      ? data.departureTimes.map((time: unknown) => String(time).trim()).filter(Boolean).sort()
+      : route.departureTimes;
+    if (requestedDepartureTimes && (requestedDepartureTimes.some((time: string) => !validTime(time)) || new Set(requestedDepartureTimes).size !== requestedDepartureTimes.length)) {
+      return res.status(422).json({ error: 'Exact departure times must be unique 24-hour HH:MM values.' });
+    }
     const updatedStops: RouteStop[] = stopsInput.map((stop: any, index: number) => {
       if (index > 0) {
         const previous = stopsInput[index - 1];
@@ -134,6 +148,8 @@ adminRouter.post('/submissions/:id/review', requireAdminAuth('SUPER_ADMIN'), (re
       firstDepartureTime: data.firstDepartureTime,
       lastDepartureTime: data.lastDepartureTime,
       direction: data.direction === 'DOWN' || data.direction === 'CIRCULAR' ? data.direction : data.direction === 'UP' ? 'UP' : route.direction,
+      operatingDays: Array.isArray(data.operatingDays) ? normalizeOperatingDays(data.operatingDays) : route.operatingDays,
+      departureTimes: requestedDepartureTimes,
       stops: updatedStops,
       geometry: updatedStops.map(stop => ({ latitude: stop.latitude, longitude: stop.longitude })),
       updatedAt: new Date().toISOString(),
@@ -150,6 +166,12 @@ adminRouter.post('/submissions/:id/review', requireAdminAuth('SUPER_ADMIN'), (re
     const validTime = (value: unknown) => typeof value === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
     const distanceKm = Number(data.distanceKm);
     const durationMinutes = Number(data.typicalDurationMinutes);
+    const departureTimes = Array.isArray(data.departureTimes)
+      ? data.departureTimes.map((time: unknown) => String(time).trim()).filter(Boolean).sort()
+      : [];
+    if (departureTimes.some((time: string) => !validTime(time)) || new Set(departureTimes).size !== departureTimes.length) {
+      return res.status(422).json({ error: 'Exact departure times must be unique 24-hour HH:MM values.' });
+    }
     if (!routeNumber || !routeName || !operatorName || stopsInput.length < 2 ||
         !validTime(data.firstDepartureTime) || !validTime(data.lastDepartureTime) ||
         !Number.isFinite(distanceKm) || distanceKm <= 0 ||
@@ -222,11 +244,12 @@ adminRouter.post('/submissions/:id/review', requireAdminAuth('SUPER_ADMIN'), (re
       direction: data.direction === 'DOWN' || data.direction === 'CIRCULAR' ? data.direction : 'UP',
       distanceKm,
       typicalDurationMinutes: durationMinutes,
-      operatingDays: ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'],
+      operatingDays: normalizeOperatingDays(data.operatingDays),
       firstDepartureTime: data.firstDepartureTime,
       lastDepartureTime: data.lastDepartureTime,
       frequencyMinutes: Number.isFinite(Number(data.frequencyMinutes)) && Number(data.frequencyMinutes) > 0
         ? Number(data.frequencyMinutes) : undefined,
+      departureTimes: departureTimes.length ? departureTimes : undefined,
       stops,
       geometry: stops.map(stop => ({ latitude: stop.latitude, longitude: stop.longitude })),
       verificationStatus: 'ADMIN_VERIFIED',
