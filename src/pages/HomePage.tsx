@@ -118,7 +118,7 @@ export const HomePage: React.FC = () => {
       {/* Route Search Card */}
       <div className="bg-white rounded-3xl p-5 sm:p-7 shadow-elevated border border-yatriwarm-200 relative z-20">
         <form onSubmit={handleSearch} className="space-y-4">
-          <div className="relative grid grid-cols-1 md:grid-cols-[1fr,auto,1fr] gap-3 items-center">
+          <div className="relative grid grid-cols-1 md:grid-cols-[1fr,auto,1fr] gap-y-3.5 gap-x-3 items-center">
             {/* Origin Input */}
             <div className="relative">
               <label htmlFor="from-input" className="block text-xs font-bold text-yatriwarm-700 uppercase tracking-wider mb-1.5 flex items-center gap-1">
@@ -164,11 +164,11 @@ export const HomePage: React.FC = () => {
             </div>
 
             {/* Swap Button */}
-            <div className="flex justify-center -my-1 md:my-0 md:pt-6">
+            <div className="absolute left-1/2 top-1/2 z-10 flex -translate-x-1/2 -translate-y-1/2 justify-center md:static md:translate-x-0 md:translate-y-0 md:pt-6">
               <button
                 type="button"
                 onClick={handleSwap}
-                className="p-2.5 rounded-full bg-yatriwarm-100 hover:bg-yatribrand-100 text-yatriwarm-700 hover:text-yatribrand-900 border border-yatriwarm-200 transition-colors shadow-subtle"
+                className="h-9 w-9 p-2 rounded-full bg-white hover:bg-yatribrand-100 text-yatribrand-900 border-2 border-yatriwarm-200 transition-colors shadow-md"
                 title={t('swap_direction')}
                 aria-label={t('swap_direction')}
               >
