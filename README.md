@@ -9,7 +9,7 @@
 
 ## 🚌 Overview
 
-**YatriBus** is a community-powered public transport information platform designed for daily commuters across Indian cities and states. It combines a comprehensive Indian places directory, bus route schedules, intelligent typo-tolerant search, account-free community contributions, and consent-based passenger-assisted GPS live tracking.
+**YatriBus** is a community-powered public transport information platform for Indian commuters. It combines an India-focused places directory, a timetable and route engine, typo-tolerant search, account-free community contributions, and a consent-based passenger-assisted GPS tracking module. Live shared features require a deployed backend; the included bus schedules are sample records, not a nationwide verified feed.
 
 ### Core Non-Negotiables Built In:
 - **No Mandatory Passenger Accounts**: Search, view routes, and submit corrections immediately without phone numbers, OTPs, or passwords.
@@ -17,7 +17,7 @@
 - **Deterministic Multi-Signal GPS Engine**: Evaluates horizontal accuracy, timestamp freshness, route cross-track distance, and speed realism without requiring paid AI APIs.
 - **Transparent Distinction**: Live GPS observations and schedule timetable predictions are clearly differentiated. Schedule estimates are **never** falsely labeled as "Live GPS".
 - **Custom SVG Bus Artwork**: Missing bus photos display a custom vector SVG bus illustration, never a broken image icon.
-- **₹0 Initial Cost Target**: Runs on open-source code, free-tier PostGIS/PostgreSQL, OpenStreetMap tiles, and automated GitHub Actions Android APK builds.
+- **₹0 Initial Cost Target**: Uses open-source code, OpenStreetMap data, a free-first deployment plan and automated GitHub Actions Android APK builds. Production PostgreSQL is planned but not yet connected to the backend runtime.
 
 ---
 
