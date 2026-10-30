@@ -17,6 +17,7 @@ const config: CapacitorConfig = {
     },
   },
   android: {
+    useLegacyBridge: true,
     buildOptions: {
       keystorePath: undefined, // Debug build uses Android debug keystore
     },
