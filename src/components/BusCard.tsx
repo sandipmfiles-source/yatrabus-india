@@ -84,6 +84,29 @@ export const BusCard: React.FC<BusCardProps> = ({ journey }) => {
           <div className="mt-3 text-[10px] text-yatriwarm-500">
             {t('service_hours')}: {route.firstDepartureTime}–{route.lastDepartureTime}
           </div>
+          {journey.timetableDepartures && journey.timetableDepartures.length > 0 && (
+            <div className="mt-3 pt-3 border-t border-yatriwarm-200">
+              <div className="flex items-center justify-between mb-2">
+                <div className="text-[11px] font-bold text-signal-charcoal-800">Verified bus departures</div>
+                <span className="text-[9px] uppercase tracking-wider font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded-full">Admin verified</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {journey.timetableDepartures.map(item => (
+                  <div key={item.id} className="flex items-center justify-between gap-2 rounded-lg border border-signal-yellow-200 bg-white px-3 py-2">
+                    <div className="min-w-0">
+                      <div className="text-[11px] font-semibold text-signal-charcoal-900 truncate">{item.busIdentifier || route.routeNumber}</div>
+                      <div className="text-[9px] text-yatriwarm-500">{item.operatingDays.join(', ')}</div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="text-xs font-bold tabular-nums text-signal-red-700">{item.departureTime}</div>
+                      <div className="text-[9px] text-yatriwarm-500">Arr. {item.arrivalTime}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {journey.dailyTripCount !== undefined && (
             <div className="mt-3 pt-2 border-t border-yatriwarm-200 text-[11px] text-yatriwarm-700 flex flex-wrap items-center gap-x-3 gap-y-1">
               <span className="font-semibold">{t('approx_daily_departures')}: {journey.dailyTripCount}</span>
