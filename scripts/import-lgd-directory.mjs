@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { gzipSync } from 'node:zlib';
 
+// Bulk importer for the official LGD semicolon-delimited CSV exports.
 const inputDir = process.argv[2] || '/tmp/lgd';
 const outputFile = process.argv[3] || 'backend/data/india-lgd-directory.json.gz';
 
