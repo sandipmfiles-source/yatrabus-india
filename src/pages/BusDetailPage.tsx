@@ -120,7 +120,7 @@ export const BusDetailPage: React.FC = () => {
 
             <div className="mt-3 p-3.5 rounded-2xl bg-yatriwarm-50 border border-yatriwarm-200 text-xs space-y-1.5">
               <div className="font-semibold text-yatriwarm-900">
-                {location?.statusExplanation || '{t('timetable_prediction')}'}
+                {location?.statusExplanation || t('timetable_prediction')}
               </div>
               {location?.isLive && (
                 <div className="text-emerald-700 font-medium">
