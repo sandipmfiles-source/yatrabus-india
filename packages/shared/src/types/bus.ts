@@ -43,6 +43,7 @@ export interface Bus {
   publicIdentifier: string; // Public bus name or number shown on front LED/board
   operatorId: string;
   operatorName?: string;
+  contributedBy?: string;
   fleetRegistrationNumber?: string; // Optional (e.g. DL 1PC 4432)
   vehicleType: VehicleType;
   photoUrl?: string; // If absent, UI must render custom SVG illustration
@@ -85,6 +86,7 @@ export interface Route {
   destinationStopName: string;
   operatorId: string;
   operatorName?: string;
+  contributedBy?: string;
   direction: 'UP' | 'DOWN' | 'CIRCULAR';
   distanceKm: number;
   typicalDurationMinutes: number;
