@@ -92,6 +92,8 @@ export interface Route {
   firstDepartureTime: string; // HH:MM
   lastDepartureTime: string;  // HH:MM
   frequencyMinutes?: number;
+  /** Individually scheduled and admin-approved departures for this route. */
+  departures?: TimetableDeparture[];
   stops: RouteStop[];
   geometry?: RouteGeometryPoint[];
   verificationStatus: 'UNVERIFIED' | 'COMMUNITY_CORROBORATED' | 'ADMIN_VERIFIED';
@@ -152,4 +154,5 @@ export interface JourneyCandidate {
   frequencyMinutes?: number;
   /** Stops between the selected boarding and alighting points. */
   intermediateStops?: RouteStop[];
+  timetableDepartures?: TimetableDeparture[];
 }
