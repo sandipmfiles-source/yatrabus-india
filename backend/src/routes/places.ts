@@ -42,6 +42,34 @@ placesRouter.get('/geocode-search', publicSearchLimiter, async (req: Request, re
   }
 });
 
+// Resolve a GPS point to a readable place/road name using free OpenStreetMap data.
+placesRouter.get('/reverse-geocode', publicSearchLimiter, async (req: Request, res: Response) => {
+  const latitude = Number(req.query.lat);
+  const longitude = Number(req.query.lon);
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude) || latitude < 6 || latitude > 38 || longitude < 68 || longitude > 98) {
+    return res.status(400).json({ error: 'INVALID_COORDINATES', message: 'Valid India GPS coordinates are required.' });
+  }
+  const key = latitude.toFixed(4) + ',' + longitude.toFixed(4);
+  const cached = geocodeCache.get('reverse:' + key);
+  if (cached && cached.expiresAt > Date.now() && cached.results[0]) return res.json({ place: cached.results[0], cache: 'HIT' });
+  const waitMs = 1100 - (Date.now() - lastGeocodeRequestAt);
+  if (waitMs > 0) await new Promise(resolve => setTimeout(resolve, waitMs));
+  lastGeocodeRequestAt = Date.now();
+  try {
+    const url = 'https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=18&addressdetails=1&lat=' + latitude + '&lon=' + longitude;
+    const response = await fetch(url, { headers: { 'User-Agent': 'YatraBusIndia/1.0 (+https://github.com/sandipmfiles-source/yatrabus-india)', 'Accept-Language': 'en,hi,bn' }, signal: AbortSignal.timeout(10000) });
+    if (!response.ok) return res.status(502).json({ error: 'REVERSE_GEOCODE_UNAVAILABLE', message: 'GPS coordinates saved, but the place name could not be fetched.' });
+    const data = await response.json() as any;
+    const address = data.address || {};
+    const name = data.name || address.bus_stop || address.road || address.suburb || address.village || address.town || address.city || address.county || '';
+    const place = name ? { name: String(name), address: String(data.display_name || ''), latitude, longitude, source: 'OPENSTREETMAP_NOMINATIM' } : null;
+    geocodeCache.set('reverse:' + key, { expiresAt: Date.now() + 24 * 60 * 60 * 1000, results: place ? [place] : [] });
+    return res.json({ place, attribution: '© OpenStreetMap contributors' });
+  } catch {
+    return res.status(502).json({ error: 'REVERSE_GEOCODE_UNAVAILABLE', message: 'GPS coordinates saved, but the place name could not be fetched.' });
+  }
+});
+
 // Free local catalogue search. External paid geocoding is deliberately not required.
 placesRouter.get('/search', publicSearchLimiter, (req: Request, res: Response) => {
   const query = typeof req.query.q === 'string' ? req.query.q.trim() : '';
