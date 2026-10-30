@@ -13,6 +13,7 @@ RUN npm run build
 RUN mkdir -p /data
 
 ENV NODE_ENV=production
+ENV TS_NODE_TRANSPILE_ONLY=true
 ENV PORT=5000
 ENV YATRIBUS_DATA_FILE=/data/yatribus-store.json
 
