@@ -281,7 +281,7 @@ export const ContributePage: React.FC = () => {
                     placeholder="e.g. Anand Vihar ISBT"
                     className="w-full px-3.5 py-2.5 bg-yatriwarm-50 border border-yatriwarm-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-yatribrand-800 focus:bg-white"
                   />
-                </div>
+                </div>}
 
                 {submissionType !== 'SUGGEST_ROUTE' && <div>
                   <label className="block text-xs font-medium text-yatriwarm-700 mb-1">
