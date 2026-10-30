@@ -294,6 +294,7 @@ export class TransitRepository {
     const voteKey = field.slice(0, 60) + ':' + value.slice(0, 120);
     submission.communityVotes = submission.communityVotes || {};
     submission.communityVotes[voteKey] = (submission.communityVotes[voteKey] || 0) + 1;
+    submission.corroborationCount = (submission.corroborationCount || 0) + 1;
     submission.voterKeys = [...(submission.voterKeys || []), key].slice(-20000);
     return { success: true, counts: { ...submission.communityVotes } };
   }
