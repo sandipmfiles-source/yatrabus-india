@@ -2,47 +2,123 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  color-scheme: light;
+  --yb-yellow: #FACC15;
+  --yb-yellow-soft: #FFF7D6;
+  --yb-red: #DC2626;
+  --yb-red-dark: #991B1B;
+  --yb-charcoal: #171717;
+  --yb-charcoal-soft: #292524;
+  --yb-paper: #FFFEF8;
+}
+
 @layer base {
+  html { background: var(--yb-paper); }
   body {
-    @apply bg-signal-yellow-50 text-signal-charcoal-900 antialiased font-sans;
+    @apply text-signal-charcoal-900 antialiased font-sans;
     -webkit-tap-highlight-color: transparent;
-    background-image: radial-gradient(circle at 1px 1px, rgba(41, 37, 36, 0.045) 1px, transparent 0);
+    background-color: var(--yb-paper);
+    background-image: radial-gradient(circle at 1px 1px, rgba(41, 37, 36, 0.055) 1px, transparent 0);
     background-size: 22px 22px;
   }
+  button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+  :focus-visible {
+    outline: 3px solid rgba(220, 38, 38, 0.55);
+    outline-offset: 2px;
+  }
 }
 
-/* Custom pulsing animation for Live GPS markers */
+/* YatraBus traffic-signal visual system: warm yellow + charcoal + signal red */
+.yatribus-theme { min-height: 100vh; background: var(--yb-paper); }
+.yatribus-theme header {
+  color: #fff;
+  background: rgba(23, 23, 23, 0.97);
+  border-bottom: 3px solid var(--yb-yellow);
+  box-shadow: 0 8px 24px rgba(23, 23, 23, 0.12);
+}
+.yatribus-theme header a { color: #fff; }
+.yatribus-theme header a:hover { color: var(--yb-yellow); }
+.yatribus-theme header a > div:first-child {
+  background: var(--yb-yellow);
+  color: var(--yb-charcoal);
+}
+.yatribus-theme header a > div:first-child svg { color: var(--yb-charcoal); }
+.yatribus-theme header a span.bg-yatribrand-100 {
+  color: var(--yb-charcoal);
+  background: var(--yb-yellow);
+}
+.yatribus-theme header nav a.bg-yatribrand-50 {
+  color: var(--yb-charcoal);
+  background: var(--yb-yellow);
+}
+.yatribus-theme header nav a:not(.bg-yatribrand-50) { color: #F5F5F4; }
+.yatribus-theme header nav a:not(.bg-yatribrand-50):hover {
+  color: var(--yb-yellow);
+  background: rgba(255,255,255,.08);
+}
+.yatribus-theme header p { color: #D6D3D1; }
+.yatribus-theme header a[title] { color: #FDE68A; }
+.yatribus-theme main { background: transparent; }
+
+/* Cards and form controls */
+.yatribus-theme main .bg-white {
+  border-color: #F1E3B5;
+  box-shadow: 0 8px 28px rgba(41, 37, 36, 0.055);
+}
+.yatribus-theme main input,
+.yatribus-theme main select,
+.yatribus-theme main textarea {
+  border-color: #E8D9A7;
+  background-color: #FFFEF8;
+}
+.yatribus-theme main input:focus,
+.yatribus-theme main select:focus,
+.yatribus-theme main textarea:focus {
+  border-color: var(--yb-red);
+  --tw-ring-color: rgba(220, 38, 38, .2);
+}
+.yatribus-theme main button.bg-yatribrand-900,
+.yatribus-theme main a.bg-yatribrand-900,
+.yatribus-theme main button[type="submit"] {
+  color: var(--yb-charcoal);
+  background: linear-gradient(135deg, #FDE68A 0%, var(--yb-yellow) 100%);
+  border: 1px solid #EAB308;
+  box-shadow: 0 6px 16px rgba(234, 179, 8, .22);
+}
+.yatribus-theme main button.bg-yatribrand-900:hover,
+.yatribus-theme main a.bg-yatribrand-900:hover,
+.yatribus-theme main button[type="submit"]:hover {
+  color: #111;
+  background: #FBBF24;
+  transform: translateY(-1px);
+}
+.yatribus-theme main .bg-gradient-to-r {
+  background-image: linear-gradient(115deg, #171717 0%, #292524 72%, #7F1D1D 100%);
+  border: 1px solid rgba(250, 204, 21, .35);
+}
+.yatribus-theme main .bg-gradient-to-r .bg-emerald-500 {
+  background: var(--yb-red);
+  color: #fff;
+}
+.yatribus-theme main .bg-gradient-to-r .bg-emerald-500:hover { background: var(--yb-red-dark); }
+.yatribus-theme main .text-emerald-600,
+.yatribus-theme main .text-emerald-500 { color: var(--yb-red); }
+.yatribus-theme main .bg-emerald-50,
+.yatribus-theme main .bg-emerald-100 { background-color: #FFF1F0; }
+.yatribus-theme main .border-emerald-200 { border-color: #FECACA; }
+
+/* Signal-red states and accessible live indicator */
+.yatribus-theme .live-pulse-badge { --yb-pulse: rgba(220, 38, 38, .55); }
 @keyframes pulse-ring {
-  0% {
-    transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
-  }
-  70% {
-    transform: scale(1.15);
-    box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
-  }
-  100% {
-    transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
-  }
+  0% { transform: scale(.95); box-shadow: 0 0 0 0 var(--yb-pulse, rgba(220, 38, 38, .55)); }
+  70% { transform: scale(1.12); box-shadow: 0 0 0 9px rgba(220, 38, 38, 0); }
+  100% { transform: scale(.95); box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
 }
-
-.live-pulse-badge {
-  animation: pulse-ring 2s infinite cubic-bezier(0.45, 0, 0.55, 1);
-}
+.live-pulse-badge { animation: pulse-ring 2s infinite cubic-bezier(.45, 0, .55, 1); }
 
 /* Custom scrollbars */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track {
-  background: #F7F7F3;
-}
-::-webkit-scrollbar-thumb {
-  background: #D2D2C6;
-  border-radius: 3px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #AFAFA0;
-}
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #FFF9E8; }
+::-webkit-scrollbar-thumb { background: #D6C58D; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #A89A6C; }
