@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { api } from '../services/api.js';
 import { storage } from '../services/storage.js';
+import { startNativeTracking, stopNativeTracking } from '../services/nativeTracking.js';
 
 interface ActiveSessionData {
   sessionId: string;
@@ -117,6 +118,11 @@ export const TrackingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
       setActiveSession(sessionData);
       storage.setActiveSession(sessionData);
+      try {
+        await startNativeTracking({ sessionId: session.sessionId, busId: pendingBusForTracking.busId, routeId: pendingBusForTracking.routeId });
+      } catch (nativeError) {
+        console.warn('Native background tracking could not start; foreground tracking remains available.', nativeError);
+      }
       closeConsentModal();
     } catch (e) {
       // eslint-disable-next-line no-console
@@ -132,6 +138,7 @@ export const TrackingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const stopSharing = async () => {
+    try { await stopNativeTracking(); } catch (nativeError) { console.warn('Could not stop native tracking service', nativeError); }
     if (activeSession) {
       await api.stopJourneySession(activeSession.sessionId, 'USER_STOPPED');
       storage.clearActiveSession();
