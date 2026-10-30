@@ -24,10 +24,10 @@ export const SearchResultsPage: React.FC = () => {
     if (!from || !to) { setIsLoading(false); return; }
 
     setIsLoading(true);
-    Promise.all([api.searchRoutes(from, to), api.searchRoutes(to, from)]).then(([res, reverse]) => {
+    Promise.all([api.searchRoutes(from, to), api.searchRoutes(to, from).catch(() => null)]).then(([res, reverse]) => {
       setDirectRoutes(res.directRoutes || []);
       setTransferRoutes(res.transferRoutes || []);
-      setReturnJourneys([...(reverse.directRoutes || []), ...(reverse.transferRoutes || [])]);
+      setReturnJourneys(reverse ? [...(reverse.directRoutes || []), ...(reverse.transferRoutes || [])] : []);
       setIsLoading(false);
     }).catch(() => setIsLoading(false));
   }, [from, to]);
