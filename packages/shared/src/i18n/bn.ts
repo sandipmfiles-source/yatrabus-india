@@ -8,7 +8,7 @@ export const bn = {
   startup_location_denied: 'অবস্থানের অনুমতি এখনও বন্ধ। Android Settings-এ চালু করে আবার চেষ্টা করুন।',
   startup_location_settings: 'অনুমতি চাওয়া যায়নি। Android Settings → Apps → YatriBus → Permissions → Location খুলুন।',
   startup_location_check_error: 'অবস্থানের অনুমতি পরীক্ষা করা যায়নি। এগোতে অনুমতি দিন।',
-  startup_location_footer: 'কাছের স্টপ ও যাত্রার সুবিধার জন্য অবস্থান ব্যবহৃত হয়। GPS ভাগ করা যেকোনো সময় বন্ধ করতে পারবেন.'
+  startup_location_footer: 'কাছের স্টপ ও যাত্রার সুবিধার জন্য অবস্থান ব্যবহৃত হয়। GPS ভাগ করা যেকোনো সময় বন্ধ করতে পারবেন.',
   tagline: 'ভারতজোড়া স্মার্ট বাস ডিরেক্টরি এবং যাত্রী-সহায়তায় লাইভ ট্র্যাকিং',
   search_placeholder_from: 'শুরুর স্থান (শহর, বাস টার্মিনাস, স্টপ)',
   search_placeholder_to: 'গন্তব্য স্থান (শহর, বাস টার্মিনাস, স্টপ)',
