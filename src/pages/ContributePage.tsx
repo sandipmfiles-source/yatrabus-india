@@ -245,6 +245,16 @@ export const ContributePage: React.FC = () => {
                     />
                   </div>
                 )}
+                {submissionType === 'ADD_STOP' && (
+                  <div className="grid grid-cols-2 gap-3 sm:col-span-2">
+                    <label className="text-xs font-medium text-yatriwarm-700">{t('origin_latitude')}
+                      <input type="number" step="any" min="-90" max="90" required value={originLatitude} onChange={e => setOriginLatitude(e.target.value)} className="mt-1 w-full px-3 py-2.5 bg-yatriwarm-50 border border-yatriwarm-200 rounded-xl" />
+                    </label>
+                    <label className="text-xs font-medium text-yatriwarm-700">{t('origin_longitude')}
+                      <input type="number" step="any" min="-180" max="180" required value={originLongitude} onChange={e => setOriginLongitude(e.target.value)} className="mt-1 w-full px-3 py-2.5 bg-yatriwarm-50 border border-yatriwarm-200 rounded-xl" />
+                    </label>
+                  </div>
+                )}
 
                 <div>
                   <label className="block text-xs font-medium text-yatriwarm-700 mb-1">
