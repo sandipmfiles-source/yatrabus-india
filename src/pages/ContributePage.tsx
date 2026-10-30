@@ -104,7 +104,8 @@ export const ContributePage: React.FC = () => {
     if (!stopName) return;
     try {
       const matches = await api.searchPlaces(stopName, 8);
-      const exact = matches.find((item: any) => item.place?.canonicalName?.toLocaleLowerCase() === stopName.toLocaleLowerCase());
+      const exact = matches.find((item: any) => item.place?.canonicalName?.toLocaleLowerCase() === stopName.toLocaleLowerCase()) ||
+        matches.find((item: any) => item.matchScore >= 95);
       if (exact?.place && Number.isFinite(exact.place.latitude) && Number.isFinite(exact.place.longitude)) {
         updateRouteStop(index, 'latitude', String(exact.place.latitude));
         updateRouteStop(index, 'longitude', String(exact.place.longitude));
@@ -271,6 +272,15 @@ export const ContributePage: React.FC = () => {
                   onClick={() => {
                     setSubmittedRefId(null);
                     setName('');
+                    setStopLatitude('');
+                    setStopLongitude('');
+                    setEvidenceUrl('');
+                    setRoutePreview(null);
+                    setRoutePreviewError('');
+                    setRouteStops([
+                      { name: '', latitude: '', longitude: '', arrivalTime: '', departureTime: '' },
+                      { name: '', latitude: '', longitude: '', arrivalTime: '', departureTime: '' },
+                    ]);
                     setRouteNumber('');
                     setBusIdentifier('');
                     setDepartureTime('');
