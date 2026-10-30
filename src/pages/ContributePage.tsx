@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
+import { useLanguage } from '../context/LanguageContext.js';
 import { useSearchParams } from 'react-router-dom';
 import { api } from '../services/api.js';
 import { SubmissionType } from '@shared/types/contribution.js';
 import { PlusCircle, Search, CheckCircle, AlertTriangle, ShieldCheck, ArrowRight } from 'lucide-react';
 
 export const ContributePage: React.FC = () => {
+  const { t } = useLanguage();
   const [searchParams] = useSearchParams();
   const initialType = (searchParams.get('type') as SubmissionType) || 'ADD_BUS';
 
@@ -44,10 +46,12 @@ export const ContributePage: React.FC = () => {
   // Submission result
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedRefId, setSubmittedRefId] = useState<string | null>(null);
+  const [submissionError, setSubmissionError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setSubmissionError('');
 
     try {
       const res = await api.submitContribution({
@@ -82,7 +86,8 @@ export const ContributePage: React.FC = () => {
 
       setSubmittedRefId(res.referenceId);
       setIsSubmitting(false);
-    } catch {
+    } catch (error) {
+      setSubmissionError(error instanceof Error ? error.message : t('contribution_backend_error'));
       setIsSubmitting(false);
     }
   };
@@ -105,13 +110,13 @@ export const ContributePage: React.FC = () => {
       <div className="text-center space-y-2">
         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-yatribrand-100 text-yatribrand-900 text-xs font-semibold">
           <ShieldCheck className="w-3.5 h-3.5 text-yatribrand-700" />
-          <span>No Passenger Account Required</span>
+          <span>{t('contribute_no_account')}</span>
         </div>
         <h1 className="text-2xl sm:text-3xl font-bold text-yatriwarm-950">
-          Community Transport Contribution
+          {t('contribute_heading')}
         </h1>
         <p className="text-xs sm:text-sm text-yatriwarm-600 max-w-lg mx-auto">
-          Help fellow commuters keep public transport data accurate. Submit updates, verify schedules, or check previous submissions with your Reference ID.
+          {t('contribute_intro')}
         </p>
       </div>
 
@@ -126,7 +131,7 @@ export const ContributePage: React.FC = () => {
               : 'border-transparent text-yatriwarm-500 hover:text-yatriwarm-800'
           }`}
         >
-          Submit Missing Info
+          {t('contribute_submit_tab')}
         </button>
         <button
           type="button"
@@ -137,7 +142,7 @@ export const ContributePage: React.FC = () => {
               : 'border-transparent text-yatriwarm-500 hover:text-yatriwarm-800'
           }`}
         >
-          Check Submission Status
+          {t('contribute_status_tab')}
         </button>
       </div>
 
@@ -150,19 +155,19 @@ export const ContributePage: React.FC = () => {
                 <CheckCircle className="w-8 h-8" />
               </div>
               <div className="space-y-1">
-                <h3 className="text-xl font-bold text-yatriwarm-900">Contribution Received!</h3>
+                <h3 className="text-xl font-bold text-yatriwarm-900">{t('contribution_received')}</h3>
                 <p className="text-xs text-yatriwarm-600">
-                  Your update has been placed in the verifier review queue.
+                  {t('contribution_queued')}
                 </p>
               </div>
 
               <div className="p-4 bg-yatriwarm-50 rounded-2xl border border-yatriwarm-200 max-w-sm mx-auto">
-                <div className="text-xs text-yatriwarm-500 font-medium">Your Tracking Reference ID</div>
+                <div className="text-xs text-yatriwarm-500 font-medium">{t('contribution_reference')}</div>
                 <div className="text-lg font-mono font-bold text-yatribrand-900 mt-1 select-all">
                   {submittedRefId}
                 </div>
                 <div className="text-[11px] text-yatriwarm-400 mt-1">
-                  Save this code to check verification status without creating an account.
+                  {t('contribution_save_reference')}
                 </div>
               </div>
 
@@ -181,11 +186,12 @@ export const ContributePage: React.FC = () => {
                   }}
                   className="px-5 py-2.5 bg-yatribrand-900 text-white rounded-xl text-xs font-semibold shadow-subtle hover:bg-yatribrand-950 transition-colors"
                 >
-                  Submit Another Contribution
+                  {t('contribution_submit_another')}
                 </button>
               </div>
             </div>
           ) : (
+            {submissionError && <div role="alert" className="mb-4 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800">{submissionError}</div>}
             <form onSubmit={handleSubmit} className="space-y-5">
               {/* Type selection */}
               <div>
