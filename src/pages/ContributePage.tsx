@@ -12,10 +12,10 @@ export const ContributePage: React.FC = () => {
   const initialType = (searchParams.get('type') as SubmissionType) || 'ADD_BUS';
   const isOperatorSubmission = searchParams.get('source') === 'OPERATOR';
   const routeIdParam = searchParams.get('routeId');
-  const isRouteSubmission = submissionType === 'SUGGEST_ROUTE' || submissionType === 'UPDATE_ROUTE';
 
   const [activeTab, setActiveTab] = useState<'SUBMIT' | 'CHECK_STATUS'>('SUBMIT');
   const [submissionType, setSubmissionType] = useState<SubmissionType>(initialType);
+  const isRouteSubmission = submissionType === 'SUGGEST_ROUTE' || submissionType === 'UPDATE_ROUTE';
 
   // Form State
   const [name, setName] = useState('');
