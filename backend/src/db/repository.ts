@@ -350,6 +350,15 @@ export class TransitRepository {
   }
 
   // ==================== ADMIN & HEALTH ====================
+  public getAllAdminUsers(): AdminUser[] {
+    return Array.from(this.adminUsers.values());
+  }
+
+  public addAdminUser(admin: AdminUser): AdminUser {
+    this.adminUsers.set(admin.id, admin);
+    return admin;
+  }
+
   public getAdminByEmail(email: string): AdminUser | undefined {
     for (const u of this.adminUsers.values()) {
       if (u.email.toLowerCase() === email.toLowerCase()) {
