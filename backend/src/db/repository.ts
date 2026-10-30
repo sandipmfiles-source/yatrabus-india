@@ -175,6 +175,11 @@ export class TransitRepository {
     return route;
   }
 
+  public updateRoute(route: Route): Route {
+    this.routes.set(route.id, route);
+    return route;
+  }
+
   public getAllRoutes(): Route[] {
     return Array.from(this.routes.values());
   }
