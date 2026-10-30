@@ -112,6 +112,11 @@ export const OwnerDashboardPage: React.FC = () => {
     return () => script?.removeEventListener('load', initialize);
   }, [token]);
 
+  useEffect(() => {
+    setRoutePreview(null);
+    setRoutePreviewError('');
+  }, [origin, destination, stopsText]);
+
   const checkRoutePreview = async () => {
     if (origin.trim().length < 2 || destination.trim().length < 2) {
       setRoutePreviewError('Enter a starting place and destination first.');
@@ -131,6 +136,14 @@ export const OwnerDashboardPage: React.FC = () => {
     } finally {
       setRoutePreviewLoading(false);
     }
+  };
+
+  const moveIntermediateStop = (index: number, offset: -1 | 1) => {
+    const lines = stopsText.split('\n').map(line => line.trim()).filter(Boolean);
+    const target = index + offset;
+    if (target < 0 || target >= lines.length) return;
+    [lines[index], lines[target]] = [lines[target], lines[index]];
+    setStopsText(lines.join('\n'));
   };
 
   const signOut = () => {
@@ -176,9 +189,10 @@ export const OwnerDashboardPage: React.FC = () => {
     setLastDepartureTime(String(data.lastDepartureTime || ''));
     setDistanceKm(String(data.distanceKm || ''));
     setDurationMinutes(String(data.typicalDurationMinutes || ''));
-    setStopsText((Array.isArray(data.stops) ? data.stops : []).map((stop: any) =>
+    setStopsText((Array.isArray(data.stops) ? data.stops.slice(1, -1) : []).map((stop: any) =>
       [stop.name || stop.stopName || '', stop.latitude ?? '', stop.longitude ?? '', stop.arrivalTime || stop.scheduledArrivalTime || '', stop.departureTime || stop.scheduledDepartureTime || ''].join(' | ')
     ).join('\n'));
+    setRoutePreview(null);
     setNote('Owner requested route and stop update');
   };
 
@@ -204,13 +218,29 @@ export const OwnerDashboardPage: React.FC = () => {
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!token) return;
+    if (kind === 'ROUTE' && routePreview?.routeStatus !== 'ROAD_ROUTE_FOUND_IN_SUBMITTED_ORDER') {
+      setError('Check the OpenStreetMap road route in the submitted stop order before sending a new or updated route for approval.');
+      return;
+    }
     setLoading(true);
     setError('');
     setMessage('');
-    const stops = stopsText.split('\n').map(line => line.trim()).filter(Boolean).map(line => {
+    const enteredStops = stopsText.split('\n').map(line => line.trim()).filter(Boolean).map(line => {
       const [name, latitude, longitude, arrivalTime, departureTime] = line.split('|').map(part => part.trim());
       return { name, latitude: latitude ? Number(latitude) : undefined, longitude: longitude ? Number(longitude) : undefined, arrivalTime, departureTime };
     });
+    const stops = kind === 'ROUTE' && Array.isArray(routePreview?.points)
+      ? routePreview.points.map((point: any) => {
+          const entered = enteredStops.find(stop => stop.name.toLocaleLowerCase() === String(point.name).toLocaleLowerCase());
+          return {
+            name: String(point.name),
+            latitude: Number(point.latitude),
+            longitude: Number(point.longitude),
+            arrivalTime: entered?.arrivalTime,
+            departureTime: entered?.departureTime,
+          };
+        })
+      : enteredStops;
     try {
       const proposedData = {
         name: busName,
@@ -301,7 +331,7 @@ export const OwnerDashboardPage: React.FC = () => {
                 <label className="text-xs text-yatriwarm-700">Route distance (km)<input required type="number" min="1" value={distanceKm} onChange={e => setDistanceKm(e.target.value)} className="mt-1 w-full px-3 py-2 rounded-xl border border-yatriwarm-200 bg-white" /></label>
                 <label className="text-xs text-yatriwarm-700">Journey duration (minutes)<input required type="number" min="1" value={durationMinutes} onChange={e => setDurationMinutes(e.target.value)} className="mt-1 w-full px-3 py-2 rounded-xl border border-yatriwarm-200 bg-white" /></label>
               </>}
-              <label className="sm:col-span-2 text-xs text-yatriwarm-700">Stops in order (one per line: Name | latitude | longitude | arrival HH:MM | departure HH:MM)<textarea required={kind === 'ROUTE'} rows={5} value={stopsText} onChange={e => setStopsText(e.target.value)} placeholder={'Esplanade | 22.56 | 88.35 | 06:55 | 07:00\nPark Street | 22.55 | 88.35 | 07:25 | 07:30\nHowrah Station | 22.58 | 88.34 | 07:55 | 08:00'} className="mt-1 w-full px-3 py-2 rounded-xl border border-yatriwarm-200 bg-white" /></label>
+              <label className="sm:col-span-2 text-xs text-yatriwarm-700">Stops in order (one per line: Name | latitude | longitude | arrival HH:MM | departure HH:MM)<textarea required={kind === 'ROUTE'} rows={5} value={stopsText} onChange={e => setStopsText(e.target.value)} placeholder={'Esplanade | 22.56 | 88.35 | 06:55 | 07:00\nPark Street | 22.55 | 88.35 | 07:25 | 07:30'}  className="mt-1 w-full px-3 py-2 rounded-xl border border-yatriwarm-200 bg-white" /></label>
               <section className="sm:col-span-2 yb-premium-panel rounded-3xl p-5 sm:p-6 text-white space-y-4">
                 <div className="flex items-center justify-between gap-3">
                   <div>
@@ -327,8 +357,14 @@ export const OwnerDashboardPage: React.FC = () => {
                   <div className="rounded-xl bg-white/10 border border-white/10 p-3"><div className="text-slate-400">TO</div><div className="font-semibold text-white mt-1">{destination || 'Destination'}</div></div>
                 </div>
                 <div className="pl-6 ml-2 border-l-2 yb-route-line space-y-3">
-                  {(stopsText.split('\n').map(line => line.split('|')[0].trim()).filter(Boolean)).map((stop, index) => (
-                    <div key={index} className="yb-route-stop text-xs text-slate-100">{stop}</div>
+                  {(stopsText.split('\n').map(line => line.split('|')[0].trim()).filter(Boolean)).map((stop, index, all) => (
+                    <div key={index} className="yb-route-stop flex items-center justify-between gap-2 text-xs text-slate-100">
+                      <span>{stop}</span>
+                      <span className="flex shrink-0 gap-1">
+                        <button type="button" disabled={index === 0} onClick={() => moveIntermediateStop(index, -1)} aria-label={`Move ${stop} up`} className="rounded-md border border-white/20 px-2 py-1 disabled:opacity-30">↑</button>
+                        <button type="button" disabled={index === all.length - 1} onClick={() => moveIntermediateStop(index, 1)} aria-label={`Move ${stop} down`} className="rounded-md border border-white/20 px-2 py-1 disabled:opacity-30">↓</button>
+                      </span>
+                    </div>
                   ))}
                   {stopsText.trim() === '' && <div className="text-xs text-slate-400">Intermediate stops will appear here as you add them.</div>}
                 </div>
