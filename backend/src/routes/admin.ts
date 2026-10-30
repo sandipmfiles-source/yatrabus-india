@@ -374,6 +374,7 @@ adminRouter.post('/submissions/:id/review', requireAdminAuth('SUPER_ADMIN'), (re
       publicIdentifier: String(data.busIdentifier).trim().slice(0, 80),
       operatorName: typeof data.operatorName === 'string' ? data.operatorName.trim().slice(0, 120) : targetBus.operatorName,
       contributedBy: pendingSubmission.contributorDisplayName || targetBus.contributedBy,
+      serviceStatus: verifyTimetable === true ? 'OPERATING_SCHEDULED' : targetBus.serviceStatus,
       updatedAt: new Date().toISOString(),
       if (verifyTimetable === true) repository.addRoute({ ...route, serviceStatus: 'OPERATING_SCHEDULED', updatedAt: new Date().toISOString() });
   });
@@ -440,7 +441,7 @@ adminRouter.post('/submissions/:id/review', requireAdminAuth('SUPER_ADMIN'), (re
         contributedBy: pendingSubmission.contributorDisplayName || pendingSubmission.contributorNote || undefined,
         vehicleType: 'ORDINARY',
         hasCustomSvgIllustration: true,
-        serviceStatus: 'SCHEDULE_UNVERIFIED',
+        serviceStatus: verifyTimetable === true ? 'OPERATING_SCHEDULED' : 'SCHEDULE_UNVERIFIED',
         verificationStatus: 'ADMIN_VERIFIED',
         isActive: true,
         createdAt: now,
