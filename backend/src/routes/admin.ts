@@ -139,6 +139,11 @@ adminRouter.post('/submissions/:id/review', requireAdminAuth('SUPER_ADMIN'), (re
         !Number.isFinite(Number(stop.longitude)) || Number(stop.longitude) < -180 || Number(stop.longitude) > 180)) {
       return res.status(422).json({ error: 'Every route stop must have a name and valid coordinates.' });
     }
+    const updateStopNames = stopsInput.map((stop: any) => String(stop.name).trim().toLocaleLowerCase());
+    const updateStopCoordinates = stopsInput.map((stop: any) => `${Number(stop.latitude).toFixed(5)},${Number(stop.longitude).toFixed(5)}`);
+    if (new Set(updateStopNames).size !== updateStopNames.length || new Set(updateStopCoordinates).size !== updateStopCoordinates.length) {
+      return res.status(422).json({ error: 'Route stops must have unique names and coordinates in travel order.' });
+    }
     let distanceFromStartKm = 0;
     const requestedDepartureTimes = Array.isArray(data.departureTimes)
       ? data.departureTimes.map((time: unknown) => String(time).trim()).filter(Boolean).sort()
@@ -222,6 +227,11 @@ adminRouter.post('/submissions/:id/review', requireAdminAuth('SUPER_ADMIN'), (re
     );
     if (!stopsAreValid) {
       return res.status(422).json({ error: 'Every stop must have a name and valid latitude/longitude coordinates.' });
+    }
+    const createStopNames = stopsInput.map((stop: any) => String(stop.name).trim().toLocaleLowerCase());
+    const createStopCoordinates = stopsInput.map((stop: any) => `${Number(stop.latitude).toFixed(5)},${Number(stop.longitude).toFixed(5)}`);
+    if (new Set(createStopNames).size !== createStopNames.length || new Set(createStopCoordinates).size !== createStopCoordinates.length) {
+      return res.status(422).json({ error: 'Route stops must have unique names and coordinates in travel order.' });
     }
     const now = new Date().toISOString();
     let operator = repository.getOperatorByName(operatorName);
