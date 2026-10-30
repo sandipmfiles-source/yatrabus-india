@@ -152,6 +152,9 @@ export const bn = {
   contribute_heading: 'গণপরিবহনে তথ্য যোগ করুন',
   contribute_intro: 'গণপরিবহনের তথ্য সঠিক রাখতে সাহায্য করুন। আপডেট পাঠান, সময়সূচি যাচাই করুন বা রেফারেন্স আইডি দিয়ে আগের জমা দেখুন।',
   nav_owner_portal: 'বাস মালিক / অপারেটর',
+  owner_route_update: 'মালিক: রুট আপডেট',
+  owner_timetable_update: 'মালিক: সময়সূচি আপডেট',
+
   owner_account_free_title: 'বাস মালিক / অপারেটরের তথ্য — সাইন-ইন লাগবে না',
   owner_account_free_description: 'আপনার জমা আলাদা Super Admin পর্যালোচনা তালিকায় যাবে। যোগাযোগের তথ্য শুধু অপারেটরের দাবি যাচাই করতে ব্যবহার হবে।',
   owner_contact_person: 'আপনার নাম / যোগাযোগকারী',
