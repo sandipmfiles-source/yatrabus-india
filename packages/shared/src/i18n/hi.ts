@@ -119,4 +119,5 @@ export const hi = {
   submission_type: "जानकारी का प्रकार",
   submitted: "जमा करने की तारीख",
   reviewer_note: "समीक्षक की टिप्पणी",
+  scheduled_departures: "प्रकाशित बस प्रस्थान समय",
 };
