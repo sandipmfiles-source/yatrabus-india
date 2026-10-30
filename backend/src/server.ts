@@ -59,7 +59,7 @@ export function createServer() {
   const webIndex = resolve(webDist, 'index.html');
   if (existsSync(webIndex)) {
     app.use(express.static(webDist, { index: false }));
-    app.get(/^(?!\\/api(?:\\/|$)|\\/health$).*/, (_req: Request, res: Response) => {
+    app.get(/^(?!\/api(?:\/|$)|\/health$).*/, (_req: Request, res: Response) => {
       res.sendFile(webIndex);
     });
   }
