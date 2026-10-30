@@ -194,6 +194,8 @@ adminRouter.post('/submissions/:id/review', requireAdminAuth('SUPER_ADMIN'), (re
       direction: data.direction === 'DOWN' || data.direction === 'CIRCULAR' ? data.direction : data.direction === 'UP' ? 'UP' : route.direction,
       operatingDays: Array.isArray(data.operatingDays) ? normalizeOperatingDays(data.operatingDays) : route.operatingDays,
       departureTimes: requestedDepartureTimes,
+      frequencyMinutes: Number.isFinite(Number(data.frequencyMinutes)) && Number(data.frequencyMinutes) > 0
+        ? Number(data.frequencyMinutes) : undefined,
       serviceStatus: verifyTimetable === true ? 'OPERATING_SCHEDULED' : route.serviceStatus,
       stops: updatedStops,
       geometry: updatedStops.map(stop => ({ latitude: stop.latitude, longitude: stop.longitude })),
