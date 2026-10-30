@@ -156,7 +156,12 @@ export const TrackingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       }
       const res = await api.startJourneySession(pendingBusForTracking.busId, pendingBusForTracking.routeId);
       const session = res.session;
-      await api.recordConsent(session.sessionId, 'GRANTED', true);
+      try {
+        await api.recordConsent(session.sessionId, 'GRANTED', true);
+      } catch (consentError) {
+        await api.stopJourneySession(session.sessionId, 'USER_STOPPED');
+        throw consentError;
+      }
       const sessionData: ActiveSessionData = {
         sessionId: session.sessionId,
         busId: pendingBusForTracking.busId,
