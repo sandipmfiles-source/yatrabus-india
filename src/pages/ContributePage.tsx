@@ -170,11 +170,11 @@ export const ContributePage: React.FC = () => {
                 </label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {[
-                    { id: 'ADD_BUS' as SubmissionType, label: '{t('add_bus')}' },
+                    { id: 'ADD_BUS' as SubmissionType, label: t('add_bus') },
                     { id: 'SUGGEST_ROUTE' as SubmissionType, label: t('add_route_timetable') },
-                    { id: 'ADD_STOP' as SubmissionType, label: '{t('add_stop')}' },
-                    { id: 'CORRECT_TIMETABLE' as SubmissionType, label: '{t('fix_schedule')}' },
-                    { id: 'REPORT_CHANGED_ROUTE' as SubmissionType, label: '{t('report_issue')}' },
+                    { id: 'ADD_STOP' as SubmissionType, label: t('add_stop') },
+                    { id: 'CORRECT_TIMETABLE' as SubmissionType, label: t('fix_schedule') },
+                    { id: 'REPORT_CHANGED_ROUTE' as SubmissionType, label: t('report_issue') },
                   ].map(t => (
                     <button
                       key={t.id}
