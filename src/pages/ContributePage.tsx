@@ -137,6 +137,46 @@ export const ContributePage: React.FC = () => {
   const [submittedRefId, setSubmittedRefId] = useState<string | null>(null);
   const [submissionError, setSubmissionError] = useState('');
 
+  useEffect(() => {
+    if (!routeIdParam || submissionType !== 'UPDATE_ROUTE') return;
+    let cancelled = false;
+    setSubmissionError('');
+    api.getRouteById(routeIdParam).then((result: any) => {
+      if (cancelled) return;
+      const route = result?.route;
+      if (!route) {
+        setSubmissionError('The selected route could not be loaded. Return to the route page and try again.');
+        return;
+      }
+      const stops = Array.isArray(route.stops) ? route.stops : [];
+      setRouteNumber(String(route.routeNumber || ''));
+      setDirection(route.direction === 'DOWN' ? 'DOWN' : 'UP');
+      setRouteName(String(route.routeName || ''));
+      setOrigin(String(route.originStopName || ''));
+      setDestination(String(route.destinationStopName || ''));
+      setOperatorName(String(route.operatorName || ''));
+      setRouteDistanceKm(String(route.distanceKm || ''));
+      setRouteDurationMinutes(String(route.typicalDurationMinutes || ''));
+      setFirstDepartureTime(String(route.firstDepartureTime || ''));
+      setLastDepartureTime(String(route.lastDepartureTime || ''));
+      setFrequencyMinutes(String(route.frequencyMinutes || ''));
+      setDepartureTimes(Array.isArray(route.departureTimes) ? route.departureTimes.join(', ') : '');
+      setOperatingDays(Array.isArray(route.operatingDays) && route.operatingDays.length === 7 ? 'Daily' : (route.operatingDays || []).join(','));
+      setRouteStops(stops.map((stop: any) => ({
+        name: String(stop.stopName || stop.name || ''),
+        latitude: String(stop.latitude ?? ''),
+        longitude: String(stop.longitude ?? ''),
+        arrivalTime: String(stop.scheduledArrivalTime || ''),
+        departureTime: String(stop.scheduledDepartureTime || ''),
+      })));
+      setRoutePreview(null);
+      setRoutePreviewError('');
+    }).catch((error: unknown) => {
+      if (!cancelled) setSubmissionError(error instanceof Error ? error.message : 'Unable to load the existing route.');
+    });
+    return () => { cancelled = true; };
+  }, [routeIdParam, submissionType]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isRouteSubmission) {
