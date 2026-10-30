@@ -41,4 +41,7 @@ export const en = {
   consent_decline: 'No Thanks, Search Manually',
   view_route_details: 'View Route & Stops',
   privacy_guarantee: '₹0 Paid AI • Zero Account Required • Privacy-Preserving GPS',
+  approx_daily_departures: 'Approx. departures per operating day',
+  every_minutes: 'Every {minutes} minutes',
+  intermediate_stops: 'Stops on this journey',
 };
