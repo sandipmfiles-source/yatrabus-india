@@ -125,6 +125,9 @@ export const OwnerDashboardPage: React.FC = () => {
     setDestination(String(data.destination || ''));
     setDepartureTime(String(data.departureTime || ''));
     setArrivalTime(String(data.arrivalTime || ''));
+    setStopsText((Array.isArray(data.stops) ? data.stops : []).map((stop: any) =>
+      [stop.name || stop.stopName || '', stop.latitude ?? '', stop.longitude ?? '', stop.arrivalTime || stop.scheduledArrivalTime || '', stop.departureTime || stop.scheduledDepartureTime || ''].join(' | ')
+    ).join('\n'));
     setNote('Owner timetable correction');
   };
 
