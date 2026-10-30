@@ -19,16 +19,25 @@ export const SearchResultsPage: React.FC = () => {
   const [directRoutes, setDirectRoutes] = useState<JourneyCandidate[]>([]);
   const [transferRoutes, setTransferRoutes] = useState<JourneyCandidate[]>([]);
   const [filterType, setFilterType] = useState<'ALL' | 'DIRECT' | 'LIVE'>('ALL');
+  const [returnJourneys, setReturnJourneys] = useState<JourneyCandidate[]>([]);
 
   useEffect(() => {
-    if (!from || !to) return;
-
-    setIsLoading(true);
-    api.searchRoutes(from, to).then(res => {
-      setDirectRoutes(res.directRoutes || []);
-      setTransferRoutes(res.transferRoutes || []);
+    if (!from || !to) {
       setIsLoading(false);
-    });
+      return;
+    }
+    let cancelled = false;
+    setIsLoading(true);
+    Promise.all([api.searchRoutes(from, to), api.searchRoutes(to, from).catch(() => null)])
+      .then(([res, reverse]) => {
+        if (cancelled) return;
+        setDirectRoutes(res.directRoutes || []);
+        setTransferRoutes(res.transferRoutes || []);
+        setReturnJourneys(reverse ? [...(reverse.directRoutes || []), ...(reverse.transferRoutes || [])] : []);
+        setIsLoading(false);
+      })
+      .catch(() => { if (!cancelled) setIsLoading(false); });
+    return () => { cancelled = true; };
   }, [from, to]);
 
   const allJourneys = [...directRoutes, ...transferRoutes];
