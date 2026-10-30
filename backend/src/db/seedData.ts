@@ -654,6 +654,7 @@ export const SEED_ROUTES: Route[] = [
 export const SEED_BUSES: Bus[] = [
   {
     id: 'bus-dtc-534-01',
+    routeId: 'route-dtc-534-up',
     publicIdentifier: 'Route 534 (DL 1PC 4432)',
     operatorId: 'op-dtc',
     operatorName: 'Delhi Transport Corporation',
@@ -668,6 +669,7 @@ export const SEED_BUSES: Bus[] = [
   },
   {
     id: 'bus-dtc-429-01',
+    routeId: 'route-dtc-429-up',
     publicIdentifier: 'Route 429 (DL 1PD 8821)',
     operatorId: 'op-dtc',
     operatorName: 'Delhi Transport Corporation',
@@ -682,6 +684,7 @@ export const SEED_BUSES: Bus[] = [
   },
   {
     id: 'bus-best-105-01',
+    routeId: 'route-best-105-up',
     publicIdentifier: 'Route AC-105 (MH 01 CV 2012)',
     operatorId: 'op-best',
     operatorName: 'BEST Undertaking',
@@ -696,6 +699,7 @@ export const SEED_BUSES: Bus[] = [
   },
   {
     id: 'bus-wbtc-s12-01',
+    routeId: 'route-wbtc-s12-up',
     publicIdentifier: 'Route S-12 (WB 04 G 9912)',
     operatorId: 'op-wbtc',
     operatorName: 'West Bengal Transport Corporation',
