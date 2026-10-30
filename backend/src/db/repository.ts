@@ -242,16 +242,44 @@ export class TransitRepository {
     return this.journeySessions.get(sessionId);
   }
 
+  private pruneExpiredTrackingData(nowMs: number = Date.now()): void {
+    const retentionCutoff = nowMs - 12 * 60 * 60 * 1000;
+    const inactiveSessionIds = new Set<string>();
+    for (const [sessionId, session] of this.journeySessions) {
+      const expiryMs = new Date(session.maxExpiryTime).getTime();
+      if (session.isActive && Number.isFinite(expiryMs) && nowMs >= expiryMs) {
+        session.isActive = false;
+        session.stoppedReason = 'SESSION_EXPIRED';
+        session.lastActiveTime = new Date(nowMs).toISOString();
+        const consent = this.consentRecords.get(sessionId);
+        if (consent?.status === 'GRANTED') {
+          this.consentRecords.set(sessionId, { ...consent, status: 'REVOKED', revokedAt: new Date(nowMs).toISOString() });
+        }
+      }
+      if (!session.isActive) inactiveSessionIds.add(sessionId);
+    }
+    this.observations = this.observations.filter(observation =>
+      !inactiveSessionIds.has(observation.sessionId) &&
+      new Date(observation.timestamp).getTime() >= retentionCutoff
+    );
+  }
+
   public stopJourneySession(sessionId: string, reason: JourneySession['stoppedReason']): boolean {
     const sess = this.journeySessions.get(sessionId);
     if (!sess) return false;
     sess.isActive = false;
     sess.stoppedReason = reason;
     sess.lastActiveTime = new Date().toISOString();
+    const consent = this.consentRecords.get(sessionId);
+    if (consent?.status === 'GRANTED') {
+      this.consentRecords.set(sessionId, { ...consent, status: 'REVOKED', revokedAt: new Date().toISOString() });
+    }
+    this.pruneExpiredTrackingData();
     return true;
   }
 
   public ingestObservation(obs: LocationObservation): void {
+    this.pruneExpiredTrackingData();
     this.observations.push(obs);
     // Increment session counter
     const sess = this.journeySessions.get(obs.sessionId);
@@ -262,6 +290,7 @@ export class TransitRepository {
   }
 
   public getDistinctSessionsForBus(busId: string, sinceIso: string): number {
+    this.pruneExpiredTrackingData();
     const sinceMs = new Date(sinceIso).getTime();
     const sessions = new Set<string>();
     for (const obs of this.observations) {
@@ -380,6 +409,7 @@ export class TransitRepository {
   }
 
   public exportState(): Record<string, unknown> {
+    this.pruneExpiredTrackingData();
     return {
       places: Array.from(this.places.values()),
       operators: Array.from(this.operators.values()),
@@ -419,6 +449,7 @@ export class TransitRepository {
     restore(this.automationRules, snapshot.automationRules, item => (item as any).id);
     restore(this.adminUsers, snapshot.adminUsers, item => (item as any).id);
     if (Array.isArray(snapshot.observations)) this.observations = (snapshot.observations as LocationObservation[]).slice(-10000);
+    this.pruneExpiredTrackingData();
     if (Array.isArray(snapshot.auditLogs)) this.auditLogs = (snapshot.auditLogs as AuditLogEntry[]).slice(0, 500);
   }
 
