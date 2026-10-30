@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import { createHash } from 'node:crypto';
 import { repository } from '../db/repository.js';
 import { checkDuplicateStop, checkDuplicateRoute } from '../../../packages/shared/src/engine/duplicateDetector.js';
 import { contributionLimiter } from '../middleware/rateLimiter.js';
@@ -57,7 +58,8 @@ contributionsRouter.post('/submit', contributionLimiter, (req: Request, res: Res
     contributorNote,
     proposedData,
     status: 'PENDING_REVIEW',
-    corroborationCount: 1,
+    corroborationCount: 0,
+    sourceCategory: 'PUBLIC',
     duplicateCandidateIds,
     createdAt: new Date().toISOString(),
   });
@@ -69,6 +71,27 @@ contributionsRouter.post('/submit', contributionLimiter, (req: Request, res: Res
     duplicateWarnings: duplicateCandidateIds.length > 0 ? 'Potential duplicate detected and flagged for verifier review' : null,
     message: 'Contribution received successfully. You can check review progress anytime using your Reference ID without an account.',
   });
+});
+
+
+
+// POST /api/contributions/vote/:refId — one anonymous correction vote per app/browser install.
+contributionsRouter.post('/vote/:refId', contributionLimiter, (req: Request, res: Response) => {
+  const submission = repository.getSubmissionByReference(String(req.params.refId));
+  if (!submission) return res.status(404).json({ error: 'Correction not found' });
+  if (submission.status !== 'PENDING_REVIEW' && submission.status !== 'COMMUNITY_CORROBORATED') {
+    return res.status(409).json({ error: 'This correction is no longer open for voting' });
+  }
+  const field = typeof req.body?.field === 'string' ? req.body.field.trim() : '';
+  const value = typeof req.body?.value === 'string' ? req.body.value.trim() : '';
+  const visitorId = typeof req.body?.visitorId === 'string' ? req.body.visitorId : '';
+  if (!field || !value || visitorId.length < 16 || visitorId.length > 128) {
+    return res.status(400).json({ error: 'A correction field, proposed value and anonymous visitor ID are required' });
+  }
+  const voterKey = createHash('sha256').update(visitorId).digest('hex');
+  const result = repository.recordSubmissionVote(submission.id, voterKey, field, value);
+  if (!result.success) return res.status(409).json({ error: result.error });
+  return res.json({ success: true, counts: result.counts, message: 'Your community vote was counted.' });
 });
 
 // GET /api/contributions/status/:refId
