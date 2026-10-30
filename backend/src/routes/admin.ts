@@ -382,8 +382,17 @@ adminRouter.post('/submissions/:id/review', requireAdminAuth('SUPER_ADMIN'), (re
 
   if (decision === 'ADMIN_VERIFIED' && pendingSubmission?.submissionType === 'DELETE_BUS') {
     const busId = pendingSubmission.targetEntityId || '';
-    const bus = busId ? repository.getBusById(busId) : undefined;
-    if (!bus) return res.status(404).json({ error: 'Bus record was not found for removal.' });
+    const proposedIdentifier = typeof pendingSubmission.proposedData?.busIdentifier === 'string'
+      ? pendingSubmission.proposedData.busIdentifier.trim().toLocaleLowerCase() : '';
+    const routeNumber = typeof pendingSubmission.proposedData?.routeNumber === 'string'
+      ? pendingSubmission.proposedData.routeNumber.trim() : '';
+    const route = routeNumber ? repository.getRouteByNumber(routeNumber) : undefined;
+    const bus = (busId ? repository.getBusById(busId) : undefined) ||
+      (proposedIdentifier && route
+        ? repository.getAllBuses().find(item => item.isActive && item.routeId === route.id &&
+            item.publicIdentifier.trim().toLocaleLowerCase() === proposedIdentifier)
+        : undefined);
+    if (!bus) return res.status(404).json({ error: 'Matching active bus record was not found. Check the route number and exact bus name / number before approving removal.' });
     repository.addBus({ ...bus, isActive: false, updatedAt: new Date().toISOString() });
   }
 
