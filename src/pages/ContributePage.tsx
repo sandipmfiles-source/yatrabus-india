@@ -582,7 +582,7 @@ export const ContributePage: React.FC = () => {
                 <section className="rounded-2xl border border-amber-300 bg-amber-50/70 p-4 space-y-4">
                   <div>
                     <h3 className="text-sm font-bold text-yatriwarm-900">New route details</h3>
-                    <p className="text-[11px] text-yatriwarm-600 mt-1">Add stops in travel order. Latitude and longitude are required for every stop. The route stays private until Super Admin approval.</p>
+                    <p className="text-[11px] text-yatriwarm-600 mt-1">Enter the starting point at the top and destination at the bottom. Tap “Add stoppage between” to insert stops along the route. Place coordinates are matched automatically; use GPS if needed. Your route stays private until Super Admin approval.</p>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <label className="text-xs font-medium text-yatriwarm-700">Route number
@@ -620,27 +620,38 @@ export const ContributePage: React.FC = () => {
                   </div>
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <h4 className="text-xs font-bold text-yatriwarm-800">Ordered route stops</h4>
-                      <button type="button" disabled={routeStops.length >= 25} onClick={() => setRouteStops(current => current.length >= 25 ? current : [...current.slice(0, -1), { name: '', latitude: '', longitude: '', arrivalTime: '', departureTime: '' }, current[current.length - 1]])} className="text-xs font-semibold text-red-700 disabled:opacity-40">+ Add intermediate stop</button>
+                      <h4 className="text-xs font-bold text-yatriwarm-800">Build your route visually</h4>
+                      <button type="button" disabled={routeStops.length >= 25} onClick={() => setRouteStops(current => current.length >= 25 ? current : [...current.slice(0, -1), { name: '', latitude: '', longitude: '', arrivalTime: '', departureTime: '' }, current[current.length - 1]])} className="text-xs font-semibold text-red-700 disabled:opacity-40">Top → Bottom</button>
                     </div>
                     {routeStops.map((stop, index) => (
-                      <div key={index} className="rounded-xl border border-yatriwarm-200 bg-white p-3 space-y-2">
-                        <div className="flex items-center justify-between gap-2"><span className="text-xs font-bold text-yatriwarm-800">Stop {index + 1} {index === 0 ? '(Origin)' : index === routeStops.length - 1 ? '(Destination)' : '(Intermediate)'}</span>
+                      <React.Fragment key={index}>
+                        <div className="rounded-2xl border border-yatriwarm-200 bg-white p-3 space-y-2 shadow-sm">
                           <div className="flex items-center gap-2">
-                            {index > 0 && index < routeStops.length - 1 && <><button type="button" onClick={() => moveRouteStop(index, -1)} disabled={index === 1} aria-label="Move stop up" className="rounded-md border border-yatriwarm-200 px-2 py-1 text-[11px] disabled:opacity-30">↑</button><button type="button" onClick={() => moveRouteStop(index, 1)} disabled={index === routeStops.length - 2} aria-label="Move stop down" className="rounded-md border border-yatriwarm-200 px-2 py-1 text-[11px] disabled:opacity-30">↓</button></>}
-                            {routeStops.length > 2 && index > 0 && index < routeStops.length - 1 && <button type="button" onClick={() => setRouteStops(current => current.filter((_, i) => i !== index))} className="text-[11px] text-red-700">Remove</button>}
+                            <span className={"flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold " + (index === 0 || index === routeStops.length - 1 ? "bg-yatribrand-900 text-white" : "bg-emerald-100 text-emerald-800")}>
+                              {index === 0 ? "A" : index === routeStops.length - 1 ? "B" : index}
+                            </span>
+                            <div className="min-w-0 flex-1">
+                              <div className="text-xs font-bold text-yatriwarm-900">{index === 0 ? "Starting point" : index === routeStops.length - 1 ? "Destination" : "Stoppage " + index}</div>
+                              <div className="text-[10px] text-yatriwarm-500">{index === 0 ? "Bus starts here" : index === routeStops.length - 1 ? "Bus ends here" : "Bus stops here"}</div>
+                            </div>
+                            {index > 0 && index < routeStops.length - 1 && <button type="button" onClick={() => setRouteStops(current => current.filter((_, i) => i !== index))} className="rounded-lg px-2 py-1 text-[11px] font-semibold text-rose-600 hover:bg-rose-50">Remove</button>}
+                          </div>
+                          <input required value={stop.name} onChange={e => updateRouteStop(index, "name", e.target.value)} onBlur={e => void fillKnownStopCoordinates(index, e.target.value)} placeholder={index === 0 ? "Enter starting place / bus stand" : index === routeStops.length - 1 ? "Enter destination" : "Enter intermediate bus stop"} className="w-full rounded-xl border border-yatriwarm-200 bg-yatriwarm-50 px-3 py-3 text-sm focus:border-yatribrand-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-yatribrand-100" />
+                          <div className="flex items-center justify-between gap-2">
+                            <span className={"text-[10px] " + (stop.latitude && stop.longitude ? "text-emerald-700" : "text-amber-700")}>
+                              {stop.latitude && stop.longitude ? "✓ Place location matched" : "Location will match from place name"}
+                            </span>
+                            <button type="button" onClick={async () => { try { const p = await Geolocation.getCurrentPosition({ enableHighAccuracy: true, timeout: 15000 }); updateRouteStop(index, "latitude", p.coords.latitude.toString()); updateRouteStop(index, "longitude", p.coords.longitude.toString()); } catch { setRoutePreviewError("Allow GPS access or enter a recognised place name."); } }} className="text-[10px] font-semibold text-yatribrand-800 underline">Use my GPS</button>
+                          </div>
+                          <input type="hidden" value={stop.latitude} readOnly />
+                          <input type="hidden" value={stop.longitude} readOnly />
+                          <div className="grid grid-cols-2 gap-2">
+                            <label className="text-[10px] text-yatriwarm-600">Arrival time (optional)<input type="time" value={stop.arrivalTime} onChange={e => updateRouteStop(index, "arrivalTime", e.target.value)} className="mt-1 w-full rounded-lg border border-yatriwarm-200 bg-yatriwarm-50 px-2 py-2 text-xs" /></label>
+                            <label className="text-[10px] text-yatriwarm-600">Departure time (optional)<input type="time" value={stop.departureTime} onChange={e => updateRouteStop(index, "departureTime", e.target.value)} className="mt-1 w-full rounded-lg border border-yatriwarm-200 bg-yatriwarm-50 px-2 py-2 text-xs" /></label>
                           </div>
                         </div>
-                        <input required value={stop.name} onChange={e => updateRouteStop(index, 'name', e.target.value)} onBlur={e => void fillKnownStopCoordinates(index, e.target.value)} placeholder="Stop / place name (saved places auto-fill coordinates)" className="w-full px-3 py-2 bg-yatriwarm-50 border border-yatriwarm-200 rounded-lg text-xs" />
-                        <div className="grid grid-cols-2 gap-2">
-                          <input required type="number" min="6" max="38" step="any" value={stop.latitude} onChange={e => updateRouteStop(index, 'latitude', e.target.value)} placeholder="Latitude" className="w-full px-3 py-2 bg-yatriwarm-50 border border-yatriwarm-200 rounded-lg text-xs" />
-                          <input required type="number" min="68" max="98" step="any" value={stop.longitude} onChange={e => updateRouteStop(index, 'longitude', e.target.value)} placeholder="Longitude" className="w-full px-3 py-2 bg-yatriwarm-50 border border-yatriwarm-200 rounded-lg text-xs" />
-                        </div>
-                        <div className="grid grid-cols-2 gap-2">
-                          <label className="text-[10px] text-yatriwarm-600">Arrival (optional)<input type="time" value={stop.arrivalTime} onChange={e => updateRouteStop(index, 'arrivalTime', e.target.value)} className="mt-1 w-full px-2 py-2 bg-yatriwarm-50 border border-yatriwarm-200 rounded-lg text-xs" /></label>
-                          <label className="text-[10px] text-yatriwarm-600">Departure (optional)<input type="time" value={stop.departureTime} onChange={e => updateRouteStop(index, 'departureTime', e.target.value)} className="mt-1 w-full px-2 py-2 bg-yatriwarm-50 border border-yatriwarm-200 rounded-lg text-xs" /></label>
-                        </div>
-                      </div>
+                        {index === 0 && <div className="flex justify-center py-1"><button type="button" disabled={routeStops.length >= 25} onClick={() => setRouteStops(current => current.length >= 25 ? current : [...current.slice(0, -1), { name: "", latitude: "", longitude: "", arrivalTime: "", departureTime: "" }, current[current.length - 1]])} className="inline-flex items-center gap-2 rounded-full border-2 border-dashed border-yatribrand-300 bg-yatribrand-50 px-4 py-2 text-xs font-bold text-yatribrand-900 hover:bg-yatribrand-100 disabled:opacity-40"><PlusCircle className="h-4 w-4" /> Add stoppage between</button></div>}
+                      </React.Fragment>
                     ))}
                   </div>
                   <div className="rounded-2xl border border-yatriwarm-200 bg-white p-4 space-y-3">
