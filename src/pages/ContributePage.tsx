@@ -675,7 +675,7 @@ export const ContributePage: React.FC = () => {
                             <span className={"text-[10px] " + (stop.latitude && stop.longitude ? "text-emerald-700" : "text-amber-700")}>
                               {stop.latitude && stop.longitude ? "✓ Place location matched" : "Location will match from place name"}
                             </span>
-                            <button type="button" onClick={async () => { try { const p = await Geolocation.getCurrentPosition({ enableHighAccuracy: true, timeout: 15000 }); updateRouteStop(index, "latitude", p.coords.latitude.toString()); updateRouteStop(index, "longitude", p.coords.longitude.toString()); } catch { setRoutePreviewError("Allow GPS access or enter a recognised place name."); } }} className="text-[10px] font-semibold text-yatribrand-800 underline">Use my GPS</button>
+                            <button type="button" onClick={async () => { try { const p = await Geolocation.getCurrentPosition({ enableHighAccuracy: true, timeout: 15000 }); updateRouteStop(index, "latitude", p.coords.latitude.toString()); updateRouteStop(index, "longitude", p.coords.longitude.toString()); try { const place = await api.reverseGeocodePlace(p.coords.latitude, p.coords.longitude); if (place?.name) updateRouteStop(index, "name", place.name); } catch { /* Keep GPS coordinates even if the free place-name service is unavailable. */ } } catch { setRoutePreviewError("Allow GPS access or select a suggested place name."); } }} className="text-[10px] font-semibold text-yatribrand-800 underline">Use my GPS</button>
                           </div>
                           <input type="hidden" value={stop.latitude} readOnly />
                           <input type="hidden" value={stop.longitude} readOnly />
