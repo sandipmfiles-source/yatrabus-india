@@ -38,6 +38,13 @@ All endpoints accept and return `application/json`. Timestamps use ISO 8601 UTC 
 - **Endpoint**: `GET /api/routes/search?from={from}&to={to}`
 - **Returns**: Direct bus routes and 1-transfer connections with interchange wait times.
 
+### 3A. Free Road Route Preview
+- **Endpoint**: `POST /api/places/route-preview`
+- **Body**: `{ "origin": "Kolkata Airport | 22.65 | 88.44", "destination": "Howrah Station | 22.59 | 88.34", "stops": ["Esplanade | 22.56 | 88.35"] }`
+- **Returns**: Road distance, estimated driving duration and encoded road geometry from OSRM / OpenStreetMap.
+- **Requirements**: Use an exact saved YatraBus place with coordinates or provide each point as Name | latitude | longitude.
+- **Limits**: Low-volume, manual checks only; route results are not proof of a bus service and require Super Admin review.
+
 ### 4. Route Details & Stops Sequence
 - **Endpoint**: `GET /api/routes/:id`
 
