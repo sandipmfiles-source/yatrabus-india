@@ -3,7 +3,7 @@ import { discoverJourneys } from '../../packages/shared/src/engine/routeGraph.js
 import { calculateStopETAs } from '../../packages/shared/src/engine/etaCalculator.js';
 import { evaluateJourneyPrompt } from '../../packages/shared/src/engine/journeyConfirmationEngine.js';
 
-const API_BASE = (import.meta.env.VITE_API_BASE_URL || '/api').replace(/\/+$/, '');
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
 
 export const api = {
   async searchPlaces(query: string, limit = 8) {
