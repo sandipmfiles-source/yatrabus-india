@@ -160,4 +160,5 @@ export const en = {
   privacy_session_body: "A journey session terminates immediately when you tap Stop Sharing. An automated safety rule also terminates all sessions after a maximum of 12 hours.",
   privacy_contact_title: "5. Contact & Data Deletion Requests",
   privacy_contact_body: "Passenger searches do not create a passenger profile. When owner sign-in is configured, the verified account email and display name may be stored with that owner's bus submissions so the owner can view and manage them. Browser/app cache is only a convenience and may be erased when the app is uninstalled. For account or data deletion requests, operator listing queries or verifications, contact",
+  privacy_location_on_demand: "Location access is not required to open or search the app. Android asks for it only when you choose Find nearby stops or start journey tracking.",
 };
