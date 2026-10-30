@@ -13,7 +13,7 @@
 
 ### Core Non-Negotiables Built In:
 - **No Mandatory Passenger Accounts**: Search, view routes, and submit corrections immediately without phone numbers, OTPs, or passwords.
-- **Explicit Location Consent**: Zero covert background tracking. Location is only requested when using proximity features or confirming a bus journey.
+- **Explicit Location Consent**: The Android app requires foreground location permission before entry. Permission alone never shares GPS; journey tracking starts only after the passenger separately confirms a bus journey and consents.
 - **Deterministic Multi-Signal GPS Engine**: Evaluates horizontal accuracy, timestamp freshness, route cross-track distance, and speed realism without requiring paid AI APIs.
 - **Transparent Distinction**: Live GPS observations and schedule timetable predictions are clearly differentiated. Schedule estimates are **never** falsely labeled as "Live GPS".
 - **Custom SVG Bus Artwork**: Missing bus photos display a custom vector SVG bus illustration, never a broken image icon.
