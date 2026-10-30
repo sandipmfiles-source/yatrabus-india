@@ -81,12 +81,12 @@ export const api = {
     const bus = repository.getBusById(id);
     const loc = repository.getBusLocation(id);
     const routes = repository.getAllRoutes();
-    const route = routes.find(r => r.operatorId === bus?.operatorId) || routes[0];
-    const stopETAs = calculateStopETAs(
+    const route = routes.find(r => r.id === bus?.routeId) || routes.find(r => r.operatorId === bus?.operatorId) || routes[0];
+    const stopETAs = route ? calculateStopETAs(
       route.stops,
       0.35,
       loc?.isLive ? { latitude: loc.latitude!, longitude: loc.longitude!, speedKmh: loc.speedKmh, isLive: true } : undefined
-    );
+    ) : [];
     return { bus, location: loc, route, stopETAs };
   },
 
