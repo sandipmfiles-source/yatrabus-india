@@ -133,6 +133,19 @@ export const ContributePage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submissionType === 'SUGGEST_ROUTE') {
+      const times = departureTimes.split(',').map(time => time.trim()).filter(Boolean);
+      const validTime = (time: string) => /^([01]\\d|2[0-3]):[0-5]\\d$/.test(time);
+      if (times.some(time => !validTime(time)) || new Set(times).size !== times.length) {
+        setSubmissionError('Exact departure times must be unique 24-hour HH:MM values.');
+        return;
+      }
+      const days = operatingDays.trim().toLowerCase() === 'daily' ? [] : operatingDays.split(',').map(day => day.trim().slice(0, 3).toUpperCase()).filter(Boolean);
+      if (days.some(day => !['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'].includes(day))) {
+        setSubmissionError('Operating days must be Daily or comma-separated MON,TUE,WED,THU,FRI,SAT,SUN.');
+        return;
+      }
+    }
     if (submissionType === 'SUGGEST_ROUTE' && routePreview?.routeStatus !== 'ROAD_ROUTE_FOUND_IN_SUBMITTED_ORDER') {
       setSubmissionError('Check the OpenStreetMap road route in the submitted stop order before sending this route for Super Admin approval.');
       return;
