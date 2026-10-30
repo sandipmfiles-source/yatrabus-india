@@ -7,6 +7,10 @@ on:
     branches: [main, master, mx-local-preserve]
   workflow_dispatch:
 
+concurrency:
+  group: android-apk-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build-android:
     name: Build & Package Android APK
@@ -36,7 +40,7 @@ jobs:
           accept-android-sdk-licenses: true
 
       - name: Install NPM Dependencies
-        run: npm ci || npm install
+        run: npm install --no-audit --no-fund
 
       - name: Build Web Application
         env:
