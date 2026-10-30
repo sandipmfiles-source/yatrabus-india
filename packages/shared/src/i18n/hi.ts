@@ -97,4 +97,15 @@ export const hi = {
   requesting_permission: 'अनुमति माँगी जा रही है…',
   location_permission_denied: 'स्थान अनुमति नहीं मिली। आप बसें खोज सकते हैं; लाइव GPS के लिए अनुमति चाहिए।',
   location_permission_error: 'स्थान अनुमति नहीं माँगी जा सकी। Android Settings में ऐप की अनुमति जाँचें।',
+
+  tracking_updates_sent: 'स्थान अपडेट भेजे गए',
+  privacy_preserved: 'गोपनीयता सुरक्षित',
+  tracking_stop_title: 'स्थान साझा करना तुरंत बंद करें',
+  tracking_background_note: 'यात्रा ट्रैक होने के दौरान Android लगातार नोटिफिकेशन दिखा सकता है।',
+  tracking_bus_confirmed: 'आपकी यात्रा की पुष्टि:',
+  tracking_consent_message: 'आपकी स्पष्ट अनुमति से, इस बस में यात्रा करते समय आपका फोन अनाम स्थान अपडेट साझा करेगा। स्थान साझा किए बिना भी आप खोज जारी रख सकते हैं।',
+  tracking_privacy_detail: 'आपका स्थान बस स्तर पर एकत्रित होता है। व्यक्तिगत यात्रा इतिहास सार्वजनिक नहीं होता।',
+  tracking_expiry_detail: 'आप कभी भी साझा करना रोक सकते हैं। सत्र 12 घंटे बाद अपने आप समाप्त होगा।',
+  tracking_enable_button: 'स्थान चालू करें और यात्रियों की मदद करें',
+  tracking_not_now: 'अभी नहीं (खोज जारी रखें)',
 };
