@@ -37,13 +37,16 @@ export const SearchResultsPage: React.FC = () => {
     const route = journey.route;
     const departures = (route.departures || []).filter(item => !item.isCancelled)
       .slice().sort((a, b) => a.departureTime.localeCompare(b.departureTime));
-    const exactDepartures = departures.length > 0;
+    const exactTimes = (route.departureTimes || []).slice().sort();
+    const exactDepartures = departures.length > 0 || exactTimes.length > 0;
     const estimate = estimateDailyTripCount(route.firstDepartureTime, route.lastDepartureTime, route.frequencyMinutes);
     const dayCounts = (route.operatingDays || []).map(day =>
       departures.filter(item => !item.operatingDays?.length || item.operatingDays.includes(day)).length
     );
     const exactCount = exactDepartures
-      ? (dayCounts.length ? { min: Math.min(...dayCounts), max: Math.max(...dayCounts) } : { min: departures.length, max: departures.length })
+      ? departures.length
+        ? (dayCounts.length ? { min: Math.min(...dayCounts), max: Math.max(...dayCounts) } : { min: departures.length, max: departures.length })
+        : { min: exactTimes.length, max: exactTimes.length }
       : null;
     const countLabel = exactCount
       ? (exactCount.min === exactCount.max ? String(exactCount.min) : `${exactCount.min}–${exactCount.max}`)
@@ -55,9 +58,11 @@ export const SearchResultsPage: React.FC = () => {
           return { key: `estimated-${index}`, time: `${String(Math.floor(total / 60) % 24).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`, busIdentifier: '' };
         })
       : [];
-    const departureSlots = exactDepartures
+    const departureSlots = departures.length
       ? departures.slice(0, 30).map(item => ({ key: item.id, time: item.departureTime, busIdentifier: item.busIdentifier || '' }))
-      : estimatedSlots;
+      : exactTimes.length
+        ? exactTimes.slice(0, 30).map((time, index) => ({ key: `exact-time-${index}`, time, busIdentifier: '' }))
+        : estimatedSlots;
     const firstIndex = route.stops.findIndex(stop => stop.id === journey.boardingStop.id);
     const lastIndex = route.stops.findIndex(stop => stop.id === journey.alightingStop.id);
     const segmentStops = firstIndex >= 0 && lastIndex >= firstIndex
