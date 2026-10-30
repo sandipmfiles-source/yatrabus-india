@@ -11,7 +11,7 @@ export const translations = {
 };
 
 export function getTranslation(lang: LanguageCode, key: keyof typeof en): string {
-  const dict = translations[lang] || translations.en;
+  const dict = (translations[lang] || translations.en) as Record<keyof typeof en, string>;
   return dict[key] || translations.en[key] || key;
 }
 
