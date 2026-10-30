@@ -42,8 +42,9 @@ export const SearchResultsPage: React.FC = () => {
     const toMinutes = (value: string) => { const [h, m] = value.split(':').map(Number); return h * 60 + m; };
     const frequency = route.frequencyMinutes;
     const span = toMinutes(route.lastDepartureTime) - toMinutes(route.firstDepartureTime);
-    const trips = frequency && frequency > 0 && span >= 0 ? Math.floor(span / frequency) + 1 : null;
-    const departureSlots = trips && frequency ? Array.from({ length: Math.min(trips, 30) }, (_, index) => {
+    const exactDepartures = Array.isArray(route.departureTimes) && route.departureTimes.length > 0;
+    const trips = exactDepartures ? route.departureTimes!.length : frequency && frequency > 0 && span >= 0 ? Math.floor(span / frequency) + 1 : null;
+    const departureSlots = exactDepartures ? route.departureTimes!.slice(0, 30) : trips && frequency ? Array.from({ length: Math.min(trips, 30) }, (_, index) => {
       const minutes = toMinutes(route.firstDepartureTime) + index * frequency;
       return `${String(Math.floor(minutes / 60) % 24).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
     }) : [];
