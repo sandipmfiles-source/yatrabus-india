@@ -1,0 +1,46 @@
+name: Import India LGD Place Directory
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '20 2 * * 1'
+
+permissions:
+  contents: write
+
+jobs:
+  import-directory:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: mx-local-preserve
+      - name: Install 7-Zip
+        run: sudo apt-get update && sudo apt-get install -y p7zip-full
+      - name: Download latest pinned LGD snapshot
+        run: |
+          mkdir -p /tmp/lgd
+          base="https://github.com/ramSeraph/opendata/releases/download/lgd-latest-extra1"
+          for file in villages.21Oct2026.csv.7z blocks.21Oct2026.csv.7z urban_local_bodies.21Oct2026.csv.7z; do
+            curl --fail --location --retry 3 "$base/$file" -o "/tmp/$file"
+            7z e -y -o/tmp/lgd "/tmp/$file"
+          done
+          ls -lh /tmp/lgd
+      - name: Build compressed backend catalogue
+        run: node scripts/import-lgd-directory.mjs /tmp/lgd backend/data/india-lgd-directory.json.gz
+      - name: Validate imported catalogue
+        run: |
+          test -s backend/data/india-lgd-directory.json.gz
+          gzip -t backend/data/india-lgd-directory.json.gz
+      - name: Commit refreshed catalogue
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add backend/data/india-lgd-directory.json.gz
+          if git diff --cached --quiet; then
+            echo "LGD catalogue unchanged."
+          else
+            git commit -m "Import India LGD administrative directory"
+            git push origin HEAD:mx-local-preserve
+          fi
