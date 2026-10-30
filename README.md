@@ -81,9 +81,9 @@ You do **not** need Android Studio installed locally. The repository includes an
 ### How to Get Your APK:
 1. Push this repository to GitHub.
 2. Navigate to the **Actions** tab on your GitHub repository page.
-3. Select the latest completed run of **Build Android Debug APK**.
-4. Download the **`yatribus-debug-apk`** artifact.
-5. Transfer the unzipped `app-debug.apk` to your Android phone, enable *"Install Unknown Apps"* for your file manager, and tap **Install**.
+3. After a successful merge to `mx-local-preserve`, open the repository **Releases** page and download the latest **app-debug.apk** asset.
+4. If the release has not appeared yet, open **Actions** → **Build Android Debug APK** and download the `yatribus-debug-apk` artifact from the latest successful run.
+5. Transfer `app-debug.apk` to your Android phone, enable *Install Unknown Apps* for your file manager, and tap **Install**.
 
 *For complete details, see [docs/APK_INSTALLATION.md](docs/APK_INSTALLATION.md).*
 
