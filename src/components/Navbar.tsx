@@ -10,6 +10,7 @@ export const Navbar: React.FC = () => {
   const { t } = useLanguage();
 
   const isActive = (path: string) => location.pathname === path;
+  const isOwnerContribution = location.pathname === '/contribute' && location.search.includes('source=OPERATOR');
 
   return (
     <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-yatriwarm-200">
@@ -57,11 +58,11 @@ export const Navbar: React.FC = () => {
           <Link
             to="/contribute?type=SUGGEST_ROUTE&source=OPERATOR"
             className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 ${
-              isActive('/operator') || isActive('/operator-claim') ? 'bg-yatribrand-50 text-yatribrand-900 font-semibold' : 'text-yatriwarm-700 hover:bg-yatriwarm-100'
+              isOwnerContribution ? 'bg-yatribrand-50 text-yatribrand-900 font-semibold' : 'text-yatriwarm-700 hover:bg-yatriwarm-100'
             }`}
           >
             <BusFront className="w-4 h-4" />
-            Add Bus / Route
+            Bus Owner / Operator
           </Link>
         </nav>
 
