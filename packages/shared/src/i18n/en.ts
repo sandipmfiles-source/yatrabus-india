@@ -7,6 +7,8 @@ export const en = {
   last_bus: 'Last bus',
   frequency: 'Frequency',
   not_provided: 'Not provided',
+  not_verified: 'Not verified',
+
   trips_per_day: 'Trips per operating day',
   every: 'Every',
   minutes: 'minutes',
