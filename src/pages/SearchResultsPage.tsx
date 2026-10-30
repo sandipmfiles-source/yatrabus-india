@@ -122,6 +122,11 @@ export const SearchResultsPage: React.FC = () => {
     if (filterType === 'LIVE') return j.locationStatus === 'LIVE';
     return true;
   });
+  const filteredReturnJourneys = returnJourneys.filter(j => {
+    if (filterType === 'DIRECT') return j.isDirect;
+    if (filterType === 'LIVE') return j.locationStatus === 'LIVE';
+    return true;
+  });
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
@@ -210,15 +215,15 @@ export const SearchResultsPage: React.FC = () => {
         </div>
       )}
 
-      {!isLoading && returnJourneys.length > 0 && (
+      {!isLoading && filteredReturnJourneys.length > 0 && (
         <section className="space-y-3 pt-3">
           <div className="flex items-center gap-2"><BusFront className="w-5 h-5 text-yatribrand-800" /><h3 className="text-base font-bold text-yatriwarm-900">{t('return_buses')}: {to} → {from}</h3></div>
-          {returnJourneys.map(j => <div key={'return-' + j.id}><BusCard journey={j} />{timetablePanel(j)}</div>)}
+          {filteredReturnJourneys.map(j => <div key={'return-' + j.id}><BusCard journey={j} />{timetablePanel(j)}</div>)}
         </section>
       )}
 
       {/* Empty State */}
-      {!isLoading && filteredJourneys.length === 0 && returnJourneys.length === 0 && (
+      {!isLoading && filteredJourneys.length === 0 && filteredReturnJourneys.length === 0 && (
         <div className="bg-white rounded-3xl p-8 border border-yatriwarm-200 shadow-card text-center space-y-4">
           <div className="w-12 h-12 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center mx-auto">
             <AlertCircle className="w-6 h-6" />
