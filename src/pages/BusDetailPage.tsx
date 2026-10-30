@@ -397,59 +397,62 @@ export const BusDetailPage: React.FC = () => {
       </div>
 
       {/* Community Actions */}
-      <section className="rounded-2xl border border-yatriwarm-200 bg-white p-4 sm:p-5 shadow-subtle space-y-4">
-        <div className="space-y-1">
-          <h3 className="text-sm sm:text-base font-bold text-yatriwarm-900">
-            Noticed an incorrect schedule or temporary diversion on this bus?
+      <section className="min-w-0 rounded-xl border border-yatriwarm-200 bg-white p-3 shadow-subtle space-y-2">
+        <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
+          <h3 className="text-xs font-bold text-yatriwarm-900">
+            Report a schedule or route issue
           </h3>
-          <p className="text-xs sm:text-sm text-yatriwarm-600">
-            Choose the action that matches what you want to report. Suggestions are sent for review.
-          </p>
+          <span className="text-[10px] text-yatriwarm-500">Suggestions reviewed</span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+        <div className="flex min-w-0 flex-nowrap gap-1.5 overflow-x-auto overscroll-x-contain pb-1">
           <Link
             to={`/contribute?routeId=${route.id}&type=CORRECT_TIMETABLE`}
-            className="group min-w-0 rounded-xl border border-yatriwarm-200 bg-yatriwarm-50 p-3 hover:border-yatribrand-300 hover:bg-yatribrand-50 transition-colors focus:outline-none focus:ring-2 focus:ring-yatribrand-700"
+            title="Suggest a timetable correction"
+            aria-label="Suggest a timetable correction"
+            className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-lg border border-yatriwarm-200 bg-yatriwarm-50 px-2.5 py-2 text-[11px] font-semibold text-yatribrand-900 hover:bg-yatribrand-50 focus:outline-none focus:ring-2 focus:ring-yatribrand-700"
           >
-            <span className="flex items-center gap-2 text-sm font-bold text-yatribrand-900"><Edit3 className="w-4 h-4 shrink-0" />Suggest a timetable correction</span>
-            <span className="mt-1 block text-xs leading-relaxed text-yatriwarm-600">Fix a wrong departure, arrival time or bus schedule</span>
+            <Edit3 className="h-3.5 w-3.5" /> Timetable
           </Link>
 
           <Link
             to={`/contribute?routeId=${route.id}&type=REPORT_CHANGED_ROUTE`}
-            className="group min-w-0 rounded-xl border border-yatriwarm-200 bg-yatriwarm-50 p-3 hover:border-rose-300 hover:bg-rose-50 transition-colors focus:outline-none focus:ring-2 focus:ring-rose-500"
+            title="Report diversion or service issue"
+            aria-label="Report diversion or service issue"
+            className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-2 text-[11px] font-semibold text-rose-700 hover:bg-rose-100 focus:outline-none focus:ring-2 focus:ring-rose-500"
           >
-            <span className="flex items-center gap-2 text-sm font-bold text-rose-700"><Flag className="w-4 h-4 shrink-0" />Report diversion or issue</span>
-            <span className="mt-1 block text-xs leading-relaxed text-yatriwarm-600">Tell us about a changed route, disruption or service issue</span>
+            <Flag className="h-3.5 w-3.5" /> Diversion / issue
           </Link>
 
           <Link
             to={`/contribute?routeId=${route.id}&type=UPDATE_ROUTE&source=OPERATOR`}
-            className="group min-w-0 rounded-xl border border-yatriwarm-200 bg-yatriwarm-50 p-3 hover:border-yatribrand-300 hover:bg-yatribrand-50 transition-colors focus:outline-none focus:ring-2 focus:ring-yatribrand-700"
+            title="Update route details"
+            aria-label="Update route details"
+            className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-lg border border-yatriwarm-200 bg-yatriwarm-50 px-2.5 py-2 text-[11px] font-semibold text-yatribrand-900 hover:bg-yatribrand-50 focus:outline-none focus:ring-2 focus:ring-yatribrand-700"
           >
-            <span className="flex items-center gap-2 text-sm font-bold text-yatribrand-900"><Edit3 className="w-4 h-4 shrink-0" />Update route details</span>
-            <span className="mt-1 block text-xs leading-relaxed text-yatriwarm-600">For bus operators to submit revised route and stop details</span>
+            <Edit3 className="h-3.5 w-3.5" /> Route details
           </Link>
 
           {activeBusId && <>
             <Link
               to={`/contribute?routeId=${route.id}&busId=${activeBusId}&type=CORRECT_TIMETABLE&source=OPERATOR`}
-              className="group min-w-0 rounded-xl border border-yatriwarm-200 bg-yatriwarm-50 p-3 hover:border-yatribrand-300 hover:bg-yatribrand-50 transition-colors focus:outline-none focus:ring-2 focus:ring-yatribrand-700"
+              title="Update this bus timetable"
+              aria-label="Update this bus timetable"
+              className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-lg border border-yatriwarm-200 bg-yatriwarm-50 px-2.5 py-2 text-[11px] font-semibold text-yatribrand-900 hover:bg-yatribrand-50 focus:outline-none focus:ring-2 focus:ring-yatribrand-700"
             >
-              <span className="flex items-center gap-2 text-sm font-bold text-yatribrand-900"><Clock className="w-4 h-4 shrink-0" />Update this bus timetable</span>
-              <span className="mt-1 block text-xs leading-relaxed text-yatriwarm-600">For the operator to update this bus's timings</span>
+              <Clock className="h-3.5 w-3.5" /> Bus timings
             </Link>
             <Link
               to={`/contribute?routeId=${route.id}&busId=${activeBusId}&type=DELETE_BUS&source=OPERATOR`}
-              className="group min-w-0 rounded-xl border border-rose-200 bg-rose-50 p-3 hover:border-rose-300 hover:bg-rose-100 transition-colors focus:outline-none focus:ring-2 focus:ring-rose-500"
+              title="Request review to remove this bus"
+              aria-label="Request bus removal"
+              className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-2 text-[11px] font-semibold text-rose-700 hover:bg-rose-100 focus:outline-none focus:ring-2 focus:ring-rose-500"
             >
-              <span className="flex items-center gap-2 text-sm font-bold text-rose-700"><Flag className="w-4 h-4 shrink-0" />Request bus removal</span>
-              <span className="mt-1 block text-xs leading-relaxed text-yatriwarm-600">Request review if this bus no longer operates</span>
+              <Flag className="h-3.5 w-3.5" /> Remove bus
             </Link>
           </>}
         </div>
-        <p className="text-[11px] leading-relaxed text-yatriwarm-500">Community reports do not change the official timetable immediately. Changes are reviewed before they are applied.</p>
+        <p className="text-[10px] leading-tight text-yatriwarm-500">Swipe the options sideways to see all actions. Reports are reviewed before changes are applied.</p>
       </section>
     </div>
   );
