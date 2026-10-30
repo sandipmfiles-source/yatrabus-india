@@ -78,6 +78,10 @@ export function runRouteGraphTests(assert: (desc: string, pass: boolean) => void
   assert('Direct route includes its intermediate stops', directResult.directRoutes[0].intermediateStops?.length === 1);
   assert('Direct route exposes estimated daily trips from frequency', directResult.directRoutes[0].dailyTripCount === 49);
   assert('Direct route includes verified individual bus departures', directResult.directRoutes[0].timetableDepartures?.[0]?.busIdentifier === 'Community Bus 101A');
+  assert('Search result identifies the exact owner-submitted bus', directResult.directRoutes[0].busIdentifier === 'Community Bus 101A');
+  const intermediateResult = discoverJourneys('Stop B', 'Stop C', routes);
+  assert('Intermediate-stop boarding uses the individual bus departure time', intermediateResult.directRoutes[0]?.departureTime === '07:36');
+  assert('Intermediate-stop arrival uses the bus destination time', intermediateResult.directRoutes[0]?.arrivalTime === '08:00');
 
   // Transfer Search: Stop A to Stop D (via Interchange Stop B)
   const transferResult = discoverJourneys('Stop A', 'Stop D', routes);
