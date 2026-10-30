@@ -14,7 +14,11 @@ This plan keeps the initial build at ₹0 by using open-source data and free tie
 | Map data | OpenStreetMap | Open map data under ODbL | Tile servers are donation-funded, not unlimited; follow tile policy and show attribution |
 | Road routing | OSRM public demo using OSM road data | No API key for low-volume route checks | Best-effort demo only, no SLA; rate-limit/cache; switchable endpoint needed before scale |
 
-## 2. What works without paid keys
+## 2. Self-hosted single-container option
+
+A Dockerfile and `docker-compose.yml` are now included. They build the passenger web app and Express API into one container, serve both from the same host, and persist the JSON repository on a named Docker volume. Follow `docs/DOCKER_DEPLOYMENT.md`. This provides a deployable package; it does not mean a hosting account or public HTTPS endpoint has already been configured.
+
+## 3. What works without paid keys
 
 - Android APK compilation through the public GitHub Actions workflow.
 - Local seeded place search and route/timetable data.
@@ -25,7 +29,7 @@ This plan keeps the initial build at ₹0 by using open-source data and free tie
 
 Google Identity Services owner sign-in is implemented in the frontend and Express backend. It becomes active after configuring the same Web Client ID as `GOOGLE_OAUTH_CLIENT_ID` and `VITE_GOOGLE_CLIENT_ID`, plus a private 32+ character `OWNER_JWT_SECRET`. Google Maps / Places is not required for the free route-preview path.
 
-## 3. Important service boundaries
+## 4. Important service boundaries
 
 - A successful APK build does not deploy the backend. The app must be configured with a reachable VITE_API_BASE_URL for shared submissions, admin review and live GPS to work across devices.
 - The current Express backend writes JSON state to its local filesystem. A host with ephemeral storage can lose data on restart. Do not launch community submissions on an ephemeral instance as if it were durable.
@@ -35,7 +39,7 @@ Google Identity Services owner sign-in is implemented in the frontend and Expres
 - OSM tile policy requires visible attribution, normal interactive viewing only, and respecting caching headers. Do not bulk-download tiles or add offline map prefetch.
 - Public OSRM/Nominatim endpoints are community resources with usage limits, not guaranteed free production infrastructure.
 
-## 4. Backend environment variables
+## 5. Backend environment variables
 
 Configure only on the backend host, never in the APK:
 
@@ -57,7 +61,7 @@ Configure only on the backend host, never in the APK:
 
 Set `GOOGLE_OAUTH_CLIENT_ID` and `OWNER_JWT_SECRET` only on the backend host; set the matching public `VITE_GOOGLE_CLIENT_ID` as a GitHub Actions repository variable before building the APK. Never put passwords, JWT secrets, OAuth client secrets, or database passwords in GitHub source files.
 
-## 5. Persistent database activation (future step)
+## 6. Persistent database activation (future step)
 
 Before public launch, connect the runtime repository to PostgreSQL and then run:
 
@@ -68,6 +72,6 @@ Before public launch, connect the runtime repository to PostgreSQL and then run:
 
 The migration files alone do not activate PostgreSQL. Verify reads, writes, restart recovery and backups before accepting real community data.
 
-## 6. Backup
+## 7. Backup
 
 For a persistent PostgreSQL deployment, schedule regular pg_dump backups and test restoration. For the current JSON-file backend, keep the data directory on a persistent disk and back up yatribus-state.json; a container's temporary filesystem is not a backup.
