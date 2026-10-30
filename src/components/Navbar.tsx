@@ -55,7 +55,7 @@ export const Navbar: React.FC = () => {
             {t('nav_contribute')}
           </Link>
           <Link
-            to="/contribute?type=SUGGEST_ROUTE"
+            to="/contribute?type=SUGGEST_ROUTE&source=OPERATOR"
             className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 ${
               isActive('/operator') || isActive('/operator-claim') ? 'bg-yatribrand-50 text-yatribrand-900 font-semibold' : 'text-yatriwarm-700 hover:bg-yatriwarm-100'
             }`}
