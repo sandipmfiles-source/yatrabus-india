@@ -370,7 +370,7 @@ export const OwnerDashboardPage: React.FC = () => {
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <input value={newStopName} onChange={e => setNewStopName(e.target.value)} placeholder="Stop | latitude | longitude" className="min-w-0 flex-1 rounded-xl border border-white/20 bg-white/10 text-white placeholder:text-slate-400 px-3 py-2 text-xs" />
-                  <button type="button" onClick={() => { const name = newStopName.trim(); if (!name) return; setStopsText(current => current.trim() ? current + '\n' + name : name); setNewStopName(''); }} className="rounded-xl bg-amber-300 hover:bg-amber-200 text-slate-950 font-bold px-4 py-2 text-xs">+ Add stop</button>
+                  <button type="button" disabled={stopsText.split('\n').filter(line => line.trim()).length >= 23} onClick={() => { const name = newStopName.trim(); if (!name) return; setStopsText(current => current.trim() ? current + '\n' + name : name); setNewStopName(''); }} className="rounded-xl bg-amber-300 hover:bg-amber-200 text-slate-950 font-bold px-4 py-2 text-xs disabled:opacity-40">+ Add stop</button>
                 </div>
                 <div className="rounded-2xl overflow-hidden border border-white/15 bg-slate-950/60 p-3">
                   <div className="flex items-center justify-between text-[10px] uppercase tracking-wider text-slate-300 mb-2"><span>Road route preview</span><span>{routePreviewLoading ? 'Checking OpenStreetMap…' : routePreview?.provider === 'OPENSTREETMAP_OSRM' ? 'OpenStreetMap · OSRM' : 'Tap to check road route'}</span></div>
