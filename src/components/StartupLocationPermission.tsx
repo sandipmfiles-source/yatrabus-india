@@ -55,7 +55,6 @@ export const StartupLocationPermission: React.FC = () => {
       <section className="w-full max-w-md rounded-3xl border border-amber-200 bg-white p-6 shadow-2xl">
         <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-100 text-2xl" aria-hidden="true">📍</div>
         <h2 id="startup-location-title" className="text-center text-xl font-extrabold text-slate-950">{t('location_startup_title')}</h2>
-        <p className="mt-2 text-center text-sm text-slate-700"></p>
         <p className="mt-4 text-sm leading-relaxed text-slate-700">{t('location_startup_description')}</p>
         <p className="mt-2 text-xs text-slate-500">
           {t('location_startup_privacy')}
