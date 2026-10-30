@@ -271,6 +271,18 @@ export class TransitRepository {
     return submission;
   }
 
+  public recordSubmissionVote(id: string, voterKey: string, field: string, value: string): { success: boolean; counts?: Record<string, number>; error?: string } {
+    const submission = this.submissions.get(id);
+    if (!submission) return { success: false, error: 'Submission not found' };
+    const key = voterKey.slice(0, 128);
+    if (!key || (submission.voterKeys || []).includes(key)) return { success: false, error: 'This device has already voted on this correction' };
+    const voteKey = field.slice(0, 60) + ':' + value.slice(0, 120);
+    submission.communityVotes = submission.communityVotes || {};
+    submission.communityVotes[voteKey] = (submission.communityVotes[voteKey] || 0) + 1;
+    submission.voterKeys = [...(submission.voterKeys || []), key].slice(-20000);
+    return { success: true, counts: { ...submission.communityVotes } };
+  }
+
   public getSubmissionByReference(refId: string): CommunitySubmission | undefined {
     for (const sub of this.submissions.values()) {
       if (sub.referenceId.toLowerCase() === refId.toLowerCase()) {
