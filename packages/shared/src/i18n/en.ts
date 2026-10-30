@@ -108,4 +108,6 @@ export const en = {
   tracking_expiry_detail: 'You can stop sharing anytime. A session expires automatically after 12 hours.',
   tracking_enable_button: 'Enable Location & Assist Passengers',
   tracking_not_now: 'Not Now (Keep Searching)',
+  nearby_stops_desc: 'Locate verified bus terminals and stops near your current location.',
+  location_error_nearby: 'Could not access your location. Check app permissions and try again.',
 };
