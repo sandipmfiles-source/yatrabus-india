@@ -16,8 +16,11 @@ export const ContributePage: React.FC = () => {
   const [routeNumber, setRouteNumber] = useState('');
   const [origin, setOrigin] = useState('');
   const [destination, setDestination] = useState('');
-  const [stateName, setStateName] = useState('Delhi');
+  const [stateName, setStateName] = useState('West Bengal');
   const [departureTime, setDepartureTime] = useState('');
+  const [arrivalTime, setArrivalTime] = useState('');
+  const [busIdentifier, setBusIdentifier] = useState('');
+  const [frequencyMinutes, setFrequencyMinutes] = useState('');
   const [notes, setNotes] = useState('');
 
   // Status check state
@@ -36,7 +39,7 @@ export const ContributePage: React.FC = () => {
     try {
       const res = await api.submitContribution({
         submissionType,
-        entityType: submissionType === 'ADD_STOP' ? 'STOP' : 'BUS',
+        entityType: submissionType === 'ADD_STOP' ? 'STOP' : (submissionType === 'ADD_BUS' || submissionType === 'CORRECT_TIMETABLE') ? 'TIMETABLE' : 'BUS',
         contributorNote: notes,
         proposedData: {
           name: name || routeNumber,
@@ -45,6 +48,11 @@ export const ContributePage: React.FC = () => {
           destination,
           state: stateName,
           departureTime,
+          arrivalTime,
+          busIdentifier,
+          frequencyMinutes: frequencyMinutes ? Number(frequencyMinutes) : undefined,
+          timetableEntry: submissionType === 'ADD_BUS' || submissionType === 'CORRECT_TIMETABLE',
+          operatingDays: ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'],
         },
       });
 
@@ -141,6 +149,10 @@ export const ContributePage: React.FC = () => {
                     setSubmittedRefId(null);
                     setName('');
                     setRouteNumber('');
+                    setBusIdentifier('');
+                    setDepartureTime('');
+                    setArrivalTime('');
+                    setFrequencyMinutes('');
                     setNotes('');
                   }}
                   className="px-5 py-2.5 bg-yatribrand-900 text-white rounded-xl text-xs font-semibold shadow-subtle hover:bg-yatribrand-950 transition-colors"
@@ -158,9 +170,9 @@ export const ContributePage: React.FC = () => {
                 </label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {[
-                    { id: 'ADD_BUS' as SubmissionType, label: 'Add Bus' },
+                    { id: 'ADD_BUS' as SubmissionType, label: 'Add Bus to Route' },
                     { id: 'ADD_STOP' as SubmissionType, label: 'Add Stop' },
-                    { id: 'CORRECT_TIMETABLE' as SubmissionType, label: 'Fix Schedule' },
+                    { id: 'CORRECT_TIMETABLE' as SubmissionType, label: 'Add / Fix Timetable' },
                     { id: 'REPORT_CHANGED_ROUTE' as SubmissionType, label: 'Report Issue' },
                   ].map(t => (
                     <button
@@ -181,17 +193,17 @@ export const ContributePage: React.FC = () => {
 
               {/* Dynamic form fields */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {submissionType === 'ADD_BUS' && (
+                {(submissionType === 'ADD_BUS' || submissionType === 'CORRECT_TIMETABLE') && (
                   <div>
                     <label className="block text-xs font-medium text-yatriwarm-700 mb-1">
-                      Bus Route Number
+                      Existing Route Number
                     </label>
                     <input
                       type="text"
                       required
                       value={routeNumber}
                       onChange={e => setRouteNumber(e.target.value)}
-                      placeholder="e.g. 534, AC-105, 500D"
+                      placeholder="Enter an existing route number"
                       className="w-full px-3.5 py-2.5 bg-yatriwarm-50 border border-yatriwarm-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-yatribrand-800 focus:bg-white"
                     />
                   </div>
@@ -222,10 +234,10 @@ export const ContributePage: React.FC = () => {
                     onChange={e => setStateName(e.target.value)}
                     className="w-full px-3.5 py-2.5 bg-yatriwarm-50 border border-yatriwarm-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-yatribrand-800 focus:bg-white"
                   >
+                    <option value="West Bengal">West Bengal</option>
                     <option value="Delhi">Delhi</option>
                     <option value="Maharashtra">Maharashtra</option>
                     <option value="Karnataka">Karnataka</option>
-                    <option value="West Bengal">West Bengal</option>
                     <option value="Tamil Nadu">Tamil Nadu</option>
                     <option value="Uttar Pradesh">Uttar Pradesh</option>
                     <option value="Gujarat">Gujarat</option>
@@ -261,19 +273,28 @@ export const ContributePage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Departure time if schedule correction */}
-              {submissionType === 'CORRECT_TIMETABLE' && (
-                <div>
-                  <label className="block text-xs font-medium text-yatriwarm-700 mb-1">
-                    Correct Departure Time (IST)
-                  </label>
-                  <input
-                    type="time"
-                    required
-                    value={departureTime}
-                    onChange={e => setDepartureTime(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-yatriwarm-50 border border-yatriwarm-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-yatribrand-800 focus:bg-white"
-                  />
+              {(submissionType === 'ADD_BUS' || submissionType === 'CORRECT_TIMETABLE') && (
+                <div className="rounded-2xl border border-amber-300 bg-amber-50/70 p-4 space-y-3 sm:col-span-2">
+                  <div className="text-xs font-bold uppercase tracking-wider text-yatriwarm-800">Bus timetable details</div>
+                  <p className="text-[11px] text-yatriwarm-600">Use an existing route number. Your bus and time will appear in public search only after Super Admin verification.</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-yatriwarm-700 mb-1">Bus name / number</label>
+                      <input type="text" required value={busIdentifier} onChange={e => setBusIdentifier(e.target.value)} placeholder="e.g. Jhargram Express / WB-xx" className="w-full px-3.5 py-2.5 bg-white border border-yatriwarm-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-red-500" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-yatriwarm-700 mb-1">Departure time (IST)</label>
+                      <input type="time" required value={departureTime} onChange={e => setDepartureTime(e.target.value)} className="w-full px-3.5 py-2.5 bg-white border border-yatriwarm-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-red-500" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-yatriwarm-700 mb-1">Arrival time (IST)</label>
+                      <input type="time" required value={arrivalTime} onChange={e => setArrivalTime(e.target.value)} className="w-full px-3.5 py-2.5 bg-white border border-yatriwarm-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-red-500" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-yatriwarm-700 mb-1">Frequency in minutes (optional)</label>
+                      <input type="number" min="1" max="1440" value={frequencyMinutes} onChange={e => setFrequencyMinutes(e.target.value)} placeholder="e.g. 30" className="w-full px-3.5 py-2.5 bg-white border border-yatriwarm-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-red-500" />
+                    </div>
+                  </div>
                 </div>
               )}
 
