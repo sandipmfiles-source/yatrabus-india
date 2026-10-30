@@ -64,13 +64,13 @@ export const SearchResultsPage: React.FC = () => {
       ? Array.from({ length: Math.min(estimate, 30) }, (_, index) => {
           const [hours, minutes] = route.firstDepartureTime.split(':').map(Number);
           const total = hours * 60 + minutes + index * route.frequencyMinutes!;
-          return { key: `estimated-${index}`, time: `${String(Math.floor(total / 60) % 24).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`, busIdentifier: '' };
+          return { key: `estimated-${index}`, time: `${String(Math.floor(total / 60) % 24).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`, busIdentifier: '', days: route.operatingDays?.join(', ') || '' };
         })
       : [];
     const departureSlots = departures.length
-      ? departures.slice(0, 30).map(item => ({ key: item.id, time: item.departureTime, busIdentifier: item.busIdentifier || '' }))
+      ? departures.slice(0, 30).map(item => ({ key: item.id, time: item.departureTime, busIdentifier: item.busIdentifier || '', days: item.operatingDays?.join(', ') || '' }))
       : exactTimes.length
-        ? exactTimes.slice(0, 30).map((time, index) => ({ key: `exact-time-${index}`, time, busIdentifier: '' }))
+        ? exactTimes.slice(0, 30).map((time, index) => ({ key: `exact-time-${index}`, time, busIdentifier: '', days: route.operatingDays?.join(', ') || '' }))
         : estimatedSlots;
     const firstIndex = route.stops.findIndex(stop => stop.id === journey.boardingStop.id);
     const lastIndex = route.stops.findIndex(stop => stop.id === journey.alightingStop.id);
@@ -98,7 +98,7 @@ export const SearchResultsPage: React.FC = () => {
           <div className="text-[11px] font-semibold text-yatriwarm-700">{exactDepartures ? t('scheduled_departures') : t('estimated_departures')}</div>
           <div className="mt-2 flex flex-wrap gap-1.5">
             {departureSlots.map(item => <span key={item.key} className="rounded-lg bg-yatriwarm-100 px-2 py-1 text-[11px] tabular-nums text-yatriwarm-800">
-              {item.time}{item.busIdentifier ? ` · ${item.busIdentifier}` : ''}
+              {item.time}{item.busIdentifier ? ` · ${item.busIdentifier}` : ''}{item.days ? <span className="ml-1 text-[9px] text-yatriwarm-500">({item.days})</span> : ''}
             </span>)}
           </div>
           {(exactDepartures ? departures.length : estimate || 0) > 30 && <p className="mt-1 text-[10px] text-yatriwarm-500">{t('showing_first')} 30 {exactDepartures ? t('of_total') : t('of_approximately')} {exactDepartures ? departures.length : estimate} {t('departures')}</p>}
