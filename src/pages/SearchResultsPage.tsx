@@ -5,7 +5,7 @@ import { api } from '../services/api.js';
 import { JourneyCandidate } from '@shared/types/bus.js';
 import { estimateDailyTripCount } from '@shared/engine/routeGraph.js';
 import { BusCard } from '../components/BusCard.js';
-import { ArrowLeft, Filter, AlertCircle, PlusCircle, RefreshCw } from 'lucide-react';
+import { ArrowLeft, AlertCircle, PlusCircle, Clock3, MapPin, CalendarDays, BusFront } from 'lucide-react';
 
 export const SearchResultsPage: React.FC = () => {
   const [searchParams] = useSearchParams();
