@@ -10,6 +10,7 @@ export const ContributePage: React.FC = () => {
   const { t } = useLanguage();
   const [searchParams] = useSearchParams();
   const initialType = (searchParams.get('type') as SubmissionType) || 'ADD_BUS';
+  const isOperatorSubmission = searchParams.get('source') === 'OPERATOR';
 
   const [activeTab, setActiveTab] = useState<'SUBMIT' | 'CHECK_STATUS'>('SUBMIT');
   const [submissionType, setSubmissionType] = useState<SubmissionType>(initialType);
@@ -31,6 +32,9 @@ export const ContributePage: React.FC = () => {
   const [frequencyMinutes, setFrequencyMinutes] = useState('');
   const [routeName, setRouteName] = useState('');
   const [operatorName, setOperatorName] = useState('');
+  const [operatorContactName, setOperatorContactName] = useState('');
+  const [operatorContactPhone, setOperatorContactPhone] = useState('');
+  const [operatorOfficialEmail, setOperatorOfficialEmail] = useState('');
   const [routeDistanceKm, setRouteDistanceKm] = useState('');
   const [routeDurationMinutes, setRouteDurationMinutes] = useState('');
   const [firstDepartureTime, setFirstDepartureTime] = useState('');
@@ -150,11 +154,15 @@ export const ContributePage: React.FC = () => {
       setSubmissionError('Check the OpenStreetMap road route in the submitted stop order before sending this route for Super Admin approval.');
       return;
     }
+    if (isOperatorSubmission && (operatorName.trim().length < 2 || operatorContactName.trim().length < 2 || operatorContactPhone.replace(/\D/g, '').length < 10)) {
+      setSubmissionError('Bus owners: enter your operator / fleet name, contact person and a valid 10-digit phone number. No account or Google sign-in is required.');
+      return;
+    }
     setIsSubmitting(true);
     setSubmissionError('');
 
     try {
-      const res = await api.submitContribution({
+      const submissionData = {
         submissionType,
         entityType: submissionType === 'SUGGEST_ROUTE' ? 'ROUTE' : submissionType === 'ADD_STOP' ? 'STOP' : (submissionType === 'ADD_BUS' || submissionType === 'CORRECT_TIMETABLE') ? 'TIMETABLE' : 'BUS',
         targetEntityId: searchParams.get('routeId') || undefined,
@@ -196,7 +204,10 @@ export const ContributePage: React.FC = () => {
               })),
           operatingDays: operatingDays.split(',').map(day => day.trim()).filter(Boolean),
         },
-      });
+      };
+      const res = isOperatorSubmission
+        ? await api.submitOperatorContribution({ ...submissionData, operatorName, contactName: operatorContactName, contactPhone: operatorContactPhone, officialEmail: operatorOfficialEmail })
+        : await api.submitContribution(submissionData);
 
       setSubmittedRefId(res.referenceId);
       setIsSubmitting(false);
@@ -316,6 +327,16 @@ export const ContributePage: React.FC = () => {
           ) : (
             <form onSubmit={handleSubmit} className="space-y-5">
               {submissionError && <div role="alert" className="mb-4 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800">{submissionError}</div>}
+              {isOperatorSubmission && <section className="rounded-2xl border border-yatribrand-200 bg-yatribrand-50 p-4 space-y-3">
+                <div className="text-sm font-bold text-yatriwarm-900">Bus owner / operator details — no sign-in required</div>
+                <p className="text-xs text-yatriwarm-600">Your submission goes to a separate Super Admin review queue. Contact details are used only to verify the operator claim.</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <label className="text-xs font-medium text-yatriwarm-700">Operator / fleet name<input required value={operatorName} onChange={e => setOperatorName(e.target.value)} placeholder="e.g. Delhi Transport Corporation" className="mt-1 w-full rounded-xl border border-yatriwarm-200 bg-white px-3 py-2" /></label>
+                  <label className="text-xs font-medium text-yatriwarm-700">Your name<input required value={operatorContactName} onChange={e => setOperatorContactName(e.target.value)} placeholder="Contact person" className="mt-1 w-full rounded-xl border border-yatriwarm-200 bg-white px-3 py-2" /></label>
+                  <label className="text-xs font-medium text-yatriwarm-700">Contact phone<input required type="tel" value={operatorContactPhone} onChange={e => setOperatorContactPhone(e.target.value)} placeholder="10-digit phone number" className="mt-1 w-full rounded-xl border border-yatriwarm-200 bg-white px-3 py-2" /></label>
+                  <label className="text-xs font-medium text-yatriwarm-700">Official email (optional)<input type="email" value={operatorOfficialEmail} onChange={e => setOperatorOfficialEmail(e.target.value)} placeholder="office@example.in" className="mt-1 w-full rounded-xl border border-yatriwarm-200 bg-white px-3 py-2" /></label>
+                </div>
+              </section>}
               {/* Type selection */}
               <div>
                 <label className="block text-xs font-bold text-yatriwarm-700 uppercase tracking-wider mb-2">
