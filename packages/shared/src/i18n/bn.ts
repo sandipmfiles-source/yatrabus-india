@@ -120,4 +120,7 @@ export const bn = {
   submitted: "জমার তারিখ",
   reviewer_note: "পর্যালোচকের মন্তব্য",
   scheduled_departures: "প্রকাশিত বাস ছাড়ার সময়",
+  background_tracking_active: "Android ব্যাকগ্রাউন্ড GPS চালু আছে",
+  background_tracking_unavailable: "ব্যাকগ্রাউন্ড GPS চালু নেই",
+  location_updates_checked: "লোকেশন পরীক্ষা",
 };
