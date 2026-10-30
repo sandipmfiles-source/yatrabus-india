@@ -155,7 +155,7 @@ export const ContributePage: React.FC = () => {
       return;
     }
     if (isOperatorSubmission && (operatorName.trim().length < 2 || operatorContactName.trim().length < 2 || operatorContactPhone.replace(/\D/g, '').length < 10)) {
-      setSubmissionError('${t('owner_submission_contact_error')}');
+      setSubmissionError(t('owner_submission_contact_error'));
       return;
     }
     setIsSubmitting(true);
