@@ -138,7 +138,7 @@ placesRouter.post('/route-preview', publicSearchLimiter, async (req: Request, re
   const stopsRaw = (Array.isArray(req.body?.stops) ? req.body.stops : [])
     .filter((value: unknown): value is string => typeof value === 'string')
     .map((value: string) => value.trim()).filter(Boolean);
-  if (stopsRaw.length > 98) return res.status(400).json({ error: 'TOO_MANY_STOPS', message: 'This free road-routing service supports up to 98 intermediate stops per route check. Your stop list can still be saved for admin review.' });
+  if (stopsRaw.length > 998) return res.status(400).json({ error: 'TOO_MANY_STOPS', message: 'This route contains too many stops for one contribution. Please split unusually long routes into separate services.' });
   const points = [originRaw, ...stopsRaw, destinationRaw].map(resolveRoutePoint);
   const missingIndex = points.findIndex(point => point === null);
   if (missingIndex >= 0) {
@@ -157,22 +157,35 @@ placesRouter.post('/route-preview', publicSearchLimiter, async (req: Request, re
   if (Date.now() - lastOsrmRequestAt < 1100) return res.status(429).json({ error: 'ROUTE_RATE_LIMIT', message: 'Please wait a moment before checking another route.' });
   lastOsrmRequestAt = Date.now();
   try {
-    const url = 'https://router.project-osrm.org/route/v1/driving/' + coordinates + '?overview=full&geometries=polyline&steps=false&alternatives=false';
-    const response = await fetch(url, {
-      headers: { 'User-Agent': 'YatraBusIndia/1.0 (+https://github.com/sandipmfiles-source/yatrabus-india)' },
-      signal: AbortSignal.timeout(12000),
-    });
-    const data = await response.json() as any;
-    const route = data.routes?.[0];
-    if (!response.ok || data.code !== 'Ok' || !route) {
-      return res.status(502).json({ error: 'OSRM_ROUTE_FAILED', message: 'OpenStreetMap routing could not connect every stop in the submitted order. Check the coordinates and stop sequence.' });
+    // The public OSRM demo limits waypoints per request. Validate long routes
+    // in overlapping chunks so the stop count follows the actual bus service.
+    let totalDistanceMeters = 0;
+    let totalDurationSeconds = 0;
+    for (let start = 0; start < resolved.length - 1; start += 99) {
+      const chunk = resolved.slice(start, Math.min(start + 100, resolved.length));
+      const waitMs = 1100 - (Date.now() - lastOsrmRequestAt);
+      if (start > 0 && waitMs > 0) await new Promise(resolve => setTimeout(resolve, waitMs));
+      const chunkCoordinates = chunk.map(point => point.longitude + ',' + point.latitude).join(';');
+      const url = 'https://router.project-osrm.org/route/v1/driving/' + chunkCoordinates + '?overview=false&steps=false&alternatives=false';
+      const response = await fetch(url, {
+        headers: { 'User-Agent': 'YatraBusIndia/1.0 (+https://github.com/sandipmfiles-source/yatrabus-india)' },
+        signal: AbortSignal.timeout(20000),
+      });
+      lastOsrmRequestAt = Date.now();
+      const data = await response.json() as any;
+      const route = data.routes?.[0];
+      if (!response.ok || data.code !== 'Ok' || !route) {
+        return res.status(502).json({ error: 'OSRM_ROUTE_FAILED', message: 'OpenStreetMap could not connect every stop in the submitted order. Check the selected stop locations and sequence.' });
+      }
+      totalDistanceMeters += Number(route.distance) || 0;
+      totalDurationSeconds += Number(route.duration) || 0;
     }
     const payload = {
       provider: 'OPENSTREETMAP_OSRM',
       routeStatus: 'ROAD_ROUTE_FOUND_IN_SUBMITTED_ORDER',
-      distanceKm: Math.round(route.distance / 100) / 10,
-      durationSeconds: Math.round(route.duration),
-      encodedPolyline: route.geometry || null,
+      distanceKm: Math.round(totalDistanceMeters / 100) / 10,
+      durationSeconds: Math.round(totalDurationSeconds),
+      encodedPolyline: null,
       submittedStops: resolved.slice(1, -1).map(point => point.name),
       points: resolved.map(point => ({ name: point.name, latitude: point.latitude, longitude: point.longitude })),
       orderChanged: false,
@@ -186,6 +199,5 @@ placesRouter.post('/route-preview', publicSearchLimiter, async (req: Request, re
     osrmRouteCache.set(coordinates, { expiresAt: Date.now() + 10 * 60 * 1000, payload });
     return res.json({ ...payload, cache: 'MISS' });
   } catch {
-    return res.status(502).json({ error: 'OSRM_UNAVAILABLE', message: 'The free OpenStreetMap routing demo is temporarily unavailable. You can still enter the route details manually.' });
-  }
-});
+    return res.status(502).json({ error: 'OSRM_UNAVAILABLE', message: 'The free OpenStreetMap demo routing service is temporarily unavailable. Please try again.' });
+  }});
