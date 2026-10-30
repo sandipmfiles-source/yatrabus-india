@@ -45,6 +45,7 @@ export const OwnerDashboardPage: React.FC = () => {
   const [distanceKm, setDistanceKm] = useState('');
   const [durationMinutes, setDurationMinutes] = useState('');
   const [stopsText, setStopsText] = useState('');
+  const [newStopName, setNewStopName] = useState('');
   const [note, setNote] = useState('');
 
   const loadSubmissions = useCallback(async (sessionToken: string) => {
@@ -254,12 +255,12 @@ export const OwnerDashboardPage: React.FC = () => {
               <button type="button" onClick={() => setKind('ROUTE')} className={`px-3 py-2 rounded-xl text-xs font-semibold border ${kind === 'ROUTE' ? 'bg-yatribrand-900 text-white border-yatribrand-900' : 'bg-white text-yatriwarm-700 border-yatriwarm-200'}`}>Suggest a new route</button>
             </div>
             <form onSubmit={submit} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <label className="text-xs text-yatriwarm-700">Bus short name / number<input required value={busName} onChange={e => setBusName(e.target.value)} placeholder="e.g. Jhargram-Kolkata Express" className="mt-1 w-full px-3 py-2 rounded-xl border border-yatriwarm-200 bg-white" /></label>
+              <label className="text-xs text-yatriwarm-700">Bus short name / number<input required value={busName} onChange={e => setBusName(e.target.value)} placeholder="e.g. MetroLink AC 01" className="mt-1 w-full px-3 py-2 rounded-xl border border-yatriwarm-200 bg-white" /></label>
               <label className="text-xs text-yatriwarm-700">Bus owner / samiti name<input required value={operatorName} onChange={e => setOperatorName(e.target.value)} placeholder="Owner or bus samiti" className="mt-1 w-full px-3 py-2 rounded-xl border border-yatriwarm-200 bg-white" /></label>
               <label className="text-xs text-yatriwarm-700">Route number / code<input required value={routeNumber} onChange={e => setRouteNumber(e.target.value)} placeholder="Route code" className="mt-1 w-full px-3 py-2 rounded-xl border border-yatriwarm-200 bg-white" /></label>
-              <label className="text-xs text-yatriwarm-700">Route name<input value={routeName} onChange={e => setRouteName(e.target.value)} placeholder="Jhargram to Kolkata" className="mt-1 w-full px-3 py-2 rounded-xl border border-yatriwarm-200 bg-white" /></label>
-              <label className="text-xs text-yatriwarm-700">Starting place<input required value={origin} onChange={e => setOrigin(e.target.value)} placeholder="Jhargram" className="mt-1 w-full px-3 py-2 rounded-xl border border-yatriwarm-200 bg-white" /></label>
-              <label className="text-xs text-yatriwarm-700">Destination<input required value={destination} onChange={e => setDestination(e.target.value)} placeholder="Kolkata" className="mt-1 w-full px-3 py-2 rounded-xl border border-yatriwarm-200 bg-white" /></label>
+              <label className="text-xs text-yatriwarm-700">Route name<input value={routeName} onChange={e => setRouteName(e.target.value)} placeholder="Kolkata Airport to Howrah" className="mt-1 w-full px-3 py-2 rounded-xl border border-yatriwarm-200 bg-white" /></label>
+              <label className="text-xs text-yatriwarm-700">Starting place<input required value={origin} onChange={e => setOrigin(e.target.value)} placeholder="Kolkata Airport" className="mt-1 w-full px-3 py-2 rounded-xl border border-yatriwarm-200 bg-white" /></label>
+              <label className="text-xs text-yatriwarm-700">Destination<input required value={destination} onChange={e => setDestination(e.target.value)} placeholder="Howrah Station" className="mt-1 w-full px-3 py-2 rounded-xl border border-yatriwarm-200 bg-white" /></label>
               {kind === 'TIMETABLE' ? <>
                 <label className="text-xs text-yatriwarm-700">Departure time<input required type="time" value={departureTime} onChange={e => setDepartureTime(e.target.value)} className="mt-1 w-full px-3 py-2 rounded-xl border border-yatriwarm-200 bg-white" /></label>
                 <label className="text-xs text-yatriwarm-700">Arrival time<input required type="time" value={arrivalTime} onChange={e => setArrivalTime(e.target.value)} className="mt-1 w-full px-3 py-2 rounded-xl border border-yatriwarm-200 bg-white" /></label>
@@ -270,6 +271,42 @@ export const OwnerDashboardPage: React.FC = () => {
                 <label className="text-xs text-yatriwarm-700">Journey duration (minutes)<input required type="number" min="1" value={durationMinutes} onChange={e => setDurationMinutes(e.target.value)} className="mt-1 w-full px-3 py-2 rounded-xl border border-yatriwarm-200 bg-white" /></label>
               </>}
               <label className="sm:col-span-2 text-xs text-yatriwarm-700">Stops in order (one per line: Name | latitude | longitude | arrival HH:MM | departure HH:MM)<textarea required={kind === 'ROUTE'} rows={5} value={stopsText} onChange={e => setStopsText(e.target.value)} placeholder={'Jhargram | 22.45 | 86.98 | 06:55 | 07:00\nLodhasuli | 22.48 | 87.05 | 07:25 | 07:30\nKharagpur | 22.34 | 87.32 | 07:55 | 08:00\nKolkata | 22.57 | 88.36 | 10:30 | 10:35'} className="mt-1 w-full px-3 py-2 rounded-xl border border-yatriwarm-200 bg-white" /></label>
+              <section className="sm:col-span-2 yb-premium-panel rounded-3xl p-5 sm:p-6 text-white space-y-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <div className="text-[10px] uppercase tracking-[.2em] text-amber-300 font-bold">Live route preview</div>
+                    <h3 className="text-lg font-bold text-white mt-1">Your bus journey, visualised</h3>
+                    <p className="text-xs text-slate-300 mt-1">Add intermediate stops in travel order. The route stays pending until map validation and admin review.</p>
+                  </div>
+                  <div className="yb-bus-float shrink-0">
+                    <svg viewBox="0 0 120 76" width="112" height="72" role="img" aria-label="Animated YatraBus vector">
+                      <defs><linearGradient id="ybBusBody" x1="0" y1="0" x2="1" y2="1"><stop stopColor="#fde68a"/><stop offset="1" stopColor="#f59e0b"/></linearGradient></defs>
+                      <path d="M9 17Q9 9 19 9H94Q109 9 112 22V57H8V22Q8 17 9 17Z" fill="url(#ybBusBody)" stroke="#fff7d6" strokeWidth="2"/>
+                      <path d="M17 17H98V34H17Z" fill="#172033" stroke="#fff" strokeOpacity=".55"/>
+                      <path d="M21 20H42V31H21ZM47 20H68V31H47ZM73 20H94V31H73Z" fill="#7dd3fc"/>
+                      <path d="M9 42H111V48H9Z" fill="#dc2626"/>
+                      <text x="60" y="44" fontSize="5.5" fontWeight="bold" fill="#fff" textAnchor="middle">YATRIBUS</text>
+                      <circle cx="29" cy="58" r="9" fill="#111827" stroke="#cbd5e1" strokeWidth="2"/><circle cx="91" cy="58" r="9" fill="#111827" stroke="#cbd5e1" strokeWidth="2"/>
+                      <circle className="yb-bus-wheel" cx="29" cy="58" r="4" fill="none" stroke="#facc15" strokeWidth="1.5"/><circle className="yb-bus-wheel" cx="91" cy="58" r="4" fill="none" stroke="#facc15" strokeWidth="1.5"/>
+                    </svg>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="rounded-xl bg-white/10 border border-white/10 p-3"><div className="text-slate-400">FROM</div><div className="font-semibold text-white mt-1">{origin || 'Starting point'}</div></div>
+                  <div className="rounded-xl bg-white/10 border border-white/10 p-3"><div className="text-slate-400">TO</div><div className="font-semibold text-white mt-1">{destination || 'Destination'}</div></div>
+                </div>
+                <div className="pl-6 ml-2 border-l-2 yb-route-line space-y-3">
+                  {(stopsText.split('\\n').map(line => line.split('|')[0].trim()).filter(Boolean)).map((stop, index) => (
+                    <div key={index} className="yb-route-stop text-xs text-slate-100">{stop}</div>
+                  ))}
+                  {stopsText.trim() === '' && <div className="text-xs text-slate-400">Intermediate stops will appear here as you add them.</div>}
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <input value={newStopName} onChange={e => setNewStopName(e.target.value)} placeholder="Add intermediate stop" className="min-w-0 flex-1 rounded-xl border border-white/20 bg-white/10 text-white placeholder:text-slate-400 px-3 py-2 text-xs" />
+                  <button type="button" onClick={() => { const name = newStopName.trim(); if (!name) return; setStopsText(current => current.trim() ? current + '\\n' + name : name); setNewStopName(''); }} className="rounded-xl bg-amber-300 hover:bg-amber-200 text-slate-950 font-bold px-4 py-2 text-xs">+ Add stop</button>
+                </div>
+                <div className="text-[11px] text-amber-100/80">Map-based road distance, route geometry and stop-order verification require the backend Google Maps Routes/Places APIs to be configured. Until then, this is a visual draft—not a verified live map.</div>
+              </section>
               <label className="sm:col-span-2 text-xs text-yatriwarm-700">“Helped by” note / source details<textarea rows={2} value={note} onChange={e => setNote(e.target.value)} placeholder="Name to show as contributor, or source of timetable" className="mt-1 w-full px-3 py-2 rounded-xl border border-yatriwarm-200 bg-white" /></label>
               <button disabled={loading} type="submit" className="sm:col-span-2 px-5 py-3 rounded-xl bg-yatribrand-900 text-white text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2"><PlusCircle className="w-4 h-4" />{loading ? 'Submitting…' : editingSubmissionId ? 'Send update for approval' : 'Send for approval'}</button>
             </form>
