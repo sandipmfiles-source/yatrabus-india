@@ -146,4 +146,5 @@ export const hi = {
   live_eta: "लाइव पहुँचने का समय",
   scheduled: "समय-सारणी",
   incorrect_schedule_notice: "क्या इस बस की समय-सारणी गलत है या रास्ता बदला है?",
+  no_bus_linked_tracking: "इस रूट पर बस जुड़ने और सत्यापित होने के बाद लाइव GPS शेयरिंग उपलब्ध होगी।",
 };
