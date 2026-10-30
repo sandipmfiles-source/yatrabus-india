@@ -19,6 +19,7 @@ public class BackgroundTrackingPlugin extends Plugin {
         String busId = call.getString("busId");
         String routeId = call.getString("routeId");
         String apiBase = call.getString("apiBase");
+        Long startedAtMs = call.getLong("startedAtMs");
         if (sessionId == null || busId == null || routeId == null || apiBase == null || apiBase.trim().isEmpty()) {
             call.reject("Tracking session and deployed API URL are required.");
             return;
@@ -34,6 +35,7 @@ public class BackgroundTrackingPlugin extends Plugin {
         intent.putExtra("busId", busId);
         intent.putExtra("routeId", routeId);
         intent.putExtra("apiBase", apiBase);
+        intent.putExtra("startedAtMs", startedAtMs == null ? System.currentTimeMillis() : startedAtMs);
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 ContextCompat.startForegroundService(getContext(), intent);
