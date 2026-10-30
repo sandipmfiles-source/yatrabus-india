@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { repository } from '../db/repository.js';
+import { repository } from '../db/persistentRepository.js';
 import { evaluateLocationConfidence } from '../../../packages/shared/src/engine/confidenceEngine.js';
 import { evaluateJourneyPrompt } from '../../../packages/shared/src/engine/journeyConfirmationEngine.js';
 import { evaluateObservationFreshness } from '../../../packages/shared/src/engine/staleDetector.js';
