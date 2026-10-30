@@ -235,7 +235,7 @@ adminRouter.post('/submissions/:id/review', requireAdminAuth(), (req: Request, r
         const proposedTimes = Array.isArray(submission.proposedData.departureTimes)
           ? submission.proposedData.departureTimes.map((time: unknown) => String(time).trim()).filter(Boolean).sort()
           : [];
-        if (proposedTimes.some((time: string) => !/^([01]\\d|2[0-3]):[0-5]\\d$/.test(time))) {
+        if (proposedTimes.some((time: string) => !/^([01]\d|2[0-3]):[0-5]\d$/.test(time))) {
           throw new Error('Exact departures must use 24-hour HH:MM format.');
         }
         const updated = {
