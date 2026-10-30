@@ -81,7 +81,14 @@ export function discoverJourneys(
       );
 
       const timetableDepartures = (route.departures || []).filter(item => !item.isCancelled);
-      const services = timetableDepartures.length ? timetableDepartures : [undefined];
+      const exactDepartureTimes = (route.departureTimes || []).filter(time => /^([01]\\d|2[0-3]):[0-5]\\d$/.test(time));
+      const exactTimeServices = exactDepartureTimes.map((departureTime, index) => ({
+        id: `exact-${route.id}-${index}`,
+        departureTime,
+        busIdentifier: undefined,
+        stopTimes: undefined,
+      }));
+      const services = timetableDepartures.length ? timetableDepartures : exactTimeServices.length ? exactTimeServices : [undefined];
       for (const service of services) {
         const boardingOffset = route.distanceKm > 0
           ? Math.round((boardingStop.distanceFromStartKm / route.distanceKm) * route.typicalDurationMinutes)
@@ -111,7 +118,7 @@ export function discoverJourneys(
           confidenceScore: service ? 95 : 85,
           serviceStatus: route.serviceStatus,
           locationStatus: 'ESTIMATED',
-          dailyTripCount: estimateDailyTripCount(route.firstDepartureTime, route.lastDepartureTime, route.frequencyMinutes),
+          dailyTripCount: exactDepartureTimes.length || estimateDailyTripCount(route.firstDepartureTime, route.lastDepartureTime, route.frequencyMinutes),
           frequencyMinutes: route.frequencyMinutes,
           intermediateStops: route.stops.slice(originIndex + 1, destIndex),
           timetableDepartures,
