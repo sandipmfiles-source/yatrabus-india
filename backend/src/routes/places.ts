@@ -1,4 +1,6 @@
 import { Router, Request, Response } from 'express';
+import { readFileSync } from 'node:fs';
+import { gunzipSync } from 'node:zlib';
 import { repository } from '../db/repository.js';
 import { publicSearchLimiter } from '../middleware/rateLimiter.js';
 
@@ -59,38 +61,55 @@ async function loadBlockDirectory() {
   return blockDirectoryPromise;
 }
 
+const lgdCatalogue = (() => {
+  try {
+    const file = new URL('../../data/india-lgd-directory.json.gz', import.meta.url);
+    const payload = JSON.parse(gunzipSync(readFileSync(file)).toString('utf8'));
+    return Array.isArray(payload?.places) ? payload.places as any[] : [];
+  } catch {
+    return [];
+  }
+})();
+
 async function fetchLgdDirectorySuggestions(query: string) {
   const key = query.toLocaleLowerCase('en-IN');
   const cached = lgdSuggestionCache.get(key);
   if (cached && cached.expiresAt > Date.now()) return cached.results;
-  const apiPromise = (async () => {
-    const url = 'https://lgd-json-api.vercel.app/api/search?q=' + encodeURIComponent(query) + '&limit=8';
-    const response = await fetch(url, {
-      headers: { 'User-Agent': 'YatraBusIndia/1.0', 'Accept': 'application/json' },
-      signal: AbortSignal.timeout(6000),
-    });
-    if (!response.ok) return [];
-    return normaliseDirectoryRows(await response.json() as any, query);
-  })();
-  const [apiResult, blockResult] = await Promise.allSettled([apiPromise, loadBlockDirectory()]);
-  const results: any[] = apiResult.status === 'fulfilled' ? apiResult.value : [];
-  if (blockResult.status === 'fulfilled') {
-    for (const block of blockResult.value) {
-      if (String(block.name).toLocaleLowerCase('en-IN').includes(key)) {
-        results.push({
-          id: 'lgd-block-' + block.code,
-          name: block.name,
-          address: ['Block', block.districtName, block.stateName, 'LGD directory'].filter(Boolean).join(' · '),
-          source: 'LOCAL_GOVERNMENT_DIRECTORY',
-          level: 'Block',
-        });
-      }
+
+  const localMatches = lgdCatalogue
+    .filter(item => String(item.name || '').toLocaleLowerCase('en-IN').includes(key))
+    .sort((a, b) => {
+      const aPrefix = String(a.name || '').toLocaleLowerCase('en-IN').startsWith(key) ? 0 : 1;
+      const bPrefix = String(b.name || '').toLocaleLowerCase('en-IN').startsWith(key) ? 0 : 1;
+      return aPrefix - bPrefix || String(a.name).localeCompare(String(b.name));
+    })
+    .slice(0, 8)
+    .map(item => ({
+      id: item.id,
+      name: item.name,
+      address: [item.level, item.subdistrict, item.district, item.state, 'LGD directory'].filter(Boolean).join(' · '),
+      source: 'LOCAL_GOVERNMENT_DIRECTORY',
+      level: item.level,
+      code: item.code,
+    }));
+
+  let fallback: any[] = [];
+  if (localMatches.length < 8) {
+    try {
+      const url = 'https://lgd-json-api.vercel.app/api/search?q=' + encodeURIComponent(query) + '&limit=8';
+      const response = await fetch(url, {
+        headers: { 'User-Agent': 'YatraBusIndia/1.0', 'Accept': 'application/json' },
+        signal: AbortSignal.timeout(5000),
+      });
+      if (response.ok) fallback = normaliseDirectoryRows(await response.json() as any, query);
+    } catch {
+      // The bundled LGD catalogue remains available even when the optional mirror is offline.
     }
   }
-  const unique = Array.from(new Map(results.map(item => [item.id, item])).values()).slice(0, 8);
+  const results = Array.from(new Map([...localMatches, ...fallback].map(item => [item.id, item])).values()).slice(0, 8);
   if (lgdSuggestionCache.size > 500) lgdSuggestionCache.delete(lgdSuggestionCache.keys().next().value as string);
-  lgdSuggestionCache.set(key, { expiresAt: Date.now() + 24 * 60 * 60 * 1000, results: unique });
-  return unique;
+  lgdSuggestionCache.set(key, { expiresAt: Date.now() + 24 * 60 * 60 * 1000, results });
+  return results;
 }
 
 
