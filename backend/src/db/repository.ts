@@ -174,6 +174,21 @@ export class TransitRepository {
     return Array.from(this.routes.values()).find(route => route.routeNumber.trim().toLowerCase() === normalized);
   }
 
+  public getOperatorByName(name: string): Operator | undefined {
+    const normalized = name.trim().toLowerCase();
+    return Array.from(this.operators.values()).find(operator => operator.name.trim().toLowerCase() === normalized);
+  }
+
+  public addOperator(operator: Operator): Operator {
+    this.operators.set(operator.id, operator);
+    return operator;
+  }
+
+  public addRoute(route: Route): Route {
+    this.routes.set(route.id, route);
+    return route;
+  }
+
   public addTimetableDeparture(routeId: string, departure: NonNullable<Route['departures']>[number], frequencyMinutes?: number): boolean {
     const route = this.routes.get(routeId);
     if (!route) return false;
