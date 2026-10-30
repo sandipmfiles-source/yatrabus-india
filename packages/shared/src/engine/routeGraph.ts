@@ -90,10 +90,12 @@ export function discoverJourneys(
           ? Math.round((alightingStop.distanceFromStartKm / route.distanceKm) * route.typicalDurationMinutes)
           : Math.round((destIndex / Math.max(1, route.stops.length - 1)) * route.typicalDurationMinutes);
         const baseDeparture = service?.departureTime || route.firstDepartureTime;
-        const depTime = boardingStop.scheduledDepartureTime || boardingStop.scheduledArrivalTime ||
-          (service ? addMinutesToTime(baseDeparture, boardingOffset) : route.firstDepartureTime);
-        const arrTime = alightingStop.scheduledArrivalTime || alightingStop.scheduledDepartureTime ||
-          (service ? addMinutesToTime(baseDeparture, arrivalOffset) : route.lastDepartureTime);
+        const boardingBusTime = service?.stopTimes?.find(item => item.stopId === boardingStop.stopId);
+        const alightingBusTime = service?.stopTimes?.find(item => item.stopId === alightingStop.stopId);
+        const depTime = boardingBusTime?.departureTime ||
+          (service ? addMinutesToTime(baseDeparture, boardingOffset) : boardingStop.scheduledDepartureTime || boardingStop.scheduledArrivalTime || route.firstDepartureTime);
+        const arrTime = alightingBusTime?.arrivalTime ||
+          (service ? addMinutesToTime(baseDeparture, arrivalOffset) : alightingStop.scheduledArrivalTime || alightingStop.scheduledDepartureTime || route.lastDepartureTime);
 
         directCandidates.push({
           id: `journey-direct-${route.id}-${originIndex}-${destIndex}-${service?.id || 'frequency'}`,
