@@ -126,6 +126,26 @@ export const OwnerDashboardPage: React.FC = () => {
     setNote('Owner timetable correction');
   };
 
+  const startEditRoute = (item: OwnerSubmission) => {
+    const data = item.proposedData || {};
+    setKind('ROUTE');
+    setEditingSubmissionId(item.id);
+    setBusName(String(data.name || data.busIdentifier || ''));
+    setOperatorName(String(data.operatorName || ''));
+    setRouteNumber(String(data.routeNumber || ''));
+    setRouteName(String(data.routeName || ''));
+    setOrigin(String(data.origin || ''));
+    setDestination(String(data.destination || ''));
+    setFirstDepartureTime(String(data.firstDepartureTime || ''));
+    setLastDepartureTime(String(data.lastDepartureTime || ''));
+    setDistanceKm(String(data.distanceKm || ''));
+    setDurationMinutes(String(data.typicalDurationMinutes || ''));
+    setStopsText((Array.isArray(data.stops) ? data.stops : []).map((stop: any) =>
+      [stop.name || stop.stopName || '', stop.latitude ?? '', stop.longitude ?? '', stop.arrivalTime || stop.scheduledArrivalTime || '', stop.departureTime || stop.scheduledDepartureTime || ''].join(' | ')
+    ).join('\n'));
+    setNote('Owner requested route and stop update');
+  };
+
   const requestRemoval = async (item: OwnerSubmission) => {
     if (!token || !window.confirm('Send this bus for removal review? It will remain listed until the Super Admin approves.')) return;
     setLoading(true);
@@ -177,9 +197,9 @@ export const OwnerDashboardPage: React.FC = () => {
       const result = await api.submitOwnerContribution(token, {
         submissionType: editingSubmissionId ? 'CORRECT_TIMETABLE' : kind === 'ROUTE' ? 'SUGGEST_ROUTE' : 'ADD_BUS',
         entityType: kind === 'ROUTE' ? 'ROUTE' : 'TIMETABLE',
-        targetEntityId: editingSubmissionId ? 'bus-community-' + editingSubmissionId : undefined,
+        targetEntityId: editingSubmissionId ? (kind === 'ROUTE' ? 'route-community-' : 'bus-community-') + editingSubmissionId : undefined,
         contributorNote: note || (editingSubmissionId ? 'Owner requested timetable update' : 'Bus owner submission'),
-        proposedData: editingSubmissionId ? { ...proposedData, timetableEntry: false, action: 'UPDATE_BUS_TIMETABLE' } : proposedData,
+        proposedData: editingSubmissionId ? { ...proposedData, timetableEntry: false, action: kind === 'ROUTE' ? 'UPDATE_ROUTE' : 'UPDATE_BUS_TIMETABLE' } : proposedData,
       });
       setMessage('Request submitted. Reference ID: ' + result.referenceId + '. It will appear publicly only after Super Admin approval.');
       setEditingSubmissionId(null);
@@ -221,7 +241,7 @@ export const OwnerDashboardPage: React.FC = () => {
           </section>
 
           <section className="bg-white rounded-3xl p-5 sm:p-7 border border-yatriwarm-200 shadow-card space-y-4">
-            <div><h2 className="text-lg font-bold text-yatriwarm-900">{editingSubmissionId ? 'Update bus timetable' : 'Submit a bus or route'}</h2><p className="text-xs text-yatriwarm-500">Every owner submission goes to a separate Super Admin approval queue.</p></div>
+            <div><h2 className="text-lg font-bold text-yatriwarm-900">{editingSubmissionId ? (kind === 'ROUTE' ? 'Update route and stops' : 'Update bus timetable') : 'Submit a bus or route'}</h2><p className="text-xs text-yatriwarm-500">Every owner submission goes to a separate Super Admin approval queue.</p></div>
             <div className="flex flex-wrap gap-2">
               <button type="button" onClick={() => setKind('TIMETABLE')} className={`px-3 py-2 rounded-xl text-xs font-semibold border ${kind === 'TIMETABLE' ? 'bg-yatribrand-900 text-white border-yatribrand-900' : 'bg-white text-yatriwarm-700 border-yatriwarm-200'}`}>Add bus / timetable</button>
               <button type="button" onClick={() => setKind('ROUTE')} className={`px-3 py-2 rounded-xl text-xs font-semibold border ${kind === 'ROUTE' ? 'bg-yatribrand-900 text-white border-yatribrand-900' : 'bg-white text-yatriwarm-700 border-yatriwarm-200'}`}>Suggest a new route</button>
@@ -250,7 +270,7 @@ export const OwnerDashboardPage: React.FC = () => {
 
           <section className="bg-white rounded-3xl p-5 border border-yatriwarm-200 shadow-card space-y-3">
             <h2 className="font-bold text-yatriwarm-900">My submissions ({submissions.length})</h2>
-            {submissions.length === 0 ? <p className="text-xs text-yatriwarm-500">You have not submitted any buses or routes yet.</p> : submissions.map(item => <div key={item.id} className="flex flex-wrap items-center justify-between gap-3 py-3 border-t border-yatriwarm-100"><div><div className="text-sm font-semibold text-yatriwarm-900">{item.proposedData?.busIdentifier || item.proposedData?.name || item.submissionType}</div><div className="text-[11px] text-yatriwarm-500">{item.submissionType} · {item.referenceId} · {new Date(item.createdAt).toLocaleDateString()}</div></div><div className="flex items-center gap-2"><span className="text-[11px] rounded-full px-2 py-1 bg-yatriwarm-100 text-yatriwarm-700 flex items-center gap-1">{item.status === 'ADMIN_VERIFIED' ? <CheckCircle className="w-3 h-3" /> : <Clock className="w-3 h-3" />}{item.status.replace('_', ' ')}</span>{item.status === 'ADMIN_VERIFIED' && item.submissionType === 'ADD_BUS' && <><button type="button" onClick={() => startEdit(item)} className="text-[11px] px-2 py-1 rounded-lg border border-yatriwarm-200">Edit</button><button type="button" onClick={() => void requestRemoval(item)} className="text-[11px] px-2 py-1 rounded-lg border border-rose-200 text-rose-700">Request delete</button></>}</div></div>)}
+            {submissions.length === 0 ? <p className="text-xs text-yatriwarm-500">You have not submitted any buses or routes yet.</p> : submissions.map(item => <div key={item.id} className="flex flex-wrap items-center justify-between gap-3 py-3 border-t border-yatriwarm-100"><div><div className="text-sm font-semibold text-yatriwarm-900">{item.proposedData?.busIdentifier || item.proposedData?.name || item.submissionType}</div><div className="text-[11px] text-yatriwarm-500">{item.submissionType} · {item.referenceId} · {new Date(item.createdAt).toLocaleDateString()}</div></div><div className="flex items-center gap-2"><span className="text-[11px] rounded-full px-2 py-1 bg-yatriwarm-100 text-yatriwarm-700 flex items-center gap-1">{item.status === 'ADMIN_VERIFIED' ? <CheckCircle className="w-3 h-3" /> : <Clock className="w-3 h-3" />}{item.status.replace('_', ' ')}</span>{item.status === 'ADMIN_VERIFIED' && item.submissionType === 'ADD_BUS' && <><button type="button" onClick={() => startEdit(item)} className="text-[11px] px-2 py-1 rounded-lg border border-yatriwarm-200">Edit</button><button type="button" onClick={() => void requestRemoval(item)} className="text-[11px] px-2 py-1 rounded-lg border border-rose-200 text-rose-700">Request delete</button></>}{item.status === 'ADMIN_VERIFIED' && item.submissionType === 'SUGGEST_ROUTE' && <button type="button" onClick={() => startEditRoute(item)} className="text-[11px] px-2 py-1 rounded-lg border border-yatriwarm-200">Edit route</button>}</div></div>)}
           </section>
         </>
       )}
