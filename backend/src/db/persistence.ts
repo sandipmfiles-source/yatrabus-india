@@ -40,7 +40,7 @@ export function installRepositoryPersistence(): void {
   const mutationMethods = [
     'addPlace', 'addOperator', 'addRoute', 'addTimetableDeparture', 'addBus',
     'recordConsent', 'createJourneySession', 'stopJourneySession', 'ingestObservation',
-    'updateBusLocation', 'createSubmission', 'updateSubmissionReview', 'createOperatorClaim',
+    'updateBusLocation', 'createSubmission', 'recordSubmissionVote', 'updateSubmissionReview', 'createOperatorClaim',
     'addDuplicateCandidate', 'resolveDuplicateCandidate', 'updateAutomationRule', 'createAuditLog',
     'ensureSuperAdmin',
   ] as const;
