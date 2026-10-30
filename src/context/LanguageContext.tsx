@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 import { LanguageCode, getTranslation, SUPPORTED_LANGUAGES } from '@shared/i18n/index.js';
 import { storage } from '../services/storage.js';
 import { en } from '@shared/i18n/en.js';
