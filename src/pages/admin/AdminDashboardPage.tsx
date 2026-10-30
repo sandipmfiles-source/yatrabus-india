@@ -9,7 +9,6 @@ export const AdminDashboardPage: React.FC = () => {
   const token = localStorage.getItem('yatribus_admin_token');
   const [stats, setStats] = useState<SystemHealthStats | null>(null);
   const [recentSubmissions, setRecentSubmissions] = useState<any[]>([]);
-  const [error, setError] = useState('');
 
   useEffect(() => {
     if (!token) { navigate('/admin'); return; }
@@ -45,8 +44,6 @@ export const AdminDashboardPage: React.FC = () => {
           <button onClick={handleLogout} className="px-3 py-1.5 rounded-xl bg-rose-50 text-rose-700 text-xs font-medium flex items-center gap-1.5 border border-rose-200"><LogOut className="w-3.5 h-3.5" />Sign Out</button>
         </div>
       </div>
-
-      {error && <div role="alert" className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800">{error}</div>}
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <Metric label="Places" value={stats?.totalPlaces} detail="Transit stops & hubs" icon={<MapPin className="w-4 h-4" />} />
