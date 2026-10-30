@@ -103,7 +103,7 @@ export const BusDetailPage: React.FC = () => {
       if (!best || error < best.error) best = { ratio: Math.max(0, Math.min(1, ratio)), error };
     }
     // Do not place a bus on this route when its GPS fix is far off the corridor.
-    // Only show the timeline bus when its GPS fix is close to the actual stop corridor (about 220 m).\n    return best && best.error < 0.002 ? best.ratio : null;
+    // Only show the timeline bus when its GPS fix is close to the actual stop corridor (about 220 m).\n    return best !== null && best.error < 0.002 ? best.ratio : null;
   })();
 
   const refreshCorrections = async () => {
