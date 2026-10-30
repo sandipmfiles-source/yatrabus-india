@@ -149,6 +149,12 @@ export const en = {
   contribute_no_account: 'No Passenger Account Required',
   contribute_heading: 'Community Transport Contribution',
   contribute_intro: 'Help fellow commuters keep public transport data accurate. Submit updates, verify schedules, or check previous submissions with your Reference ID.',
+  nav_owner_portal: 'Bus Owner / Operator',
+  owner_account_free_title: 'Bus owner / operator details — no sign-in required',
+  owner_account_free_description: 'Your submission goes to a separate Super Admin review queue. Contact details are used only to verify the operator claim.',
+  owner_contact_person: 'Your name / contact person',
+  owner_submission_contact_error: 'Bus owners: enter your operator / fleet name, contact person and a valid 10-digit phone number. No account or Google sign-in is required.',
+
   contribute_submit_tab: 'Submit Missing Info',
   contribute_status_tab: 'Check Submission Status',
   contribution_received: 'Contribution Received!',
