@@ -14,6 +14,7 @@ import { SearchResultsPage } from './pages/SearchResultsPage.js';
 import { BusDetailPage } from './pages/BusDetailPage.js';
 import { ContributePage } from './pages/ContributePage.js';
 import { OperatorClaimPage } from './pages/OperatorClaimPage.js';
+import { OwnerDashboardPage } from './pages/OwnerDashboardPage.js';
 import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage.js';
 
 import { AdminLoginPage } from './pages/admin/AdminLoginPage.js';
@@ -39,6 +40,7 @@ export const App: React.FC = () => {
                 <Route path="/search" element={<SearchResultsPage />} />
                 <Route path="/routes/:id" element={<BusDetailPage />} />
                 <Route path="/contribute" element={<ContributePage />} />
+                <Route path="/operator" element={<OwnerDashboardPage />} />
                 <Route path="/operator-claim" element={<OperatorClaimPage />} />
                 <Route path="/privacy" element={<PrivacyPolicyPage />} />
                 <Route path="/admin" element={<AdminLoginPage />} />
