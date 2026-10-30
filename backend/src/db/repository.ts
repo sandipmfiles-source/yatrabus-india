@@ -158,6 +158,10 @@ export class TransitRepository {
     return Array.from(this.routes.values());
   }
 
+  public getAllBuses(): Bus[] {
+    return Array.from(this.buses.values()).filter(bus => bus.isActive);
+  }
+
   public getRouteById(id: string): Route | undefined {
     return this.routes.get(id);
   }
