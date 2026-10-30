@@ -79,7 +79,7 @@ function publishVerifiedRoute(submission: CommunitySubmission): Route {
   const stops: RouteStop[] = rawStops.map((stop: any, index: number) => {
     const latitude = Number(stop.latitude);
     const longitude = Number(stop.longitude);
-    if (!String(stop.stopName || '').trim() || !Number.isFinite(latitude) || !Number.isFinite(longitude) ||
+    if (stop.latitude === null || stop.latitude === undefined || stop.latitude === '' || stop.longitude === null || stop.longitude === undefined || stop.longitude === '' || !String(stop.stopName || '').trim() || !Number.isFinite(latitude) || !Number.isFinite(longitude) ||
         Math.abs(latitude) > 90 || Math.abs(longitude) > 180) {
       throw new Error(`Intermediate stop ${index} is missing a valid name or GPS coordinates. Use Name|latitude|longitude|HH:MM in the form.`);
     }
