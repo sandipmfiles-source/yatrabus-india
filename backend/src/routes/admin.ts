@@ -73,7 +73,11 @@ adminRouter.post('/submissions/:id/review', requireAdminAuth('SUPER_ADMIN'), (re
 
   // A new route is published only after an explicit Super Admin approval.
   const pendingSubmission = repository.listSubmissions().find(item => item.id === String(req.params.id));
-  if (decision === 'ADMIN_VERIFIED' && pendingSubmission?.submissionType === 'SUGGEST_ROUTE' &&
+  if (!pendingSubmission) return res.status(404).json({ error: 'Submission not found' });
+  if (pendingSubmission.status !== 'PENDING_REVIEW') {
+    return res.status(409).json({ error: 'This submission has already been reviewed.' });
+  }
+  if (decision === 'ADMIN_VERIFIED' && pendingSubmission.submissionType === 'SUGGEST_ROUTE' &&
       pendingSubmission.entityType === 'ROUTE') {
     const data = pendingSubmission.proposedData || {};
     const routeNumber = typeof data.routeNumber === 'string' ? data.routeNumber.trim() : '';
