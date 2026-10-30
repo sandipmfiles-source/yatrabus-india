@@ -95,7 +95,7 @@ adminRouter.post('/submissions/:id/review', requireAdminAuth('SUPER_ADMIN'), (re
       confidenceScore: 100,
       isCancelled: false,
     };
-    if (!repository.addTimetableDeparture(route.id, departure)) {
+    if (!repository.addTimetableDeparture(route.id, departure, Number(data.frequencyMinutes))) {
       return res.status(409).json({ error: 'This bus and departure time already exist on the selected route.' });
     }
   }
