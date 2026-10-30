@@ -10,7 +10,6 @@ import { busesRouter } from './routes/buses.js';
 import { trackingRouter } from './routes/tracking.js';
 import { contributionsRouter } from './routes/contributions.js';
 import { adminRouter } from './routes/admin.js';
-import { operatorsRouter } from './routes/operators.js';
 
 export function createServer() {
   installRepositoryPersistence();
@@ -52,7 +51,6 @@ export function createServer() {
   app.use('/api/buses', busesRouter);
   app.use('/api/tracking', trackingRouter);
   app.use('/api/contributions', contributionsRouter);
-  app.use('/api/operators', operatorsRouter);
   app.use('/api/admin', adminRouter);
 
   // Serve the built passenger app and API from one HTTPS host/container.
