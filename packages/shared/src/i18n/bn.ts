@@ -154,6 +154,10 @@ export const bn = {
   owner_account_free_description: 'আপনার জমা আলাদা Super Admin পর্যালোচনা তালিকায় যাবে। যোগাযোগের তথ্য শুধু অপারেটরের দাবি যাচাই করতে ব্যবহার হবে।',
   owner_contact_person: 'আপনার নাম / যোগাযোগকারী',
   owner_submission_contact_error: 'বাস মালিক: অপারেটর / ফ্লিটের নাম, যোগাযোগকারীর নাম এবং সঠিক ১০ সংখ্যার ফোন নম্বর দিন। অ্যাকাউন্ট বা Google সাইন-ইন লাগবে না।',
+  request_bus_removal: 'বাস সরানোর অনুরোধ',
+  existing_route_number: 'বিদ্যমান রুট নম্বর',
+  bus_name_number_to_remove: 'যে বাসটি সরাতে হবে তার নাম / নম্বর',
+
 
   contribute_submit_tab: 'নতুন তথ্য জমা দিন',
   contribute_status_tab: 'জমার অবস্থা দেখুন',
