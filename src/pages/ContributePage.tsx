@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Geolocation } from '@capacitor/geolocation';
 import { useLanguage } from '../context/LanguageContext.js';
 import { useSearchParams } from 'react-router-dom';
 import { api } from '../services/api.js';
@@ -15,6 +16,10 @@ export const ContributePage: React.FC = () => {
 
   // Form State
   const [name, setName] = useState('');
+  const [stopLatitude, setStopLatitude] = useState('');
+  const [stopLongitude, setStopLongitude] = useState('');
+  const [locationLookupLoading, setLocationLookupLoading] = useState(false);
+  const [evidenceUrl, setEvidenceUrl] = useState('');
   const [routeNumber, setRouteNumber] = useState('');
   const [direction, setDirection] = useState<'UP' | 'DOWN'>('UP');
   const [origin, setOrigin] = useState('');
@@ -81,6 +86,33 @@ export const ContributePage: React.FC = () => {
     }
   };
   const [notes, setNotes] = useState('');
+  const fillStopCoordinates = async () => {
+    setLocationLookupLoading(true);
+    setSubmissionError('');
+    try {
+      const position = await Geolocation.getCurrentPosition({ enableHighAccuracy: true, timeout: 20000, maximumAge: 0 });
+      setStopLatitude(position.coords.latitude.toFixed(6));
+      setStopLongitude(position.coords.longitude.toFixed(6));
+    } catch {
+      setSubmissionError('Could not read your location. Check GPS permission and enter the coordinates manually.');
+    } finally {
+      setLocationLookupLoading(false);
+    }
+  };
+  const fillKnownStopCoordinates = async (index: number, value: string) => {
+    const stopName = value.trim();
+    if (!stopName) return;
+    try {
+      const matches = await api.searchPlaces(stopName, 8);
+      const exact = matches.find((item: any) => item.place?.canonicalName?.toLocaleLowerCase() === stopName.toLocaleLowerCase());
+      if (exact?.place && Number.isFinite(exact.place.latitude) && Number.isFinite(exact.place.longitude)) {
+        updateRouteStop(index, 'latitude', String(exact.place.latitude));
+        updateRouteStop(index, 'longitude', String(exact.place.longitude));
+      }
+    } catch {
+      // Manual coordinates remain available if the place catalogue is offline.
+    }
+  };
 
   // Status check state
   const [refIdQuery, setRefIdQuery] = useState('');
@@ -109,6 +141,9 @@ export const ContributePage: React.FC = () => {
         contributorNote: notes,
         proposedData: {
           name: name || routeNumber,
+          latitude: stopLatitude ? Number(stopLatitude) : undefined,
+          longitude: stopLongitude ? Number(stopLongitude) : undefined,
+          evidenceUrl: evidenceUrl.trim() || undefined,
           routeNumber,
           direction,
           origin,
@@ -312,6 +347,11 @@ export const ContributePage: React.FC = () => {
                       placeholder="e.g. AIIMS Ansari Nagar Gate 2"
                       className="w-full px-3.5 py-2.5 bg-yatriwarm-50 border border-yatriwarm-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-yatribrand-800 focus:bg-white"
                     />
+                    <div className="mt-2 grid grid-cols-2 gap-2">
+                      <input aria-label="Bus stop latitude" type="number" required min="6" max="38" step="any" value={stopLatitude} onChange={e => setStopLatitude(e.target.value)} placeholder="Latitude (6–38)" className="w-full px-3 py-2 bg-yatriwarm-50 border border-yatriwarm-200 rounded-xl text-xs" />
+                      <input aria-label="Bus stop longitude" type="number" required min="68" max="98" step="any" value={stopLongitude} onChange={e => setStopLongitude(e.target.value)} placeholder="Longitude (68–98)" className="w-full px-3 py-2 bg-yatriwarm-50 border border-yatriwarm-200 rounded-xl text-xs" />
+                    </div>
+                    <button type="button" onClick={() => void fillStopCoordinates()} disabled={locationLookupLoading} className="mt-2 rounded-lg border border-yatriwarm-200 px-3 py-2 text-[11px] font-semibold text-yatriwarm-700 disabled:opacity-50">{locationLookupLoading ? 'Reading GPS…' : 'Use my current GPS location'}</button>
                   </div>
                 )}
 
@@ -445,7 +485,7 @@ export const ContributePage: React.FC = () => {
                             {routeStops.length > 2 && index > 0 && index < routeStops.length - 1 && <button type="button" onClick={() => setRouteStops(current => current.filter((_, i) => i !== index))} className="text-[11px] text-red-700">Remove</button>}
                           </div>
                         </div>
-                        <input required value={stop.name} onChange={e => updateRouteStop(index, 'name', e.target.value)} placeholder="Stop / place name" className="w-full px-3 py-2 bg-yatriwarm-50 border border-yatriwarm-200 rounded-lg text-xs" />
+                        <input required value={stop.name} onChange={e => updateRouteStop(index, 'name', e.target.value)} onBlur={e => void fillKnownStopCoordinates(index, e.target.value)} placeholder="Stop / place name (saved places auto-fill coordinates)" className="w-full px-3 py-2 bg-yatriwarm-50 border border-yatriwarm-200 rounded-lg text-xs" />
                         <div className="grid grid-cols-2 gap-2">
                           <input required type="number" min="6" max="38" step="any" value={stop.latitude} onChange={e => updateRouteStop(index, 'latitude', e.target.value)} placeholder="Latitude" className="w-full px-3 py-2 bg-yatriwarm-50 border border-yatriwarm-200 rounded-lg text-xs" />
                           <input required type="number" min="68" max="98" step="any" value={stop.longitude} onChange={e => updateRouteStop(index, 'longitude', e.target.value)} placeholder="Longitude" className="w-full px-3 py-2 bg-yatriwarm-50 border border-yatriwarm-200 rounded-lg text-xs" />
@@ -501,6 +541,11 @@ export const ContributePage: React.FC = () => {
                   </div>
                 </div>
               )}
+
+              <div>
+                <label className="block text-xs font-medium text-yatriwarm-700 mb-1">Official timetable / operator evidence link (optional)</label>
+                <input type="url" value={evidenceUrl} onChange={e => setEvidenceUrl(e.target.value)} placeholder="https://official-operator-site.example/timetable" className="w-full px-3.5 py-2.5 bg-yatriwarm-50 border border-yatriwarm-200 rounded-xl text-xs" />
+              </div>
 
               {/* Contributor note */}
               <div>
