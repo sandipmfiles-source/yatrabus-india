@@ -76,15 +76,15 @@ async function fetchLgdDirectorySuggestions(query: string) {
   const cached = lgdSuggestionCache.get(key);
   if (cached && cached.expiresAt > Date.now()) return cached.results;
 
-  const localMatches = lgdCatalogue
-    .filter(item => String(item.name || '').toLocaleLowerCase('en-IN').includes(key))
-    .sort((a, b) => {
+  const localMatches = (lgdCatalogue as any[])
+    .filter((item: any) => String(item.name || '').toLocaleLowerCase('en-IN').includes(key))
+    .sort((a: any, b: any) => {
       const aPrefix = String(a.name || '').toLocaleLowerCase('en-IN').startsWith(key) ? 0 : 1;
       const bPrefix = String(b.name || '').toLocaleLowerCase('en-IN').startsWith(key) ? 0 : 1;
       return aPrefix - bPrefix || String(a.name).localeCompare(String(b.name));
     })
     .slice(0, 8)
-    .map(item => ({
+    .map((item: any) => ({
       id: item.id,
       name: item.name,
       address: [item.level, item.subdistrict, item.district, item.state, 'LGD directory'].filter(Boolean).join(' · '),
