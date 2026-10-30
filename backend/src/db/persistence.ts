@@ -5,6 +5,7 @@ import { repository } from './repository.js';
 const dataPath = resolve(process.env.YATRIBUS_DATA_FILE || './data/yatribus-state.json');
 let persistenceReady = false;
 let writing = false;
+let installed = false;
 
 function persistSnapshot(): void {
   if (writing) return;
@@ -24,6 +25,8 @@ function persistSnapshot(): void {
 }
 
 export function installRepositoryPersistence(): void {
+  if (installed) return;
+  installed = true;
   if (existsSync(dataPath)) {
     try {
       const snapshot = JSON.parse(readFileSync(dataPath, 'utf8')) as Record<string, unknown>;
