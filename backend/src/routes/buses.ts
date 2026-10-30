@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { repository } from '../db/repository.js';
+import { repository } from '../db/persistentRepository.js';
 import { calculateStopETAs } from '../../../packages/shared/src/engine/etaCalculator.js';
 import { evaluateObservationFreshness } from '../../../packages/shared/src/engine/staleDetector.js';
 
