@@ -356,6 +356,7 @@ adminRouter.post('/submissions/:id/review', requireAdminAuth('SUPER_ADMIN'), (re
       const now = new Date().toISOString();
       const bus: Bus = {
         id: `bus-community-${pendingSubmission.id}`,
+        routeId: route.id,
         publicIdentifier: busIdentifier,
         operatorId: route.operatorId,
         operatorName: route.operatorName,
