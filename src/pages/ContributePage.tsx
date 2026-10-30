@@ -385,6 +385,16 @@ export const ContributePage: React.FC = () => {
                   </div>
                 )}
 
+                {submissionType === 'DELETE_BUS' && <>
+                  <div>
+                    <label className="block text-xs font-medium text-yatriwarm-700 mb-1">Existing route number</label>
+                    <input required value={routeNumber} onChange={e => setRouteNumber(e.target.value)} placeholder="e.g. DTC-534" className="w-full px-3.5 py-2.5 bg-yatriwarm-50 border border-yatriwarm-200 rounded-xl text-xs" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-yatriwarm-700 mb-1">Bus name / number to remove</label>
+                    <input required value={busIdentifier} onChange={e => setBusIdentifier(e.target.value)} placeholder="e.g. DTC 534 / DL-1P-xxxx" className="w-full px-3.5 py-2.5 bg-yatriwarm-50 border border-yatriwarm-200 rounded-xl text-xs" />
+                  </div>
+                </>}
                 {submissionType === 'ADD_STOP' && (
                   <div>
                     <label className="block text-xs font-medium text-yatriwarm-700 mb-1">
