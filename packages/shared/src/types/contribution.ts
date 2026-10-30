@@ -29,6 +29,8 @@ export interface CommunitySubmission {
   sourceCategory?: 'PUBLIC' | 'OPERATOR';
   contributorEmail?: string;
   contributorDisplayName?: string;
+  communityVotes?: Record<string, number>;
+  voterKeys?: string[];
 }
 
 export interface DuplicateCandidate {
