@@ -3,7 +3,7 @@ import { discoverJourneys } from '../../packages/shared/src/engine/routeGraph.js
 import { calculateStopETAs } from '../../packages/shared/src/engine/etaCalculator.js';
 import { evaluateJourneyPrompt } from '../../packages/shared/src/engine/journeyConfirmationEngine.js';
 
-const API_BASE = '/api';
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || '/api').replace(/\\/+$/, '');
 
 export const api = {
   async searchPlaces(query: string, limit = 8) {
@@ -72,63 +72,80 @@ export const api = {
   },
 
   async recordConsent(sessionId: string, status: string, disclosuresAccepted: boolean) {
-    try {
-      await fetch(`${API_BASE}/tracking/consent`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessionId, status, disclosuresAccepted }) });
-    } catch {}
-    repository.recordConsent({ sessionId, scope: 'JOURNEY_TRACKING', status: status as any, disclosuresAccepted });
+    const res = await fetch(`${API_BASE}/tracking/consent`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sessionId, status, disclosuresAccepted }),
+    });
+    if (!res.ok) throw new Error('Unable to record location consent. Connect to the YatraBus backend and try again.');
+    return await res.json();
   },
 
   async startJourneySession(busId: string, routeId: string) {
-    try {
-      const res = await fetch(`${API_BASE}/tracking/session/start`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ busId, routeId }) });
-      if (res.ok) return await res.json();
-    } catch {}
-    const sessionId = `sess-${Date.now()}`;
-    const session = repository.createJourneySession({ sessionId, busId, routeId, startTime: new Date().toISOString(), lastActiveTime: new Date().toISOString(), maxExpiryTime: new Date(Date.now() + 12 * 3600 * 1000).toISOString(), isActive: true, isConfirmedPassenger: true, observationsContributedCount: 0 });
-    return { session };
+    const res = await fetch(`${API_BASE}/tracking/session/start`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ busId, routeId }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.session) throw new Error(data.message || 'Live tracking service is unavailable. Please try again when connected.');
+    return data;
   },
 
   async stopJourneySession(sessionId: string, reason = 'USER_STOPPED') {
     try {
-      await fetch(`${API_BASE}/tracking/session/stop`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessionId, reason }) });
-    } catch {}
-    repository.stopJourneySession(sessionId, reason as any);
+      const res = await fetch(`${API_BASE}/tracking/session/stop`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId, reason }),
+      });
+      return res.ok;
+    } catch {
+      return false;
+    }
   },
 
   async sendObservation(obs: { sessionId: string; busId: string; routeId: string; latitude: number; longitude: number; accuracyMeters: number; speedKmh?: number; headingDegrees?: number }) {
     try {
-      const res = await fetch(`${API_BASE}/tracking/observation`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(obs) });
-      if (res.ok) return await res.json();
-    } catch {}
-    return { accepted: true };
+      const res = await fetch(`${API_BASE}/tracking/observation`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(obs),
+      });
+      if (!res.ok) return { accepted: false };
+      return await res.json();
+    } catch {
+      return { accepted: false };
+    }
   },
 
   async submitContribution(data: { submissionType: string; entityType: string; targetEntityId?: string; contributorNote?: string; proposedData: Record<string, any> }) {
-    try {
-      const res = await fetch(`${API_BASE}/contributions/submit`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
-      if (res.ok) return await res.json();
-    } catch {}
-    const ref = `YB-SUB-2026-${Math.floor(1000 + Math.random() * 9000)}`;
-    const sub = repository.createSubmission({ id: `sub-${Date.now()}`, referenceId: ref, submissionType: data.submissionType as any, entityType: data.entityType as any, targetEntityId: data.targetEntityId, contributorNote: data.contributorNote, proposedData: data.proposedData, status: 'PENDING_REVIEW', corroborationCount: 1, createdAt: new Date().toISOString() });
-    return { success: true, referenceId: sub.referenceId, status: sub.status, message: 'Contribution received successfully. Track with reference ID.' };
+    const res = await fetch(`${API_BASE}/contributions/submit`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    const result = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(result.message || result.error || 'Contribution service is unavailable. Please try again when connected.');
+    return result;
   },
 
   async getSubmissionStatus(refId: string) {
-    try {
-      const res = await fetch(`${API_BASE}/contributions/status/${encodeURIComponent(refId)}`);
-      if (res.ok) return await res.json();
-    } catch {}
-    const sub = repository.getSubmissionByReference(refId);
-    if (!sub) throw new Error('Reference ID not found');
-    return sub;
+    const res = await fetch(`${API_BASE}/contributions/status/${encodeURIComponent(refId)}`);
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.message || data.error || 'Submission status service is unavailable.');
+    return data;
   },
 
   async submitOperatorClaim(data: any) {
-    try {
-      const res = await fetch(`${API_BASE}/contributions/operator-claim`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
-      if (res.ok) return await res.json();
-    } catch {}
-    return { success: true, message: 'Operator claim received' };
+    const res = await fetch(`${API_BASE}/contributions/operator-claim`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    const result = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(result.message || result.error || 'Operator claim service is unavailable.');
+    return result;
   },
 
   // Admin endpoints deliberately fail closed: no local/demo token or data fallback.
