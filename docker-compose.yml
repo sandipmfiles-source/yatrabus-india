@@ -1,0 +1,21 @@
+services:
+  yatribus:
+    build:
+      context: .
+      args:
+        VITE_API_BASE_URL: ${PUBLIC_API_BASE_URL:?Set PUBLIC_API_BASE_URL in .env}
+    ports:
+      - "${PORT:-5000}:5000"
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      YATRIBUS_DATA_FILE: /data/yatribus-store.json
+      ADMIN_JWT_SECRET: ${ADMIN_JWT_SECRET:?Set a random 32+ character ADMIN_JWT_SECRET}
+      INITIAL_ADMIN_EMAIL: ${INITIAL_ADMIN_EMAIL:-admin@yatribus.in}
+      INITIAL_ADMIN_PASSWORD: ${INITIAL_ADMIN_PASSWORD:?Set a strong INITIAL_ADMIN_PASSWORD}
+    volumes:
+      - yatribus-data:/data
+    restart: unless-stopped
+
+volumes:
+  yatribus-data:
