@@ -662,9 +662,9 @@ export const ContributePage: React.FC = () => {
                           {placeSuggestions?.index === index && placeSuggestions.items.length > 0 && (
                             <div className="overflow-hidden rounded-xl border border-yatriwarm-200 bg-white shadow-lg">
                               {placeSuggestions.items.map((item: any, suggestionIndex: number) => (
-                                <button key={item.id || suggestionIndex} type="button" onMouseDown={e => e.preventDefault()} onClick={() => { updateRouteStop(index, "name", item.name); updateRouteStop(index, "latitude", String(item.latitude)); updateRouteStop(index, "longitude", String(item.longitude)); setPlaceSuggestions(null); setPlaceSearchQuery(null); }} className="block w-full border-b border-yatriwarm-100 px-3 py-2.5 text-left last:border-0 hover:bg-yatribrand-50">
+                                <button key={item.id || suggestionIndex} type="button" onMouseDown={e => e.preventDefault()} onClick={() => { updateRouteStop(index, "name", item.name); updateRouteStop(index, "latitude", Number.isFinite(Number(item.latitude)) ? String(item.latitude) : ""); updateRouteStop(index, "longitude", Number.isFinite(Number(item.longitude)) ? String(item.longitude) : ""); setPlaceSuggestions(null); setPlaceSearchQuery(null); }} className="block w-full border-b border-yatriwarm-100 px-3 py-2.5 text-left last:border-0 hover:bg-yatribrand-50">
                                   <span className="block text-xs font-semibold text-yatriwarm-900">{item.name}</span>
-                                  <span className="block text-[10px] text-yatriwarm-500">{item.address}</span>
+                                  <span className="block text-[10px] text-yatriwarm-500">{item.address}{item.level ? " · " + item.level : ""}{item.latitude === undefined ? " · GPS needed to confirm route point" : ""}</span>
                                 </button>
                               ))}
                             </div>
