@@ -146,4 +146,5 @@ export const bn = {
   live_eta: "লাইভ পৌঁছানোর সময়",
   scheduled: "সময়সূচী",
   incorrect_schedule_notice: "এই বাসের সময়সূচী ভুল বা রুট পরিবর্তন হয়েছে কি?",
+  no_bus_linked_tracking: "এই রুটে বাস যোগ ও যাচাই হওয়ার পর লাইভ GPS শেয়ারিং চালু হবে।",
 };
