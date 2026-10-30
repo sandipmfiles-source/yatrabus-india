@@ -1,69 +1,80 @@
 import { Router, Request, Response } from 'express';
+import { CONFIG } from '../config.js';
 import { repository } from '../db/repository.js';
-import { requireAdminAuth } from '../middleware/auth.js';
+import { createAdminSessionToken, requireAdminAuth, verifyAdminPassword } from '../middleware/auth.js';
 
 export const adminRouter = Router();
 
-// POST /api/admin/login
+// POST /api/admin/login — one configured Super Admin only.
 adminRouter.post('/login', (req: Request, res: Response) => {
-  const { email, password } = req.body;
+  const email = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : '';
+  const password = typeof req.body?.password === 'string' ? req.body.password : '';
 
   if (!email || !password) {
     return res.status(400).json({ error: 'Email and password required' });
   }
 
-  const admin = repository.getAdminByEmail(email);
-  if (!admin) {
+  // Fail closed: no development/default credentials are accepted.
+  if (!CONFIG.ADMIN_PASSWORD_HASH || CONFIG.ADMIN_JWT_SECRET.length < 32) {
+    return res.status(503).json({
+      error: 'Admin login is not configured',
+      message: 'The owner must configure ADMIN_PASSWORD_HASH and a 32+ character ADMIN_JWT_SECRET.',
+    });
+  }
+
+  if (email !== CONFIG.ADMIN_EMAIL) {
     return res.status(401).json({ error: 'Invalid administrator credentials' });
   }
 
-  // Generate bearer session token
-  const token = `yatribus_admin_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+  const admin = repository.getAdminByEmail(CONFIG.ADMIN_EMAIL);
+  if (!admin || !admin.isActive || admin.role !== 'SUPER_ADMIN' || !verifyAdminPassword(password)) {
+    return res.status(401).json({ error: 'Invalid administrator credentials' });
+  }
+
+  const token = createAdminSessionToken(admin);
+  if (!token) {
+    return res.status(503).json({ error: 'Admin session signing is not configured' });
+  }
 
   return res.json({
     token,
-    user: {
-      id: admin.id,
-      email: admin.email,
-      name: admin.name,
-      role: admin.role,
-    },
+    expiresIn: CONFIG.ADMIN_SESSION_TTL_SECONDS,
+    user: { id: admin.id, email: admin.email, name: admin.name, role: admin.role },
   });
 });
 
 // GET /api/admin/overview
-adminRouter.get('/overview', requireAdminAuth(), (req: Request, res: Response) => {
+adminRouter.get('/overview', requireAdminAuth('SUPER_ADMIN'), (_req: Request, res: Response) => {
   const health = repository.getSystemHealthStats();
   const recentSubmissions = repository.listSubmissions('PENDING_REVIEW').slice(0, 5);
   const recentAudit = repository.getAuditLogs(5);
-
-  return res.json({
-    stats: health,
-    recentSubmissions,
-    recentAudit,
-  });
+  return res.json({ stats: health, recentSubmissions, recentAudit });
 });
 
 // GET /api/admin/submissions
-adminRouter.get('/submissions', requireAdminAuth(), (req: Request, res: Response) => {
-  const status = req.query.status as string;
+adminRouter.get('/submissions', requireAdminAuth('SUPER_ADMIN'), (req: Request, res: Response) => {
+  const status = typeof req.query.status === 'string' ? req.query.status : undefined;
   const submissions = repository.listSubmissions(status);
   return res.json({ count: submissions.length, submissions });
 });
 
 // POST /api/admin/submissions/:id/review
-adminRouter.post('/submissions/:id/review', requireAdminAuth(), (req: Request, res: Response) => {
-  const { decision, reason } = req.body; // 'COMMUNITY_CORROBORATED' | 'ADMIN_VERIFIED' | 'REJECTED'
-  const adminId = (req as any).admin?.id || 'admin-default';
+adminRouter.post('/submissions/:id/review', requireAdminAuth('SUPER_ADMIN'), (req: Request, res: Response) => {
+  const { decision, reason } = req.body;
+  const adminId = (req as any).admin.id;
 
   if (!decision || !['ADMIN_VERIFIED', 'COMMUNITY_CORROBORATED', 'REJECTED'].includes(decision)) {
     return res.status(400).json({ error: 'Valid review decision required' });
   }
 
-  const success = repository.updateSubmissionReview(String(req.params.id), decision, reason || 'Reviewed by administrator', adminId);
-  if (!success) {
-    return res.status(404).json({ error: 'Submission not found' });
-  }
+  const reviewReason = typeof reason === 'string' ? reason.trim().slice(0, 1000) : '';
+  const success = repository.updateSubmissionReview(
+    String(req.params.id),
+    decision,
+    reviewReason || 'Reviewed by Super Admin',
+    adminId
+  );
+  if (!success) return res.status(404).json({ error: 'Submission not found' });
 
   repository.createAuditLog({
     id: `audit-${Date.now()}`,
@@ -72,7 +83,7 @@ adminRouter.post('/submissions/:id/review', requireAdminAuth(), (req: Request, r
     action: decision === 'REJECTED' ? 'DELETE' : 'VERIFY',
     actorId: adminId,
     actorRole: 'SUPER_ADMIN',
-    reason,
+    reason: reviewReason || undefined,
     timestamp: new Date().toISOString(),
   });
 
@@ -80,51 +91,49 @@ adminRouter.post('/submissions/:id/review', requireAdminAuth(), (req: Request, r
 });
 
 // GET /api/admin/duplicates
-adminRouter.get('/duplicates', requireAdminAuth(), (req: Request, res: Response) => {
+adminRouter.get('/duplicates', requireAdminAuth('SUPER_ADMIN'), (_req: Request, res: Response) => {
   const candidates = repository.listDuplicateCandidates();
   return res.json({ count: candidates.length, candidates });
 });
 
 // POST /api/admin/duplicates/:id/resolve
-adminRouter.post('/duplicates/:id/resolve', requireAdminAuth(), (req: Request, res: Response) => {
-  const { resolution } = req.body; // 'MERGED' | 'REJECTED_DIFFERENT'
-  const adminId = (req as any).admin?.id || 'admin-default';
-
-  const success = repository.resolveDuplicateCandidate(String(req.params.id), resolution, adminId);
-  if (!success) {
-    return res.status(404).json({ error: 'Duplicate candidate not found' });
+adminRouter.post('/duplicates/:id/resolve', requireAdminAuth('SUPER_ADMIN'), (req: Request, res: Response) => {
+  const { resolution } = req.body;
+  const adminId = (req as any).admin.id;
+  if (!['MERGED', 'REJECTED_DIFFERENT'].includes(resolution)) {
+    return res.status(400).json({ error: 'Valid duplicate resolution required' });
   }
-
+  const success = repository.resolveDuplicateCandidate(String(req.params.id), resolution, adminId);
+  if (!success) return res.status(404).json({ error: 'Duplicate candidate not found' });
   return res.json({ success: true, resolution });
 });
 
 // GET /api/admin/automation/rules
-adminRouter.get('/automation/rules', requireAdminAuth(), (req: Request, res: Response) => {
+adminRouter.get('/automation/rules', requireAdminAuth('SUPER_ADMIN'), (_req: Request, res: Response) => {
   const rules = repository.getAutomationRules();
   return res.json({ count: rules.length, rules });
 });
 
 // PUT /api/admin/automation/rules/:id
-adminRouter.put('/automation/rules/:id', requireAdminAuth(), (req: Request, res: Response) => {
+adminRouter.put('/automation/rules/:id', requireAdminAuth('SUPER_ADMIN'), (req: Request, res: Response) => {
   const { isEnabled, parameters } = req.body;
-
-  const success = repository.updateAutomationRule(String(req.params.id), isEnabled, parameters || {});
-  if (!success) {
-    return res.status(404).json({ error: 'Automation rule not found' });
+  if (typeof isEnabled !== 'boolean') {
+    return res.status(400).json({ error: 'isEnabled must be a boolean' });
   }
-
+  const success = repository.updateAutomationRule(String(req.params.id), isEnabled, parameters || {});
+  if (!success) return res.status(404).json({ error: 'Automation rule not found' });
   return res.json({ success: true, message: 'Automation rule updated' });
 });
 
 // GET /api/admin/audit-logs
-adminRouter.get('/audit-logs', requireAdminAuth(), (req: Request, res: Response) => {
-  const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 50;
+adminRouter.get('/audit-logs', requireAdminAuth('SUPER_ADMIN'), (req: Request, res: Response) => {
+  const requestedLimit = req.query.limit ? parseInt(req.query.limit as string, 10) : 50;
+  const limit = Number.isFinite(requestedLimit) ? Math.min(200, Math.max(1, requestedLimit)) : 50;
   const logs = repository.getAuditLogs(limit);
   return res.json({ count: logs.length, logs });
 });
 
-// GET /api/admin/health
-adminRouter.get('/health', (req: Request, res: Response) => {
-  const health = repository.getSystemHealthStats();
-  return res.json(health);
+// GET /api/admin/health — private; never expose internal admin health publicly.
+adminRouter.get('/health', requireAdminAuth('SUPER_ADMIN'), (_req: Request, res: Response) => {
+  return res.json(repository.getSystemHealthStats());
 });
