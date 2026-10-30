@@ -149,6 +149,12 @@ export const hi = {
   contribute_no_account: 'यात्री खाता आवश्यक नहीं',
   contribute_heading: 'सामुदायिक परिवहन योगदान',
   contribute_intro: 'सार्वजनिक परिवहन की जानकारी सही रखने में मदद करें। अपडेट भेजें, समय-सारणी सत्यापित करें या रेफरेंस आईडी से पिछला आवेदन देखें।',
+  nav_owner_portal: 'बस मालिक / ऑपरेटर',
+  owner_account_free_title: 'बस मालिक / ऑपरेटर की जानकारी — साइन-इन आवश्यक नहीं',
+  owner_account_free_description: 'आपका आवेदन Super Admin की अलग समीक्षा सूची में जाएगा। संपर्क जानकारी का उपयोग केवल ऑपरेटर के दावे की पुष्टि के लिए होगा।',
+  owner_contact_person: 'आपका नाम / संपर्क व्यक्ति',
+  owner_submission_contact_error: 'बस मालिक: ऑपरेटर / फ्लीट का नाम, संपर्क व्यक्ति और सही 10 अंकों का फोन नंबर भरें। अकाउंट या Google साइन-इन की आवश्यकता नहीं है।',
+
   contribute_submit_tab: 'नई जानकारी भेजें',
   contribute_status_tab: 'आवेदन की स्थिति देखें',
   contribution_received: 'योगदान प्राप्त हुआ!',
