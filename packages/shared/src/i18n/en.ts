@@ -120,4 +120,7 @@ export const en = {
   submitted: "Submitted",
   reviewer_note: "Reviewer Note",
   scheduled_departures: "Published departure times",
+  background_tracking_active: "Android background GPS is active",
+  background_tracking_unavailable: "Background GPS is not active",
+  location_updates_checked: "location checks",
 };
