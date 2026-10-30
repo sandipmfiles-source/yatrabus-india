@@ -64,7 +64,7 @@ export const ContributePage: React.FC = () => {
           lastDepartureTime,
           frequencyMinutes: frequencyMinutes ? Number(frequencyMinutes) : undefined,
           departureTimes: departureTimes.split(',').map(time => time.trim()).filter(Boolean),
-          operatingDays: operatingDays.split(',').map(day => day.trim()).filter(Boolean),
+          operatingDays: submissionType === 'SUGGEST_ROUTE' ? operatingDays.split(',').map(day => day.trim()).filter(Boolean) : undefined,
           originLatitude: originLatitude ? Number(originLatitude) : undefined,
           originLongitude: originLongitude ? Number(originLongitude) : undefined,
           destinationLatitude: destinationLatitude ? Number(destinationLatitude) : undefined,
