@@ -45,4 +45,7 @@ export const en = {
   every_minutes: 'Every {minutes} minutes',
   intermediate_stops: 'Stops on this journey',
   service_hours: 'Service hours',
+  verified_departures: 'Verified bus departures',
+  admin_verified: 'Admin verified',
+  arrival_short: 'Arr.',
 };
