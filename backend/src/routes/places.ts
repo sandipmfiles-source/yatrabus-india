@@ -63,32 +63,37 @@ async function fetchLgdDirectorySuggestions(query: string) {
   const key = query.toLocaleLowerCase('en-IN');
   const cached = lgdSuggestionCache.get(key);
   if (cached && cached.expiresAt > Date.now()) return cached.results;
+  let results: any[] = [];
   try {
     const url = 'https://lgd-json-api.vercel.app/api/search?q=' + encodeURIComponent(query) + '&limit=8';
     const response = await fetch(url, {
       headers: { 'User-Agent': 'YatraBusIndia/1.0', 'Accept': 'application/json' },
       signal: AbortSignal.timeout(7000),
     });
-    if (!response.ok) return [];
-    const payload = await response.json() as any;
-    const results = normaliseDirectoryRows(payload, query);
-    try {
-      const blocks = await loadBlockDirectory();
-      const needle = key;
-      for (const block of blocks) {
-        if (String(block.name).toLocaleLowerCase('en-IN').includes(needle)) {
-          results.push({
-            id: 'lgd-block-' + block.code,
-            name: block.name,
-            address: ['Block', block.districtName, block.stateName, 'LGD directory'].filter(Boolean).join(' · '),
-            source: 'LOCAL_GOVERNMENT_DIRECTORY',
-            level: 'Block',
-          });
-        }
-      }
-    } catch {
-      // Keep the current LGD API results if the optional block CSV is unavailable.
+    if (response.ok) {
+      const payload = await response.json() as any;
+      results = normaliseDirectoryRows(payload, query);
     }
+  } catch {
+    // The local GitHub block index and OpenStreetMap fallback remain available.
+  }
+  try {
+    const blocks = await loadBlockDirectory();
+    const needle = key;
+    for (const block of blocks) {
+      if (String(block.name).toLocaleLowerCase('en-IN').includes(needle)) {
+        results.push({
+          id: 'lgd-block-' + block.code,
+          name: block.name,
+          address: ['Block', block.districtName, block.stateName, 'LGD directory'].filter(Boolean).join(' · '),
+          source: 'LOCAL_GOVERNMENT_DIRECTORY',
+          level: 'Block',
+        });
+      }
+    }
+  } catch {
+    // Continue with state, district, sub-district and town matches if blocks are offline.
+  }
     const unique = Array.from(new Map(results.map(item => [item.id, item])).values()).slice(0, 8);
     if (lgdSuggestionCache.size > 500) lgdSuggestionCache.delete(lgdSuggestionCache.keys().next().value as string);
     lgdSuggestionCache.set(key, { expiresAt: Date.now() + 24 * 60 * 60 * 1000, results: unique });
@@ -117,7 +122,7 @@ placesRouter.get('/geocode-search', publicSearchLimiter, async (req: Request, re
       headers: { 'User-Agent': 'YatraBusIndia/1.0 (+https://github.com/sandipmfiles-source/yatrabus-india)', 'Accept-Language': 'en,hi,bn' },
       signal: AbortSignal.timeout(10000),
     });
-    if (!response.ok) return res.status(502).json({ error: 'PLACE_SEARCH_UNAVAILABLE', message: 'OpenStreetMap place search is temporarily unavailable. Use GPS or try again.' });
+    if (!response.ok) return res.json({ query, results: directoryResults, source: 'LOCAL_GOVERNMENT_DIRECTORY', attribution: 'Government Local Government Directory' });
     const data = await response.json() as any[];
     const mapResults = (Array.isArray(data) ? data : []).map(item => ({
       id: String(item.place_id),
