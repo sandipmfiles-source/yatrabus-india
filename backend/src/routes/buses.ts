@@ -28,14 +28,14 @@ busesRouter.get('/:id', (req: Request, res: Response) => {
 
   // Find associated route
   const routes = repository.getAllRoutes();
-  const route = routes.find(r => r.operatorId === bus.operatorId) || routes[0];
+  const route = routes.find(r => r.id === bus.routeId) || routes.find(r => r.operatorId === bus.operatorId);
 
-  // Calculate stop ETAs
+  // Calculate stop ETAs only when the bus has a linked route.
   const progressRatio = 0.35; // Default progress along corridor
-  const etas = calculateStopETAs(
+  const etas = route ? calculateStopETAs(
     route.stops,
     progressRatio,
-    loc && loc.latitude && loc.longitude
+    loc && typeof loc.latitude === 'number' && typeof loc.longitude === 'number'
       ? {
           latitude: loc.latitude,
           longitude: loc.longitude,
@@ -43,7 +43,7 @@ busesRouter.get('/:id', (req: Request, res: Response) => {
           isLive: loc.isLive,
         }
       : undefined
-  );
+  ) : [];
 
   return res.json({
     bus,
