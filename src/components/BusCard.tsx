@@ -4,7 +4,7 @@ import { JourneyCandidate } from '@shared/types/bus.js';
 import { StatusBadge } from './StatusBadge.js';
 import { ConfidenceBadge } from './ConfidenceBadge.js';
 import { BusIllustration } from '../assets/BusIllustration.js';
-import { Clock, ArrowRight, MapPin, Split, BusFront } from 'lucide-react';
+import { Clock, ArrowRight, Split, BusFront } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext.js';
 
 interface BusCardProps {
