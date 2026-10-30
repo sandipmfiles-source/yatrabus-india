@@ -122,7 +122,7 @@ function publishVerifiedRoute(submission: CommunitySubmission): Route {
     stops,
     geometry: stops.map(stop => ({ latitude: stop.latitude, longitude: stop.longitude })),
     verificationStatus: 'ADMIN_VERIFIED',
-    serviceStatus: 'SCHEDULE_UNVERIFIED',
+    serviceStatus: 'OPERATING_SCHEDULED',
     createdAt: now,
     updatedAt: now,
   };
@@ -139,14 +139,13 @@ function publishVerifiedBus(submission: CommunitySubmission): Bus {
     candidate.destinationStopName.toLowerCase() === String(data.destination || '').trim().toLowerCase()
   );
   if (!route) throw new Error('Approve the matching route and timetable before publishing this bus.');
-  const operator = communityOperator(String(data.state || 'West Bengal'));
   const now = new Date().toISOString();
   return repository.addBus({
     id: `bus-community-${submission.id}`,
     publicIdentifier,
     operatorId: route.operatorId,
     routeId: route.id,
-    operatorName: route.operatorName || operator.name,
+    operatorName: route.operatorName || 'Transit Operator',
     vehicleType: 'ORDINARY',
     hasCustomSvgIllustration: true,
     serviceStatus: 'SCHEDULE_UNVERIFIED',
