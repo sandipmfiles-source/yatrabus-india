@@ -123,4 +123,9 @@ export const bn = {
   background_tracking_active: "Android ব্যাকগ্রাউন্ড GPS চালু আছে",
   background_tracking_unavailable: "ব্যাকগ্রাউন্ড GPS চালু নেই",
   location_updates_checked: "লোকেশন পরীক্ষা",
+  origin_latitude: "শুরুর স্থানের অক্ষাংশ",
+  origin_longitude: "শুরুর স্থানের দ্রাঘিমাংশ",
+  destination_latitude: "গন্তব্যের অক্ষাংশ",
+  destination_longitude: "গন্তব্যের দ্রাঘিমাংশ",
+  exact_departures: "নির্দিষ্ট ছাড়ার সময় (ঐচ্ছিক, কমা দিয়ে আলাদা করুন)",
 };
