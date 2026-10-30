@@ -1,5 +1,6 @@
 import express, { Request, Response, NextFunction } from 'express';
 import { CONFIG } from './config.js';
+import { repository } from './db/repository.js';
 import { placesRouter } from './routes/places.js';
 import { routesRouter } from './routes/routes.js';
 import { busesRouter } from './routes/buses.js';
@@ -8,6 +9,7 @@ import { contributionsRouter } from './routes/contributions.js';
 import { adminRouter } from './routes/admin.js';
 
 export function createServer() {
+  if (CONFIG.ADMIN_EMAIL) repository.ensureSuperAdmin(CONFIG.ADMIN_EMAIL);
   const app = express();
 
   // Basic security and parsing middleware
