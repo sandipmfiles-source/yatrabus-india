@@ -42,6 +42,8 @@ export interface Bus {
   id: string;
   publicIdentifier: string; // Public bus name or number shown on front LED/board
   operatorId: string;
+  /** Route served by this bus; prevents same-operator buses being mixed across corridors. */
+  routeId?: string;
   operatorName?: string;
   contributedBy?: string;
   fleetRegistrationNumber?: string; // Optional (e.g. DL 1PC 4432)
