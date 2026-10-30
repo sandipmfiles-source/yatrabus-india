@@ -3,7 +3,7 @@ import { useLanguage } from '../context/LanguageContext.js';
 import { Link, useLocation } from 'react-router-dom';
 import { BusIllustration } from '../assets/BusIllustration.js';
 import { LanguageSwitcher } from './LanguageSwitcher.js';
-import { ShieldCheck, PlusCircle, Search, UserCheck, BusFront } from 'lucide-react';
+import { ShieldCheck, PlusCircle, Search, UserCheck } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
   const location = useLocation();
