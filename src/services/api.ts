@@ -1,14 +1,19 @@
 import { repository } from '../../backend/src/db/repository.js';
+import { Capacitor } from '@capacitor/core';
 import { discoverJourneys } from '../../packages/shared/src/engine/routeGraph.js';
 import { calculateStopETAs } from '../../packages/shared/src/engine/etaCalculator.js';
 import { evaluateJourneyPrompt } from '../../packages/shared/src/engine/journeyConfirmationEngine.js';
 
 const remoteApiConfigured = Boolean(import.meta.env.VITE_API_BASE_URL);
+const remoteApiRequired = remoteApiConfigured || Capacitor.isNativePlatform();
 const API_BASE = import.meta.env.VITE_API_BASE_URL ? `${import.meta.env.VITE_API_BASE_URL.replace(/\/$/, '')}/api` : '/api';
 
 async function apiFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+  if (Capacitor.isNativePlatform() && !remoteApiConfigured) {
+    throw new Error('This Android build needs the deployed backend URL. Set VITE_API_BASE_URL and build the APK again.');
+  }
   const response = await fetch(input, init);
-  if (remoteApiConfigured && !response.ok) {
+  if (remoteApiRequired && !response.ok) {
     const payload = await response.clone().json().catch(() => ({}));
     throw new Error(payload.error || `YatriBus API request failed (${response.status}).`);
   }
@@ -24,7 +29,7 @@ export const api = {
         const data = await res.json();
         return data.results || [];
       }
-    } catch (error) { if (remoteApiConfigured) throw error; }
+    } catch (error) { if (remoteApiRequired) throw error; }
     // Fallback to in-memory repository
     return repository.searchPlaces(query, limit);
   },
@@ -37,7 +42,7 @@ export const api = {
         const data = await res.json();
         return data.stops || [];
       }
-    } catch (error) { if (remoteApiConfigured) throw error; }
+    } catch (error) { if (remoteApiRequired) throw error; }
     return repository.findNearbyStops(lat, lon, radius);
   },
 
@@ -48,7 +53,7 @@ export const api = {
       if (res.ok) {
         return await res.json();
       }
-    } catch (error) { if (remoteApiConfigured) throw error; }
+    } catch (error) { if (remoteApiRequired) throw error; }
     const all = repository.getAllRoutes();
     const result = discoverJourneys(from, to, all);
     return {
@@ -66,7 +71,7 @@ export const api = {
     try {
       const res = await apiFetch(`${API_BASE}/routes/${id}`);
       if (res.ok) return await res.json();
-    } catch (error) { if (remoteApiConfigured) throw error; }
+    } catch (error) { if (remoteApiRequired) throw error; }
     const route = repository.getRouteById(id);
     const buses = repository.getBusesForRoute(id);
     return { route, stopsCount: route?.stops.length || 0, buses };
@@ -77,7 +82,7 @@ export const api = {
     try {
       const res = await apiFetch(`${API_BASE}/buses/${id}`);
       if (res.ok) return await res.json();
-    } catch (error) { if (remoteApiConfigured) throw error; }
+    } catch (error) { if (remoteApiRequired) throw error; }
     const bus = repository.getBusById(id);
     const loc = repository.getBusLocation(id);
     const routes = repository.getAllRoutes();
@@ -99,7 +104,7 @@ export const api = {
         body: JSON.stringify({ routeId, isAlreadyTracking, dismissedCount }),
       });
       if (res.ok) return await res.json();
-    } catch (error) { if (remoteApiConfigured) throw error; }
+    } catch (error) { if (remoteApiRequired) throw error; }
     const route = repository.getRouteById(routeId);
     if (!route) return { shouldPrompt: false };
     return evaluateJourneyPrompt(route, {
@@ -117,7 +122,7 @@ export const api = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sessionId, status, disclosuresAccepted }),
       });
-    } catch (error) { if (remoteApiConfigured) throw error; }
+    } catch (error) { if (remoteApiRequired) throw error; }
     repository.recordConsent({
       sessionId,
       scope: 'JOURNEY_TRACKING',
@@ -135,7 +140,7 @@ export const api = {
         body: JSON.stringify({ busId, routeId }),
       });
       if (res.ok) return await res.json();
-    } catch (error) { if (remoteApiConfigured) throw error; }
+    } catch (error) { if (remoteApiRequired) throw error; }
     const sessionId = `sess-${Date.now()}`;
     const session = repository.createJourneySession({
       sessionId,
@@ -159,7 +164,7 @@ export const api = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sessionId, reason }),
       });
-    } catch (error) { if (remoteApiConfigured) throw error; }
+    } catch (error) { if (remoteApiRequired) throw error; }
     repository.stopJourneySession(sessionId, reason as any);
   },
 
@@ -181,7 +186,7 @@ export const api = {
         body: JSON.stringify(obs),
       });
       if (res.ok) return await res.json();
-    } catch (error) { if (remoteApiConfigured) throw error; }
+    } catch (error) { if (remoteApiRequired) throw error; }
     return { accepted: true };
   },
 
@@ -200,7 +205,7 @@ export const api = {
         body: JSON.stringify(data),
       });
       if (res.ok) return await res.json();
-    } catch (error) { if (remoteApiConfigured) throw error; }
+    } catch (error) { if (remoteApiRequired) throw error; }
     const ref = `YB-SUB-2026-${Math.floor(1000 + Math.random() * 9000)}`;
     const sub = repository.createSubmission({
       id: `sub-${Date.now()}`,
@@ -227,7 +232,7 @@ export const api = {
     try {
       const res = await apiFetch(`${API_BASE}/contributions/status/${encodeURIComponent(refId)}`);
       if (res.ok) return await res.json();
-    } catch (error) { if (remoteApiConfigured) throw error; }
+    } catch (error) { if (remoteApiRequired) throw error; }
     const sub = repository.getSubmissionByReference(refId);
     if (!sub) throw new Error('Reference ID not found');
     return sub;
@@ -242,7 +247,7 @@ export const api = {
         body: JSON.stringify(data),
       });
       if (res.ok) return await res.json();
-    } catch (error) { if (remoteApiConfigured) throw error; }
+    } catch (error) { if (remoteApiRequired) throw error; }
     return { success: true, message: 'Operator claim received' };
   },
 
