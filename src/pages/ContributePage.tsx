@@ -321,7 +321,7 @@ export const ContributePage: React.FC = () => {
                     <label className="text-xs font-medium text-yatriwarm-700">Destination longitude
                       <input type="number" step="any" min="-180" max="180" required value={destinationLongitude} onChange={e => setDestinationLongitude(e.target.value)} placeholder="87.32" className="mt-1 w-full px-3 py-2.5 bg-white border border-yatriwarm-200 rounded-xl" />
                     </label>
-                  </div>
+                  </div>}
 
                   {submissionType === 'SUGGEST_ROUTE' && <label className="block text-xs font-medium text-yatriwarm-700">{t('intermediate_stops')}
                     <textarea rows={2} value={intermediateStops} onChange={e => setIntermediateStops(e.target.value)} placeholder="Gopiballavpur|22.20|86.90|08:30|08:32; Lodhasuli|22.35|86.95|09:00|09:02" className="mt-1 w-full px-3 py-2.5 bg-white border border-yatriwarm-200 rounded-xl" />
