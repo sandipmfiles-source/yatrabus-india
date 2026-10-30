@@ -55,18 +55,18 @@ export const SearchResultsPage: React.FC = () => {
       <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2">
         <div className="rounded-xl bg-yatriwarm-50 p-2"><div className="text-[10px] text-yatriwarm-500">{t('first_bus')}</div><div className="text-sm font-bold text-yatriwarm-900">{route.firstDepartureTime}</div></div>
         <div className="rounded-xl bg-yatriwarm-50 p-2"><div className="text-[10px] text-yatriwarm-500">{t('last_bus')}</div><div className="text-sm font-bold text-yatriwarm-900">{route.lastDepartureTime}</div></div>
-        <div className="rounded-xl bg-yatriwarm-50 p-2"><div className="text-[10px] text-yatriwarm-500">{t('frequency')}</div><div className="text-sm font-bold text-yatriwarm-900">{frequency ? `Every ${frequency} min` : '{t('not_provided')}'}</div></div>
-        <div className="rounded-xl bg-yatriwarm-50 p-2"><div className="text-[10px] text-yatriwarm-500">{t('trips_per_day')}</div><div className="text-sm font-bold text-yatriwarm-900">{trips === null ? '{t('not_verified')}' : `~${trips}`}</div></div>
+        <div className="rounded-xl bg-yatriwarm-50 p-2"><div className="text-[10px] text-yatriwarm-500">{t('frequency')}</div><div className="text-sm font-bold text-yatriwarm-900">{frequency ? `${t('every')} ${frequency} ${t('minutes')}` : {t('not_provided')}}</div></div>
+        <div className="rounded-xl bg-yatriwarm-50 p-2"><div className="text-[10px] text-yatriwarm-500">{t('trips_per_day')}</div><div className="text-sm font-bold text-yatriwarm-900">{trips === null ? {t('not_verified')} : `~${trips}`}</div></div>
       </div>
-      <p className="mt-2 flex items-center gap-1 text-[11px] text-yatriwarm-500"><CalendarDays className="w-3.5 h-3.5" /> {t('operating_days')}: {route.operatingDays?.join(', ') || 'Not provided'} {trips !== null ? '• {t('calculated_trip_note')}' : ''}</p>
+      <p className="mt-2 flex items-center gap-1 text-[11px] text-yatriwarm-500"><CalendarDays className="w-3.5 h-3.5" /> {t('operating_days')}: {route.operatingDays?.join(', ') || t('not_provided')} {trips !== null ? `• ${t('calculated_trip_note')}` : ''}</p>
       <div className="mt-4">
         <div className="mb-2 flex items-center gap-2 text-xs font-bold text-yatriwarm-800"><MapPin className="w-3.5 h-3.5 text-yatribrand-800" /> {t('stops_between')} {journey.boardingStop.stopName} → {journey.alightingStop.stopName}</div>
         <ol className="relative ml-2 border-l-2 border-yatribrand-200 pl-4 space-y-3">
-          {segmentStops.map((stop, index) => <li key={stop.id} className="relative"><span className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full border-2 border-yatribrand-700 bg-white" /><div className="flex items-center justify-between gap-3"><span className="text-xs font-medium text-yatriwarm-800">{stop.stopName}</span><span className="text-[11px] tabular-nums text-yatriwarm-500">{stop.scheduledArrivalTime || stop.scheduledDepartureTime || '{t('time_not_listed')}'}</span></div></li>)}
+          {segmentStops.map((stop, index) => <li key={stop.id} className="relative"><span className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full border-2 border-yatribrand-700 bg-white" /><div className="flex items-center justify-between gap-3"><span className="text-xs font-medium text-yatriwarm-800">{stop.stopName}</span><span className="text-[11px] tabular-nums text-yatriwarm-500">{stop.scheduledArrivalTime || stop.scheduledDepartureTime || t('time_not_listed')}</span></div></li>)}
         </ol>
       </div>
-      {departureSlots.length > 0 && <div className="mt-3"><div className="text-[11px] font-semibold text-yatriwarm-700">Scheduled departures (estimated from frequency)</div><div className="mt-2 flex flex-wrap gap-1.5">{departureSlots.map(time => <span key={time} className="rounded-lg bg-yatriwarm-100 px-2 py-1 text-[11px] tabular-nums text-yatriwarm-800">{time}</span>)}</div>{trips! > 30 && <p className="mt-1 text-[10px] text-yatriwarm-500">Showing first 30 of approximately {trips} departures</p>}</div>}
-      <p className="mt-3 text-[10px] text-yatriwarm-500">{route.verificationStatus === 'ADMIN_VERIFIED' ? '{t('verified_schedule')}' : '{t('unverified_schedule')}'}</p>
+      {departureSlots.length > 0 && <div className="mt-3"><div className="text-[11px] font-semibold text-yatriwarm-700">{t('estimated_departures')}</div><div className="mt-2 flex flex-wrap gap-1.5">{departureSlots.map(time => <span key={time} className="rounded-lg bg-yatriwarm-100 px-2 py-1 text-[11px] tabular-nums text-yatriwarm-800">{time}</span>)}</div>{trips! > 30 && <p className="mt-1 text-[10px] text-yatriwarm-500">{t('showing_first')} 30 {t('of_approximately')} {trips} {t('departures')}</p>}</div>}
+      <p className="mt-3 text-[10px] text-yatriwarm-500">{route.verificationStatus === 'ADMIN_VERIFIED' ? t('verified_schedule') : t('unverified_schedule')}</p>
     </section>;
   };
 

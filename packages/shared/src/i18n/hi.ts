@@ -65,4 +65,10 @@ export const hi = {
   no_verified_bus: "इस रूट के लिए अभी सत्यापित बस नहीं मिली",
   add_missing_bus: "बस / रूट जोड़ें",
   search_different_stops: "दूसरे स्टॉप खोजें",
+  every: "हर",
+  minutes: "मिनट",
+  estimated_departures: "अनुमानित प्रस्थान समय (आवृत्ति के आधार पर)",
+  showing_first: "पहले दिखाए जा रहे हैं",
+  of_approximately: "कुल अनुमानित",
+  departures: "प्रस्थान",
 };

@@ -65,4 +65,10 @@ export const en = {
   no_verified_bus: "No verified bus found for this route yet",
   add_missing_bus: "Add Missing Bus / Route",
   search_different_stops: "Search Different Stops",
+  every: "Every",
+  minutes: "min",
+  estimated_departures: "Estimated departure slots (based on frequency)",
+  showing_first: "Showing first",
+  of_approximately: "of approximately",
+  departures: "departures",
 };

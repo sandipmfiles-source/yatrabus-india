@@ -65,4 +65,10 @@ export const bn = {
   no_verified_bus: "এই রুটে এখনও যাচাইকৃত বাস পাওয়া যায়নি",
   add_missing_bus: "বাস / রুট যোগ করুন",
   search_different_stops: "অন্য স্টপ খুঁজুন",
+  every: "প্রতি",
+  minutes: "মিনিট",
+  estimated_departures: "আনুমানিক ছাড়ার সময় (ব্যবধান অনুযায়ী)",
+  showing_first: "প্রথম",
+  of_approximately: "আনুমানিক মোট",
+  departures: "টি যাত্রা",
 };
