@@ -96,6 +96,8 @@ export interface Route {
   firstDepartureTime: string; // HH:MM
   lastDepartureTime: string;  // HH:MM
   frequencyMinutes?: number;
+  /** Exact published departure times for routes where per-bus arrival details are not yet available. */
+  departureTimes?: string[];
   /** Individually scheduled and admin-approved departures for this route. */
   departures?: TimetableDeparture[];
   stops: RouteStop[];
