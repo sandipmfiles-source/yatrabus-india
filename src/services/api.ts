@@ -258,11 +258,11 @@ export const api = {
     return data;
   },
 
-  async reviewAdminSubmission(token: string, id: string, decision: 'ADMIN_VERIFIED' | 'COMMUNITY_CORROBORATED' | 'REJECTED', reason: string) {
+  async reviewAdminSubmission(token: string, id: string, decision: 'ADMIN_VERIFIED' | 'COMMUNITY_CORROBORATED' | 'REJECTED', reason: string, verifyTimetable = false) {
     const res = await fetch(`${API_BASE}/admin/submissions/${encodeURIComponent(id)}/review`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ decision, reason }),
+      body: JSON.stringify({ decision, reason, verifyTimetable }),
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.message || data.error || 'Unable to review submission');
