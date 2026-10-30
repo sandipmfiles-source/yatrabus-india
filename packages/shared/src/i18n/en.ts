@@ -151,7 +151,7 @@ export const en = {
   privacy_no_account_title: "1. No Mandatory Accounts for Passengers",
   privacy_no_account_body: "Passengers can search routes, look up timetables, view bus stops and submit public corrections without creating an account or sharing an email address. Google sign-in is planned only for bus owners, drivers or bus-samiti representatives who want to manage their own submissions.",
   privacy_gps_title: "2. Never Secretly Collecting GPS",
-  privacy_gps_body: "YatriBus never collects, transmits or logs your GPS location secretly. We only ask for location permission when you explicitly choose to:",
+  privacy_gps_body: "YatriBus never collects, transmits or logs your GPS location secretly. Android location permission is required to enter the app, but GPS is shared only when you explicitly choose to:",
   privacy_nearby_item: "Find nearby bus stops based on your current physical vicinity.",
   privacy_tracking_item: "Explicitly opt into passenger-assisted journey tracking to help other commuters.",
   privacy_aggregation_title: "3. Bus-Level Location Aggregation",
@@ -160,5 +160,5 @@ export const en = {
   privacy_session_body: "A journey session terminates immediately when you tap Stop Sharing. An automated safety rule also terminates all sessions after a maximum of 12 hours.",
   privacy_contact_title: "5. Contact & Data Deletion Requests",
   privacy_contact_body: "Passenger searches do not create a passenger profile. When owner sign-in is configured, the verified account email and display name may be stored with that owner's bus submissions so the owner can view and manage them. Browser/app cache is only a convenience and may be erased when the app is uninstalled. For account or data deletion requests, operator listing queries or verifications, contact",
-  privacy_location_on_demand: "Location access is not required to open or search the app. Android asks for it only when you choose Find nearby stops or start journey tracking.",
+  privacy_location_on_demand: "Android location permission is required to open the app and use nearby-stop features. Granting permission does not start tracking; sharing begins only after separate journey consent.",
 };
