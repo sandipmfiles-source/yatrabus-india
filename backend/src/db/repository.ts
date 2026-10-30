@@ -174,7 +174,7 @@ export class TransitRepository {
     return Array.from(this.routes.values()).find(route => route.routeNumber.trim().toLowerCase() === normalized);
   }
 
-  public addTimetableDeparture(routeId: string, departure: NonNullable<Route['departures']>[number]): boolean {
+  public addTimetableDeparture(routeId: string, departure: NonNullable<Route['departures']>[number], frequencyMinutes?: number): boolean {
     const route = this.routes.get(routeId);
     if (!route) return false;
     const current = route.departures || [];
@@ -182,6 +182,7 @@ export class TransitRepository {
       (item.busIdentifier || '').toLowerCase() === (departure.busIdentifier || '').toLowerCase() && !item.isCancelled);
     if (duplicate) return false;
     route.departures = [...current, departure].sort((a, b) => a.departureTime.localeCompare(b.departureTime));
+    if (Number.isFinite(frequencyMinutes) && frequencyMinutes && frequencyMinutes > 0) route.frequencyMinutes = frequencyMinutes;
     route.updatedAt = new Date().toISOString();
     return true;
   }
