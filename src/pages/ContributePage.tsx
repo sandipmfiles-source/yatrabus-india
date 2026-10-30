@@ -24,6 +24,10 @@ export const ContributePage: React.FC = () => {
   const [lastDepartureTime, setLastDepartureTime] = useState('');
   const [frequencyMinutes, setFrequencyMinutes] = useState('');
   const [intermediateStops, setIntermediateStops] = useState('');
+  const [originLatitude, setOriginLatitude] = useState('');
+  const [originLongitude, setOriginLongitude] = useState('');
+  const [destinationLatitude, setDestinationLatitude] = useState('');
+  const [destinationLongitude, setDestinationLongitude] = useState('');
   const [operatingDays, setOperatingDays] = useState('Daily');
   const [notes, setNotes] = useState('');
 
@@ -56,7 +60,14 @@ export const ContributePage: React.FC = () => {
           lastDepartureTime,
           frequencyMinutes: frequencyMinutes ? Number(frequencyMinutes) : undefined,
           operatingDays: operatingDays.split(',').map(day => day.trim()).filter(Boolean),
-          intermediateStops: intermediateStops.split(',').map(stop => stop.trim()).filter(Boolean),
+          originLatitude: originLatitude ? Number(originLatitude) : undefined,
+          originLongitude: originLongitude ? Number(originLongitude) : undefined,
+          destinationLatitude: destinationLatitude ? Number(destinationLatitude) : undefined,
+          destinationLongitude: destinationLongitude ? Number(destinationLongitude) : undefined,
+          intermediateStops: intermediateStops.split(';').map(item => {
+            const [stopName, latitude, longitude, arrivalTime] = item.split('|').map(value => value.trim());
+            return stopName ? { stopName, latitude: Number(latitude), longitude: Number(longitude), scheduledArrivalTime: arrivalTime || undefined } : null;
+          }).filter(Boolean),
         },
       });
 
@@ -291,8 +302,23 @@ export const ContributePage: React.FC = () => {
                   <label className="block text-xs font-medium text-yatriwarm-700">{t('operating_days_comma')}
                     <input value={operatingDays} onChange={e => setOperatingDays(e.target.value)} placeholder="Daily or MON,TUE,WED..." className="mt-1 w-full px-3 py-2.5 bg-white border border-yatriwarm-200 rounded-xl" />
                   </label>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <label className="text-xs font-medium text-yatriwarm-700">Origin latitude
+                      <input type="number" step="any" min="-90" max="90" required value={originLatitude} onChange={e => setOriginLatitude(e.target.value)} placeholder="22.45" className="mt-1 w-full px-3 py-2.5 bg-white border border-yatriwarm-200 rounded-xl" />
+                    </label>
+                    <label className="text-xs font-medium text-yatriwarm-700">Origin longitude
+                      <input type="number" step="any" min="-180" max="180" required value={originLongitude} onChange={e => setOriginLongitude(e.target.value)} placeholder="86.98" className="mt-1 w-full px-3 py-2.5 bg-white border border-yatriwarm-200 rounded-xl" />
+                    </label>
+                    <label className="text-xs font-medium text-yatriwarm-700">Destination latitude
+                      <input type="number" step="any" min="-90" max="90" required value={destinationLatitude} onChange={e => setDestinationLatitude(e.target.value)} placeholder="22.33" className="mt-1 w-full px-3 py-2.5 bg-white border border-yatriwarm-200 rounded-xl" />
+                    </label>
+                    <label className="text-xs font-medium text-yatriwarm-700">Destination longitude
+                      <input type="number" step="any" min="-180" max="180" required value={destinationLongitude} onChange={e => setDestinationLongitude(e.target.value)} placeholder="87.32" className="mt-1 w-full px-3 py-2.5 bg-white border border-yatriwarm-200 rounded-xl" />
+                    </label>
+                  </div>
+
                   <label className="block text-xs font-medium text-yatriwarm-700">{t('intermediate_stops')}
-                    <textarea rows={2} value={intermediateStops} onChange={e => setIntermediateStops(e.target.value)} placeholder="e.g. Gopiballavpur, Lodhasuli, Jhargram Court" className="mt-1 w-full px-3 py-2.5 bg-white border border-yatriwarm-200 rounded-xl" />
+                    <textarea rows={2} value={intermediateStops} onChange={e => setIntermediateStops(e.target.value)} placeholder="Gopiballavpur|22.20|86.90|08:30; Lodhasuli|22.35|86.95|09:00" className="mt-1 w-full px-3 py-2.5 bg-white border border-yatriwarm-200 rounded-xl" />
                   </label>
                 </div>
               )}
