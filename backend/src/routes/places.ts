@@ -65,7 +65,7 @@ const lgdCatalogue = (() => {
   try {
     const file = new URL('../../data/india-lgd-directory.json.gz', import.meta.url);
     const payload = JSON.parse(gunzipSync(readFileSync(file)).toString('utf8'));
-    return Array.isArray(payload?.places) ? payload.places as any[] : [];
+    return Array.isArray(payload?.places) ? payload.places.map((row: any) => Array.isArray(row) ? ({ id: row[0], code: row[1], name: row[2], level: row[3], state: row[4], district: row[5], subdistrict: row[6] }) : row) : [];
   } catch {
     return [];
   }
