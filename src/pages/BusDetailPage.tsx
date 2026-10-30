@@ -305,6 +305,7 @@ export const BusDetailPage: React.FC = () => {
         </h3>
         <MapView
           stops={route.stops}
+          route={route}
           geometry={route.geometry}
           busLocation={location}
           className="w-full h-80 rounded-3xl overflow-hidden border border-yatriwarm-200 shadow-card"
