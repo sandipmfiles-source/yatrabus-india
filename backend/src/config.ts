@@ -2,7 +2,7 @@ export const CONFIG = {
   PORT: process.env.PORT ? parseInt(process.env.PORT, 10) : 5000,
   NODE_ENV: process.env.NODE_ENV || 'development',
   // Admin access is disabled until strong secrets are configured in the hosting environment.
-  ADMIN_EMAIL: (process.env.ADMIN_EMAIL || 'admin@yatribus.in').trim().toLowerCase(),
+  ADMIN_EMAIL: (process.env.ADMIN_EMAIL || '').trim().toLowerCase(),
   ADMIN_PASSWORD_HASH: process.env.ADMIN_PASSWORD_HASH || '',
   ADMIN_JWT_SECRET: process.env.ADMIN_JWT_SECRET || '',
   ADMIN_SESSION_TTL_SECONDS: 8 * 60 * 60,
