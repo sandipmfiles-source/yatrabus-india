@@ -23,7 +23,7 @@ This plan keeps the initial build at ₹0 by using open-source data and free tie
 - Road-route preview using OSRM when every point has coordinates. Use Name | latitude | longitude for a point that is not in the local YatraBus catalogue.
 - Hindi, Bengali and English UI resources already included in the app source.
 
-Google OAuth / owner sign-in is intentionally deferred. Google Maps / Places is not required for the free route-preview path.
+Google Identity Services owner sign-in is implemented in the frontend and Express backend. It becomes active after configuring the same Web Client ID as `GOOGLE_OAUTH_CLIENT_ID` and `VITE_GOOGLE_CLIENT_ID`, plus a private 32+ character `OWNER_JWT_SECRET`. Google Maps / Places is not required for the free route-preview path.
 
 ## 3. Important service boundaries
 
@@ -55,7 +55,7 @@ Configure only on the backend host, never in the APK:
     RATE_LIMIT_PUBLIC_MAX_REQUESTS=300
     RATE_LIMIT_CONTRIBUTION_MAX_HOURLY=15
 
-Leave Google OAuth variables unset until the later sign-in setup. Never put passwords, JWT secrets, OAuth client secrets, or database passwords in GitHub source files.
+Set `GOOGLE_OAUTH_CLIENT_ID` and `OWNER_JWT_SECRET` only on the backend host; set the matching public `VITE_GOOGLE_CLIENT_ID` as a GitHub Actions repository variable before building the APK. Never put passwords, JWT secrets, OAuth client secrets, or database passwords in GitHub source files.
 
 ## 5. Persistent database activation (future step)
 
