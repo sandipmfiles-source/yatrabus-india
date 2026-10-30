@@ -98,7 +98,6 @@ export const HomePage: React.FC = () => {
         try {
           const stops = await api.getNearbyStops(pos.coords.latitude, pos.coords.longitude, 4000);
           setNearbyStops(stops);
-          if (!stops.length) alert(t('location_error_nearby'));
         } catch {
           setNearbyStops([]);
           alert(t('location_error_nearby'));
@@ -325,19 +324,21 @@ export const HomePage: React.FC = () => {
         {nearbyStops.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-3 pt-3 border-t border-yatriwarm-100">
             {nearbyStops.map(item => (
-              <div
+              <button
+                type="button"
                 key={item.place.id}
                 onClick={() => setFromQuery(item.place.canonicalName)}
-                className="p-2.5 rounded-xl bg-yatriwarm-50 hover:bg-yatribrand-50 cursor-pointer border border-yatriwarm-200/80 transition-colors flex items-center justify-between"
+                className="w-full p-2.5 rounded-xl bg-yatriwarm-50 hover:bg-yatribrand-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yatribrand-700 border border-yatriwarm-200/80 transition-colors flex items-center justify-between text-left"
+                aria-label={`Use ${item.place.canonicalName} as starting point`}
               >
-                <div>
-                  <div className="text-xs font-semibold text-yatriwarm-900">{item.place.canonicalName}</div>
-                  <div className="text-[11px] text-yatriwarm-500">{item.place.district}, {item.place.state}</div>
-                </div>
+                <span>
+                  <span className="block text-xs font-semibold text-yatriwarm-900">{item.place.canonicalName}</span>
+                  <span className="block text-[11px] text-yatriwarm-500">{item.place.district}, {item.place.state}</span>
+                </span>
                 <span className="text-[11px] font-bold text-yatribrand-800 bg-yatribrand-100 px-2 py-0.5 rounded-md">
                   ~{Math.round(item.distanceMeters / 100) / 10} km
                 </span>
-              </div>
+              </button>
             ))}
           </div>
         )}
