@@ -148,7 +148,7 @@ placesRouter.get('/geocode-search', publicSearchLimiter, async (req: Request, re
     geocodeCache.set(key, { expiresAt: Date.now() + 24 * 60 * 60 * 1000, results });
     return res.json({ query, results, source: 'LGD + OPENSTREETMAP', attribution: 'Government Local Government Directory · © OpenStreetMap contributors' });
   } catch {
-    return res.status(502).json({ error: 'PLACE_SEARCH_UNAVAILABLE', message: 'OpenStreetMap place search is temporarily unavailable. Use GPS or try again.' });
+    return res.json({ query, results: directoryResults, source: 'LOCAL_GOVERNMENT_DIRECTORY', attribution: 'Ministry of Panchayati Raj · Local Government Directory' });
   }
 });
 
