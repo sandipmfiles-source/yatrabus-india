@@ -48,7 +48,7 @@ export const BusDetailPage: React.FC = () => {
     api.getRouteById(id).then(res => {
       if (res.route) {
         setRoute(res.route);
-        const routeBus = res.buses?.[0];
+        const routeBus = res.buses?.find((bus: any) => bus.routeId === res.route.id);
         if (routeBus?.id) setActiveBusId(routeBus.id);
       }
       setIsLoading(false);
