@@ -81,6 +81,9 @@ export const BusCard: React.FC<BusCardProps> = ({ journey }) => {
             </div>
           </div>
 
+          <div className="mt-3 text-[10px] text-yatriwarm-500">
+            {t('service_hours')}: {route.firstDepartureTime}–{route.lastDepartureTime}
+          </div>
           {journey.dailyTripCount !== undefined && (
             <div className="mt-3 pt-2 border-t border-yatriwarm-200 text-[11px] text-yatriwarm-700 flex flex-wrap items-center gap-x-3 gap-y-1">
               <span className="font-semibold">{t('approx_daily_departures')}: {journey.dailyTripCount}</span>
