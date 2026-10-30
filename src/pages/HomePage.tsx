@@ -4,7 +4,7 @@ import { useLanguage } from '../context/LanguageContext.js';
 import { storage, RecentSearchItem } from '../services/storage.js';
 import { api } from '../services/api.js';
 import { PlaceSearchResult } from '@shared/types/places.js';
-import { Search, ArrowUpDown, Clock, MapPin, PlusCircle, ShieldCheck, Sparkles, Navigation } from 'lucide-react';
+import { Search, ArrowUpDown, Clock, MapPin, PlusCircle, Sparkles, Navigation } from 'lucide-react';
 import { BusIllustration } from '../assets/BusIllustration.js';
 
 export const HomePage: React.FC = () => {
@@ -231,23 +231,6 @@ export const HomePage: React.FC = () => {
           </button>
         </form>
 
-        {/* Feature Guarantees */}
-        <div className="mt-4 pt-4 border-t border-yatriwarm-100 flex flex-wrap items-center justify-center gap-4 text-xs text-yatriwarm-500">
-          <span className="flex items-center gap-1">
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-            {t('feature_no_account')}
-          </span>
-          <span>•</span>
-          <span className="flex items-center gap-1">
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-            {t('feature_gps_confidence')}
-          </span>
-          <span>•</span>
-          <span className="flex items-center gap-1">
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-            {t('feature_free_ai')}
-          </span>
-        </div>
       </div>
 
       {/* Recent Searches (stored on user's device) */}
