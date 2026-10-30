@@ -31,6 +31,7 @@ export const ContributePage: React.FC = () => {
   const [destinationLongitude, setDestinationLongitude] = useState('');
   const [operatingDays, setOperatingDays] = useState('Daily');
   const [notes, setNotes] = useState('');
+  const [evidenceUrl, setEvidenceUrl] = useState('');
 
   // Status check state
   const [refIdQuery, setRefIdQuery] = useState('');
@@ -52,6 +53,7 @@ export const ContributePage: React.FC = () => {
         entityType: submissionType === 'ADD_STOP' ? 'STOP' : submissionType === 'SUGGEST_ROUTE' ? 'ROUTE' : submissionType === 'CORRECT_TIMETABLE' ? 'TIMETABLE' : 'BUS',
         contributorNote: notes,
         proposedData: {
+          evidenceUrl: evidenceUrl.trim() || undefined,
           name: name || routeNumber,
           routeNumber,
           origin,
@@ -361,6 +363,12 @@ export const ContributePage: React.FC = () => {
                   />
                 </div>
               )}
+
+              <div>
+                <label className="block text-xs font-medium text-yatriwarm-700 mb-1">Evidence link (optional)
+                  <input type="url" value={evidenceUrl} onChange={e => setEvidenceUrl(e.target.value)} placeholder="https://official-operator-site.example/timetable" className="w-full px-3.5 py-2.5 bg-yatriwarm-50 border border-yatriwarm-200 rounded-xl text-xs" />
+                </label>
+              </div>
 
               {/* Contributor note */}
               <div>
