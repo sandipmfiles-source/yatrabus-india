@@ -62,7 +62,7 @@ export const Navbar: React.FC = () => {
             }`}
           >
             <BusFront className="w-4 h-4" />
-            Bus Owner / Operator
+            {t('nav_owner_portal')}
           </Link>
         </nav>
 
