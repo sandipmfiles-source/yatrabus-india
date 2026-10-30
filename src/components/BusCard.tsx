@@ -42,6 +42,8 @@ export const BusCard: React.FC<BusCardProps> = ({ journey }) => {
             <h3 className="text-xs text-yatriwarm-600 mt-1 font-medium line-clamp-1">
               {route.routeName}
             </h3>
+            {journey.busIdentifier && <div className="text-[10px] text-yatriwarm-500 mt-1">Bus: <strong>{journey.busIdentifier}</strong></div>}
+            {route.contributedBy && <div className="text-[10px] text-yatriwarm-500">Helped by {route.contributedBy}</div>}
           </div>
 
           <ConfidenceBadge displayState={locationStatus} />

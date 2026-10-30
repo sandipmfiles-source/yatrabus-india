@@ -28,7 +28,7 @@ export const HomePage: React.FC = () => {
   useEffect(() => {
     if (fromQuery.trim().length >= 2) {
       const timer = setTimeout(async () => {
-        const res = await api.searchPlaces(fromQuery, 5);
+        const res = await api.searchPlaces(fromQuery, 8);
         setFromSuggestions(res);
       }, 200);
       return () => clearTimeout(timer);
@@ -41,7 +41,7 @@ export const HomePage: React.FC = () => {
   useEffect(() => {
     if (toQuery.trim().length >= 2) {
       const timer = setTimeout(async () => {
-        const res = await api.searchPlaces(toQuery, 5);
+        const res = await api.searchPlaces(toQuery, 8);
         setToSuggestions(res);
       }, 200);
       return () => clearTimeout(timer);
@@ -357,6 +357,16 @@ export const HomePage: React.FC = () => {
             </button>
           ))}
         </div>
+      </div>
+
+      {/* Bus owner and samiti invitation */}
+      <div className="bg-white rounded-3xl p-6 sm:p-7 border border-yatriwarm-200 shadow-card flex flex-col md:flex-row items-center justify-between gap-5">
+        <div className="space-y-2 text-center md:text-left">
+          <div className="text-xs font-bold uppercase tracking-wider text-yatriwarm-500">For bus owners, drivers and bus samitis across India</div>
+          <h3 className="text-lg font-bold text-yatriwarm-900">Apni bus ka time YatraBus par add kariye</h3>
+          <p className="text-xs text-yatriwarm-600 max-w-xl">Har city ke private bus malik, local bus samiti aur drivers apna route aur timetable bhej sakte hain. Approval ke baad passengers ko aapki bus search mein dikhegi.</p>
+        </div>
+        <button type="button" onClick={() => navigate('/operator')} className="px-5 py-3 rounded-xl bg-yatribrand-900 text-white text-sm font-bold shrink-0">Bus Owner Portal</button>
       </div>
 
       {/* Community Contribution Invite */}

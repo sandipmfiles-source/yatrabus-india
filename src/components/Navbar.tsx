@@ -55,13 +55,13 @@ export const Navbar: React.FC = () => {
             {t('nav_contribute')}
           </Link>
           <Link
-            to="/operator-claim"
+            to="/operator"
             className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 ${
               isActive('/operator-claim') ? 'bg-yatribrand-50 text-yatribrand-900 font-semibold' : 'text-yatriwarm-700 hover:bg-yatriwarm-100'
             }`}
           >
             <UserCheck className="w-4 h-4" />
-            {t('nav_operator_portal')}
+            Bus Owner Portal
           </Link>
         </nav>
 

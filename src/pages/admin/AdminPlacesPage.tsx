@@ -16,7 +16,7 @@ export const AdminPlacesPage: React.FC = () => {
 
   const filteredPlaces = places.filter(p =>
     p.canonicalName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    p.state.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (p.state || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
     (p.district && p.district.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 

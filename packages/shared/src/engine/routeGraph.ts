@@ -1,6 +1,13 @@
 import { Route, JourneyCandidate } from '../types/bus.js';
 import { normalizePlaceName } from '../search/normalizer.js';
 
+function addMinutesToTime(value: string, minutes: number): string {
+  const match = /^(\d{2}):(\d{2})$/.exec(value);
+  if (!match) return value;
+  const total = (Number(match[1]) * 60 + Number(match[2]) + minutes + 1440) % 1440;
+  return String(Math.floor(total / 60)).padStart(2, '0') + ':' + String(total % 60).padStart(2, '0');
+}
+
 export interface RouteSearchResult {
   directRoutes: JourneyCandidate[];
   transferRoutes: JourneyCandidate[];
@@ -73,27 +80,43 @@ export function discoverJourneys(
         (stopsCount / Math.max(1, route.stops.length - 1)) * route.typicalDurationMinutes
       );
 
-      const depTime = boardingStop.scheduledDepartureTime || boardingStop.scheduledArrivalTime || route.firstDepartureTime;
-      const arrTime = alightingStop.scheduledArrivalTime || alightingStop.scheduledDepartureTime || route.lastDepartureTime;
+      const timetableDepartures = (route.departures || []).filter(item => !item.isCancelled);
+      const services = timetableDepartures.length ? timetableDepartures : [undefined];
+      for (const service of services) {
+        const boardingOffset = route.distanceKm > 0
+          ? Math.round((boardingStop.distanceFromStartKm / route.distanceKm) * route.typicalDurationMinutes)
+          : Math.round((originIndex / Math.max(1, route.stops.length - 1)) * route.typicalDurationMinutes);
+        const arrivalOffset = route.distanceKm > 0
+          ? Math.round((alightingStop.distanceFromStartKm / route.distanceKm) * route.typicalDurationMinutes)
+          : Math.round((destIndex / Math.max(1, route.stops.length - 1)) * route.typicalDurationMinutes);
+        const baseDeparture = service?.departureTime || route.firstDepartureTime;
+        const boardingBusTime = service?.stopTimes?.find(item => item.stopId === boardingStop.stopId);
+        const alightingBusTime = service?.stopTimes?.find(item => item.stopId === alightingStop.stopId);
+        const depTime = boardingBusTime?.departureTime ||
+          (service ? addMinutesToTime(baseDeparture, boardingOffset) : boardingStop.scheduledDepartureTime || boardingStop.scheduledArrivalTime || route.firstDepartureTime);
+        const arrTime = alightingBusTime?.arrivalTime ||
+          (service ? addMinutesToTime(baseDeparture, arrivalOffset) : alightingStop.scheduledArrivalTime || alightingStop.scheduledDepartureTime || route.lastDepartureTime);
 
-      directCandidates.push({
-        id: `journey-direct-${route.id}-${originIndex}-${destIndex}`,
-        route,
-        departureTime: depTime,
-        arrivalTime: arrTime,
-        durationMinutes: durationMins,
-        boardingStop,
-        alightingStop,
-        isDirect: true,
-        transfers: [],
-        confidenceScore: 85,
-        serviceStatus: route.serviceStatus,
-        locationStatus: 'ESTIMATED',
-        dailyTripCount: estimateDailyTripCount(route.firstDepartureTime, route.lastDepartureTime, route.frequencyMinutes),
-        frequencyMinutes: route.frequencyMinutes,
-        intermediateStops: route.stops.slice(originIndex + 1, destIndex),
-        timetableDepartures: (route.departures || []).filter(item => !item.isCancelled),
-      });
+        directCandidates.push({
+          id: `journey-direct-${route.id}-${originIndex}-${destIndex}-${service?.id || 'frequency'}`,
+          route,
+          busIdentifier: service?.busIdentifier,
+          departureTime: depTime,
+          arrivalTime: arrTime,
+          durationMinutes: durationMins,
+          boardingStop,
+          alightingStop,
+          isDirect: true,
+          transfers: [],
+          confidenceScore: service ? 95 : 85,
+          serviceStatus: route.serviceStatus,
+          locationStatus: 'ESTIMATED',
+          dailyTripCount: estimateDailyTripCount(route.firstDepartureTime, route.lastDepartureTime, route.frequencyMinutes),
+          frequencyMinutes: route.frequencyMinutes,
+          intermediateStops: route.stops.slice(originIndex + 1, destIndex),
+          timetableDepartures,
+        });
+      }
     }
   }
 

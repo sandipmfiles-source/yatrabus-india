@@ -57,6 +57,7 @@ export const ContributePage: React.FC = () => {
       const res = await api.submitContribution({
         submissionType,
         entityType: submissionType === 'SUGGEST_ROUTE' ? 'ROUTE' : submissionType === 'ADD_STOP' ? 'STOP' : (submissionType === 'ADD_BUS' || submissionType === 'CORRECT_TIMETABLE') ? 'TIMETABLE' : 'BUS',
+        targetEntityId: searchParams.get('routeId') || undefined,
         contributorNote: notes,
         proposedData: {
           name: name || routeNumber,

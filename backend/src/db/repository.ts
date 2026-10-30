@@ -13,6 +13,7 @@ import {
 } from '../../../packages/shared/src/types/contribution.js';
 import { AdminUser, AuditLogEntry, AutomationRule, SystemHealthStats } from '../../../packages/shared/src/types/admin.js';
 import { SEED_PLACES, SEED_OPERATORS, SEED_ROUTES, SEED_BUSES } from './seedData.js';
+import { INDIA_ADMIN_AREA_PLACES } from './indiaAdminAreas.js';
 import { searchPlaces as runSearchPlaces } from '../../../packages/shared/src/search/typoSearch.js';
 import { haversineDistanceMeters } from '../../../packages/shared/src/engine/routeMatcher.js';
 
@@ -40,7 +41,7 @@ export class TransitRepository {
 
   private seedInitialData() {
     // Seed Places
-    for (const p of SEED_PLACES) {
+    for (const p of [...INDIA_ADMIN_AREA_PLACES, ...SEED_PLACES]) {
       this.places.set(p.id, p);
     }
     // Seed Operators
@@ -157,6 +158,10 @@ export class TransitRepository {
     return Array.from(this.routes.values());
   }
 
+  public getAllBuses(): Bus[] {
+    return Array.from(this.buses.values());
+  }
+
   public getRouteById(id: string): Route | undefined {
     return this.routes.get(id);
   }
@@ -198,10 +203,20 @@ export class TransitRepository {
     return this.buses.get(id);
   }
 
+  public updateTimetableDeparture(routeId: string, busIdentifier: string, departureTime: string, arrivalTime: string, newBusIdentifier?: string, stopTimes?: NonNullable<Route['departures']>[number]['stopTimes']): boolean {
+    const route = this.routes.get(routeId);
+    if (!route || !route.departures?.length) return false;
+    const index = route.departures.findIndex(item => (item.busIdentifier || '').toLowerCase() === busIdentifier.toLowerCase() && !item.isCancelled);
+    if (index < 0) return false;
+    route.departures[index] = { ...route.departures[index], departureTime, arrivalTime, busIdentifier: newBusIdentifier || route.departures[index].busIdentifier, stopTimes: stopTimes || route.departures[index].stopTimes };
+    route.updatedAt = new Date().toISOString();
+    return true;
+  }
+
   public getBusesForRoute(routeId: string): Bus[] {
     const route = this.routes.get(routeId);
     if (!route) return [];
-    return Array.from(this.buses.values()).filter(b => b.operatorId === route.operatorId);
+    return Array.from(this.buses.values()).filter(b => b.operatorId === route.operatorId && b.isActive);
   }
 
   public addBus(bus: Bus): Bus {
@@ -269,6 +284,19 @@ export class TransitRepository {
   public createSubmission(submission: CommunitySubmission): CommunitySubmission {
     this.submissions.set(submission.id, submission);
     return submission;
+  }
+
+  public recordSubmissionVote(id: string, voterKey: string, field: string, value: string): { success: boolean; counts?: Record<string, number>; error?: string } {
+    const submission = this.submissions.get(id);
+    if (!submission) return { success: false, error: 'Submission not found' };
+    const key = voterKey.slice(0, 128);
+    if (!key || (submission.voterKeys || []).includes(key)) return { success: false, error: 'This device has already voted on this correction' };
+    const voteKey = field.slice(0, 60) + ':' + value.slice(0, 120);
+    submission.communityVotes = submission.communityVotes || {};
+    submission.communityVotes[voteKey] = (submission.communityVotes[voteKey] || 0) + 1;
+    submission.corroborationCount = (submission.corroborationCount || 0) + 1;
+    submission.voterKeys = [...(submission.voterKeys || []), key].slice(-20000);
+    return { success: true, counts: { ...submission.communityVotes } };
   }
 
   public getSubmissionByReference(refId: string): CommunitySubmission | undefined {

@@ -1,20 +1,44 @@
 import { Router, Request, Response } from 'express';
 import { repository } from '../db/repository.js';
 import { publicSearchLimiter } from '../middleware/rateLimiter.js';
+import { searchGooglePlaces } from '../services/googlePlaces.js';
 
 export const placesRouter = Router();
 
-// GET /api/places/search?q=kashmere&limit=8
-placesRouter.get('/search', publicSearchLimiter, (req: Request, res: Response) => {
-  const query = (req.query.q as string) || '';
-  const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 8;
+// Local YatraBus data is authoritative and appears first. Google Places is queried
+// only when the local catalogue cannot fill the requested suggestion list.
+placesRouter.get('/search', publicSearchLimiter, async (req: Request, res: Response) => {
+  const query = typeof req.query.q === 'string' ? req.query.q.trim() : '';
+  const requestedLimit = req.query.limit ? Number.parseInt(String(req.query.limit), 10) : 8;
+  const limit = Number.isFinite(requestedLimit) ? Math.max(1, Math.min(12, requestedLimit)) : 8;
 
-  if (!query || query.trim().length === 0) {
-    return res.json({ results: [] });
+  if (query.length < 2) return res.json({ query, count: 0, results: [] });
+
+  const localResults = repository.searchPlaces(query, limit);
+  let externalResults = [] as Awaited<ReturnType<typeof searchGooglePlaces>>;
+  if (localResults.length < limit) {
+    try {
+      externalResults = await searchGooglePlaces(query, limit - localResults.length);
+    } catch (error) {
+      // Google Places is an optional fallback; local search must remain available.
+      console.warn('Google Places autocomplete unavailable:', error instanceof Error ? error.message : 'unknown error');
+    }
   }
 
-  const results = repository.searchPlaces(query, limit);
-  return res.json({ query, count: results.length, results });
+  const seen = new Set(localResults.map(item => item.place.canonicalName.trim().toLowerCase()));
+  const merged = [...localResults, ...externalResults.filter(item => {
+    const key = item.place.canonicalName.trim().toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  })].slice(0, limit);
+
+  return res.json({
+    query,
+    count: merged.length,
+    results: merged,
+    sources: { local: localResults.length, googlePlaces: merged.length - localResults.length },
+  });
 });
 
 // GET /api/places/nearby?lat=28.6675&lon=77.2285&radius=3000
@@ -29,8 +53,8 @@ placesRouter.get('/nearby', (req: Request, res: Response) => {
 
   const lat = parseFloat(latStr);
   const lon = parseFloat(lonStr);
-  if (isNaN(lat) || isNaN(lon)) {
-    return res.status(400).json({ error: 'Invalid coordinates' });
+  if (!Number.isFinite(lat) || !Number.isFinite(lon) || !Number.isFinite(radius) || radius < 1 || radius > 50000) {
+    return res.status(400).json({ error: 'Invalid coordinates or radius' });
   }
 
   const stops = repository.findNearbyStops(lat, lon, radius);
@@ -40,8 +64,6 @@ placesRouter.get('/nearby', (req: Request, res: Response) => {
 // GET /api/places/:id
 placesRouter.get('/:id', (req: Request, res: Response) => {
   const place = repository.getPlaceById(String(req.params.id));
-  if (!place) {
-    return res.status(404).json({ error: 'Place not found' });
-  }
+  if (!place) return res.status(404).json({ error: 'Place not found' });
   return res.json({ place });
 });

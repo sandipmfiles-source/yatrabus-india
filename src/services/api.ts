@@ -130,10 +130,54 @@ export const api = {
     return result;
   },
 
+  async getRouteCorrections(routeId: string) {
+    const res = await fetch(`${API_BASE}/contributions/corrections/${encodeURIComponent(routeId)}`);
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.message || data.error || 'Unable to load community corrections');
+    return data;
+  },
+
   async getSubmissionStatus(refId: string) {
     const res = await fetch(`${API_BASE}/contributions/status/${encodeURIComponent(refId)}`);
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.message || data.error || 'Submission status service is unavailable.');
+    return data;
+  },
+
+  async googleOwnerLogin(credential: string) {
+    const res = await fetch(`${API_BASE}/operators/auth/google`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ credential }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.message || data.error || 'Google owner sign-in failed');
+    return data;
+  },
+
+  async getOwnerSubmissions(token: string) {
+    const res = await fetch(`${API_BASE}/operators/me/submissions`, { headers: { Authorization: `Bearer ${token}` } });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.message || data.error || 'Unable to load owner dashboard');
+    return data;
+  },
+
+  async submitOwnerContribution(token: string, submission: { submissionType: string; entityType: string; targetEntityId?: string; contributorNote?: string; proposedData: Record<string, any> }) {
+    const res = await fetch(`${API_BASE}/operators/submissions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify(submission),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.message || data.error || 'Unable to submit bus details');
+    return data;
+  },
+
+  async voteOnCorrection(referenceId: string, field: string, value: string, visitorId: string) {
+    const res = await fetch(`${API_BASE}/contributions/vote/${encodeURIComponent(referenceId)}`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ field, value, visitorId }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.message || data.error || 'Unable to record vote');
     return data;
   },
 
@@ -163,11 +207,39 @@ export const api = {
     return data;
   },
 
-  async getAdminSubmissions(token: string, status?: string) {
-    const query = status ? `?status=${encodeURIComponent(status)}` : '';
+  async getAdminSubmissions(token: string, status?: string, category?: 'PUBLIC' | 'OPERATOR') {
+    const params = new URLSearchParams();
+    if (status) params.set('status', status);
+    if (category) params.set('category', category);
+    const query = params.size ? `?${params.toString()}` : '';
     const res = await fetch(`${API_BASE}/admin/submissions${query}`, { headers: { Authorization: `Bearer ${token}` } });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.message || data.error || 'Unable to load submissions');
+    return data;
+  },
+
+  async adminGetBuses(token: string, query = '') {
+    const res = await fetch(`${API_BASE}/admin/buses?q=${encodeURIComponent(query)}`, { headers: { Authorization: `Bearer ${token}` } });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.message || data.error || 'Unable to search buses');
+    return data;
+  },
+
+  async adminUpdateBus(token: string, id: string, bus: Record<string, any>) {
+    const res = await fetch(`${API_BASE}/admin/buses/${encodeURIComponent(id)}`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(bus),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.message || data.error || 'Unable to update bus');
+    return data;
+  },
+
+  async adminUpdateRoute(token: string, id: string, route: Record<string, any>) {
+    const res = await fetch(`${API_BASE}/admin/routes/${encodeURIComponent(id)}`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(route),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.message || data.error || 'Unable to update route');
     return data;
   },
 

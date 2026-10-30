@@ -74,7 +74,7 @@ export interface Place {
   placeType: PlaceType;
   parentId?: string;
   district?: string;
-  state: IndianState;
+  state?: IndianState;
   pincode?: string;
   latitude?: number;
   longitude?: number;

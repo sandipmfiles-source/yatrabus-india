@@ -17,7 +17,19 @@ routesRouter.get('/search', publicSearchLimiter, (req: Request, res: Response) =
   }
 
   const allRoutes = repository.getAllRoutes();
-  const searchResults = discoverJourneys(from, to, allRoutes);
+  // Expand aliases and fuzzy place-name matches from the local India place catalogue.
+  const originNames = [from, ...repository.searchPlaces(from, 6).map(item => item.place.canonicalName)];
+  const destinationNames = [to, ...repository.searchPlaces(to, 6).map(item => item.place.canonicalName)];
+  const directById = new Map<string, any>();
+  const transfersById = new Map<string, any>();
+  for (const originName of Array.from(new Set(originNames))) {
+    for (const destinationName of Array.from(new Set(destinationNames))) {
+      const result = discoverJourneys(originName, destinationName, allRoutes);
+      result.directRoutes.forEach(item => directById.set(item.id, item));
+      result.transferRoutes.forEach(item => transfersById.set(item.id, item));
+    }
+  }
+  const searchResults = { directRoutes: Array.from(directById.values()), transferRoutes: Array.from(transfersById.values()) };
 
   return res.json({
     from,

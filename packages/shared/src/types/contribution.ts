@@ -1,28 +1,17 @@
 /**
  * YatriBus Shared Types - Community Contributions, Duplicate Candidates & Moderation
  */
-
 export type SubmissionType =
-  | 'ADD_BUS'
-  | 'ADD_STOP'
-  | 'SUGGEST_ROUTE'
-  | 'CORRECT_TIMETABLE'
-  | 'REPORT_CHANGED_ROUTE'
-  | 'REPORT_DISCONTINUED'
-  | 'ADD_INTERMEDIATE_STOP'
-  | 'OPERATOR_CLAIM'
-  | 'CONFIRM_DISPUTE';
+  | 'ADD_BUS' | 'ADD_STOP' | 'SUGGEST_ROUTE' | 'CORRECT_TIMETABLE'
+  | 'REPORT_CHANGED_ROUTE' | 'REPORT_DISCONTINUED' | 'ADD_INTERMEDIATE_STOP'
+  | 'OPERATOR_CLAIM' | 'CONFIRM_DISPUTE' | 'DELETE_BUS';
 
 export type SubmissionStatus =
-  | 'PENDING_REVIEW'
-  | 'COMMUNITY_CORROBORATED'
-  | 'ADMIN_VERIFIED'
-  | 'REJECTED'
-  | 'MERGED';
+  | 'PENDING_REVIEW' | 'COMMUNITY_CORROBORATED' | 'ADMIN_VERIFIED' | 'REJECTED' | 'MERGED';
 
 export interface CommunitySubmission {
   id: string;
-  referenceId: string; // e.g. YB-SUB-2026-9481 (no account required to track)
+  referenceId: string;
   submissionType: SubmissionType;
   entityType: 'BUS' | 'ROUTE' | 'STOP' | 'OPERATOR' | 'TIMETABLE';
   targetEntityId?: string;
@@ -36,6 +25,12 @@ export interface CommunitySubmission {
   reviewedBy?: string;
   reviewedAt?: string;
   createdAt: string;
+  /** Public passenger edits and verified operator submissions are reviewed separately. */
+  sourceCategory?: 'PUBLIC' | 'OPERATOR';
+  contributorEmail?: string;
+  contributorDisplayName?: string;
+  communityVotes?: Record<string, number>;
+  voterKeys?: string[];
 }
 
 export interface DuplicateCandidate {
@@ -43,7 +38,7 @@ export interface DuplicateCandidate {
   entityType: 'BUS' | 'ROUTE' | 'STOP' | 'OPERATOR';
   primaryEntityId: string;
   secondaryEntityId: string;
-  similarityScore: number; // 0 - 100
+  similarityScore: number;
   matchingFactors: string[];
   status: 'PENDING' | 'MERGED' | 'REJECTED_DIFFERENT';
   resolvedBy?: string;
@@ -56,7 +51,7 @@ export interface OperatorClaimRequest {
   operatorId: string;
   operatorName: string;
   claimantName: string;
-  claimantRole: string; // e.g. Depot Manager, Transport Officer, Fleet Owner
+  claimantRole: string;
   officialEmail?: string;
   contactNumber: string;
   proofDocumentNote?: string;

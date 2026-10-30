@@ -23,7 +23,7 @@ export const PrivacyPolicyPage: React.FC = () => {
             1. No Mandatory Accounts for Passengers
           </h2>
           <p>
-            You can search routes, look up timetables, view bus stops, and contribute community updates on YatriBus without ever creating an account, sharing your phone number, or linking an email address.
+            Passengers can search routes, look up timetables, view bus stops, and submit public corrections without creating an account or sharing an email address. Google sign-in is required only for bus owners, drivers or bus-samiti representatives who want to manage their own submissions.
           </p>
         </section>
 
@@ -64,7 +64,7 @@ export const PrivacyPolicyPage: React.FC = () => {
         <section className="space-y-2">
           <h2 className="text-base font-bold text-yatriwarm-900">5. Contact & Data Deletion Requests</h2>
           <p className="text-xs">
-            Since we do not store user profiles or personal tracking logs, there is no personal identity tied to transit data. However, for operator listing queries or verifications, you may contact our open source maintainers at <code className="bg-yatriwarm-100 px-1 py-0.5 rounded text-yatribrand-900">privacy@yatribus.in</code>.
+            Passenger searches do not create a passenger profile. For the owner portal, the verified Google account email and display name are stored with that owner's bus submissions so the owner can view and manage them; this identity is not needed for ordinary passenger search. Browser/app cache is only a convenience and may be erased when the app is uninstalled. For account or data deletion requests, operator listing queries or verifications, contact <code className="bg-yatriwarm-100 px-1 py-0.5 rounded text-yatribrand-900">privacy@yatribus.in</code>.
           </p>
         </section>
       </div>

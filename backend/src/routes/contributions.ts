@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import { createHash } from 'node:crypto';
 import { repository } from '../db/repository.js';
 import { checkDuplicateStop, checkDuplicateRoute } from '../../../packages/shared/src/engine/duplicateDetector.js';
 import { contributionLimiter } from '../middleware/rateLimiter.js';
@@ -57,7 +58,8 @@ contributionsRouter.post('/submit', contributionLimiter, (req: Request, res: Res
     contributorNote,
     proposedData,
     status: 'PENDING_REVIEW',
-    corroborationCount: 1,
+    corroborationCount: 0,
+    sourceCategory: 'PUBLIC',
     duplicateCandidateIds,
     createdAt: new Date().toISOString(),
   });
@@ -69,6 +71,54 @@ contributionsRouter.post('/submit', contributionLimiter, (req: Request, res: Res
     duplicateWarnings: duplicateCandidateIds.length > 0 ? 'Potential duplicate detected and flagged for verifier review' : null,
     message: 'Contribution received successfully. You can check review progress anytime using your Reference ID without an account.',
   });
+});
+
+
+
+// POST /api/contributions/vote/:refId — one anonymous correction vote per app/browser install.
+contributionsRouter.post('/vote/:refId', contributionLimiter, (req: Request, res: Response) => {
+  const submission = repository.getSubmissionByReference(String(req.params.refId));
+  if (!submission || submission.sourceCategory === 'OPERATOR') return res.status(404).json({ error: 'Correction not found' });
+  if (submission.status !== 'PENDING_REVIEW' && submission.status !== 'COMMUNITY_CORROBORATED') {
+    return res.status(409).json({ error: 'This correction is no longer open for voting' });
+  }
+  const field = typeof req.body?.field === 'string' ? req.body.field.trim() : '';
+  const value = typeof req.body?.value === 'string' ? req.body.value.trim() : '';
+  const visitorId = typeof req.body?.visitorId === 'string' ? req.body.visitorId : '';
+  if (!field || !value || visitorId.length < 16 || visitorId.length > 128 ||
+      submission.proposedData?.field !== field || String(submission.proposedData?.value || '') !== value) {
+    return res.status(400).json({ error: 'A correction field, proposed value and anonymous visitor ID are required' });
+  }
+  const voterKey = createHash('sha256').update(visitorId).digest('hex');
+  const result = repository.recordSubmissionVote(submission.id, voterKey, field, value);
+  if (!result.success) return res.status(409).json({ error: result.error });
+  return res.json({ success: true, counts: result.counts, message: 'Your community vote was counted.' });
+});
+
+
+
+// GET /api/contributions/corrections/:routeId — anonymous timetable suggestions and vote totals.
+contributionsRouter.get('/corrections/:routeId', (req: Request, res: Response) => {
+  const corrections = repository.listSubmissions().filter(item =>
+    item.targetEntityId === String(req.params.routeId) &&
+    item.submissionType === 'CORRECT_TIMETABLE' && item.sourceCategory !== 'OPERATOR' &&
+    typeof item.proposedData?.field === 'string' && typeof item.proposedData?.value === 'string' &&
+    (item.status === 'PENDING_REVIEW' || item.status === 'COMMUNITY_CORROBORATED')
+  );
+  const totals: Record<string, { field: string; value: string; votes: number }> = {};
+  for (const correction of corrections) {
+    for (const [key, count] of Object.entries(correction.communityVotes || {})) {
+      const split = key.indexOf(':');
+      if (split < 1) continue;
+      const field = key.slice(0, split);
+      const value = key.slice(split + 1);
+      const totalKey = field + ':' + value;
+      totals[totalKey] = totals[totalKey] || { field, value, votes: 0 };
+      totals[totalKey].votes += count;
+    }
+  }
+  const consensus = Object.values(totals).sort((a, b) => b.votes - a.votes)[0] || null;
+  return res.json({ corrections, consensus });
 });
 
 // GET /api/contributions/status/:refId
