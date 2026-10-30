@@ -3,7 +3,7 @@ import { useLanguage } from '../context/LanguageContext.js';
 import { Link, useLocation } from 'react-router-dom';
 import { BusIllustration } from '../assets/BusIllustration.js';
 import { LanguageSwitcher } from './LanguageSwitcher.js';
-import { ShieldCheck, PlusCircle, Search, UserCheck } from 'lucide-react';
+import { ShieldCheck, PlusCircle, Search, BusFront } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
   const location = useLocation();
@@ -55,13 +55,13 @@ export const Navbar: React.FC = () => {
             {t('nav_contribute')}
           </Link>
           <Link
-            to="/operator"
+            to="/contribute?type=SUGGEST_ROUTE"
             className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 ${
-              isActive('/operator-claim') ? 'bg-yatribrand-50 text-yatribrand-900 font-semibold' : 'text-yatriwarm-700 hover:bg-yatriwarm-100'
+              isActive('/operator') || isActive('/operator-claim') ? 'bg-yatribrand-50 text-yatribrand-900 font-semibold' : 'text-yatriwarm-700 hover:bg-yatriwarm-100'
             }`}
           >
-            <UserCheck className="w-4 h-4" />
-            Bus Owner Portal
+            <BusFront className="w-4 h-4" />
+            Add Bus / Route
           </Link>
         </nav>
 
