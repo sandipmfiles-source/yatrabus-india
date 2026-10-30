@@ -94,6 +94,19 @@ router.post('/submissions', requireOwner, contributionLimiter, (req: Request & {
       !proposedData || typeof proposedData !== 'object' || Array.isArray(proposedData)) {
     return res.status(400).json({ error: 'A valid submission type, entity type and details are required' });
   }
+  const action = typeof proposedData.action === 'string' ? proposedData.action : '';
+  if (submissionType === 'DELETE_BUS' || action === 'UPDATE_BUS_TIMETABLE' || action === 'UPDATE_ROUTE') {
+    const targetId = typeof req.body.targetEntityId === 'string' ? req.body.targetEntityId : '';
+    const ownsApprovedRecord = repository.listSubmissions().some(item =>
+      item.sourceCategory === 'OPERATOR' &&
+      item.contributorEmail === req.owner?.email &&
+      item.status === 'ADMIN_VERIFIED' &&
+      ((action === 'UPDATE_ROUTE' && `route-community-${item.id}` === targetId) ||
+       (submissionType === 'DELETE_BUS' || action === 'UPDATE_BUS_TIMETABLE') && `bus-community-${item.id}` === targetId)
+    );
+    if (!ownsApprovedRecord) return res.status(403).json({ error: 'You can only edit or remove buses/routes that were approved from your own owner account.' });
+  }
+
   const now = new Date().toISOString();
   const id = 'operator-sub-' + randomUUID();
   const referenceId = 'YB-OWN-' + randomUUID().slice(0, 8).toUpperCase();
