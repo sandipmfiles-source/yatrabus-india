@@ -204,7 +204,7 @@ export const SearchResultsPage: React.FC = () => {
       )}
 
       {/* Empty State */}
-      {!isLoading && filteredJourneys.length === 0 && (
+      {!isLoading && filteredJourneys.length === 0 && returnJourneys.length === 0 && (
         <div className="bg-white rounded-3xl p-8 border border-yatriwarm-200 shadow-card text-center space-y-4">
           <div className="w-12 h-12 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center mx-auto">
             <AlertCircle className="w-6 h-6" />
