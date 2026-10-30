@@ -73,7 +73,7 @@ adminRouter.get('/submissions', requireAdminAuth('SUPER_ADMIN'), (req: Request, 
 
 // POST /api/admin/submissions/:id/review
 adminRouter.post('/submissions/:id/review', requireAdminAuth('SUPER_ADMIN'), (req: Request, res: Response) => {
-  const { decision, reason } = req.body;
+  const { decision, reason, verifyTimetable } = req.body;
   const adminId = (req as any).admin.id;
 
   if (!decision || !['ADMIN_VERIFIED', 'COMMUNITY_CORROBORATED', 'REJECTED'].includes(decision)) {
@@ -87,6 +87,11 @@ adminRouter.post('/submissions/:id/review', requireAdminAuth('SUPER_ADMIN'), (re
   if (!pendingSubmission) return res.status(404).json({ error: 'Submission not found' });
   if (pendingSubmission.status !== 'PENDING_REVIEW') {
     return res.status(409).json({ error: 'This submission has already been reviewed.' });
+  }
+  const evidenceUrl = typeof pendingSubmission.proposedData?.evidenceUrl === 'string' ? pendingSubmission.proposedData.evidenceUrl.trim() : '';
+  const hasHttpsEvidence = /^https:\/\//i.test(evidenceUrl);
+  if (verifyTimetable === true && (decision !== 'ADMIN_VERIFIED' || !hasHttpsEvidence)) {
+    return res.status(422).json({ error: 'Timetable verification requires Super Admin approval and a valid HTTPS official evidence link.' });
   }
   if (decision === 'ADMIN_VERIFIED' && pendingSubmission.entityType === 'STOP' && pendingSubmission.submissionType === 'ADD_STOP') {
     const data = pendingSubmission.proposedData || {};
@@ -189,6 +194,7 @@ adminRouter.post('/submissions/:id/review', requireAdminAuth('SUPER_ADMIN'), (re
       direction: data.direction === 'DOWN' || data.direction === 'CIRCULAR' ? data.direction : data.direction === 'UP' ? 'UP' : route.direction,
       operatingDays: Array.isArray(data.operatingDays) ? normalizeOperatingDays(data.operatingDays) : route.operatingDays,
       departureTimes: requestedDepartureTimes,
+      serviceStatus: verifyTimetable === true ? 'OPERATING_SCHEDULED' : route.serviceStatus,
       stops: updatedStops,
       geometry: updatedStops.map(stop => ({ latitude: stop.latitude, longitude: stop.longitude })),
       updatedAt: new Date().toISOString(),
@@ -297,7 +303,7 @@ adminRouter.post('/submissions/:id/review', requireAdminAuth('SUPER_ADMIN'), (re
       stops,
       geometry: stops.map(stop => ({ latitude: stop.latitude, longitude: stop.longitude })),
       verificationStatus: 'ADMIN_VERIFIED',
-      serviceStatus: 'SCHEDULE_UNVERIFIED',
+      serviceStatus: verifyTimetable === true ? 'OPERATING_SCHEDULED' : 'SCHEDULE_UNVERIFIED',
       createdAt: now,
       updatedAt: now,
     };
@@ -369,7 +375,8 @@ adminRouter.post('/submissions/:id/review', requireAdminAuth('SUPER_ADMIN'), (re
       operatorName: typeof data.operatorName === 'string' ? data.operatorName.trim().slice(0, 120) : targetBus.operatorName,
       contributedBy: pendingSubmission.contributorDisplayName || targetBus.contributedBy,
       updatedAt: new Date().toISOString(),
-    });
+      if (verifyTimetable === true) repository.addRoute({ ...route, serviceStatus: 'OPERATING_SCHEDULED', updatedAt: new Date().toISOString() });
+  });
   }
 
   if (decision === 'ADMIN_VERIFIED' && pendingSubmission?.submissionType === 'DELETE_BUS') {
@@ -420,6 +427,7 @@ adminRouter.post('/submissions/:id/review', requireAdminAuth('SUPER_ADMIN'), (re
     if (!repository.addTimetableDeparture(route.id, departure, Number(data.frequencyMinutes))) {
       return res.status(409).json({ error: 'This bus and departure time already exist on the selected route.' });
     }
+    if (verifyTimetable === true) repository.addRoute({ ...route, serviceStatus: 'OPERATING_SCHEDULED', updatedAt: new Date().toISOString() });
     const busIdentifier = typeof data.busIdentifier === 'string' ? data.busIdentifier.trim().slice(0, 80) : '';
     if (busIdentifier && !repository.getBusesForRoute(route.id).some(bus => bus.publicIdentifier.toLowerCase() === busIdentifier.toLowerCase())) {
       const now = new Date().toISOString();
