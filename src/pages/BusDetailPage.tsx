@@ -319,7 +319,7 @@ export const BusDetailPage: React.FC = () => {
 
                 <div className="text-right shrink-0 min-w-[112px]">
                   {(() => {
-                    const related = corrections.filter(item => item.proposedData?.stopId === stop.id);
+                    const related = corrections.filter(item => item.proposedData?.stopId === stop.id && item.proposedData?.field === 'scheduledArrivalTime');
                     const totals: Record<string, number> = {};
                     related.forEach(item => Object.entries(item.communityVotes || {}).forEach(([key, count]) => {
                       const split = key.indexOf(':');
