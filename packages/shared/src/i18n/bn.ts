@@ -64,6 +64,9 @@ export const bn = {
   journey_prompt_no: 'না',
   journey_prompt_not_now: 'এখন নয়',
   tracking_active: 'বাসের জন্য অবস্থান ভাগ করা হচ্ছে',
+  tracking_service_not_active: 'GPS পরিষেবা সক্রিয় নয়',
+  tracking_waiting_for_gps: 'প্রথম GPS অবস্থানের অপেক্ষায়। কিছুক্ষণ অ্যাপ খোলা রাখুন এবং অবস্থানের অনুমতি পরীক্ষা করুন।',
+
   tracking_stop: 'ভাগ করা বন্ধ করুন',
   consent_title: 'যাত্রীর অবস্থান সম্মতি ও গোপনীয়তা',
   consent_desc: 'যাত্রীবাস কখনই গোপনে জিপিএস তথ্য সংগ্রহ করে না। তথ্য সম্পূর্ণ বেনামী থাকে এবং ব্যক্তিগত ট্র্যাকিং ইতিহাস সংরক্ষিত হয় না।',
