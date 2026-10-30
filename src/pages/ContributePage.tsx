@@ -644,7 +644,6 @@ export const ContributePage: React.FC = () => {
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <h4 className="text-xs font-bold text-yatriwarm-800">Build your route visually</h4>
-                      <button type="button" onClick={() => setRouteStops(current => [...current.slice(0, -1), { name: '', latitude: '', longitude: '', arrivalTime: '', departureTime: '' }, current[current.length - 1]])} className="text-xs font-semibold text-red-700 disabled:opacity-40">Top → Bottom</button>
                     </div>
                     {routeStops.map((stop, index) => (
                       <React.Fragment key={index}>
