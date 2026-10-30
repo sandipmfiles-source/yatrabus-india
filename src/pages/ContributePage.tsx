@@ -135,7 +135,7 @@ export const ContributePage: React.FC = () => {
     e.preventDefault();
     if (submissionType === 'SUGGEST_ROUTE') {
       const times = departureTimes.split(',').map(time => time.trim()).filter(Boolean);
-      const validTime = (time: string) => /^([01]\\d|2[0-3]):[0-5]\\d$/.test(time);
+      const validTime = (time: string) => /^([01]\d|2[0-3]):[0-5]\d$/.test(time);
       if (times.some(time => !validTime(time)) || new Set(times).size !== times.length) {
         setSubmissionError('Exact departure times must be unique 24-hour HH:MM values.');
         return;
