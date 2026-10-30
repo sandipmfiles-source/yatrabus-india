@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { TransitRepository } from './repository.js';
 import { Place } from '../../../packages/shared/src/types/places.js';
@@ -27,7 +27,9 @@ class PersistentTransitRepository extends TransitRepository {
 
   private persistToDisk(): void {
     mkdirSync(dirname(this.dataFile), { recursive: true });
-    writeFileSync(this.dataFile, JSON.stringify(this.exportPersistentState()), 'utf8');
+    const temporaryFile = `${this.dataFile}.tmp`;
+    writeFileSync(temporaryFile, JSON.stringify(this.exportPersistentState()), { encoding: 'utf8', mode: 0o600 });
+    renameSync(temporaryFile, this.dataFile);
   }
 
   override addPlace(place: Place): Place {
