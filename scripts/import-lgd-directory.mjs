@@ -90,7 +90,9 @@ importNamedFile('urban_local_bodies.csv', 'urban_local_body', ['Local Body Name 
 const all = [...places.values()];
 const counts = {};
 for (const item of all) counts[item.level] = (counts[item.level] || 0) + 1;
-const payload = { source: 'Ministry of Panchayati Raj - Local Government Directory', sourceDate: '21Oct2026', importedAt: new Date().toISOString(), counts, places: all };
+const compactPlaces = all.map(item => [item.id, item.code, item.name, item.level, item.state, item.district, item.subdistrict]);
+console.log('Prepared LGD records:', all.length, 'counts:', JSON.stringify(counts));
+const payload = { source: 'Ministry of Panchayati Raj - Local Government Directory', sourceDate: '21Oct2026', importedAt: new Date().toISOString(), counts, places: compactPlaces };
 fs.mkdirSync(path.dirname(outputFile), { recursive: true });
 fs.writeFileSync(outputFile, gzipSync(Buffer.from(JSON.stringify(payload)), { level: 9 }));
 console.log(JSON.stringify({ outputFile, bytes: fs.statSync(outputFile).size, total: all.length, counts }, null, 2));
