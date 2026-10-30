@@ -30,6 +30,8 @@ export const ContributePage: React.FC = () => {
   const [routeDurationMinutes, setRouteDurationMinutes] = useState('');
   const [firstDepartureTime, setFirstDepartureTime] = useState('');
   const [lastDepartureTime, setLastDepartureTime] = useState('');
+  const [departureTimes, setDepartureTimes] = useState('');
+  const [operatingDays, setOperatingDays] = useState('Daily');
   const [routeStops, setRouteStops] = useState([
     { name: '', latitude: '', longitude: '', arrivalTime: '', departureTime: '' },
     { name: '', latitude: '', longitude: '', arrivalTime: '', departureTime: '' },
@@ -123,6 +125,7 @@ export const ContributePage: React.FC = () => {
           typicalDurationMinutes: routeDurationMinutes ? Number(routeDurationMinutes) : undefined,
           firstDepartureTime,
           lastDepartureTime,
+          departureTimes: departureTimes.split(',').map(time => time.trim()).filter(Boolean),
           stops: submissionType === 'SUGGEST_ROUTE' && Array.isArray(routePreview?.points)
             ? routePreview.points.map((point: any, index: number) => ({
                 name: String(point.name),
@@ -136,7 +139,7 @@ export const ContributePage: React.FC = () => {
                 latitude: stop.latitude === '' ? undefined : Number(stop.latitude),
                 longitude: stop.longitude === '' ? undefined : Number(stop.longitude),
               })),
-          operatingDays: ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'],
+          operatingDays: operatingDays.split(',').map(day => day.trim()).filter(Boolean),
         },
       });
 
@@ -420,6 +423,13 @@ export const ContributePage: React.FC = () => {
                     </label>
                     <label className="text-xs font-medium text-yatriwarm-700">Frequency in minutes (optional)
                       <input type="number" min="1" max="1440" value={frequencyMinutes} onChange={e => setFrequencyMinutes(e.target.value)} placeholder="e.g. 30" className="mt-1 w-full px-3 py-2.5 bg-white border border-yatriwarm-300 rounded-xl" />
+                    </label>
+                    <label className="text-xs font-medium text-yatriwarm-700">Exact departure times (optional)
+                      <input value={departureTimes} onChange={e => setDepartureTimes(e.target.value)} placeholder="05:45, 06:15, 06:45, 07:20" className="mt-1 w-full px-3 py-2.5 bg-white border border-yatriwarm-300 rounded-xl" />
+                      <span className="mt-1 block text-[10px] text-yatriwarm-500">Use 24-hour HH:MM times, separated by commas. Add only times confirmed by the operator.</span>
+                    </label>
+                    <label className="text-xs font-medium text-yatriwarm-700">Operating days
+                      <input value={operatingDays} onChange={e => setOperatingDays(e.target.value)} placeholder="Daily or MON,TUE,WED..." className="mt-1 w-full px-3 py-2.5 bg-white border border-yatriwarm-300 rounded-xl" />
                     </label>
                   </div>
                   <div className="space-y-3">
