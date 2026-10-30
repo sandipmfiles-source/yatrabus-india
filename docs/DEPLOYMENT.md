@@ -57,7 +57,7 @@ Configure only on the backend host, never in the APK:
     RATE_LIMIT_PUBLIC_MAX_REQUESTS=300
     RATE_LIMIT_CONTRIBUTION_MAX_HOURLY=15
 
-Set `GOOGLE_OAUTH_CLIENT_ID` and `OWNER_JWT_SECRET` only on the backend host; set the matching public `VITE_GOOGLE_CLIENT_ID` as a GitHub Actions repository variable before building the APK. Never put passwords, JWT secrets, OAuth client secrets, or database passwords in GitHub source files.
+Only Super Admin credentials belong in the backend host's private environment. Never put passwords, JWT secrets, or database passwords in GitHub source files or the APK.
 
 ## 6. Persistent database activation (future step)
 
