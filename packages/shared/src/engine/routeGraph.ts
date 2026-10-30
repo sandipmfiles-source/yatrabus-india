@@ -92,6 +92,7 @@ export function discoverJourneys(
         dailyTripCount: estimateDailyTripCount(route.firstDepartureTime, route.lastDepartureTime, route.frequencyMinutes),
         frequencyMinutes: route.frequencyMinutes,
         intermediateStops: route.stops.slice(originIndex + 1, destIndex),
+        timetableDepartures: (route.departures || []).filter(item => !item.isCancelled),
       });
     }
   }
