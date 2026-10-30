@@ -31,6 +31,9 @@ jobs:
             curl --fail --location --retry 3 "$base/$file" -o "/tmp/$file"
             7z e -y -o/tmp/lgd "/tmp/$file"
           done
+          mv /tmp/lgd/villages.21Oct2026.csv /tmp/lgd/villages.csv
+          mv /tmp/lgd/blocks.21Oct2026.csv /tmp/lgd/blocks.csv
+          mv /tmp/lgd/urban_local_bodies.21Oct2026.csv /tmp/lgd/urban_local_bodies.csv
           ls -lh /tmp/lgd
       - name: Build compressed backend catalogue
         run: node scripts/import-lgd-directory.mjs /tmp/lgd backend/data/india-lgd-directory.json.gz
