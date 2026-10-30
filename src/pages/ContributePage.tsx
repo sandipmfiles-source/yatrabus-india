@@ -425,7 +425,7 @@ export const ContributePage: React.FC = () => {
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <h4 className="text-xs font-bold text-yatriwarm-800">Ordered route stops</h4>
-                      <button type="button" onClick={() => setRouteStops(current => [...current.slice(0, -1), { name: '', latitude: '', longitude: '', arrivalTime: '', departureTime: '' }, current[current.length - 1]])} className="text-xs font-semibold text-red-700">+ Add intermediate stop</button>
+                      <button type="button" disabled={routeStops.length >= 25} onClick={() => setRouteStops(current => current.length >= 25 ? current : [...current.slice(0, -1), { name: '', latitude: '', longitude: '', arrivalTime: '', departureTime: '' }, current[current.length - 1]])} className="text-xs font-semibold text-red-700 disabled:opacity-40">+ Add intermediate stop</button>
                     </div>
                     {routeStops.map((stop, index) => (
                       <div key={index} className="rounded-xl border border-yatriwarm-200 bg-white p-3 space-y-2">
@@ -437,8 +437,8 @@ export const ContributePage: React.FC = () => {
                         </div>
                         <input required value={stop.name} onChange={e => updateRouteStop(index, 'name', e.target.value)} placeholder="Stop / place name" className="w-full px-3 py-2 bg-yatriwarm-50 border border-yatriwarm-200 rounded-lg text-xs" />
                         <div className="grid grid-cols-2 gap-2">
-                          <input required type="number" min="-90" max="90" step="any" value={stop.latitude} onChange={e => updateRouteStop(index, 'latitude', e.target.value)} placeholder="Latitude" className="w-full px-3 py-2 bg-yatriwarm-50 border border-yatriwarm-200 rounded-lg text-xs" />
-                          <input required type="number" min="-180" max="180" step="any" value={stop.longitude} onChange={e => updateRouteStop(index, 'longitude', e.target.value)} placeholder="Longitude" className="w-full px-3 py-2 bg-yatriwarm-50 border border-yatriwarm-200 rounded-lg text-xs" />
+                          <input required type="number" min="6" max="38" step="any" value={stop.latitude} onChange={e => updateRouteStop(index, 'latitude', e.target.value)} placeholder="Latitude" className="w-full px-3 py-2 bg-yatriwarm-50 border border-yatriwarm-200 rounded-lg text-xs" />
+                          <input required type="number" min="68" max="98" step="any" value={stop.longitude} onChange={e => updateRouteStop(index, 'longitude', e.target.value)} placeholder="Longitude" className="w-full px-3 py-2 bg-yatriwarm-50 border border-yatriwarm-200 rounded-lg text-xs" />
                         </div>
                         <div className="grid grid-cols-2 gap-2">
                           <label className="text-[10px] text-yatriwarm-600">Arrival (optional)<input type="time" value={stop.arrivalTime} onChange={e => updateRouteStop(index, 'arrivalTime', e.target.value)} className="mt-1 w-full px-2 py-2 bg-yatriwarm-50 border border-yatriwarm-200 rounded-lg text-xs" /></label>
