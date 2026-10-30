@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { Capacitor, registerPlugin } from '@capacitor/core';
+import { LocalNotifications } from '@capacitor/local-notifications';
 import { api } from '../services/api.js';
 import { storage } from '../services/storage.js';
 
@@ -146,6 +147,13 @@ export const TrackingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const grantConsentAndStartTracking = async () => {
     if (!pendingBusForTracking) return;
     try {
+      if (Capacitor.isNativePlatform()) {
+        try {
+          await LocalNotifications.requestPermissions();
+        } catch (permissionError) {
+          console.warn('Notification permission was not granted; Android may limit visible tracking notices.', permissionError);
+        }
+      }
       const res = await api.startJourneySession(pendingBusForTracking.busId, pendingBusForTracking.routeId);
       const session = res.session;
       await api.recordConsent(session.sessionId, 'GRANTED', true);
