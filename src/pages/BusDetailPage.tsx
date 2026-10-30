@@ -327,7 +327,7 @@ export const BusDetailPage: React.FC = () => {
           </span>
         </div>
 
-        <div className="relative pl-6 space-y-6 before:absolute before:left-2.5 before:top-3 before:bottom-3 before:w-0.5 before:bg-yatriwarm-200">\n          {liveBusProgress !== null && (\n            <div className="absolute z-20 -left-[1px] -translate-x-1/2 -translate-y-1/2 pointer-events-none" style={{ top: `${liveBusProgress * 100}%` }} aria-label="Live bus position on route timeline" title="Live GPS bus position">\n              <span className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-yatribrand-900 text-white shadow-lg ring-2 ring-emerald-300">\n                <BusFront className="h-4 w-4" aria-hidden="true" />\n              </span>\n            </div>\n          )}
+        <div className="relative pl-6 space-y-6 before:absolute before:left-2.5 before:top-3 before:bottom-3 before:w-0.5 before:bg-yatriwarm-200">\n          {liveBusProgress !== null && (\n            <div className="absolute z-20 left-[10px] -translate-x-1/2 -translate-y-1/2 pointer-events-none" style={{ top: `calc(12px + ${liveBusProgress * 100}% - ${liveBusProgress * 24}px)` }} aria-label="Live bus position on route timeline" title="Live GPS bus position">\n              <span className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-yatribrand-900 text-white shadow-lg ring-2 ring-emerald-300">\n                <BusFront className="h-4 w-4" aria-hidden="true" />\n              </span>\n            </div>\n          )}
           {route.stops.map((stop, idx) => {
             const eta = stopETAs.find(e => e.stopId === stop.stopId);
             const isTerminus = idx === 0 || idx === route.stops.length - 1;
