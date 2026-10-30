@@ -11,6 +11,8 @@ export const ContributePage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const initialType = (searchParams.get('type') as SubmissionType) || 'ADD_BUS';
   const isOperatorSubmission = searchParams.get('source') === 'OPERATOR';
+  const routeIdParam = searchParams.get('routeId');
+  const isRouteSubmission = submissionType === 'SUGGEST_ROUTE' || submissionType === 'UPDATE_ROUTE';
 
   const [activeTab, setActiveTab] = useState<'SUBMIT' | 'CHECK_STATUS'>('SUBMIT');
   const [submissionType, setSubmissionType] = useState<SubmissionType>(initialType);
@@ -137,7 +139,7 @@ export const ContributePage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (submissionType === 'SUGGEST_ROUTE') {
+    if (isRouteSubmission) {
       const times = departureTimes.split(',').map(time => time.trim()).filter(Boolean);
       const validTime = (time: string) => /^([01]\d|2[0-3]):[0-5]\d$/.test(time);
       if (times.some(time => !validTime(time)) || new Set(times).size !== times.length) {
@@ -150,7 +152,7 @@ export const ContributePage: React.FC = () => {
         return;
       }
     }
-    if (submissionType === 'SUGGEST_ROUTE' && routePreview?.routeStatus !== 'ROAD_ROUTE_FOUND_IN_SUBMITTED_ORDER') {
+    if (isRouteSubmission && routePreview?.routeStatus !== 'ROAD_ROUTE_FOUND_IN_SUBMITTED_ORDER') {
       setSubmissionError('Check the OpenStreetMap road route in the submitted stop order before sending this route for Super Admin approval.');
       return;
     }
@@ -164,7 +166,7 @@ export const ContributePage: React.FC = () => {
     try {
       const submissionData = {
         submissionType,
-        entityType: submissionType === 'SUGGEST_ROUTE' ? 'ROUTE' : submissionType === 'ADD_STOP' ? 'STOP' : (submissionType === 'ADD_BUS' || submissionType === 'CORRECT_TIMETABLE') ? 'TIMETABLE' : 'BUS',
+        entityType: isRouteSubmission ? 'ROUTE' : submissionType === 'ADD_STOP' ? 'STOP' : (submissionType === 'ADD_BUS' || submissionType === 'CORRECT_TIMETABLE') ? 'TIMETABLE' : 'BUS',
         targetEntityId: searchParams.get('busId') || searchParams.get('routeId') || undefined,
         contributorNote: notes,
         proposedData: {
@@ -189,7 +191,7 @@ export const ContributePage: React.FC = () => {
           firstDepartureTime,
           lastDepartureTime,
           departureTimes: departureTimes.split(',').map(time => time.trim()).filter(Boolean),
-          stops: submissionType === 'SUGGEST_ROUTE' && Array.isArray(routePreview?.points)
+          stops: isRouteSubmission && Array.isArray(routePreview?.points)
             ? routePreview.points.map((point: any, index: number) => ({
                 name: String(point.name),
                 latitude: Number(point.latitude),
@@ -203,6 +205,7 @@ export const ContributePage: React.FC = () => {
                 longitude: stop.longitude === '' ? undefined : Number(stop.longitude),
               })),
           operatingDays: operatingDays.split(',').map(day => day.trim()).filter(Boolean),
+          action: submissionType === 'UPDATE_ROUTE' ? 'UPDATE_ROUTE' : undefined,
         },
       };
       const res = isOperatorSubmission
@@ -346,6 +349,7 @@ export const ContributePage: React.FC = () => {
                   {[
                     { id: 'ADD_BUS' as SubmissionType, label: 'Add Bus to Route' },
                     { id: 'SUGGEST_ROUTE' as SubmissionType, label: 'Add New Route' },
+                    ...(routeIdParam ? [{ id: 'UPDATE_ROUTE' as SubmissionType, label: 'Update Existing Route' }] : []),
                     { id: 'ADD_STOP' as SubmissionType, label: 'Add Stop' },
                     { id: 'CORRECT_TIMETABLE' as SubmissionType, label: 'Add / Fix Timetable' },
                     { id: 'REPORT_CHANGED_ROUTE' as SubmissionType, label: 'Report Issue' },
@@ -493,7 +497,7 @@ export const ContributePage: React.FC = () => {
                 </div>}
               </div>
 
-              {submissionType === 'SUGGEST_ROUTE' && (
+              {isRouteSubmission && (
                 <section className="rounded-2xl border border-amber-300 bg-amber-50/70 p-4 space-y-4">
                   <div>
                     <h3 className="text-sm font-bold text-yatriwarm-900">New route details</h3>
