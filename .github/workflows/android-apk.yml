@@ -2,7 +2,7 @@ name: Build Android Debug APK
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, master, mx-local-preserve]
   pull_request:
     branches: [main, master, mx-local-preserve]
   workflow_dispatch:
@@ -94,4 +94,4 @@ jobs:
           name: yatribus-debug-apk
           path: ${{ steps.verify_apk.outputs.apk_path }}
           if-no-files-found: error
-          retention-days: 14
+          retention-days: 90
