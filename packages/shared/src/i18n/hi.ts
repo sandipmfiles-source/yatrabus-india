@@ -123,4 +123,9 @@ export const hi = {
   background_tracking_active: "Android बैकग्राउंड GPS चालू है",
   background_tracking_unavailable: "बैकग्राउंड GPS चालू नहीं है",
   location_updates_checked: "लोकेशन जाँच",
+  origin_latitude: "शुरुआती स्थान का अक्षांश",
+  origin_longitude: "शुरुआती स्थान का देशांतर",
+  destination_latitude: "गंतव्य का अक्षांश",
+  destination_longitude: "गंतव्य का देशांतर",
+  exact_departures: "सटीक प्रस्थान समय (वैकल्पिक, कॉमा से अलग करें)",
 };
