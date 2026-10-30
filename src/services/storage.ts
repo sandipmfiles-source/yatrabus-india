@@ -46,6 +46,15 @@ export const storage = {
     } catch {}
   },
 
+  hasLanguagePreference(): boolean {
+    try {
+      const lang = localStorage.getItem(STORAGE_KEYS.LANGUAGE);
+      return lang === 'hi' || lang === 'bn' || lang === 'en';
+    } catch {
+      return false;
+    }
+  },
+
   getLanguage(): LanguageCode {
     try {
       const lang = localStorage.getItem(STORAGE_KEYS.LANGUAGE);
