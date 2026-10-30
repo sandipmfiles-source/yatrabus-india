@@ -159,6 +159,33 @@ export const api = {
     return data;
   },
 
+  async googleOwnerLogin(credential: string) {
+    const res = await fetch(`${API_BASE}/operators/auth/google`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ credential }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.message || data.error || 'Google owner sign-in failed');
+    return data;
+  },
+
+  async getOwnerSubmissions(token: string) {
+    const res = await fetch(`${API_BASE}/operators/me/submissions`, { headers: { Authorization: `Bearer ${token}` } });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.message || data.error || 'Unable to load owner dashboard');
+    return data;
+  },
+
+  async submitOwnerContribution(token: string, submission: { submissionType: string; entityType: string; targetEntityId?: string; contributorNote?: string; proposedData: Record<string, any> }) {
+    const res = await fetch(`${API_BASE}/operators/submissions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify(submission),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.message || data.error || 'Unable to submit bus details');
+    return data;
+  },
+
   async voteOnCorrection(referenceId: string, field: string, value: string, visitorId: string) {
     const res = await fetch(`${API_BASE}/contributions/vote/${encodeURIComponent(referenceId)}`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
