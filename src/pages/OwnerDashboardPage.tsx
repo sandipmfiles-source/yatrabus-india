@@ -109,21 +109,26 @@ export const OwnerDashboardPage: React.FC = () => {
     return () => script?.removeEventListener('load', initialize);
   }, [token]);
 
-  useEffect(() => {
-    if (origin.trim().length < 2 || destination.trim().length < 2) { setRoutePreview(null); setRoutePreviewError(''); return; }
-    const stops = stopsText.split('\n').map(line => line.split('|')[0].trim()).filter(Boolean);
-    const timer = window.setTimeout(async () => {
-      setRoutePreviewLoading(true); setRoutePreviewError('');
-      try {
-        const result = await api.previewRoadRoute(origin.trim(), destination.trim(), stops);
-        setRoutePreview(result);
-        if (result.distanceKm) setDistanceKm(String(result.distanceKm));
-        if (result.durationSeconds) setDurationMinutes(String(Math.max(1, Math.round(result.durationSeconds / 60))));
-      } catch (err) { setRoutePreview(null); setRoutePreviewError(err instanceof Error ? err.message : 'Route preview unavailable.'); }
-      finally { setRoutePreviewLoading(false); }
-    }, 700);
-    return () => window.clearTimeout(timer);
-  }, [origin, destination, stopsText]);
+  const checkRoutePreview = async () => {
+    if (origin.trim().length < 2 || destination.trim().length < 2) {
+      setRoutePreviewError('Enter a starting place and destination first.');
+      return;
+    }
+    const stops = stopsText.split('\n').map(line => line.trim()).filter(Boolean);
+    setRoutePreviewLoading(true);
+    setRoutePreviewError('');
+    try {
+      const result = await api.previewRoadRoute(origin.trim(), destination.trim(), stops);
+      setRoutePreview(result);
+      if (result.distanceKm) setDistanceKm(String(result.distanceKm));
+      if (result.durationSeconds) setDurationMinutes(String(Math.max(1, Math.round(result.durationSeconds / 60))));
+    } catch (err) {
+      setRoutePreview(null);
+      setRoutePreviewError(err instanceof Error ? err.message : 'Free road-route preview unavailable.');
+    } finally {
+      setRoutePreviewLoading(false);
+    }
+  };
 
   const signOut = () => {
     localStorage.removeItem('yatribus_owner_token');
@@ -278,8 +283,8 @@ export const OwnerDashboardPage: React.FC = () => {
               <label className="text-xs text-yatriwarm-700">Bus owner / samiti name<input required value={operatorName} onChange={e => setOperatorName(e.target.value)} placeholder="Owner or bus samiti" className="mt-1 w-full px-3 py-2 rounded-xl border border-yatriwarm-200 bg-white" /></label>
               <label className="text-xs text-yatriwarm-700">Route number / code<input required value={routeNumber} onChange={e => setRouteNumber(e.target.value)} placeholder="Route code" className="mt-1 w-full px-3 py-2 rounded-xl border border-yatriwarm-200 bg-white" /></label>
               <label className="text-xs text-yatriwarm-700">Route name<input value={routeName} onChange={e => setRouteName(e.target.value)} placeholder="Kolkata Airport to Howrah" className="mt-1 w-full px-3 py-2 rounded-xl border border-yatriwarm-200 bg-white" /></label>
-              <label className="text-xs text-yatriwarm-700">Starting place<input required value={origin} onChange={e => setOrigin(e.target.value)} placeholder="Kolkata Airport" className="mt-1 w-full px-3 py-2 rounded-xl border border-yatriwarm-200 bg-white" /></label>
-              <label className="text-xs text-yatriwarm-700">Destination<input required value={destination} onChange={e => setDestination(e.target.value)} placeholder="Howrah Station" className="mt-1 w-full px-3 py-2 rounded-xl border border-yatriwarm-200 bg-white" /></label>
+              <label className="text-xs text-yatriwarm-700">Starting place<input required value={origin} onChange={e => setOrigin(e.target.value)} placeholder="Kolkata Airport | 22.65 | 88.44" className="mt-1 w-full px-3 py-2 rounded-xl border border-yatriwarm-200 bg-white" /></label>
+              <label className="text-xs text-yatriwarm-700">Destination<input required value={destination} onChange={e => setDestination(e.target.value)} placeholder="Howrah Station | 22.59 | 88.34" className="mt-1 w-full px-3 py-2 rounded-xl border border-yatriwarm-200 bg-white" /></label>
               {kind === 'TIMETABLE' ? <>
                 <label className="text-xs text-yatriwarm-700">Departure time<input required type="time" value={departureTime} onChange={e => setDepartureTime(e.target.value)} className="mt-1 w-full px-3 py-2 rounded-xl border border-yatriwarm-200 bg-white" /></label>
                 <label className="text-xs text-yatriwarm-700">Arrival time<input required type="time" value={arrivalTime} onChange={e => setArrivalTime(e.target.value)} className="mt-1 w-full px-3 py-2 rounded-xl border border-yatriwarm-200 bg-white" /></label>
@@ -295,7 +300,7 @@ export const OwnerDashboardPage: React.FC = () => {
                   <div>
                     <div className="text-[10px] uppercase tracking-[.2em] text-amber-300 font-bold">Live route preview</div>
                     <h3 className="text-lg font-bold text-white mt-1">Your bus journey, visualised</h3>
-                    <p className="text-xs text-slate-300 mt-1">Add intermediate stops in travel order. The route stays pending until map validation and admin review.</p>
+                    <p className="text-xs text-slate-300 mt-1">Use saved places or enter coordinates as Name | latitude | longitude. Route checks run only when you tap the button.</p>
                   </div>
                   <div className="yb-bus-float shrink-0">
                     <svg viewBox="0 0 120 76" width="112" height="72" role="img" aria-label="Animated YatraBus vector">
@@ -321,21 +326,22 @@ export const OwnerDashboardPage: React.FC = () => {
                   {stopsText.trim() === '' && <div className="text-xs text-slate-400">Intermediate stops will appear here as you add them.</div>}
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <input value={newStopName} onChange={e => setNewStopName(e.target.value)} placeholder="Add intermediate stop" className="min-w-0 flex-1 rounded-xl border border-white/20 bg-white/10 text-white placeholder:text-slate-400 px-3 py-2 text-xs" />
+                  <input value={newStopName} onChange={e => setNewStopName(e.target.value)} placeholder="Stop | latitude | longitude" className="min-w-0 flex-1 rounded-xl border border-white/20 bg-white/10 text-white placeholder:text-slate-400 px-3 py-2 text-xs" />
                   <button type="button" onClick={() => { const name = newStopName.trim(); if (!name) return; setStopsText(current => current.trim() ? current + '\n' + name : name); setNewStopName(''); }} className="rounded-xl bg-amber-300 hover:bg-amber-200 text-slate-950 font-bold px-4 py-2 text-xs">+ Add stop</button>
                 </div>
                 <div className="rounded-2xl overflow-hidden border border-white/15 bg-slate-950/60 p-3">
-                  <div className="flex items-center justify-between text-[10px] uppercase tracking-wider text-slate-300 mb-2"><span>Road route map</span><span>{routePreviewLoading ? 'Checking Google Maps…' : routePreview?.provider === 'GOOGLE_MAPS_ROUTES' ? 'Google Maps route' : 'Waiting for Maps setup'}</span></div>
-                  <svg viewBox="0 0 320 132" className="w-full h-32" role="img" aria-label="Road route graphic">
+                  <div className="flex items-center justify-between text-[10px] uppercase tracking-wider text-slate-300 mb-2"><span>Road route map</span><span>{routePreviewLoading ? 'Checking OpenStreetMap…' : routePreview?.provider === 'OPENSTREETMAP_OSRM' ? 'OpenStreetMap · OSRM' : 'Tap to check road route'}</span></div>
+                  <button type="button" onClick={() => void checkRoutePreview()} disabled={routePreviewLoading} className="mb-3 rounded-xl bg-amber-300 hover:bg-amber-200 disabled:opacity-60 text-slate-950 font-bold px-4 py-2 text-xs">{routePreviewLoading ? 'Checking road route…' : 'Check road route (free)'}</button>
+                  <svg viewBox="0 0 320 132" className="w-full h-32" role="img" aria-label="OpenStreetMap road route graphic">
                     <path d="M0 28H320M0 66H320M0 104H320M42 0V132M142 0V132M244 0V132" stroke="#64748b" strokeOpacity=".16" strokeWidth="1"/>
                     {routePreview?.encodedPolyline ? <path d={(() => { let lat=0,lng=0,i=0; const pts:number[][]=[]; const str=routePreview.encodedPolyline as string; while(i<str.length){let b=0,shift=0,result=0; do{b=str.charCodeAt(i++)-63;result|=(b&31)<<shift;shift+=5;}while(b>=32);lat+=((result&1)?~(result>>1):(result>>1));shift=0;result=0;do{b=str.charCodeAt(i++)-63;result|=(b&31)<<shift;shift+=5;}while(b>=32);lng+=((result&1)?~(result>>1):(result>>1));pts.push([lat/1e5,lng/1e5]);} if(!pts.length)return '';const lats=pts.map(p=>p[0]),lngs=pts.map(p=>p[1]),minLat=Math.min(...lats),maxLat=Math.max(...lats),minLng=Math.min(...lngs),maxLng=Math.max(...lngs);return pts.map(p=>((12+(p[1]-minLng)/(maxLng-minLng||1)*296).toFixed(1)+','+(120-(p[0]-minLat)/(maxLat-minLat||1)*108).toFixed(1))).join(' '); })()} fill="none" stroke="#facc15" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" /> : <path d="M24 108 C70 85 65 40 115 56 S205 100 296 20" fill="none" stroke="#facc15" strokeOpacity=".65" strokeWidth="3" strokeDasharray="6 6"/>}
                     <circle cx="24" cy="108" r="6" fill="#22c55e" stroke="white" strokeWidth="2"/><circle cx="296" cy="20" r="6" fill="#ef4444" stroke="white" strokeWidth="2"/>
                     <g transform="translate(148 49)" className="yb-bus-float"><rect width="38" height="22" rx="6" fill="#facc15"/><rect x="5" y="4" width="28" height="8" rx="2" fill="#172033"/><circle cx="9" cy="22" r="3" fill="#cbd5e1"/><circle cx="29" cy="22" r="3" fill="#cbd5e1"/></g>
                   </svg>
                   <div className="flex items-center justify-between gap-2 text-xs text-slate-200"><span className="truncate">{origin || 'Start'}</span><span className="text-amber-300 font-bold">{routePreview?.distanceKm ? routePreview.distanceKm + ' km' : '— km'}</span><span className="truncate text-right">{destination || 'Destination'}</span></div>
-                  {routePreview?.orderChanged && <div className="mt-3 rounded-xl border border-amber-300/40 bg-amber-300/10 p-3 text-xs text-amber-100"><b>Stop order suggestion:</b> Google Maps suggests a different waypoint sequence. Suggested: {routePreview.suggestedStops.join(' → ')}. <button type="button" onClick={() => setStopsText(routePreview.suggestedStops.join('\n'))} className="underline font-bold ml-1">Apply suggested order</button></div>}
+                  {routePreview?.routeStatus === 'ROAD_ROUTE_FOUND_IN_SUBMITTED_ORDER' && <div className="mt-3 rounded-xl border border-emerald-300/30 bg-emerald-300/10 p-3 text-xs text-emerald-100"><b>Road path checked:</b> All submitted points connect in the same order. This does not confirm an operating bus service.</div>}
                   {routePreviewError && <div className="mt-2 text-[11px] text-amber-200">{routePreviewError}</div>}
-                  {routePreview?.disclaimer && <div className="mt-2 text-[10px] text-slate-400">{routePreview.disclaimer}</div>}
+                  {routePreview?.attribution && <div className="mt-2 text-[10px] text-slate-400">{routePreview.attribution}</div>}{routePreview?.disclaimer && <div className="mt-2 text-[10px] text-slate-400">{routePreview.disclaimer}</div>}
                 </div>
               </section>
               <label className="sm:col-span-2 text-xs text-yatriwarm-700">“Helped by” note / source details<textarea rows={2} value={note} onChange={e => setNote(e.target.value)} placeholder="Name to show as contributor, or source of timetable" className="mt-1 w-full px-3 py-2 rounded-xl border border-yatriwarm-200 bg-white" /></label>
