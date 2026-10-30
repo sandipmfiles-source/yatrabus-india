@@ -179,6 +179,44 @@ export const ContributePage: React.FC = () => {
     return () => { cancelled = true; };
   }, [routeIdParam, submissionType]);
 
+  useEffect(() => {
+    if (!busIdParam || !routeIdParam || submissionType !== 'CORRECT_TIMETABLE' || !isOperatorSubmission) return;
+    let cancelled = false;
+    api.getBusById(busIdParam, routeIdParam).then((result: any) => {
+      if (cancelled) return;
+      const bus = result?.bus;
+      const route = result?.route;
+      if (!bus || !route) {
+        setSubmissionError('The selected bus timetable could not be loaded. Return to the bus page and try again.');
+        return;
+      }
+      const identifier = String(bus.publicIdentifier || '');
+      const departure = (route.departures || []).find((item: any) => item.busIdentifier?.trim().toLocaleLowerCase() === identifier.trim().toLocaleLowerCase());
+      setOriginalBusIdentifier(identifier);
+      setBusIdentifier(identifier);
+      setRouteNumber(String(route.routeNumber || ''));
+      setOperatorName(String(bus.operatorName || route.operatorName || ''));
+      setRouteName(String(route.routeName || ''));
+      setOrigin(String(route.originStopName || ''));
+      setDestination(String(route.destinationStopName || ''));
+      setDepartureTime(String(departure?.departureTime || ''));
+      setArrivalTime(String(departure?.arrivalTime || ''));
+      setRouteStops((route.stops || []).map((stop: any) => {
+        const stopTime = (departure?.stopTimes || []).find((item: any) => item.stopId === stop.stopId);
+        return {
+          name: String(stop.stopName || ''),
+          latitude: String(stop.latitude ?? ''),
+          longitude: String(stop.longitude ?? ''),
+          arrivalTime: String(stopTime?.arrivalTime || stop.scheduledArrivalTime || ''),
+          departureTime: String(stopTime?.departureTime || stop.scheduledDepartureTime || ''),
+        };
+      }));
+    }).catch((error: unknown) => {
+      if (!cancelled) setSubmissionError(error instanceof Error ? error.message : 'Unable to load this bus timetable.');
+    });
+    return () => { cancelled = true; };
+  }, [busIdParam, routeIdParam, submissionType, isOperatorSubmission]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isRouteSubmission) {
