@@ -59,6 +59,12 @@ trackingRouter.post('/session/start', (req: Request, res: Response) => {
   if (!busId || !routeId) {
     return res.status(400).json({ error: 'busId and routeId are required' });
   }
+  const bus = repository.getBusById(String(busId));
+  const route = repository.getRouteById(String(routeId));
+  if (!route) return res.status(404).json({ error: 'Route not found' });
+  if (!bus || !bus.isActive || bus.routeId !== routeId) {
+    return res.status(422).json({ error: 'Live tracking is available only for an active bus explicitly linked to this route.' });
+  }
 
   const sessionId = `sess-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
   const now = new Date();
