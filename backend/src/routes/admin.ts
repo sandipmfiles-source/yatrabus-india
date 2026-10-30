@@ -56,7 +56,9 @@ adminRouter.get('/overview', requireAdminAuth('SUPER_ADMIN'), (_req: Request, re
 // GET /api/admin/submissions
 adminRouter.get('/submissions', requireAdminAuth('SUPER_ADMIN'), (req: Request, res: Response) => {
   const status = typeof req.query.status === 'string' ? req.query.status : undefined;
-  const submissions = repository.listSubmissions(status);
+  const category = typeof req.query.category === 'string' ? req.query.category : undefined;
+  if (category && !['PUBLIC', 'OPERATOR'].includes(category)) return res.status(400).json({ error: 'Invalid submission category' });
+  const submissions = repository.listSubmissions(status).filter(item => !category || (category === 'OPERATOR' ? item.sourceCategory === 'OPERATOR' : item.sourceCategory !== 'OPERATOR'));
   return res.json({ count: submissions.length, submissions });
 });
 
