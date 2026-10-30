@@ -9,7 +9,7 @@
   }
 }
 
-/* Live GPS pulse remains green to distinguish confirmed live signals. */
+/* Custom pulsing animation for Live GPS markers */
 @keyframes pulse-ring {
   0% {
     transform: scale(0.95);
@@ -29,18 +29,18 @@
   animation: pulse-ring 2s infinite cubic-bezier(0.45, 0, 0.55, 1);
 }
 
-/* Warm neutral scrollbars */
+/* Custom scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #FFF7ED;
+  background: #F7F7F3;
 }
 ::-webkit-scrollbar-thumb {
-  background: #DCC3A8;
+  background: #D2D2C6;
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #B99C80;
+  background: #AFAFA0;
 }
