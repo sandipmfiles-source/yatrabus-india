@@ -4,8 +4,10 @@
 
 @layer base {
   body {
-    @apply bg-yatriwarm-50 text-yatriwarm-900 antialiased font-sans;
+    @apply bg-signal-yellow-50 text-signal-charcoal-900 antialiased font-sans;
     -webkit-tap-highlight-color: transparent;
+    background-image: radial-gradient(circle at 1px 1px, rgba(41, 37, 36, 0.045) 1px, transparent 0);
+    background-size: 22px 22px;
   }
 }
 
