@@ -218,6 +218,31 @@ export const api = {
     return data;
   },
 
+  async adminGetBuses(token: string, query = '') {
+    const res = await fetch(`${API_BASE}/admin/buses?q=${encodeURIComponent(query)}`, { headers: { Authorization: `Bearer ${token}` } });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.message || data.error || 'Unable to search buses');
+    return data;
+  },
+
+  async adminUpdateBus(token: string, id: string, bus: Record<string, any>) {
+    const res = await fetch(`${API_BASE}/admin/buses/${encodeURIComponent(id)}`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(bus),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.message || data.error || 'Unable to update bus');
+    return data;
+  },
+
+  async adminUpdateRoute(token: string, id: string, route: Record<string, any>) {
+    const res = await fetch(`${API_BASE}/admin/routes/${encodeURIComponent(id)}`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(route),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.message || data.error || 'Unable to update route');
+    return data;
+  },
+
   async reviewAdminSubmission(token: string, id: string, decision: 'ADMIN_VERIFIED' | 'COMMUNITY_CORROBORATED' | 'REJECTED', reason: string) {
     const res = await fetch(`${API_BASE}/admin/submissions/${encodeURIComponent(id)}/review`, {
       method: 'POST',
