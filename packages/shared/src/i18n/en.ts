@@ -44,4 +44,5 @@ export const en = {
   approx_daily_departures: 'Approx. departures per operating day',
   every_minutes: 'Every {minutes} minutes',
   intermediate_stops: 'Stops on this journey',
+  service_hours: 'Service hours',
 };
