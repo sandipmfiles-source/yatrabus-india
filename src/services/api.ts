@@ -160,7 +160,7 @@ export const api = {
     return data;
   },
 
-  async submitOwnerContribution(token: string, submission: { submissionType: string; entityType: string; contributorNote?: string; proposedData: Record<string, any> }) {
+  async submitOwnerContribution(token: string, submission: { submissionType: string; entityType: string; targetEntityId?: string; contributorNote?: string; proposedData: Record<string, any> }) {
     const res = await fetch(`${API_BASE}/operators/submissions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
