@@ -236,33 +236,42 @@ export const api = {
     return { success: true, message: 'Operator claim received' };
   },
 
-  // Admin APIs
+  // Admin APIs: no client-side development-token fallback is permitted.
   async adminLogin(email: string, password: string) {
-    try {
-      const res = await fetch(`${API_BASE}/admin/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-      if (res.ok) return await res.json();
-    } catch {}
-    return {
-      token: 'yatribus_admin_dev_token',
-      user: { id: 'admin-default', email, name: 'Transit Verifier', role: 'SUPER_ADMIN' },
-    };
+    const res = await fetch(`${API_BASE}/admin/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+    if (!res.ok) throw new Error('Invalid administrator credentials or server unavailable.');
+    return await res.json();
   },
 
   async getAdminOverview(token: string) {
-    try {
-      const res = await fetch(`${API_BASE}/admin/overview`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) return await res.json();
-    } catch {}
-    return {
-      stats: repository.getSystemHealthStats(),
-      recentSubmissions: repository.listSubmissions('PENDING_REVIEW').slice(0, 5),
-      recentAudit: repository.getAuditLogs(5),
-    };
+    const res = await fetch(`${API_BASE}/admin/overview`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) throw new Error('Could not load administrator overview. Please sign in again.');
+    return await res.json();
+  },
+
+  async getAdminSubmissions(token: string, status?: string) {
+    const query = status ? `?status=${encodeURIComponent(status)}` : '';
+    const res = await fetch(`${API_BASE}/admin/submissions${query}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) throw new Error('Could not load community submissions. Please sign in again.');
+    return await res.json();
+  },
+
+  async reviewSubmission(token: string, id: string, decision: 'ADMIN_VERIFIED' | 'COMMUNITY_CORROBORATED' | 'REJECTED', reason: string) {
+    const res = await fetch(`${API_BASE}/admin/submissions/${encodeURIComponent(id)}/review`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ decision, reason }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'Could not save review decision.');
+    return data;
   },
 };
