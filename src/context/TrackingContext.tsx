@@ -51,6 +51,7 @@ export const TrackingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         startNativeTracking(saved).then(setIsBackgroundTrackingActive).catch(error => setTrackingWarning(error?.message || 'Background tracking is not configured.'));
       } else {
         storage.clearActiveSession();
+        stopNativeTracking().catch(() => undefined);
       }
     }
   }, []);
@@ -124,7 +125,7 @@ export const TrackingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setActiveSession(sessionData);
       storage.setActiveSession(sessionData);
       try {
-        const started = await startNativeTracking({ sessionId: session.sessionId, busId: pendingBusForTracking.busId, routeId: pendingBusForTracking.routeId });
+        const started = await startNativeTracking({ sessionId: session.sessionId, busId: pendingBusForTracking.busId, routeId: pendingBusForTracking.routeId, startedAt: sessionData.startedAt });
         setIsBackgroundTrackingActive(started);
         setTrackingWarning(started ? '' : 'Background GPS is available only in the Android app.');
       } catch (nativeError: any) {
