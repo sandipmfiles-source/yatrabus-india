@@ -1,6 +1,8 @@
 import { Router, Request, Response } from 'express';
+import { timingSafeEqual } from 'node:crypto';
 import { repository } from '../db/persistentRepository.js';
-import { requireAdminAuth } from '../middleware/auth.js';
+import { createAdminToken, requireAdminAuth } from '../middleware/auth.js';
+import { CONFIG } from '../config.js';
 import { Bus, Operator, Route, RouteStop } from '../../../packages/shared/src/types/bus.js';
 import { CommunitySubmission } from '../../../packages/shared/src/types/contribution.js';
 import { haversineDistanceMeters } from '../../../packages/shared/src/engine/routeMatcher.js';
@@ -152,27 +154,24 @@ function publishVerifiedBus(submission: CommunitySubmission): Bus {
 // POST /api/admin/login
 adminRouter.post('/login', (req: Request, res: Response) => {
   const { email, password } = req.body;
+  const expectedPassword = Buffer.from(CONFIG.INITIAL_ADMIN_PASSWORD || '');
+  const suppliedPassword = Buffer.from(String(password || ''));
+  const passwordMatches = expectedPassword.length > 0 &&
+    expectedPassword.length === suppliedPassword.length &&
+    timingSafeEqual(expectedPassword, suppliedPassword);
 
-  if (!email || !password) {
-    return res.status(400).json({ error: 'Email and password required' });
-  }
-
-  const admin = repository.getAdminByEmail(email);
-  if (!admin) {
+  if (!email || String(email).toLowerCase() !== CONFIG.INITIAL_ADMIN_EMAIL.toLowerCase() || !passwordMatches) {
     return res.status(401).json({ error: 'Invalid administrator credentials' });
   }
 
-  // Generate bearer session token
-  const token = `yatribus_admin_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+  const admin = repository.getAdminByEmail(CONFIG.INITIAL_ADMIN_EMAIL);
+  if (!admin || !admin.isActive || admin.role !== 'SUPER_ADMIN') {
+    return res.status(403).json({ error: 'Super Admin account is unavailable or inactive' });
+  }
 
   return res.json({
-    token,
-    user: {
-      id: admin.id,
-      email: admin.email,
-      name: admin.name,
-      role: admin.role,
-    },
+    token: createAdminToken(admin),
+    user: { id: admin.id, email: admin.email, name: admin.name, role: admin.role },
   });
 });
 
