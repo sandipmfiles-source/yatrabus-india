@@ -6,6 +6,98 @@ export const placesRouter = Router();
 
 const geocodeCache = new Map<string, { expiresAt: number; results: any[] }>();
 let lastGeocodeRequestAt = 0;
+const lgdSuggestionCache = new Map<string, { expiresAt: number; results: any[] }>();
+let blockDirectoryPromise: Promise<any[]> | null = null;
+
+function normaliseDirectoryRows(payload: any, query: string) {
+  const data = payload?.data || {};
+  const groups: [string, string][] = [
+    ['states', 'State / UT'],
+    ['districts', 'District'],
+    ['subdistricts', 'Sub-district / Tehsil'],
+    ['urban_local_bodies', 'City / Town'],
+    ['villages', 'Village'],
+    ['blocks', 'Block'],
+  ];
+  const needle = query.toLocaleLowerCase('en-IN');
+  const results: any[] = [];
+  for (const [key, level] of groups) {
+    const rows = Array.isArray(data[key]) ? data[key] : [];
+    for (const row of rows) {
+      const name = String(row?.name || '').trim();
+      if (!name || !name.toLocaleLowerCase('en-IN').includes(needle)) continue;
+      const parents = [row.subdistrictName, row.districtName, row.stateName].filter(Boolean);
+      results.push({
+        id: 'lgd-' + key + '-' + String(row.code || name) + '-' + String(row.districtCode || ''),
+        name,
+        address: [level, ...parents].join(' · ') + ' · Government Local Government Directory',
+        latitude: Number.isFinite(Number(row.latitude)) ? Number(row.latitude) : undefined,
+        longitude: Number.isFinite(Number(row.longitude)) ? Number(row.longitude) : undefined,
+        source: 'LOCAL_GOVERNMENT_DIRECTORY',
+        level,
+      });
+    }
+  }
+  return results;
+}
+
+async function loadBlockDirectory() {
+  if (!blockDirectoryPromise) {
+    blockDirectoryPromise = (async () => {
+      const response = await fetch('https://raw.githubusercontent.com/planemad/india-local-government-directory/main/administrative/blocks.csv', {
+        signal: AbortSignal.timeout(12000),
+        headers: { 'User-Agent': 'YatraBusIndia/1.0' },
+      });
+      if (!response.ok) throw new Error('Block directory download failed');
+      const csv = await response.text();
+      return csv.split(/\\r?\\n/).slice(1).map(line => {
+        const cols = line.split(',').map(value => value.trim().replace(/^"|"$/g, ''));
+        return { code: cols[5], name: cols[7], districtName: cols[4], stateName: cols[2] };
+      }).filter(row => row.name);
+    })().catch(error => { blockDirectoryPromise = null; throw error; });
+  }
+  return blockDirectoryPromise;
+}
+
+async function fetchLgdDirectorySuggestions(query: string) {
+  const key = query.toLocaleLowerCase('en-IN');
+  const cached = lgdSuggestionCache.get(key);
+  if (cached && cached.expiresAt > Date.now()) return cached.results;
+  try {
+    const url = 'https://lgd-json-api.vercel.app/api/search?q=' + encodeURIComponent(query) + '&limit=8';
+    const response = await fetch(url, {
+      headers: { 'User-Agent': 'YatraBusIndia/1.0', 'Accept': 'application/json' },
+      signal: AbortSignal.timeout(7000),
+    });
+    if (!response.ok) return [];
+    const payload = await response.json() as any;
+    const results = normaliseDirectoryRows(payload, query);
+    try {
+      const blocks = await loadBlockDirectory();
+      const needle = key;
+      for (const block of blocks) {
+        if (String(block.name).toLocaleLowerCase('en-IN').includes(needle)) {
+          results.push({
+            id: 'lgd-block-' + block.code,
+            name: block.name,
+            address: ['Block', block.districtName, block.stateName, 'LGD directory'].filter(Boolean).join(' · '),
+            source: 'LOCAL_GOVERNMENT_DIRECTORY',
+            level: 'Block',
+          });
+        }
+      }
+    } catch {
+      // Keep the current LGD API results if the optional block CSV is unavailable.
+    }
+    const unique = Array.from(new Map(results.map(item => [item.id, item])).values()).slice(0, 8);
+    if (lgdSuggestionCache.size > 500) lgdSuggestionCache.delete(lgdSuggestionCache.keys().next().value as string);
+    lgdSuggestionCache.set(key, { expiresAt: Date.now() + 24 * 60 * 60 * 1000, results: unique });
+    return unique;
+  } catch {
+    return [];
+  }
+}
+
 
 // Free OpenStreetMap Nominatim suggestions. Queries are cached and throttled to respect
 // the public service usage policy; selected coordinates are sent with route submissions.
@@ -15,6 +107,7 @@ placesRouter.get('/geocode-search', publicSearchLimiter, async (req: Request, re
   const key = query.toLocaleLowerCase();
   const cached = geocodeCache.get(key);
   if (cached && cached.expiresAt > Date.now()) return res.json({ query, results: cached.results, cache: 'HIT' });
+  const directoryResults = await fetchLgdDirectorySuggestions(query);
   const waitMs = 1100 - (Date.now() - lastGeocodeRequestAt);
   if (waitMs > 0) await new Promise(resolve => setTimeout(resolve, waitMs));
   lastGeocodeRequestAt = Date.now();
@@ -26,17 +119,20 @@ placesRouter.get('/geocode-search', publicSearchLimiter, async (req: Request, re
     });
     if (!response.ok) return res.status(502).json({ error: 'PLACE_SEARCH_UNAVAILABLE', message: 'OpenStreetMap place search is temporarily unavailable. Use GPS or try again.' });
     const data = await response.json() as any[];
-    const results = (Array.isArray(data) ? data : []).map(item => ({
+    const mapResults = (Array.isArray(data) ? data : []).map(item => ({
       id: String(item.place_id),
       name: String(item.name || item.display_name?.split(',')[0] || query),
       address: String(item.display_name || ''),
       latitude: Number(item.lat),
       longitude: Number(item.lon),
       source: 'OPENSTREETMAP_NOMINATIM',
+      level: 'Mapped place',
     })).filter(item => Number.isFinite(item.latitude) && Number.isFinite(item.longitude));
+    const merged = [...directoryResults, ...mapResults];
+    const results = Array.from(new Map(merged.map(item => [item.id, item])).values()).slice(0, 12);
     if (geocodeCache.size > 500) geocodeCache.delete(geocodeCache.keys().next().value as string);
     geocodeCache.set(key, { expiresAt: Date.now() + 24 * 60 * 60 * 1000, results });
-    return res.json({ query, results, source: 'OPENSTREETMAP_NOMINATIM', attribution: '© OpenStreetMap contributors' });
+    return res.json({ query, results, source: 'LGD + OPENSTREETMAP', attribution: 'Government Local Government Directory · © OpenStreetMap contributors' });
   } catch {
     return res.status(502).json({ error: 'PLACE_SEARCH_UNAVAILABLE', message: 'OpenStreetMap place search is temporarily unavailable. Use GPS or try again.' });
   }
