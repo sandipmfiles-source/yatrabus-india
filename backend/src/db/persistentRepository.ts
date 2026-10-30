@@ -5,7 +5,7 @@ import { Place } from '../../../packages/shared/src/types/places.js';
 import { Bus, Operator, Route } from '../../../packages/shared/src/types/bus.js';
 import { ConsentRecord, JourneySession, LocationObservation, AggregatedBusLocation } from '../../../packages/shared/src/types/tracking.js';
 import { CommunitySubmission, DuplicateCandidate, OperatorClaimRequest } from '../../../packages/shared/src/types/contribution.js';
-import { AuditLogEntry } from '../../../packages/shared/src/types/admin.js';
+import { AdminUser, AuditLogEntry } from '../../../packages/shared/src/types/admin.js';
 
 class PersistentTransitRepository extends TransitRepository {
   private readonly dataFile = resolve(process.env.YATRIBUS_DATA_FILE || 'backend/data/yatribus-store.json');
@@ -13,6 +13,11 @@ class PersistentTransitRepository extends TransitRepository {
   constructor() {
     super();
     this.loadFromDisk();
+    const initialAdmin = this.getAllAdminUsers().find(admin => admin.id === 'admin-default');
+    const configuredEmail = process.env.INITIAL_ADMIN_EMAIL || initialAdmin?.email;
+    if (initialAdmin && configuredEmail && initialAdmin.email !== configuredEmail) {
+      this.addAdminUser({ ...initialAdmin, email: configuredEmail });
+    }
   }
 
   private loadFromDisk(): void {
@@ -30,6 +35,12 @@ class PersistentTransitRepository extends TransitRepository {
     const temporaryFile = `${this.dataFile}.tmp`;
     writeFileSync(temporaryFile, JSON.stringify(this.exportPersistentState()), { encoding: 'utf8', mode: 0o600 });
     renameSync(temporaryFile, this.dataFile);
+  }
+
+  override addAdminUser(admin: AdminUser): AdminUser {
+    const result = super.addAdminUser(admin);
+    this.persistToDisk();
+    return result;
   }
 
   override addPlace(place: Place): Place {
