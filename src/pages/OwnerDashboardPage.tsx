@@ -231,6 +231,19 @@ export const OwnerDashboardPage: React.FC = () => {
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!token) return;
+    if (kind === 'ROUTE') {
+      const times = departureTimes.split(',').map(time => time.trim()).filter(Boolean);
+      const validTime = (time: string) => /^([01]\d|2[0-3]):[0-5]\d$/.test(time);
+      if (times.some(time => !validTime(time)) || new Set(times).size !== times.length) {
+        setError('Exact departure times must be unique 24-hour HH:MM values.');
+        return;
+      }
+      const days = operatingDays.trim().toLowerCase() === 'daily' ? [] : operatingDays.split(',').map(day => day.trim().slice(0, 3).toUpperCase()).filter(Boolean);
+      if (days.some(day => !['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'].includes(day))) {
+        setError('Operating days must be Daily or comma-separated MON,TUE,WED,THU,FRI,SAT,SUN.');
+        return;
+      }
+    }
     if (kind === 'ROUTE' && routePreview?.routeStatus !== 'ROAD_ROUTE_FOUND_IN_SUBMITTED_ORDER') {
       setError('Check the OpenStreetMap road route in the submitted stop order before sending a new or updated route for approval.');
       return;
