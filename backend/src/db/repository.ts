@@ -52,27 +52,21 @@ export class TransitRepository {
     for (const r of SEED_ROUTES) {
       this.routes.set(r.id, r);
     }
-    // Seed Buses & initial Location Aggregates
+    // Seed buses with an explicit unavailable location state. Never fabricate a GPS
+    // position or label a demo coordinate as a live/estimated bus location.
     for (const b of SEED_BUSES) {
       this.buses.set(b.id, b);
+      const routeId = b.routeId || '';
       this.busLocations.set(b.id, {
         busId: b.id,
-        routeId: b.routeId || (b.publicIdentifier.includes('534') ? 'route-dtc-534-up' : 'route-dtc-429-up'),
-        displayState: 'ESTIMATED',
-        latitude: 28.6469,
-        longitude: 77.3160,
-        accuracyMeters: 25,
-        bearing: 140,
-        speedKmh: 24,
-        confidenceCategory: 'MODERATE',
-        confidenceScore: 65,
+        routeId,
+        displayState: 'UNAVAILABLE',
+        confidenceCategory: 'LOW',
+        confidenceScore: 0,
         observationCount: 0,
         independentContributorsCount: 0,
-        lastObservedAt: new Date().toISOString(),
-        estimatedNextStopName: 'Sarai Kale Khan ISBT',
-        estimatedArrivalMinutes: 12,
         isLive: false,
-        statusExplanation: 'Scheduled timetable estimate — waiting for passenger GPS corroboration',
+        statusExplanation: 'No passenger GPS observation has been received. Use the published timetable for schedule estimates.',
         updatedAt: new Date().toISOString(),
       });
     }
