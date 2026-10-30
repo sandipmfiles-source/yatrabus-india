@@ -12,6 +12,7 @@ export const ContributePage: React.FC = () => {
   const initialType = (searchParams.get('type') as SubmissionType) || 'ADD_BUS';
   const isOperatorSubmission = searchParams.get('source') === 'OPERATOR';
   const routeIdParam = searchParams.get('routeId');
+  const busIdParam = searchParams.get('busId');
 
   const [activeTab, setActiveTab] = useState<'SUBMIT' | 'CHECK_STATUS'>('SUBMIT');
   const [submissionType, setSubmissionType] = useState<SubmissionType>(initialType);
@@ -31,6 +32,7 @@ export const ContributePage: React.FC = () => {
   const [departureTime, setDepartureTime] = useState('');
   const [arrivalTime, setArrivalTime] = useState('');
   const [busIdentifier, setBusIdentifier] = useState('');
+  const [originalBusIdentifier, setOriginalBusIdentifier] = useState('');
   const [frequencyMinutes, setFrequencyMinutes] = useState('');
   const [routeName, setRouteName] = useState('');
   const [operatorName, setOperatorName] = useState('');
@@ -223,7 +225,8 @@ export const ContributePage: React.FC = () => {
           arrivalTime,
           busIdentifier,
           frequencyMinutes: frequencyMinutes ? Number(frequencyMinutes) : undefined,
-          timetableEntry: submissionType === 'ADD_BUS' || submissionType === 'CORRECT_TIMETABLE',
+          timetableEntry: (submissionType === 'ADD_BUS' || submissionType === 'CORRECT_TIMETABLE') && !(isOperatorSubmission && busIdParam),
+          originalBusIdentifier: originalBusIdentifier || undefined,
           routeName,
           operatorName,
           distanceKm: routeDistanceKm ? Number(routeDistanceKm) : undefined,
@@ -245,7 +248,7 @@ export const ContributePage: React.FC = () => {
                 longitude: stop.longitude === '' ? undefined : Number(stop.longitude),
               })),
           operatingDays: operatingDays.split(',').map(day => day.trim()).filter(Boolean),
-          action: submissionType === 'UPDATE_ROUTE' ? 'UPDATE_ROUTE' : undefined,
+          action: submissionType === 'UPDATE_ROUTE' ? 'UPDATE_ROUTE' : isOperatorSubmission && busIdParam && submissionType === 'CORRECT_TIMETABLE' ? 'UPDATE_BUS_TIMETABLE' : undefined,
         },
       };
       const res = isOperatorSubmission
