@@ -127,6 +127,11 @@ export const OwnerDashboardPage: React.FC = () => {
       return;
     }
     const stops = stopsText.split('\n').map(line => line.trim()).filter(Boolean);
+    const pointNames = [origin, ...stops, destination].map(value => value.split('|')[0].trim().toLocaleLowerCase());
+    if (new Set(pointNames).size !== pointNames.length) {
+      setRoutePreviewError('Duplicate stop names were found. Keep origin, intermediate stops and destination unique and in travel order.');
+      return;
+    }
     setRoutePreviewLoading(true);
     setRoutePreviewError('');
     try {
