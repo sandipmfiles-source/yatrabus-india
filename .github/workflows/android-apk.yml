@@ -53,6 +53,11 @@ jobs:
             chmod +x android/gradlew
           fi
 
+      - name: Set up compatible Gradle 8.7
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+
       - name: Build Android Debug APK with Gradle
         working-directory: android
         run: |
