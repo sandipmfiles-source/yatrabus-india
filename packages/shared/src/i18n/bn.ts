@@ -45,4 +45,7 @@ export const bn = {
   every_minutes: 'প্রতি {minutes} মিনিটে',
   intermediate_stops: 'এই যাত্রার মাঝের স্টপগুলি',
   service_hours: 'পরিষেবার সময়',
+  verified_departures: 'যাচাইকৃত বাস ছাড়ার সময়',
+  admin_verified: 'অ্যাডমিন যাচাইকৃত',
+  arrival_short: 'পৌঁছায়',
 };
