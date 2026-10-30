@@ -38,6 +38,8 @@ jobs:
         run: npm ci || npm install
 
       - name: Run Automated Test Suites
+        env:
+          TS_NODE_TRANSPILE_ONLY: 'true'
         run: npm test
 
       - name: Build Web Application
