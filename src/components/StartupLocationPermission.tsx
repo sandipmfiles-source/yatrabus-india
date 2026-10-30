@@ -3,8 +3,6 @@ import { Capacitor } from '@capacitor/core';
 import { Geolocation } from '@capacitor/geolocation';
 import { useLanguage } from '../context/LanguageContext.js';
 
-const DISMISSED_KEY = 'yatribus_location_startup_prompt_dismissed';
-
 export const StartupLocationPermission: React.FC = () => {
   const { t } = useLanguage();
   const [visible, setVisible] = useState(false);
@@ -13,7 +11,6 @@ export const StartupLocationPermission: React.FC = () => {
 
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
-    if (localStorage.getItem(DISMISSED_KEY) === 'true') return;
     let mounted = true;
     Geolocation.checkPermissions()
       .then(result => {
@@ -31,7 +28,6 @@ export const StartupLocationPermission: React.FC = () => {
     try {
       const result = await Geolocation.requestPermissions();
       if (result.location === 'granted') {
-        localStorage.setItem(DISMISSED_KEY, 'true');
         setVisible(false);
       } else {
         setMessage(t('location_permission_denied'));
@@ -41,11 +37,6 @@ export const StartupLocationPermission: React.FC = () => {
     } finally {
       setRequesting(false);
     }
-  };
-
-  const notNow = () => {
-    localStorage.setItem(DISMISSED_KEY, 'true');
-    setVisible(false);
   };
 
   if (!visible) return null;
@@ -64,9 +55,7 @@ export const StartupLocationPermission: React.FC = () => {
           <button type="button" disabled={requesting} onClick={allowLocation} className="w-full rounded-xl bg-slate-950 px-4 py-3 text-sm font-bold text-white disabled:opacity-60">
             {requesting ? t('requesting_permission') : t('allow_location')}
           </button>
-          <button type="button" onClick={notNow} className="w-full rounded-xl bg-slate-100 px-4 py-2.5 text-sm font-semibold text-slate-700">
-            {t('location_not_now')}
-          </button>
+          <p className="text-center text-[11px] leading-relaxed text-slate-500">Location access is required to continue in the Android app. If permission was denied permanently, enable it in Android Settings → Apps → YatriBus → Permissions → Location.</p>
         </div>
       </section>
     </div>
