@@ -42,6 +42,7 @@ export interface Bus {
   id: string;
   publicIdentifier: string; // Public bus name or number shown on front LED/board
   operatorId: string;
+  routeId?: string;
   operatorName?: string;
   fleetRegistrationNumber?: string; // Optional (e.g. DL 1PC 4432)
   vehicleType: VehicleType;
