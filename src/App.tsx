@@ -31,7 +31,7 @@ export const App: React.FC = () => {
     <LanguageProvider>
       <TrackingProvider>
         <BrowserRouter>
-          <div className="flex flex-col min-h-screen">
+          <div className="yatribus-theme flex flex-col min-h-screen">
             <Navbar />
             <main className="flex-1">
               <Routes>
@@ -41,8 +41,6 @@ export const App: React.FC = () => {
                 <Route path="/contribute" element={<ContributePage />} />
                 <Route path="/operator-claim" element={<OperatorClaimPage />} />
                 <Route path="/privacy" element={<PrivacyPolicyPage />} />
-
-                {/* Admin routes */}
                 <Route path="/admin" element={<AdminLoginPage />} />
                 <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
                 <Route path="/admin/submissions" element={<AdminSubmissionsPage />} />
@@ -55,8 +53,6 @@ export const App: React.FC = () => {
               </Routes>
             </main>
             <Footer />
-
-            {/* Persistent Global Modals & Widgets */}
             <FirstLaunchLanguagePrompt />
             <StartupLocationPermission />
             <LocationConsentModal />
