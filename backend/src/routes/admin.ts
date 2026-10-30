@@ -79,7 +79,7 @@ adminRouter.post('/submissions/:id/review', requireAdminAuth('SUPER_ADMIN'), (re
     const routeName = typeof data.routeName === 'string' ? data.routeName.trim() : '';
     const operatorName = typeof data.operatorName === 'string' ? data.operatorName.trim() : '';
     const stopsInput = Array.isArray(data.stops) ? data.stops : [];
-    const validTime = (value: unknown) => typeof value === 'string' && /^([01]\\d|2[0-3]):[0-5]\\d$/.test(value);
+    const validTime = (value: unknown) => typeof value === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
     const distanceKm = Number(data.distanceKm);
     const durationMinutes = Number(data.typicalDurationMinutes);
     if (!routeNumber || !routeName || !operatorName || stopsInput.length < 2 ||
@@ -169,7 +169,6 @@ adminRouter.post('/submissions/:id/review', requireAdminAuth('SUPER_ADMIN'), (re
   }
 
   // Only an explicit, admin-approved timetable contribution becomes publicly searchable.
-  const pendingSubmission = repository.listSubmissions().find(item => item.id === String(req.params.id));
   if (decision === 'ADMIN_VERIFIED' && pendingSubmission?.proposedData?.timetableEntry === true) {
     const data = pendingSubmission.proposedData;
     const route = typeof data.routeNumber === 'string' ? repository.getRouteByNumber(data.routeNumber) : undefined;
