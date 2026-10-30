@@ -14,6 +14,7 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Build;
 import android.os.IBinder;
+import android.os.Bundle;
 import androidx.core.app.NotificationCompat;
 import androidx.core.content.ContextCompat;
 import org.json.JSONObject;
@@ -138,6 +139,10 @@ public class YatriBusTrackingService extends Service implements LocationListener
             if (manager != null) manager.createNotificationChannel(channel);
         }
     }
+
+    @Override public void onProviderEnabled(String provider) { }
+    @Override public void onProviderDisabled(String provider) { }
+    @Override public void onStatusChanged(String provider, int status, Bundle extras) { }
 
     @Override
     public void onDestroy() {
