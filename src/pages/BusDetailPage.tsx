@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLanguage } from '../context/LanguageContext.js';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { api } from '../services/api.js';
 import { Route, RouteStop } from '@shared/types/bus.js';
@@ -14,6 +15,7 @@ import { ArrowLeft, Clock, MapPin, ShieldCheck, AlertTriangle, Edit3, Flag } fro
 export const BusDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const [isLoading, setIsLoading] = useState(true);
   const [route, setRoute] = useState<Route | null>(null);
@@ -42,7 +44,7 @@ export const BusDetailPage: React.FC = () => {
   if (isLoading) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-8 text-center text-yatriwarm-500">
-        Loading bus and timetable details...
+        {t('loading_route_details')}
       </div>
     );
   }
@@ -50,9 +52,9 @@ export const BusDetailPage: React.FC = () => {
   if (!route) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-8 text-center space-y-3">
-        <h2 className="text-lg font-bold text-yatriwarm-900">Route not found</h2>
+        <h2 className="text-lg font-bold text-yatriwarm-900">{t('route_not_found')}</h2>
         <Link to="/" className="text-xs text-yatribrand-900 font-semibold underline">
-          Return to search
+          {t('return_to_search')}
         </Link>
       </div>
     );
@@ -101,8 +103,8 @@ export const BusDetailPage: React.FC = () => {
             destinationText={route.destinationStopName}
           />
           <div className="mt-4 flex items-center justify-between text-xs text-yatriwarm-600 border-t border-yatriwarm-100 pt-3">
-            <span>Operating: <strong>{route.operatingDays.join(', ')}</strong></span>
-            <span>Frequency: <strong>~{route.frequencyMinutes || 20}m</strong></span>
+            <span>{t('operating_days')}: <strong>{route.operatingDays.join(', ')}</strong></span>
+            <span>{t('frequency_label')}: <strong>~{route.frequencyMinutes || 20}m</strong></span>
           </div>
         </div>
 
@@ -111,23 +113,23 @@ export const BusDetailPage: React.FC = () => {
           <div>
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold uppercase tracking-wider text-yatriwarm-500">
-                Tracking Engine Status
+                {t('tracking_engine_status')}
               </span>
               <ConfidenceBadge displayState={location?.displayState || 'ESTIMATED'} />
             </div>
 
             <div className="mt-3 p-3.5 rounded-2xl bg-yatriwarm-50 border border-yatriwarm-200 text-xs space-y-1.5">
               <div className="font-semibold text-yatriwarm-900">
-                {location?.statusExplanation || 'Timetable schedule prediction'}
+                {location?.statusExplanation || '{t('timetable_prediction')}'}
               </div>
               {location?.isLive && (
                 <div className="text-emerald-700 font-medium">
-                  ✓ Fresh observation corroboration active
+                  ✓ {t('fresh_observation')}
                 </div>
               )}
               {!location?.isLive && (
                 <div className="text-yatriwarm-500">
-                  Note: Location is calculated from scheduled stop pace. Confirm journey to contribute live GPS.
+                  {t('scheduled_location_note')}
                 </div>
               )}
             </div>
@@ -135,11 +137,11 @@ export const BusDetailPage: React.FC = () => {
 
           <div className="grid grid-cols-2 gap-3 pt-2">
             <div className="p-3 bg-yatriwarm-50 rounded-xl border border-yatriwarm-200 text-center">
-              <div className="text-[11px] text-yatriwarm-500 font-medium">Route Distance</div>
+              <div className="text-[11px] text-yatriwarm-500 font-medium">{t('route_distance')}</div>
               <div className="text-base font-bold text-yatriwarm-900 mt-0.5">{route.distanceKm} km</div>
             </div>
             <div className="p-3 bg-yatriwarm-50 rounded-xl border border-yatriwarm-200 text-center">
-              <div className="text-[11px] text-yatriwarm-500 font-medium">Typical Duration</div>
+              <div className="text-[11px] text-yatriwarm-500 font-medium">{t('typical_duration')}</div>
               <div className="text-base font-bold text-yatriwarm-900 mt-0.5">{route.typicalDurationMinutes} min</div>
             </div>
           </div>
@@ -149,7 +151,7 @@ export const BusDetailPage: React.FC = () => {
       {/* Interactive Map View */}
       <div className="space-y-2">
         <h3 className="text-xs font-bold uppercase tracking-wider text-yatriwarm-700">
-          Route Map & Active Stops
+          {t('route_map_stops')}
         </h3>
         <MapView
           stops={route.stops}
@@ -164,14 +166,14 @@ export const BusDetailPage: React.FC = () => {
         <div className="flex items-center justify-between pb-3 border-b border-yatriwarm-200">
           <div>
             <h3 className="text-base font-bold text-yatriwarm-900">
-              Ordered Stop Sequence & ETAs
+              {t('ordered_stop_sequence')}
             </h3>
             <p className="text-xs text-yatriwarm-500">
-              Arrival estimates distinguish live GPS observations from scheduled timetable predictions.
+              {t('eta_explanation')}
             </p>
           </div>
           <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-yatriwarm-100 text-yatriwarm-700">
-            {route.stops.length} Stops
+            {route.stops.length} {t('stops_label')}
           </span>
         </div>
 
