@@ -20,6 +20,16 @@ export function runRouteGraphTests(assert: (desc: string, pass: boolean) => void
       firstDepartureTime: '06:00',
       lastDepartureTime: '22:00',
       frequencyMinutes: 20,
+      departures: [{
+        id: 'dep-r1-1',
+        timetableId: 'r1',
+        departureTime: '07:15',
+        arrivalTime: '08:00',
+        busIdentifier: 'Community Bus 101A',
+        operatingDays: ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'],
+        confidenceScore: 100,
+        isCancelled: false,
+      }],
       stops: [
         { id: '1', routeId: 'r1', stopId: 'sa', stopName: 'Stop A', stopSequence: 1, latitude: 28.60, longitude: 77.20, distanceFromStartKm: 0 },
         { id: '2', routeId: 'r1', stopId: 'sb', stopName: 'Stop B (Interchange)', stopSequence: 2, latitude: 28.65, longitude: 77.20, distanceFromStartKm: 7 },
@@ -67,6 +77,7 @@ export function runRouteGraphTests(assert: (desc: string, pass: boolean) => void
   assert('Direct route has isDirect=true', directResult.directRoutes[0].isDirect);
   assert('Direct route includes its intermediate stops', directResult.directRoutes[0].intermediateStops?.length === 1);
   assert('Direct route exposes estimated daily trips from frequency', directResult.directRoutes[0].dailyTripCount === 49);
+  assert('Direct route includes verified individual bus departures', directResult.directRoutes[0].timetableDepartures?.[0]?.busIdentifier === 'Community Bus 101A');
 
   // Transfer Search: Stop A to Stop D (via Interchange Stop B)
   const transferResult = discoverJourneys('Stop A', 'Stop D', routes);
