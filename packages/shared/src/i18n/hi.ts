@@ -120,4 +120,7 @@ export const hi = {
   submitted: "जमा करने की तारीख",
   reviewer_note: "समीक्षक की टिप्पणी",
   scheduled_departures: "प्रकाशित बस प्रस्थान समय",
+  background_tracking_active: "Android बैकग्राउंड GPS चालू है",
+  background_tracking_unavailable: "बैकग्राउंड GPS चालू नहीं है",
+  location_updates_checked: "लोकेशन जाँच",
 };
