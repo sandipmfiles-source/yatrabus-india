@@ -48,6 +48,12 @@ class PersistentTransitRepository extends TransitRepository {
     return result;
   }
 
+  override updateRoute(route: Route): Route {
+    const result = super.updateRoute(route);
+    this.persistToDisk();
+    return result;
+  }
+
   override addBus(bus: Bus): Bus {
     const result = super.addBus(bus);
     this.persistToDisk();
