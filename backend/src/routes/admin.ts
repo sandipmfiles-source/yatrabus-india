@@ -278,9 +278,19 @@ adminRouter.post('/submissions/:id/review', requireAdminAuth('SUPER_ADMIN'), (re
     if (!route || !data.busIdentifier || !validTime(data.departureTime) || !validTime(data.arrivalTime)) {
       return res.status(422).json({ error: 'Valid route, bus name, departure and arrival times are required.' });
     }
-    if (!repository.updateTimetableDeparture(route.id, String(data.busIdentifier), data.departureTime, data.arrivalTime)) {
+    const oldBusIdentifier = typeof data.originalBusIdentifier === 'string' && data.originalBusIdentifier.trim()
+      ? data.originalBusIdentifier.trim() : String(data.busIdentifier);
+    if (!repository.updateTimetableDeparture(route.id, oldBusIdentifier, data.departureTime, data.arrivalTime, String(data.busIdentifier))) {
       return res.status(404).json({ error: 'Existing timetable departure was not found for this bus.' });
     }
+    const targetBus = pendingSubmission.targetEntityId ? repository.getBusById(pendingSubmission.targetEntityId) : undefined;
+    if (targetBus) repository.addBus({
+      ...targetBus,
+      publicIdentifier: String(data.busIdentifier).trim().slice(0, 80),
+      operatorName: typeof data.operatorName === 'string' ? data.operatorName.trim().slice(0, 120) : targetBus.operatorName,
+      contributedBy: pendingSubmission.contributorDisplayName || targetBus.contributedBy,
+      updatedAt: new Date().toISOString(),
+    });
   }
 
   if (decision === 'ADMIN_VERIFIED' && pendingSubmission?.submissionType === 'DELETE_BUS') {
