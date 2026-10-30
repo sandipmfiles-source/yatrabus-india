@@ -12,7 +12,8 @@
 **YatriBus** is a community-powered public transport information platform for Indian commuters. It combines an India-focused places directory, a timetable and route engine, typo-tolerant search, account-free community contributions, and a consent-based passenger-assisted GPS tracking module. Live shared features require a deployed backend; the included bus schedules are sample records, not a nationwide verified feed.
 
 ### Core Non-Negotiables Built In:
-- **No Mandatory Passenger Accounts**: Search, view routes, and submit corrections immediately without phone numbers, OTPs, or passwords.
+- **No Sign-in for Passengers or Bus Owners**: Search, view routes, and submit passenger corrections or bus-owner route/timetable details without Google, phone OTP, email login, or passwords. Owner submissions go to a separate Super Admin review queue.
+- **Free Across India**: No subscription, listing fee, or payment gateway. The public app and contribution workflow are available across all 28 States and 8 Union Territories.
 - **Explicit Location Consent**: The Android app requires foreground location permission before entry. Permission alone never shares GPS; journey tracking starts only after the passenger separately confirms a bus journey and consents.
 - **Deterministic Multi-Signal GPS Engine**: Evaluates horizontal accuracy, timestamp freshness, route cross-track distance, and speed realism without requiring paid AI APIs.
 - **Transparent Distinction**: Live GPS observations and schedule timetable predictions are clearly differentiated. Schedule estimates are **never** falsely labeled as "Live GPS".
@@ -27,7 +28,7 @@
 - **Typo-Tolerant Place Autocomplete**: Levenshtein distance, token similarity, and Indian administrative disambiguation (e.g., distinguishing Kashmere Gate from Kashmiri Gate, or Rampur HP from Rampur UP).
 - **Multilingual Support**: First-class support for English, Hindi (हिन्दी), and Bengali (বাংলা).
 - **Interactive Route Maps**: Route polylines, ordered stop markers, and real-time pulsing bus markers powered by Leaflet and OpenStreetMap.
-- **Account-Free Contribution Portal**: Submit missing buses, stops, or schedule corrections. Contributors receive a public Reference ID (e.g., `YB-SUB-2026-9481`) to check review progress.
+- **Account-Free Contribution Portal**: Submit missing buses, stops, routes, or schedule corrections and receive a public Reference ID. Contributors receive a public Reference ID (e.g., `YB-SUB-2026-9481`) to check review progress.
 - **Administrator Moderation Dashboard**: Protected console for transit verifiers to review submissions, resolve duplicate candidates, configure automation rules, and monitor active tracking sessions.
 - **Android Mobile App**: Packaged via Capacitor with native fine location and foreground service permissions.
 
