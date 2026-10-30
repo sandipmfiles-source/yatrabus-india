@@ -1,8 +1,153 @@
 import { Router, Request, Response } from 'express';
 import { repository } from '../db/persistentRepository.js';
 import { requireAdminAuth } from '../middleware/auth.js';
+import { Bus, Operator, Route, RouteStop } from '../../../packages/shared/src/types/bus.js';
+import { CommunitySubmission } from '../../../packages/shared/src/types/contribution.js';
+import { haversineDistanceMeters } from '../../../packages/shared/src/engine/routeMatcher.js';
 
 export const adminRouter = Router();
+
+const ALL_DAYS: Route['operatingDays'] = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+
+function communityOperator(stateName: string): Operator {
+  const existing = repository.getAllOperators().find(operator =>
+    operator.operatorType === 'COMMUNITY_COOPERATIVE' &&
+    operator.serviceArea.toLowerCase() === stateName.toLowerCase()
+  );
+  if (existing) return existing;
+  const now = new Date().toISOString();
+  const slug = stateName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+  return repository.addOperator({
+    id: `op-community-${slug}`,
+    name: `Community Bus Operators - ${stateName}`,
+    shortCode: 'COMM',
+    operatorType: 'COMMUNITY_COOPERATIVE',
+    serviceArea: stateName,
+    verificationStatus: 'COMMUNITY_LISTED',
+    isClaimed: false,
+    sourceDataset: 'COMMUNITY_SUBMISSIONS',
+    createdAt: now,
+    updatedAt: now,
+  });
+}
+
+function normalizedDays(value: unknown): Route['operatingDays'] {
+  if (!Array.isArray(value) || value.length === 0 || value.some(day => String(day).toLowerCase() === 'daily')) return ALL_DAYS;
+  const aliases: Record<string, Route['operatingDays'][number]> = {
+    MON: 'MON', MONDAY: 'MON', TUE: 'TUE', TUESDAY: 'TUE', WED: 'WED', WEDNESDAY: 'WED',
+    THU: 'THU', THURSDAY: 'THU', FRI: 'FRI', FRIDAY: 'FRI', SAT: 'SAT', SATURDAY: 'SAT',
+    SUN: 'SUN', SUNDAY: 'SUN',
+  };
+  const days = value.map(day => aliases[String(day).trim().toUpperCase()]).filter(Boolean);
+  return days.length ? Array.from(new Set(days)) : ALL_DAYS;
+}
+
+function publishVerifiedRoute(submission: CommunitySubmission): Route {
+  const data = submission.proposedData || {};
+  const origin = String(data.origin || '').trim();
+  const destination = String(data.destination || '').trim();
+  const routeNumber = String(data.routeNumber || '').trim();
+  const firstDepartureTime = String(data.firstDepartureTime || '').trim();
+  const lastDepartureTime = String(data.lastDepartureTime || '').trim();
+  const originLatitude = Number(data.originLatitude);
+  const originLongitude = Number(data.originLongitude);
+  const destinationLatitude = Number(data.destinationLatitude);
+  const destinationLongitude = Number(data.destinationLongitude);
+
+  if (!origin || !destination || !routeNumber || !firstDepartureTime || !lastDepartureTime) {
+    throw new Error('Route name, origin, destination, route number and first/last departure times are required.');
+  }
+  if (![originLatitude, originLongitude, destinationLatitude, destinationLongitude].every(Number.isFinite) ||
+      Math.abs(originLatitude) > 90 || Math.abs(destinationLatitude) > 90 ||
+      Math.abs(originLongitude) > 180 || Math.abs(destinationLongitude) > 180) {
+    throw new Error('Valid origin and destination GPS coordinates are required before publishing this route.');
+  }
+
+  const routeId = `route-community-${submission.id}`;
+  const now = new Date().toISOString();
+  const operator = communityOperator(String(data.state || 'West Bengal'));
+  const intermediate = Array.isArray(data.intermediateStops) ? data.intermediateStops : [];
+  const rawStops = [
+    { stopName: origin, latitude: originLatitude, longitude: originLongitude, scheduledDepartureTime: firstDepartureTime },
+    ...intermediate,
+    { stopName: destination, latitude: destinationLatitude, longitude: destinationLongitude, scheduledArrivalTime: lastDepartureTime },
+  ];
+
+  let distanceKm = 0;
+  const stops: RouteStop[] = rawStops.map((stop: any, index: number) => {
+    const latitude = Number(stop.latitude);
+    const longitude = Number(stop.longitude);
+    if (!String(stop.stopName || '').trim() || !Number.isFinite(latitude) || !Number.isFinite(longitude) ||
+        Math.abs(latitude) > 90 || Math.abs(longitude) > 180) {
+      throw new Error(`Intermediate stop ${index} is missing a valid name or GPS coordinates. Use Name|latitude|longitude|HH:MM in the form.`);
+    }
+    if (index > 0) {
+      const previous = rawStops[index - 1];
+      distanceKm += haversineDistanceMeters(Number(previous.latitude), Number(previous.longitude), latitude, longitude) / 1000;
+    }
+    const stopId = `${routeId}-place-${index + 1}`;
+    return {
+      id: `${routeId}-stop-${index + 1}`,
+      routeId,
+      stopId,
+      stopName: String(stop.stopName).trim(),
+      stopSequence: index + 1,
+      latitude,
+      longitude,
+      distanceFromStartKm: Number(distanceKm.toFixed(2)),
+      scheduledArrivalTime: stop.scheduledArrivalTime || undefined,
+      scheduledDepartureTime: stop.scheduledDepartureTime || undefined,
+    };
+  });
+
+  const route: Route = {
+    id: routeId,
+    routeNumber,
+    routeName: `${origin} to ${destination}`,
+    originStopId: stops[0].stopId,
+    originStopName: origin,
+    destinationStopId: stops[stops.length - 1].stopId,
+    destinationStopName: destination,
+    operatorId: operator.id,
+    operatorName: operator.name,
+    direction: 'UP',
+    distanceKm: Number((Number(data.distanceKm) || distanceKm).toFixed(2)),
+    typicalDurationMinutes: Math.max(1, Number(data.typicalDurationMinutes) || 60),
+    operatingDays: normalizedDays(data.operatingDays),
+    firstDepartureTime,
+    lastDepartureTime,
+    frequencyMinutes: Number(data.frequencyMinutes) > 0 ? Number(data.frequencyMinutes) : undefined,
+    stops,
+    geometry: stops.map(stop => ({ latitude: stop.latitude, longitude: stop.longitude })),
+    verificationStatus: 'ADMIN_VERIFIED',
+    serviceStatus: 'SCHEDULE_UNVERIFIED',
+    createdAt: now,
+    updatedAt: now,
+  };
+  return repository.addRoute(route);
+}
+
+function publishVerifiedBus(submission: CommunitySubmission): Bus {
+  const data = submission.proposedData || {};
+  const publicIdentifier = String(data.name || data.routeNumber || '').trim();
+  if (!publicIdentifier) throw new Error('Bus name or route number is required before publishing.');
+  const operator = communityOperator(String(data.state || 'West Bengal'));
+  const now = new Date().toISOString();
+  return repository.addBus({
+    id: `bus-community-${submission.id}`,
+    publicIdentifier,
+    operatorId: operator.id,
+    operatorName: operator.name,
+    vehicleType: 'ORDINARY',
+    hasCustomSvgIllustration: true,
+    serviceStatus: 'SCHEDULE_UNVERIFIED',
+    verificationStatus: 'ADMIN_VERIFIED',
+    isActive: true,
+    createdAt: now,
+    updatedAt: now,
+  });
+}
+
 
 // POST /api/admin/login
 adminRouter.post('/login', (req: Request, res: Response) => {
@@ -60,6 +205,32 @@ adminRouter.post('/submissions/:id/review', requireAdminAuth(), (req: Request, r
     return res.status(400).json({ error: 'Valid review decision required' });
   }
 
+  const submission = repository.getSubmissionById(String(req.params.id));
+  if (!submission) {
+    return res.status(404).json({ error: 'Submission not found' });
+  }
+
+  let publishedEntity: Record<string, unknown> | null = null;
+  if (decision === 'ADMIN_VERIFIED') {
+    try {
+      if (submission.entityType === 'ROUTE') {
+        const route = publishVerifiedRoute(submission);
+        publishedEntity = { type: 'ROUTE', id: route.id };
+      } else if (submission.entityType === 'BUS') {
+        const bus = publishVerifiedBus(submission);
+        publishedEntity = { type: 'BUS', id: bus.id };
+      } else if (submission.entityType === 'TIMETABLE' && submission.targetEntityId) {
+        const route = repository.getRouteById(submission.targetEntityId);
+        if (!route) throw new Error('Target route was not found for this timetable correction.');
+        const updated = { ...route, firstDepartureTime: String(submission.proposedData.departureTime || route.firstDepartureTime), updatedAt: new Date().toISOString() };
+        repository.updateRoute(updated);
+        publishedEntity = { type: 'TIMETABLE', id: updated.id };
+      }
+    } catch (error: any) {
+      return res.status(422).json({ error: error?.message || 'Submission cannot be published yet.' });
+    }
+  }
+
   const success = repository.updateSubmissionReview(String(req.params.id), decision, reason || 'Reviewed by administrator', adminId);
   if (!success) {
     return res.status(404).json({ error: 'Submission not found' });
@@ -76,7 +247,7 @@ adminRouter.post('/submissions/:id/review', requireAdminAuth(), (req: Request, r
     timestamp: new Date().toISOString(),
   });
 
-  return res.json({ success: true, message: `Submission marked as ${decision}` });
+  return res.json({ success: true, message: `Submission marked as ${decision}`, publishedEntity });
 });
 
 // GET /api/admin/duplicates
