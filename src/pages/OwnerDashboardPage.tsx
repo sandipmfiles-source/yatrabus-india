@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../services/api.js';
+import { useLanguage } from '../context/LanguageContext.js';
 import { BusFront, CheckCircle, Clock, LogOut, PlusCircle, ShieldCheck } from 'lucide-react';
 
 declare global {
@@ -22,6 +23,7 @@ type OwnerSubmission = { id: string; referenceId: string; submissionType: string
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
 
 export const OwnerDashboardPage: React.FC = () => {
+  const { t } = useLanguage();
   const buttonRef = useRef<HTMLDivElement>(null);
   const [token, setToken] = useState(() => localStorage.getItem('yatribus_owner_token') || '');
   const [user, setUser] = useState<OwnerUser | null>(null);
@@ -35,6 +37,7 @@ export const OwnerDashboardPage: React.FC = () => {
   const [busName, setBusName] = useState('');
   const [operatorName, setOperatorName] = useState('');
   const [routeNumber, setRouteNumber] = useState('');
+  const [direction, setDirection] = useState<'UP' | 'DOWN'>('UP');
   const [routeName, setRouteName] = useState('');
   const [origin, setOrigin] = useState('');
   const [destination, setDestination] = useState('');
@@ -145,6 +148,7 @@ export const OwnerDashboardPage: React.FC = () => {
     setBusName(String(data.busIdentifier || data.name || ''));
     setOperatorName(String(data.operatorName || ''));
     setRouteNumber(String(data.routeNumber || ''));
+    setDirection(data.direction === 'DOWN' ? 'DOWN' : 'UP');
     setRouteName(String(data.routeName || ''));
     setOrigin(String(data.origin || ''));
     setDestination(String(data.destination || ''));
@@ -212,6 +216,7 @@ export const OwnerDashboardPage: React.FC = () => {
         busIdentifier: busName,
         operatorName,
         routeNumber,
+        direction,
         routeName: routeName || (origin + ' to ' + destination),
         origin,
         destination,
@@ -282,6 +287,7 @@ export const OwnerDashboardPage: React.FC = () => {
               <label className="text-xs text-yatriwarm-700">Bus short name / number<input required value={busName} onChange={e => setBusName(e.target.value)} placeholder="e.g. MetroLink AC 01" className="mt-1 w-full px-3 py-2 rounded-xl border border-yatriwarm-200 bg-white" /></label>
               <label className="text-xs text-yatriwarm-700">Bus owner / samiti name<input required value={operatorName} onChange={e => setOperatorName(e.target.value)} placeholder="Owner or bus samiti" className="mt-1 w-full px-3 py-2 rounded-xl border border-yatriwarm-200 bg-white" /></label>
               <label className="text-xs text-yatriwarm-700">Route number / code<input required value={routeNumber} onChange={e => setRouteNumber(e.target.value)} placeholder="Route code" className="mt-1 w-full px-3 py-2 rounded-xl border border-yatriwarm-200 bg-white" /></label>
+              <label className="text-xs text-yatriwarm-700">{t('route_direction_label')}<select value={direction} onChange={e => setDirection(e.target.value as 'UP' | 'DOWN')} className="mt-1 w-full px-3 py-2 rounded-xl border border-yatriwarm-200 bg-white"><option value="UP">{t('route_direction_outbound')}</option><option value="DOWN">{t('route_direction_return')}</option></select></label>
               <label className="text-xs text-yatriwarm-700">Route name<input value={routeName} onChange={e => setRouteName(e.target.value)} placeholder="Kolkata Airport to Howrah" className="mt-1 w-full px-3 py-2 rounded-xl border border-yatriwarm-200 bg-white" /></label>
               <label className="text-xs text-yatriwarm-700">Starting place<input required value={origin} onChange={e => setOrigin(e.target.value)} placeholder="Kolkata Airport | 22.65 | 88.44" className="mt-1 w-full px-3 py-2 rounded-xl border border-yatriwarm-200 bg-white" /></label>
               <label className="text-xs text-yatriwarm-700">Destination<input required value={destination} onChange={e => setDestination(e.target.value)} placeholder="Howrah Station | 22.59 | 88.34" className="mt-1 w-full px-3 py-2 rounded-xl border border-yatriwarm-200 bg-white" /></label>
