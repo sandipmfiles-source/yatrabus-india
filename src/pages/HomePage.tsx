@@ -234,17 +234,17 @@ export const HomePage: React.FC = () => {
         <div className="mt-4 pt-4 border-t border-yatriwarm-100 flex flex-wrap items-center justify-center gap-4 text-xs text-yatriwarm-500">
           <span className="flex items-center gap-1">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-            {t('privacy_guarantee')}
+            {t('feature_no_account')}
           </span>
           <span>•</span>
           <span className="flex items-center gap-1">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-            {t('consent_title')}
+            {t('feature_gps_confidence')}
           </span>
           <span>•</span>
           <span className="flex items-center gap-1">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-            ₹0
+            {t('feature_free_ai')}
           </span>
         </div>
       </div>
