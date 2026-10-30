@@ -41,4 +41,7 @@ export const hi = {
   consent_decline: 'नहीं, केवल खोजें',
   view_route_details: 'मार्ग व स्टॉप विवरण देखें',
   privacy_guarantee: '₹0 सशुल्क एआई • बिना खाते के उपयोग • सुरक्षित गोपनीयता',
+  approx_daily_departures: 'प्रति सेवा-दिन अनुमानित बसें',
+  every_minutes: 'हर {minutes} मिनट में',
+  intermediate_stops: 'इस यात्रा के बीच के स्टॉप',
 };
