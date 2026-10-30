@@ -82,6 +82,19 @@ export function runRouteGraphTests(assert: (desc: string, pass: boolean) => void
   const intermediateResult = discoverJourneys('Stop B', 'Stop C', routes);
   assert('Intermediate-stop boarding uses the individual bus departure time', intermediateResult.directRoutes[0]?.departureTime === '07:36');
   assert('Intermediate-stop arrival uses the bus destination time', intermediateResult.directRoutes[0]?.arrivalTime === '08:00');
+  const busSpecificRoute = {
+    ...routes[0],
+    departures: [{
+      ...routes[0].departures![0],
+      stopTimes: [
+        { stopId: 'sb', departureTime: '07:41' },
+        { stopId: 'sc', arrivalTime: '08:02' },
+      ],
+    }],
+  };
+  const busSpecificResult = discoverJourneys('Stop B', 'Stop C', [busSpecificRoute]);
+  assert('Bus-specific stop departure overrides route estimate', busSpecificResult.directRoutes[0]?.departureTime === '07:41');
+  assert('Bus-specific stop arrival overrides route estimate', busSpecificResult.directRoutes[0]?.arrivalTime === '08:02');
 
   // Transfer Search: Stop A to Stop D (via Interchange Stop B)
   const transferResult = discoverJourneys('Stop A', 'Stop D', routes);
