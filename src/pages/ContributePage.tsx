@@ -23,6 +23,7 @@ export const ContributePage: React.FC = () => {
   const [firstDepartureTime, setFirstDepartureTime] = useState('');
   const [lastDepartureTime, setLastDepartureTime] = useState('');
   const [frequencyMinutes, setFrequencyMinutes] = useState('');
+  const [departureTimes, setDepartureTimes] = useState('');
   const [intermediateStops, setIntermediateStops] = useState('');
   const [originLatitude, setOriginLatitude] = useState('');
   const [originLongitude, setOriginLongitude] = useState('');
@@ -59,14 +60,15 @@ export const ContributePage: React.FC = () => {
           firstDepartureTime,
           lastDepartureTime,
           frequencyMinutes: frequencyMinutes ? Number(frequencyMinutes) : undefined,
+          departureTimes: departureTimes.split(',').map(time => time.trim()).filter(Boolean),
           operatingDays: operatingDays.split(',').map(day => day.trim()).filter(Boolean),
           originLatitude: originLatitude ? Number(originLatitude) : undefined,
           originLongitude: originLongitude ? Number(originLongitude) : undefined,
           destinationLatitude: destinationLatitude ? Number(destinationLatitude) : undefined,
           destinationLongitude: destinationLongitude ? Number(destinationLongitude) : undefined,
           intermediateStops: intermediateStops.split(';').map(item => {
-            const [stopName, latitude, longitude, arrivalTime] = item.split('|').map(value => value.trim());
-            return stopName ? { stopName, latitude: Number(latitude), longitude: Number(longitude), scheduledArrivalTime: arrivalTime || undefined } : null;
+            const [stopName, latitude, longitude, arrivalTime, departureTimeAtStop] = item.split('|').map(value => value.trim());
+            return stopName ? { stopName, latitude: Number(latitude), longitude: Number(longitude), scheduledArrivalTime: arrivalTime || undefined, scheduledDepartureTime: departureTimeAtStop || undefined } : null;
           }).filter(Boolean),
         },
       });
@@ -298,6 +300,9 @@ export const ContributePage: React.FC = () => {
                     <label className="text-xs font-medium text-yatriwarm-700">{t('frequency_minutes')}
                       <input type="number" min="1" max="1440" value={frequencyMinutes} onChange={e => setFrequencyMinutes(e.target.value)} placeholder="e.g. 30" className="mt-1 w-full px-3 py-2.5 bg-white border border-yatriwarm-200 rounded-xl" />
                     </label>
+                    <label className="text-xs font-medium text-yatriwarm-700 sm:col-span-3">Exact departures (optional, comma separated)
+                      <input value={departureTimes} onChange={e => setDepartureTimes(e.target.value)} placeholder="05:45, 06:15, 06:45, 07:20" className="mt-1 w-full px-3 py-2.5 bg-white border border-yatriwarm-200 rounded-xl" />
+                    </label>
                   </div>
                   <label className="block text-xs font-medium text-yatriwarm-700">{t('operating_days_comma')}
                     <input value={operatingDays} onChange={e => setOperatingDays(e.target.value)} placeholder="Daily or MON,TUE,WED..." className="mt-1 w-full px-3 py-2.5 bg-white border border-yatriwarm-200 rounded-xl" />
@@ -318,7 +323,7 @@ export const ContributePage: React.FC = () => {
                   </div>
 
                   <label className="block text-xs font-medium text-yatriwarm-700">{t('intermediate_stops')}
-                    <textarea rows={2} value={intermediateStops} onChange={e => setIntermediateStops(e.target.value)} placeholder="Gopiballavpur|22.20|86.90|08:30; Lodhasuli|22.35|86.95|09:00" className="mt-1 w-full px-3 py-2.5 bg-white border border-yatriwarm-200 rounded-xl" />
+                    <textarea rows={2} value={intermediateStops} onChange={e => setIntermediateStops(e.target.value)} placeholder="Gopiballavpur|22.20|86.90|08:30|08:32; Lodhasuli|22.35|86.95|09:00|09:02" className="mt-1 w-full px-3 py-2.5 bg-white border border-yatriwarm-200 rounded-xl" />
                   </label>
                 </div>
               )}
