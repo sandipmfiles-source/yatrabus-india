@@ -1,4 +1,6 @@
 import React, { useEffect, useRef } from 'react';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import { RouteStop, RouteGeometryPoint } from '@shared/types/bus.js';
 import { AggregatedBusLocation } from '@shared/types/tracking.js';
 
@@ -9,119 +11,141 @@ interface MapViewProps {
   className?: string;
 }
 
+const validCoordinate = (latitude: unknown, longitude: unknown): latitude is number =>
+  typeof latitude === 'number' && Number.isFinite(latitude) && latitude >= -90 && latitude <= 90 &&
+  typeof longitude === 'number' && Number.isFinite(longitude) && longitude >= -180 && longitude <= 180;
+
 export const MapView: React.FC<MapViewProps> = ({
   stops,
   geometry,
   busLocation,
-  className = "w-full h-80 rounded-2xl overflow-hidden border border-yatriwarm-200 shadow-card",
+  className = 'w-full h-80 rounded-2xl overflow-hidden border border-yatriwarm-200 shadow-card',
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<any>(null);
+  const mapRef = useRef<L.Map | null>(null);
+  const overlayRef = useRef<L.LayerGroup | null>(null);
 
+  // Create the Leaflet map once. Importing Leaflet here (rather than expecting
+  // window.L from a CDN) also makes the map work inside the Capacitor APK.
   useEffect(() => {
-    if (!mapContainerRef.current) return;
+    if (!mapContainerRef.current || mapRef.current) return;
 
-    // Check if Leaflet L global is loaded via index.html CDN
-    const L = (window as any).L;
-    if (!L) return;
+    const map = L.map(mapContainerRef.current, {
+      zoomControl: true,
+      scrollWheelZoom: false,
+    });
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      maxZoom: 19,
+    }).addTo(map);
 
-    // Default center on Delhi or first stop
-    const initialLat = stops.length > 0 ? stops[0].latitude : 28.6139;
-    const initialLon = stops.length > 0 ? stops[0].longitude : 77.2090;
+    mapRef.current = map;
+    overlayRef.current = L.layerGroup().addTo(map);
+    const initial = stops.find(stop => validCoordinate(stop.latitude, stop.longitude));
+    map.setView(initial ? [initial.latitude, initial.longitude] : [22.9734, 78.6569], initial ? 12 : 5);
 
-    if (!mapInstanceRef.current) {
-      const map = L.map(mapContainerRef.current, {
-        zoomControl: true,
-        scrollWheelZoom: false,
-      }).setView([initialLat, initialLon], 12);
+    // Leaflet needs a size refresh after a mobile/web layout has settled.
+    const frame = window.requestAnimationFrame(() => map.invalidateSize());
+    return () => {
+      window.cancelAnimationFrame(frame);
+      map.remove();
+      mapRef.current = null;
+      overlayRef.current = null;
+    };
+  }, []);
 
-      // OpenStreetMap standard tiles (₹0 free tier respecting attribution)
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-        maxZoom: 18,
-      }).addTo(map);
+  // Refresh route, active-stop and bus overlays without recreating the base map.
+  useEffect(() => {
+    const map = mapRef.current;
+    const overlay = overlayRef.current;
+    if (!map || !overlay) return;
+    overlay.clearLayers();
 
-      mapInstanceRef.current = map;
+    const validStops = stops.filter(stop => validCoordinate(stop.latitude, stop.longitude));
+    const routePoints = (geometry && geometry.length >= 2 ? geometry : validStops)
+      .filter(point => validCoordinate(point.latitude, point.longitude));
+    const boundsPoints: L.LatLngExpression[] = [];
+
+    if (routePoints.length >= 2) {
+      const line = L.polyline(routePoints.map(point => [point.latitude, point.longitude] as [number, number]), {
+        color: '#0E4D34',
+        weight: 6,
+        opacity: 0.9,
+        lineCap: 'round',
+        lineJoin: 'round',
+      }).addTo(overlay);
+      line.bringToBack();
+      boundsPoints.push(...line.getLatLngs() as L.LatLng[]);
     }
 
-    const map = mapInstanceRef.current;
-
-    // Clear existing layers other than tile layer
-    map.eachLayer((layer: any) => {
-      if (layer instanceof L.Marker || layer instanceof L.Polyline || layer instanceof L.Circle) {
-        map.removeLayer(layer);
+    // Highlight the next/nearest stop when a usable GPS fix is available.
+    let activeStopId: string | null = null;
+    const hasBusCoordinates = !!busLocation && validCoordinate(busLocation.latitude, busLocation.longitude);
+    if (hasBusCoordinates && validStops.length) {
+      let nearestDistance = Number.POSITIVE_INFINITY;
+      for (const stop of validStops) {
+        const distance = map.distance(
+          [busLocation!.latitude!, busLocation!.longitude!],
+          [stop.latitude, stop.longitude],
+        );
+        if (distance < nearestDistance) {
+          nearestDistance = distance;
+          activeStopId = stop.id;
+        }
       }
-    });
-
-    const latLngs: [number, number][] = [];
-
-    // Draw route polyline
-    const pathPoints = geometry && geometry.length >= 2
-      ? geometry
-      : stops.map(s => ({ latitude: s.latitude, longitude: s.longitude }));
-
-    for (const pt of pathPoints) {
-      latLngs.push([pt.latitude, pt.longitude]);
     }
 
-    if (latLngs.length >= 2) {
-      const polyline = L.polyline(latLngs, {
-        color: '#0E4D34', // Brand Deep Green
-        weight: 5,
-        opacity: 0.85,
-        smoothFactor: 1,
-      }).addTo(map);
-
-      map.fitBounds(polyline.getBounds(), { padding: [30, 30] });
-    }
-
-    // Add Stop Markers
-    stops.forEach((stop, idx) => {
-      const isTerminus = idx === 0 || idx === stops.length - 1;
-      const markerColor = isTerminus ? '#0E4D34' : '#10B981';
-
+    validStops.forEach((stop, index) => {
+      const isTerminus = index === 0 || index === validStops.length - 1;
+      const isActive = stop.id === activeStopId;
+      const color = isActive ? '#F59E0B' : isTerminus ? '#0E4D34' : '#10B981';
       const stopIcon = L.divIcon({
-        className: 'custom-stop-marker',
-        html: `<div style="background-color: ${markerColor}; width: 14px; height: 14px; border: 2px solid white; border-radius: 50%; box-shadow: 0 1px 4px rgba(0,0,0,0.3);"></div>`,
-        iconSize: [14, 14],
-        iconAnchor: [7, 7],
+        className: 'yatribus-stop-icon',
+        html: `<div style="width:${isActive ? 22 : 15}px;height:${isActive ? 22 : 15}px;border-radius:50%;background:${color};border:${isActive ? 4 : 2}px solid #fff;box-shadow:0 1px 7px rgba(0,0,0,.38);"></div>`,
+        iconSize: [isActive ? 22 : 15, isActive ? 22 : 15],
+        iconAnchor: [isActive ? 11 : 7.5, isActive ? 11 : 7.5],
       });
-
       L.marker([stop.latitude, stop.longitude], { icon: stopIcon })
-        .addTo(map)
-        .bindPopup(`<strong>${stop.stopSequence}. ${stop.stopName}</strong><br/>Scheduled: ${stop.scheduledArrivalTime || 'N/A'}`);
+        .addTo(overlay)
+        .bindPopup(`<strong>${stop.stopSequence}. ${stop.stopName}</strong>${isActive ? '<br/><b>Nearest stop to reported bus location</b>' : ''}<br/>Scheduled: ${stop.scheduledArrivalTime || 'Not listed'}`);
+      boundsPoints.push([stop.latitude, stop.longitude]);
     });
 
-    // Add Bus Marker if location exists
-    if (busLocation && busLocation.latitude && busLocation.longitude) {
-      const isLive = busLocation.displayState === 'LIVE';
-      const busMarkerColor = isLive ? '#059669' : '#0284C7';
-
+    if (hasBusCoordinates) {
+      const isLive = busLocation!.displayState === 'LIVE' && busLocation!.isLive;
+      const busColor = isLive ? '#059669' : '#D97706';
       const busIcon = L.divIcon({
-        className: 'custom-bus-marker',
-        html: `
-          <div style="position: relative; display: flex; align-items: center; justify-content: center;">
-            ${isLive ? '<div style="position: absolute; width: 36px; height: 36px; background-color: rgba(16, 185, 129, 0.35); border-radius: 50%; animation: pulse-ring 2s infinite;"></div>' : ''}
-            <div style="background-color: ${busMarkerColor}; color: white; width: 28px; height: 28px; border: 2px solid white; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.4); font-size: 14px;">
-              🚌
-            </div>
-          </div>
-        `,
-        iconSize: [28, 28],
-        iconAnchor: [14, 14],
+        className: 'yatribus-bus-icon',
+        html: `<div style="position:relative;width:42px;height:42px;display:flex;align-items:center;justify-content:center;">
+          ${isLive ? '<span style="position:absolute;inset:0;border-radius:50%;background:rgba(16,185,129,.25);animation:yatribus-pulse 1.8s infinite;"></span>' : ''}
+          <span style="position:relative;width:34px;height:34px;border-radius:50%;background:${busColor};border:3px solid #fff;box-shadow:0 2px 9px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;font-size:19px;">🚌</span>
+        </div>
+        <style>@keyframes yatribus-pulse{0%{transform:scale(.75);opacity:.9}100%{transform:scale(1.45);opacity:0}}</style>`,
+        iconSize: [42, 42],
+        iconAnchor: [21, 21],
       });
-
-      L.marker([busLocation.latitude, busLocation.longitude], { icon: busIcon })
-        .addTo(map)
-        .bindPopup(`<strong>Bus Location (${busLocation.displayState})</strong><br/>${busLocation.statusExplanation}`);
+      L.marker([busLocation!.latitude!, busLocation!.longitude!], { icon: busIcon, zIndexOffset: 1000 })
+        .addTo(overlay)
+        .bindPopup(`<strong>🚌 Bus ${isLive ? 'LIVE GPS location' : 'last reported location'}</strong><br/>${busLocation!.statusExplanation}<br/>Updated: ${busLocation!.lastObservedAt ? new Date(busLocation!.lastObservedAt).toLocaleString() : 'Time unavailable'}`);
+      boundsPoints.push([busLocation!.latitude!, busLocation!.longitude!]);
     }
 
-    return () => {};
+    if (boundsPoints.length > 1) {
+      map.fitBounds(L.latLngBounds(boundsPoints), { padding: [28, 28], maxZoom: 15 });
+    } else if (boundsPoints.length === 1) {
+      map.setView(boundsPoints[0], 14);
+    }
+    window.requestAnimationFrame(() => map.invalidateSize());
   }, [stops, geometry, busLocation]);
 
   return (
     <div className={className}>
       <div ref={mapContainerRef} className="w-full h-full min-h-[300px] z-10" />
+      <div className="relative z-20 -mt-10 ml-3 flex flex-wrap gap-2 pointer-events-none">
+        <span className="rounded-full bg-white/95 px-2.5 py-1 text-[10px] font-semibold text-yatriwarm-800 shadow">● Stops</span>
+        <span className="rounded-full bg-white/95 px-2.5 py-1 text-[10px] font-semibold text-amber-700 shadow">● Nearest stop</span>
+        <span className="rounded-full bg-white/95 px-2.5 py-1 text-[10px] font-semibold text-emerald-700 shadow">🚌 Bus GPS</span>
+      </div>
     </div>
   );
 };
