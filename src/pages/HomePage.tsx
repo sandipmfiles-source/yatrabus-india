@@ -27,28 +27,38 @@ export const HomePage: React.FC = () => {
 
   // Autocomplete debounced search for origin
   useEffect(() => {
+    let cancelled = false;
     if (fromQuery.trim().length >= 2) {
       const timer = setTimeout(async () => {
-        const res = await api.searchPlaces(fromQuery, 8);
-        setFromSuggestions(res);
-      }, 200);
-      return () => clearTimeout(timer);
-    } else {
-      setFromSuggestions([]);
+        try {
+          const res = await api.searchPlaces(fromQuery, 8);
+          if (!cancelled) setFromSuggestions(res);
+        } catch {
+          if (!cancelled) setFromSuggestions([]);
+        }
+      }, 220);
+      return () => { cancelled = true; clearTimeout(timer); };
     }
+    setFromSuggestions([]);
+    return () => { cancelled = true; };
   }, [fromQuery]);
 
   // Autocomplete debounced search for destination
   useEffect(() => {
+    let cancelled = false;
     if (toQuery.trim().length >= 2) {
       const timer = setTimeout(async () => {
-        const res = await api.searchPlaces(toQuery, 8);
-        setToSuggestions(res);
-      }, 200);
-      return () => clearTimeout(timer);
-    } else {
-      setToSuggestions([]);
+        try {
+          const res = await api.searchPlaces(toQuery, 8);
+          if (!cancelled) setToSuggestions(res);
+        } catch {
+          if (!cancelled) setToSuggestions([]);
+        }
+      }, 220);
+      return () => { cancelled = true; clearTimeout(timer); };
     }
+    setToSuggestions([]);
+    return () => { cancelled = true; };
   }, [toQuery]);
 
   const handleSwap = () => {
@@ -85,17 +95,24 @@ export const HomePage: React.FC = () => {
     setIsLocating(true);
     navigator.geolocation.getCurrentPosition(
       async pos => {
-        const stops = await api.getNearbyStops(pos.coords.latitude, pos.coords.longitude, 4000);
-        setNearbyStops(stops);
-        setIsLocating(false);
+        try {
+          const stops = await api.getNearbyStops(pos.coords.latitude, pos.coords.longitude, 4000);
+          setNearbyStops(stops);
+          if (!stops.length) alert(t('location_error_nearby'));
+        } catch {
+          setNearbyStops([]);
+          alert(t('location_error_nearby'));
+        } finally {
+          setIsLocating(false);
+        }
       },
-      err => {
+      () => {
         // Respectful error handling without guilt
         setIsLocating(false);
         setNearbyStops([]);
         alert(t('location_error_nearby'));
       },
-      { timeout: 8000 }
+      { timeout: 8000, maximumAge: 30000 }
     );
   };
 
