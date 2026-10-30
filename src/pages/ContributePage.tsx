@@ -41,10 +41,12 @@ export const ContributePage: React.FC = () => {
   // Submission result
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedRefId, setSubmittedRefId] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setSubmitError('');
 
     try {
       const res = await api.submitContribution({
@@ -78,7 +80,8 @@ export const ContributePage: React.FC = () => {
 
       setSubmittedRefId(res.referenceId);
       setIsSubmitting(false);
-    } catch {
+    } catch (error: any) {
+      setSubmitError(error?.message || 'Submission could not be sent. Please check your connection and try again.');
       setIsSubmitting(false);
     }
   };
@@ -179,6 +182,7 @@ export const ContributePage: React.FC = () => {
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-5">
+              {submitError && <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800">{submitError}</p>}
               {/* Type selection */}
               <div>
                 <label className="block text-xs font-bold text-yatriwarm-700 uppercase tracking-wider mb-2">
