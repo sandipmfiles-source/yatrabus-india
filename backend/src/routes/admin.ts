@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { CONFIG } from '../config.js';
+import { TimetableDeparture } from '../../../packages/shared/src/types/bus.js';
 import { repository } from '../db/repository.js';
 import { createAdminSessionToken, requireAdminAuth, verifyAdminPassword } from '../middleware/auth.js';
 
@@ -68,6 +69,37 @@ adminRouter.post('/submissions/:id/review', requireAdminAuth('SUPER_ADMIN'), (re
   }
 
   const reviewReason = typeof reason === 'string' ? reason.trim().slice(0, 1000) : '';
+
+  // Only an explicit, admin-approved timetable contribution becomes publicly searchable.
+  const pendingSubmission = repository.listSubmissions().find(item => item.id === String(req.params.id));
+  if (decision === 'ADMIN_VERIFIED' && pendingSubmission?.proposedData?.timetableEntry === true) {
+    const data = pendingSubmission.proposedData;
+    const route = typeof data.routeNumber === 'string' ? repository.getRouteByNumber(data.routeNumber) : undefined;
+    if (!route) {
+      return res.status(422).json({ error: 'Route number was not found. Add and verify the route before approving this bus timetable entry.' });
+    }
+    if (typeof data.departureTime !== 'string' || !/^([01]\\d|2[0-3]):[0-5]\\d$/.test(data.departureTime) ||
+        typeof data.arrivalTime !== 'string' || !/^([01]\\d|2[0-3]):[0-5]\\d$/.test(data.arrivalTime)) {
+      return res.status(422).json({ error: 'A valid departure and arrival time are required before publishing.' });
+    }
+    const days = Array.isArray(data.operatingDays)
+      ? data.operatingDays.filter((day: string) => ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'].includes(day))
+      : ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+    const departure: TimetableDeparture = {
+      id: `departure-${pendingSubmission.id}`,
+      timetableId: route.id,
+      departureTime: data.departureTime,
+      arrivalTime: data.arrivalTime,
+      busIdentifier: typeof data.busIdentifier === 'string' ? data.busIdentifier.trim().slice(0, 80) : undefined,
+      operatingDays: days.length ? days : ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'],
+      confidenceScore: 100,
+      isCancelled: false,
+    };
+    if (!repository.addTimetableDeparture(route.id, departure)) {
+      return res.status(409).json({ error: 'This bus and departure time already exist on the selected route.' });
+    }
+  }
+
   const success = repository.updateSubmissionReview(
     String(req.params.id),
     decision,
