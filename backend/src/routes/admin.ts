@@ -82,9 +82,9 @@ adminRouter.post('/submissions/:id/review', requireAdminAuth('SUPER_ADMIN'), (re
         typeof data.arrivalTime !== 'string' || !/^([01]\d|2[0-3]):[0-5]\d$/.test(data.arrivalTime)) {
       return res.status(422).json({ error: 'A valid departure and arrival time are required before publishing.' });
     }
-    const days = Array.isArray(data.operatingDays)
+    const days = (Array.isArray(data.operatingDays)
       ? data.operatingDays.filter((day: string) => ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'].includes(day))
-      : ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+      : ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']) as TimetableDeparture['operatingDays'];
     const departure: TimetableDeparture = {
       id: `departure-${pendingSubmission.id}`,
       timetableId: route.id,
