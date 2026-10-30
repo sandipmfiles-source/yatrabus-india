@@ -299,6 +299,68 @@ adminRouter.post('/submissions/:id/review', requireAdminAuth('SUPER_ADMIN'), (re
   return res.json({ success: true, message: `Submission marked as ${decision}` });
 });
 
+// GET /api/admin/buses?q= — protected fleet search for the sole Super Admin.
+adminRouter.get('/buses', requireAdminAuth('SUPER_ADMIN'), (req: Request, res: Response) => {
+  const query = typeof req.query.q === 'string' ? req.query.q.trim().toLowerCase() : '';
+  const routes = repository.getAllRoutes();
+  const buses = repository.getAllBuses().map(bus => ({
+    bus,
+    routes: routes.filter(route => route.operatorId === bus.operatorId),
+  })).filter(item => !query ||
+    item.bus.publicIdentifier.toLowerCase().includes(query) ||
+    (item.bus.operatorName || '').toLowerCase().includes(query) ||
+    item.routes.some(route => route.routeNumber.toLowerCase().includes(query) || route.routeName.toLowerCase().includes(query))
+  );
+  return res.json({ count: buses.length, buses });
+});
+
+// PUT /api/admin/buses/:id — Super Admin edits a bus record.
+adminRouter.put('/buses/:id', requireAdminAuth('SUPER_ADMIN'), (req: Request, res: Response) => {
+  const existing = repository.getBusById(String(req.params.id));
+  if (!existing) return res.status(404).json({ error: 'Bus not found' });
+  const data = req.body || {};
+  const publicIdentifier = typeof data.publicIdentifier === 'string' ? data.publicIdentifier.trim().slice(0, 80) : existing.publicIdentifier;
+  if (!publicIdentifier) return res.status(400).json({ error: 'Bus name or number is required' });
+  const updated: Bus = {
+    ...existing,
+    publicIdentifier,
+    operatorName: typeof data.operatorName === 'string' ? data.operatorName.trim().slice(0, 120) : existing.operatorName,
+    vehicleType: ['ORDINARY','EXPRESS','SEMI_DELUXE','DELUXE_AC','ELECTRIC_AC','VOLVO_SCANIA','SLEEPER','MINI_FEEDER'].includes(data.vehicleType) ? data.vehicleType : existing.vehicleType,
+    serviceStatus: ['OPERATING_SCHEDULED','SCHEDULE_UNVERIFIED','POSSIBLE_DELAY','ROUTE_CHANGED','DISRUPTION_REPORTED','POSSIBLY_DISCONTINUED','CONFIRMED_DISCONTINUED','STATUS_UNKNOWN'].includes(data.serviceStatus) ? data.serviceStatus : existing.serviceStatus,
+    isActive: typeof data.isActive === 'boolean' ? data.isActive : existing.isActive,
+    updatedAt: new Date().toISOString(),
+  };
+  repository.addBus(updated);
+  return res.json({ success: true, bus: updated });
+});
+
+// PUT /api/admin/routes/:id — full route and stop timetable edit.
+adminRouter.put('/routes/:id', requireAdminAuth('SUPER_ADMIN'), (req: Request, res: Response) => {
+  const existing = repository.getRouteById(String(req.params.id));
+  if (!existing) return res.status(404).json({ error: 'Route not found' });
+  const data = req.body || {};
+  const validTime = (value: unknown) => typeof value === 'string' && /^([01]\\d|2[0-3]):[0-5]\\d$/.test(value);
+  const stops = Array.isArray(data.stops) ? data.stops : existing.stops;
+  if (!stops.length || stops.some((stop: any) => typeof stop?.stopName !== 'string' || !stop.stopName.trim() ||
+      !Number.isFinite(Number(stop.latitude)) || !Number.isFinite(Number(stop.longitude)))) {
+    return res.status(422).json({ error: 'Every route stop must have a name and valid coordinates.' });
+  }
+  const updated: Route = {
+    ...existing,
+    ...data,
+    id: existing.id,
+    operatorId: existing.operatorId,
+    routeNumber: typeof data.routeNumber === 'string' ? data.routeNumber.trim().slice(0, 40) : existing.routeNumber,
+    routeName: typeof data.routeName === 'string' ? data.routeName.trim().slice(0, 160) : existing.routeName,
+    firstDepartureTime: validTime(data.firstDepartureTime) ? data.firstDepartureTime : existing.firstDepartureTime,
+    lastDepartureTime: validTime(data.lastDepartureTime) ? data.lastDepartureTime : existing.lastDepartureTime,
+    stops,
+    updatedAt: new Date().toISOString(),
+  };
+  repository.addRoute(updated);
+  return res.json({ success: true, route: updated });
+});
+
 // GET /api/admin/duplicates
 adminRouter.get('/duplicates', requireAdminAuth('SUPER_ADMIN'), (_req: Request, res: Response) => {
   const candidates = repository.listDuplicateCandidates();
