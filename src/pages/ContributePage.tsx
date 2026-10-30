@@ -48,6 +48,7 @@ export const ContributePage: React.FC = () => {
     try {
       const res = await api.submitContribution({
         submissionType,
+        targetEntityId: searchParams.get('routeId') || undefined,
         entityType: submissionType === 'ADD_STOP' ? 'STOP' : submissionType === 'SUGGEST_ROUTE' ? 'ROUTE' : submissionType === 'CORRECT_TIMETABLE' ? 'TIMETABLE' : 'BUS',
         contributorNote: notes,
         proposedData: {
@@ -287,15 +288,15 @@ export const ContributePage: React.FC = () => {
                 </div>
               </div>
 
-              {submissionType === 'SUGGEST_ROUTE' && (
+              {(submissionType === 'SUGGEST_ROUTE' || submissionType === 'CORRECT_TIMETABLE') && (
                 <div className="space-y-4 rounded-2xl border border-yatriwarm-200 bg-yatriwarm-50 p-4">
                   <h3 className="text-sm font-bold text-yatriwarm-800">{t('route_timetable_details')}</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <label className="text-xs font-medium text-yatriwarm-700">{t('first_departure')}
-                      <input type="time" required value={firstDepartureTime} onChange={e => setFirstDepartureTime(e.target.value)} className="mt-1 w-full px-3 py-2.5 bg-white border border-yatriwarm-200 rounded-xl" />
+                      <input type="time" required={submissionType === 'SUGGEST_ROUTE'} value={firstDepartureTime} onChange={e => setFirstDepartureTime(e.target.value)} className="mt-1 w-full px-3 py-2.5 bg-white border border-yatriwarm-200 rounded-xl" />
                     </label>
                     <label className="text-xs font-medium text-yatriwarm-700">{t('last_departure')}
-                      <input type="time" required value={lastDepartureTime} onChange={e => setLastDepartureTime(e.target.value)} className="mt-1 w-full px-3 py-2.5 bg-white border border-yatriwarm-200 rounded-xl" />
+                      <input type="time" required={submissionType === 'SUGGEST_ROUTE'} value={lastDepartureTime} onChange={e => setLastDepartureTime(e.target.value)} className="mt-1 w-full px-3 py-2.5 bg-white border border-yatriwarm-200 rounded-xl" />
                     </label>
                     <label className="text-xs font-medium text-yatriwarm-700">{t('frequency_minutes')}
                       <input type="number" min="1" max="1440" value={frequencyMinutes} onChange={e => setFrequencyMinutes(e.target.value)} placeholder="e.g. 30" className="mt-1 w-full px-3 py-2.5 bg-white border border-yatriwarm-200 rounded-xl" />
@@ -307,7 +308,7 @@ export const ContributePage: React.FC = () => {
                   <label className="block text-xs font-medium text-yatriwarm-700">{t('operating_days_comma')}
                     <input value={operatingDays} onChange={e => setOperatingDays(e.target.value)} placeholder="Daily or MON,TUE,WED..." className="mt-1 w-full px-3 py-2.5 bg-white border border-yatriwarm-200 rounded-xl" />
                   </label>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {submissionType === 'SUGGEST_ROUTE' && <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     <label className="text-xs font-medium text-yatriwarm-700">Origin latitude
                       <input type="number" step="any" min="-90" max="90" required value={originLatitude} onChange={e => setOriginLatitude(e.target.value)} placeholder="22.45" className="mt-1 w-full px-3 py-2.5 bg-white border border-yatriwarm-200 rounded-xl" />
                     </label>
@@ -322,9 +323,9 @@ export const ContributePage: React.FC = () => {
                     </label>
                   </div>
 
-                  <label className="block text-xs font-medium text-yatriwarm-700">{t('intermediate_stops')}
+                  {submissionType === 'SUGGEST_ROUTE' && <label className="block text-xs font-medium text-yatriwarm-700">{t('intermediate_stops')}
                     <textarea rows={2} value={intermediateStops} onChange={e => setIntermediateStops(e.target.value)} placeholder="Gopiballavpur|22.20|86.90|08:30|08:32; Lodhasuli|22.35|86.95|09:00|09:02" className="mt-1 w-full px-3 py-2.5 bg-white border border-yatriwarm-200 rounded-xl" />
-                  </label>
+                  </label>}
                 </div>
               )}
 
