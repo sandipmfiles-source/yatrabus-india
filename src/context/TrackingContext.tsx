@@ -152,8 +152,8 @@ export const TrackingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setTrackingError('');
     try {
       if (Capacitor.isNativePlatform()) {
-        const apiBase = import.meta.env.VITE_API_BASE_URL?.replace(/\\/$/, '') || '';
-        if (!apiBase || !/^https:\\/\\//i.test(apiBase)) {
+        const apiBase = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') || '';
+        if (!apiBase || !/^https:\/\//i.test(apiBase)) {
           throw new Error('Live background GPS requires a deployed HTTPS backend. Configure VITE_API_BASE_URL and rebuild the APK before starting a tracked journey.');
         }
         try {
