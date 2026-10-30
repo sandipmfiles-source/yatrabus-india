@@ -110,6 +110,7 @@ export interface TimetableDeparture {
   departureTime: string; // HH:MM IST
   arrivalTime: string;   // HH:MM IST
   busIdentifier?: string;
+  stopTimes?: Array<{ stopId: string; arrivalTime?: string; departureTime?: string }>;
   operatingDays: ('MON' | 'TUE' | 'WED' | 'THU' | 'FRI' | 'SAT' | 'SUN')[];
   confidenceScore: number;
   isCancelled: boolean;
