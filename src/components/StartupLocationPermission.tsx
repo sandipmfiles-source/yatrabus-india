@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { Geolocation } from '@capacitor/geolocation';
 import { useLanguage } from '../context/LanguageContext.js';
@@ -8,8 +8,9 @@ export const StartupLocationPermission: React.FC = () => {
   const [visible, setVisible] = useState(() => Capacitor.isNativePlatform());
   const [requesting, setRequesting] = useState(false);
   const [message, setMessage] = useState('');
+  const [hasPermission, setHasPermission] = useState(false);
 
-  const verifyLocationReady = useCallback(async (requestPermission: boolean) => {
+  const verifyLocationReady = async (requestPermission: boolean) => {
     setRequesting(true);
     setMessage('');
     try {
@@ -17,10 +18,12 @@ export const StartupLocationPermission: React.FC = () => {
         ? await Geolocation.requestPermissions()
         : await Geolocation.checkPermissions();
       if (permission.location !== 'granted') {
+        setHasPermission(false);
         setVisible(true);
-        setMessage(t('location_permission_denied'));
+        if (requestPermission) setMessage(t('location_permission_denied'));
         return;
       }
+      setHasPermission(true);
       // A granted permission alone is not enough: the device Location switch
       // must also be enabled. A fresh fix works without mobile data when GPS is available.
       await Geolocation.getCurrentPosition({ enableHighAccuracy: true, timeout: 30000, maximumAge: 0 });
@@ -32,12 +35,12 @@ export const StartupLocationPermission: React.FC = () => {
     } finally {
       setRequesting(false);
     }
-  }, [t]);
+  };
 
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
     void verifyLocationReady(false);
-  }, [verifyLocationReady]);
+  }, []);
 
   const allowLocation = () => {
     void verifyLocationReady(true);
@@ -56,7 +59,7 @@ export const StartupLocationPermission: React.FC = () => {
         {message && <p role="alert" className="mt-3 rounded-xl bg-amber-50 p-3 text-xs text-amber-900">{message}</p>}
         <div className="mt-5 flex flex-col gap-2">
           <button type="button" disabled={requesting} onClick={allowLocation} className="w-full rounded-xl bg-signal-charcoal-950 px-4 py-3 text-sm font-bold text-white disabled:opacity-60">
-            {requesting ? t('requesting_permission') : t('allow_location')}
+            {requesting ? t('requesting_permission') : hasPermission ? t('location_retry') : t('allow_location')}
           </button>
           <p className="text-center text-[11px] leading-relaxed text-signal-charcoal-500">{t('location_gate_instruction')}</p>
         </div>
