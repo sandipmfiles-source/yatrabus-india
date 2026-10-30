@@ -27,28 +27,38 @@ export const HomePage: React.FC = () => {
 
   // Autocomplete debounced search for origin
   useEffect(() => {
+    let cancelled = false;
     if (fromQuery.trim().length >= 2) {
       const timer = setTimeout(async () => {
-        const res = await api.searchPlaces(fromQuery, 8);
-        setFromSuggestions(res);
-      }, 200);
-      return () => clearTimeout(timer);
-    } else {
-      setFromSuggestions([]);
+        try {
+          const res = await api.searchPlaces(fromQuery, 8);
+          if (!cancelled) setFromSuggestions(res);
+        } catch {
+          if (!cancelled) setFromSuggestions([]);
+        }
+      }, 220);
+      return () => { cancelled = true; clearTimeout(timer); };
     }
+    setFromSuggestions([]);
+    return () => { cancelled = true; };
   }, [fromQuery]);
 
   // Autocomplete debounced search for destination
   useEffect(() => {
+    let cancelled = false;
     if (toQuery.trim().length >= 2) {
       const timer = setTimeout(async () => {
-        const res = await api.searchPlaces(toQuery, 8);
-        setToSuggestions(res);
-      }, 200);
-      return () => clearTimeout(timer);
-    } else {
-      setToSuggestions([]);
+        try {
+          const res = await api.searchPlaces(toQuery, 8);
+          if (!cancelled) setToSuggestions(res);
+        } catch {
+          if (!cancelled) setToSuggestions([]);
+        }
+      }, 220);
+      return () => { cancelled = true; clearTimeout(timer); };
     }
+    setToSuggestions([]);
+    return () => { cancelled = true; };
   }, [toQuery]);
 
   const handleSwap = () => {
@@ -85,17 +95,23 @@ export const HomePage: React.FC = () => {
     setIsLocating(true);
     navigator.geolocation.getCurrentPosition(
       async pos => {
-        const stops = await api.getNearbyStops(pos.coords.latitude, pos.coords.longitude, 4000);
-        setNearbyStops(stops);
-        setIsLocating(false);
+        try {
+          const stops = await api.getNearbyStops(pos.coords.latitude, pos.coords.longitude, 4000);
+          setNearbyStops(stops);
+        } catch {
+          setNearbyStops([]);
+          alert(t('location_error_nearby'));
+        } finally {
+          setIsLocating(false);
+        }
       },
-      err => {
+      () => {
         // Respectful error handling without guilt
         setIsLocating(false);
         setNearbyStops([]);
         alert(t('location_error_nearby'));
       },
-      { timeout: 8000 }
+      { timeout: 8000, maximumAge: 30000 }
     );
   };
 
@@ -308,19 +324,21 @@ export const HomePage: React.FC = () => {
         {nearbyStops.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-3 pt-3 border-t border-yatriwarm-100">
             {nearbyStops.map(item => (
-              <div
+              <button
+                type="button"
                 key={item.place.id}
                 onClick={() => setFromQuery(item.place.canonicalName)}
-                className="p-2.5 rounded-xl bg-yatriwarm-50 hover:bg-yatribrand-50 cursor-pointer border border-yatriwarm-200/80 transition-colors flex items-center justify-between"
+                className="w-full p-2.5 rounded-xl bg-yatriwarm-50 hover:bg-yatribrand-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yatribrand-700 border border-yatriwarm-200/80 transition-colors flex items-center justify-between text-left"
+                aria-label={`Use ${item.place.canonicalName} as starting point`}
               >
-                <div>
-                  <div className="text-xs font-semibold text-yatriwarm-900">{item.place.canonicalName}</div>
-                  <div className="text-[11px] text-yatriwarm-500">{item.place.district}, {item.place.state}</div>
-                </div>
+                <span>
+                  <span className="block text-xs font-semibold text-yatriwarm-900">{item.place.canonicalName}</span>
+                  <span className="block text-[11px] text-yatriwarm-500">{item.place.district}, {item.place.state}</span>
+                </span>
                 <span className="text-[11px] font-bold text-yatribrand-800 bg-yatribrand-100 px-2 py-0.5 rounded-md">
                   ~{Math.round(item.distanceMeters / 100) / 10} km
                 </span>
-              </div>
+              </button>
             ))}
           </div>
         )}
