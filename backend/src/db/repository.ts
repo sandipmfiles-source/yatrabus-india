@@ -198,10 +198,20 @@ export class TransitRepository {
     return this.buses.get(id);
   }
 
+  public updateTimetableDeparture(routeId: string, busIdentifier: string, departureTime: string, arrivalTime: string): boolean {
+    const route = this.routes.get(routeId);
+    if (!route || !route.departures?.length) return false;
+    const index = route.departures.findIndex(item => (item.busIdentifier || '').toLowerCase() === busIdentifier.toLowerCase() && !item.isCancelled);
+    if (index < 0) return false;
+    route.departures[index] = { ...route.departures[index], departureTime, arrivalTime };
+    route.updatedAt = new Date().toISOString();
+    return true;
+  }
+
   public getBusesForRoute(routeId: string): Bus[] {
     const route = this.routes.get(routeId);
     if (!route) return [];
-    return Array.from(this.buses.values()).filter(b => b.operatorId === route.operatorId);
+    return Array.from(this.buses.values()).filter(b => b.operatorId === route.operatorId && b.isActive);
   }
 
   public addBus(bus: Bus): Bus {
