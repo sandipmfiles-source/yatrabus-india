@@ -2,7 +2,7 @@
  * YatriBus Shared Types - Community Contributions, Duplicate Candidates & Moderation
  */
 export type SubmissionType =
-  | 'ADD_BUS' | 'ADD_STOP' | 'SUGGEST_ROUTE' | 'CORRECT_TIMETABLE'
+  | 'ADD_BUS' | 'ADD_STOP' | 'SUGGEST_ROUTE' | 'UPDATE_ROUTE' | 'CORRECT_TIMETABLE'
   | 'REPORT_CHANGED_ROUTE' | 'REPORT_DISCONTINUED' | 'ADD_INTERMEDIATE_STOP'
   | 'OPERATOR_CLAIM' | 'CONFIRM_DISPUTE' | 'DELETE_BUS';
 

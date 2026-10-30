@@ -81,7 +81,20 @@ export function discoverJourneys(
       );
 
       const timetableDepartures = (route.departures || []).filter(item => !item.isCancelled);
-      const services = timetableDepartures.length ? timetableDepartures : [undefined];
+      const timetableDayCounts = (route.operatingDays || []).map(day =>
+        timetableDepartures.filter(item => !item.operatingDays?.length || item.operatingDays.includes(day)).length
+      );
+      const exactTimetableCount = timetableDepartures.length
+        ? (timetableDayCounts.length ? Math.max(...timetableDayCounts) : timetableDepartures.length)
+        : 0;
+      const exactDepartureTimes = (route.departureTimes || []).filter(time => /^([01]\d|2[0-3]):[0-5]\d$/.test(time));
+      const exactTimeServices = exactDepartureTimes.map((departureTime, index) => ({
+        id: `exact-${route.id}-${index}`,
+        departureTime,
+        busIdentifier: undefined,
+        stopTimes: undefined,
+      }));
+      const services = timetableDepartures.length ? timetableDepartures : exactTimeServices.length ? exactTimeServices : [undefined];
       for (const service of services) {
         const boardingOffset = route.distanceKm > 0
           ? Math.round((boardingStop.distanceFromStartKm / route.distanceKm) * route.typicalDurationMinutes)
@@ -108,10 +121,10 @@ export function discoverJourneys(
           alightingStop,
           isDirect: true,
           transfers: [],
-          confidenceScore: service ? 95 : 85,
+          confidenceScore: timetableDepartures.length ? 95 : exactDepartureTimes.length ? (route.serviceStatus === 'SCHEDULE_UNVERIFIED' ? 75 : 90) : 85,
           serviceStatus: route.serviceStatus,
           locationStatus: 'ESTIMATED',
-          dailyTripCount: estimateDailyTripCount(route.firstDepartureTime, route.lastDepartureTime, route.frequencyMinutes),
+          dailyTripCount: exactDepartureTimes.length || estimateDailyTripCount(route.firstDepartureTime, route.lastDepartureTime, route.frequencyMinutes) || exactTimetableCount || undefined,
           frequencyMinutes: route.frequencyMinutes,
           intermediateStops: route.stops.slice(originIndex + 1, destIndex),
           timetableDepartures,

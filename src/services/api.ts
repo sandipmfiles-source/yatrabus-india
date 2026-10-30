@@ -17,6 +17,13 @@ export const api = {
     return repository.searchPlaces(query, limit);
   },
 
+  async previewRoadRoute(origin: string, destination: string, stops: string[] = []) {
+    const res = await fetch(`${API_BASE}/places/route-preview`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ origin, destination, stops }) });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.message || data.error || 'Free OpenStreetMap road-route preview is unavailable.');
+    return data;
+  },
+
   async getNearbyStops(lat: number, lon: number, radius = 3000) {
     try {
       const res = await fetch(`${API_BASE}/places/nearby?lat=${lat}&lon=${lon}&radius=${radius}`);
@@ -48,16 +55,24 @@ export const api = {
     return { route, stopsCount: route?.stops.length || 0, buses };
   },
 
-  async getBusById(id: string) {
+  async getBusById(id: string, routeId?: string) {
     try {
-      const res = await fetch(`${API_BASE}/buses/${id}`);
+      const query = routeId ? `?routeId=${encodeURIComponent(routeId)}` : '';
+      const res = await fetch(`${API_BASE}/buses/${id}${query}`);
       if (res.ok) return await res.json();
     } catch {}
     const bus = repository.getBusById(id);
     const loc = repository.getBusLocation(id);
     const routes = repository.getAllRoutes();
-    const route = routes.find(r => r.operatorId === bus?.operatorId) || routes[0];
-    const stopETAs = calculateStopETAs(route.stops, 0.35, loc?.isLive ? { latitude: loc.latitude!, longitude: loc.longitude!, speedKmh: loc.speedKmh, isLive: true } : undefined);
+    const linkedRoute = bus?.routeId ? routes.find(r => r.id === bus.routeId) : undefined;
+    const route = routeId
+      ? (bus?.routeId === routeId ? routes.find(r => r.id === routeId) : undefined)
+      : linkedRoute;
+    const stopETAs = route
+      ? calculateStopETAs(route.stops, 0.35, loc?.isLive && typeof loc.latitude === 'number' && typeof loc.longitude === 'number'
+          ? { latitude: loc.latitude, longitude: loc.longitude, speedKmh: loc.speedKmh, isLive: true }
+          : undefined)
+      : [];
     return { bus, location: loc, route, stopETAs };
   },
 
@@ -144,33 +159,6 @@ export const api = {
     return data;
   },
 
-  async googleOwnerLogin(credential: string) {
-    const res = await fetch(`${API_BASE}/operators/auth/google`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ credential }),
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.message || data.error || 'Google owner sign-in failed');
-    return data;
-  },
-
-  async getOwnerSubmissions(token: string) {
-    const res = await fetch(`${API_BASE}/operators/me/submissions`, { headers: { Authorization: `Bearer ${token}` } });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.message || data.error || 'Unable to load owner dashboard');
-    return data;
-  },
-
-  async submitOwnerContribution(token: string, submission: { submissionType: string; entityType: string; targetEntityId?: string; contributorNote?: string; proposedData: Record<string, any> }) {
-    const res = await fetch(`${API_BASE}/operators/submissions`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify(submission),
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.message || data.error || 'Unable to submit bus details');
-    return data;
-  },
-
   async voteOnCorrection(referenceId: string, field: string, value: string, visitorId: string) {
     const res = await fetch(`${API_BASE}/contributions/vote/${encodeURIComponent(referenceId)}`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -179,6 +167,17 @@ export const api = {
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.message || data.error || 'Unable to record vote');
     return data;
+  },
+
+  async submitOperatorContribution(data: { submissionType: string; entityType: string; targetEntityId?: string; contributorNote?: string; proposedData: Record<string, any>; operatorName: string; contactName: string; contactPhone: string; officialEmail?: string }) {
+    const res = await fetch(`${API_BASE}/contributions/operator-submit`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    const result = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(result.message || result.error || 'Owner submission service is unavailable.');
+    return result;
   },
 
   async submitOperatorClaim(data: any) {
@@ -243,11 +242,11 @@ export const api = {
     return data;
   },
 
-  async reviewAdminSubmission(token: string, id: string, decision: 'ADMIN_VERIFIED' | 'COMMUNITY_CORROBORATED' | 'REJECTED', reason: string) {
+  async reviewAdminSubmission(token: string, id: string, decision: 'ADMIN_VERIFIED' | 'COMMUNITY_CORROBORATED' | 'REJECTED', reason: string, verifyTimetable = false) {
     const res = await fetch(`${API_BASE}/admin/submissions/${encodeURIComponent(id)}/review`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ decision, reason }),
+      body: JSON.stringify({ decision, reason, verifyTimetable }),
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.message || data.error || 'Unable to review submission');

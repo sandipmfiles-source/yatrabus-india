@@ -1,6 +1,6 @@
 # YatraBus backend and Android configuration
 
-The Android APK is a client application. Live GPS uploads, community submissions, moderation, and owner login require a reachable backend API; they cannot be made multi-device or persistent by the APK alone.
+The Android APK is a client application. Live GPS uploads, community submissions, moderation, and account-free owner submissions require a reachable backend API; they cannot be made multi-device or persistent by the APK alone.
 
 ## Backend environment
 
@@ -38,7 +38,7 @@ After deploying the backend, set a GitHub Actions repository variable named `VIT
 https://YOUR-BACKEND-HOST.example/api
 ```
 
-Do not include a trailing slash. The Android workflow injects this value into the web build. If it is unset, the app uses the local relative `/api` path; on an installed APK this will not reach a separately hosted backend, so submissions, owner login, and shared live tracking will not work until configured.
+Do not include a trailing slash. The Android workflow injects this value into the web build. If it is unset, the app uses the local relative `/api` path; on an installed APK this will not reach a separately hosted backend, so submissions and shared live tracking will not work until configured.
 
 ## Android tracking permissions
 

@@ -1,14 +1,15 @@
 import express, { Request, Response, NextFunction } from 'express';
+import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { CONFIG } from './config.js';
 import { repository } from './db/repository.js';
-import { installRepositoryPersistence } from './db/persistence.js';
+import { installRepositoryPersistence, isRepositoryPersistenceReady } from './db/persistence.js';
 import { placesRouter } from './routes/places.js';
 import { routesRouter } from './routes/routes.js';
 import { busesRouter } from './routes/buses.js';
 import { trackingRouter } from './routes/tracking.js';
 import { contributionsRouter } from './routes/contributions.js';
 import { adminRouter } from './routes/admin.js';
-import { operatorsRouter } from './routes/operators.js';
 
 export function createServer() {
   installRepositoryPersistence();
@@ -30,24 +31,19 @@ export function createServer() {
     next();
   });
 
-  // Health checks
-  app.get('/health', (req: Request, res: Response) => {
-    res.json({
-      status: 'UP',
+  // Health checks also verify that the persistent state file is writable.
+  const healthHandler = (_req: Request, res: Response) => {
+    const storageReady = isRepositoryPersistenceReady();
+    res.status(storageReady ? 200 : 503).json({
+      status: storageReady ? 'UP' : 'DEGRADED',
+      storageReady,
+      storageMode: 'JSON_FILE',
       service: 'YatriBus Backend API',
       timestamp: new Date().toISOString(),
-      costTarget: '₹0 Initial Architecture',
     });
-  });
-
-  app.get('/api/health', (req: Request, res: Response) => {
-    res.json({
-      status: 'UP',
-      service: 'YatriBus Backend API',
-      timestamp: new Date().toISOString(),
-      costTarget: '₹0 Initial Architecture',
-    });
-  });
+  };
+  app.get('/health', healthHandler);
+  app.get('/api/health', healthHandler);
 
   // Mount API routers
   app.use('/api/places', placesRouter);
@@ -55,8 +51,20 @@ export function createServer() {
   app.use('/api/buses', busesRouter);
   app.use('/api/tracking', trackingRouter);
   app.use('/api/contributions', contributionsRouter);
-  app.use('/api/operators', operatorsRouter);
   app.use('/api/admin', adminRouter);
+
+  // Serve the built passenger app and API from one HTTPS host/container.
+  const webDist = resolve(process.cwd(), 'dist');
+  const webIndex = resolve(webDist, 'index.html');
+  if (existsSync(webIndex)) {
+    app.use(express.static(webDist, { index: false, maxAge: '1h' }));
+    app.use((req: Request, res: Response, next: NextFunction) => {
+      if (req.method === 'GET' && !req.path.startsWith('/api/') && req.path !== '/health') {
+        return res.sendFile(webIndex);
+      }
+      next();
+    });
+  }
 
   // 404 handler
   app.use((req: Request, res: Response) => {

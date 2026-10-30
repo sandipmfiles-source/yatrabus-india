@@ -3,8 +3,9 @@ import { useLanguage } from '../context/LanguageContext.js';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { api } from '../services/api.js';
 import { JourneyCandidate } from '@shared/types/bus.js';
+import { estimateDailyTripCount } from '@shared/engine/routeGraph.js';
 import { BusCard } from '../components/BusCard.js';
-import { ArrowLeft, Filter, AlertCircle, PlusCircle, RefreshCw } from 'lucide-react';
+import { ArrowLeft, AlertCircle, PlusCircle, Clock3, MapPin, CalendarDays, BusFront } from 'lucide-react';
 
 export const SearchResultsPage: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -18,21 +19,115 @@ export const SearchResultsPage: React.FC = () => {
   const [directRoutes, setDirectRoutes] = useState<JourneyCandidate[]>([]);
   const [transferRoutes, setTransferRoutes] = useState<JourneyCandidate[]>([]);
   const [filterType, setFilterType] = useState<'ALL' | 'DIRECT' | 'LIVE'>('ALL');
+  const [returnJourneys, setReturnJourneys] = useState<JourneyCandidate[]>([]);
 
   useEffect(() => {
-    if (!from || !to) return;
-
-    setIsLoading(true);
-    api.searchRoutes(from, to).then(res => {
-      setDirectRoutes(res.directRoutes || []);
-      setTransferRoutes(res.transferRoutes || []);
+    if (!from || !to) {
       setIsLoading(false);
-    });
+      return;
+    }
+    let cancelled = false;
+    setIsLoading(true);
+    Promise.all([api.searchRoutes(from, to), api.searchRoutes(to, from).catch(() => null)])
+      .then(([res, reverse]) => {
+        if (cancelled) return;
+        setDirectRoutes(res.directRoutes || []);
+        setTransferRoutes(res.transferRoutes || []);
+        setReturnJourneys(reverse ? [...(reverse.directRoutes || []), ...(reverse.transferRoutes || [])] : []);
+        setIsLoading(false);
+      })
+      .catch(() => { if (!cancelled) setIsLoading(false); });
+    return () => { cancelled = true; };
   }, [from, to]);
 
   const allJourneys = [...directRoutes, ...transferRoutes];
 
+  const timetablePanel = (journey: JourneyCandidate) => {
+    if (!journey.isDirect) return null;
+    const route = journey.route;
+    const departures = (route.departures || []).filter(item => !item.isCancelled)
+      .slice().sort((a, b) => a.departureTime.localeCompare(b.departureTime));
+    const exactTimes = (route.departureTimes || []).slice().sort();
+    const exactDepartures = departures.length > 0 || exactTimes.length > 0;
+    const estimate = estimateDailyTripCount(route.firstDepartureTime, route.lastDepartureTime, route.frequencyMinutes);
+    const dayCounts = (route.operatingDays || []).map(day =>
+      departures.filter(item => !item.operatingDays?.length || item.operatingDays.includes(day)).length
+    );
+    const exactCount = exactDepartures
+      ? departures.length
+        ? (dayCounts.length ? { min: Math.min(...dayCounts), max: Math.max(...dayCounts) } : { min: departures.length, max: departures.length })
+        : { min: exactTimes.length, max: exactTimes.length }
+      : null;
+    const countLabel = exactTimes.length
+      ? String(exactTimes.length)
+      : estimate !== undefined
+        ? `~${estimate}`
+        : exactCount
+          ? (exactCount.min === exactCount.max ? String(exactCount.min) : `${exactCount.min}–${exactCount.max}`)
+          : t('not_verified');
+    const estimatedSlots = estimate && route.frequencyMinutes
+      ? Array.from({ length: Math.min(estimate, 30) }, (_, index) => {
+          const [hours, minutes] = route.firstDepartureTime.split(':').map(Number);
+          const total = hours * 60 + minutes + index * route.frequencyMinutes!;
+          return { key: `estimated-${index}`, time: `${String(Math.floor(total / 60) % 24).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`, busIdentifier: '', days: route.operatingDays?.join(', ') || '' };
+        })
+      : [];
+    const departureSlots = departures.length
+      ? departures.slice(0, 30).map(item => ({ key: item.id, time: item.departureTime, busIdentifier: item.busIdentifier || '', days: item.operatingDays?.join(', ') || '' }))
+      : exactTimes.length
+        ? exactTimes.slice(0, 30).map((time, index) => ({ key: `exact-time-${index}`, time, busIdentifier: '', days: route.operatingDays?.join(', ') || '' }))
+        : estimatedSlots;
+    const firstIndex = route.stops.findIndex(stop => stop.id === journey.boardingStop.id);
+    const lastIndex = route.stops.findIndex(stop => stop.id === journey.alightingStop.id);
+    const segmentStops = firstIndex >= 0 && lastIndex >= firstIndex
+      ? route.stops.slice(firstIndex, lastIndex + 1)
+      : [journey.boardingStop, journey.alightingStop];
+    const scheduleVerified = route.verificationStatus === 'ADMIN_VERIFIED' && route.serviceStatus !== 'SCHEDULE_UNVERIFIED';
+
+    return (
+      <section key={journey.id + '-timetable'} className="mt-3 rounded-2xl border border-yatriwarm-200 bg-white p-4 space-y-3">
+        <div className="flex items-center justify-between gap-2">
+          <h3 className="flex items-center gap-2 text-sm font-bold text-yatriwarm-900"><Clock3 className="w-4 h-4 text-yatribrand-800" />{t('timetable_panel_title')}</h3>
+          <span className={`text-[10px] rounded-full px-2 py-1 font-semibold ${scheduleVerified ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-800'}`}>
+            {scheduleVerified ? t('verified') : t('unverified')}
+          </span>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <div className="rounded-xl bg-yatriwarm-50 p-2"><div className="text-[10px] text-yatriwarm-500">{t('first_bus')}</div><div className="text-sm font-bold text-yatriwarm-900">{route.firstDepartureTime || t('not_provided')}</div></div>
+          <div className="rounded-xl bg-yatriwarm-50 p-2"><div className="text-[10px] text-yatriwarm-500">{t('last_bus')}</div><div className="text-sm font-bold text-yatriwarm-900">{route.lastDepartureTime || t('not_provided')}</div></div>
+          <div className="rounded-xl bg-yatriwarm-50 p-2"><div className="text-[10px] text-yatriwarm-500">{t('frequency')}</div><div className="text-sm font-bold text-yatriwarm-900">{route.frequencyMinutes ? `${t('every')} ${route.frequencyMinutes} ${t('minutes')}` : t('not_provided')}</div></div>
+          <div className="rounded-xl bg-yatriwarm-50 p-2"><div className="text-[10px] text-yatriwarm-500">{t('trips_per_day')}</div><div className="text-sm font-bold text-yatriwarm-900">{countLabel}</div></div>
+        </div>
+        <p className="flex items-center gap-1 text-[11px] text-yatriwarm-500"><CalendarDays className="w-3.5 h-3.5" />{t('operating_days')}: {route.operatingDays?.join(', ') || t('not_provided')}</p>
+        {departureSlots.length > 0 && <div>
+          <div className="text-[11px] font-semibold text-yatriwarm-700">{exactDepartures ? t('scheduled_departures') : t('estimated_departures')}</div>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {departureSlots.map(item => <span key={item.key} className="rounded-lg bg-yatriwarm-100 px-2 py-1 text-[11px] tabular-nums text-yatriwarm-800">
+              {item.time}{item.busIdentifier ? ` · ${item.busIdentifier}` : ''}{item.days ? <span className="ml-1 text-[9px] text-yatriwarm-500">({item.days})</span> : ''}
+            </span>)}
+          </div>
+          {(exactDepartures ? departures.length : estimate || 0) > 30 && <p className="mt-1 text-[10px] text-yatriwarm-500">{t('showing_first')} 30 {exactDepartures ? t('of_total') : t('of_approximately')} {exactDepartures ? departures.length : estimate} {t('departures')}</p>}
+        </div>}
+        <div>
+          <div className="mb-2 flex items-center gap-2 text-xs font-bold text-yatriwarm-800"><MapPin className="w-3.5 h-3.5 text-yatribrand-800" />{t('stops_between')} {journey.boardingStop.stopName} → {journey.alightingStop.stopName}</div>
+          <ol className="relative ml-2 border-l-2 border-yatribrand-200 pl-4 space-y-2">
+            {segmentStops.map(stop => <li key={stop.id} className="relative">
+              <span className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full border-2 border-yatribrand-700 bg-white" />
+              <div className="flex items-center justify-between gap-3"><span className="text-xs font-medium text-yatriwarm-800">{stop.stopName}</span><span className="text-[11px] tabular-nums text-yatriwarm-500">{stop.scheduledArrivalTime || stop.scheduledDepartureTime || t('time_not_listed')}</span></div>
+            </li>)}
+          </ol>
+        </div>
+        <p className="text-[10px] text-yatriwarm-500">{scheduleVerified ? t('verified_schedule') : t('unverified_schedule')}</p>
+      </section>
+    );
+  };
+
   const filteredJourneys = allJourneys.filter(j => {
+    if (filterType === 'DIRECT') return j.isDirect;
+    if (filterType === 'LIVE') return j.locationStatus === 'LIVE';
+    return true;
+  });
+  const filteredReturnJourneys = returnJourneys.filter(j => {
     if (filterType === 'DIRECT') return j.isDirect;
     if (filterType === 'LIVE') return j.locationStatus === 'LIVE';
     return true;
@@ -120,13 +215,20 @@ export const SearchResultsPage: React.FC = () => {
       {!isLoading && filteredJourneys.length > 0 && (
         <div className="space-y-4">
           {filteredJourneys.map(j => (
-            <BusCard key={j.id} journey={j} />
+            <div key={j.id}><BusCard journey={j} />{timetablePanel(j)}</div>
           ))}
         </div>
       )}
 
+      {!isLoading && filteredReturnJourneys.length > 0 && (
+        <section className="space-y-3 pt-3">
+          <div className="flex items-center gap-2"><BusFront className="w-5 h-5 text-yatribrand-800" /><h3 className="text-base font-bold text-yatriwarm-900">{t('return_buses')}: {to} → {from}</h3></div>
+          {filteredReturnJourneys.map(j => <div key={'return-' + j.id}><BusCard journey={j} />{timetablePanel(j)}</div>)}
+        </section>
+      )}
+
       {/* Empty State */}
-      {!isLoading && filteredJourneys.length === 0 && (
+      {!isLoading && filteredJourneys.length === 0 && filteredReturnJourneys.length === 0 && (
         <div className="bg-white rounded-3xl p-8 border border-yatriwarm-200 shadow-card text-center space-y-4">
           <div className="w-12 h-12 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center mx-auto">
             <AlertCircle className="w-6 h-6" />

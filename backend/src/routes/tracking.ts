@@ -29,8 +29,13 @@ trackingRouter.post('/evaluate-prompt', (req: Request, res: Response) => {
 trackingRouter.post('/consent', (req: Request, res: Response) => {
   const { sessionId, status, disclosuresAccepted } = req.body;
 
-  if (!sessionId || !status) {
-    return res.status(400).json({ error: 'Missing required fields: sessionId and status' });
+  if (!sessionId || !['GRANTED', 'REVOKED'].includes(status)) {
+    return res.status(400).json({ error: 'A valid sessionId and consent status (GRANTED or REVOKED) are required.' });
+  }
+  const session = repository.getJourneySession(sessionId);
+  if (!session || !session.isActive) return res.status(404).json({ error: 'Active journey session not found.' });
+  if (status === 'GRANTED' && disclosuresAccepted !== true) {
+    return res.status(400).json({ error: 'Explicit tracking disclosures must be accepted before location sharing can start.' });
   }
 
   repository.recordConsent({
@@ -40,8 +45,9 @@ trackingRouter.post('/consent', (req: Request, res: Response) => {
     grantedAt: status === 'GRANTED' ? new Date().toISOString() : undefined,
     revokedAt: status === 'REVOKED' ? new Date().toISOString() : undefined,
     userAgentSnippet: req.headers['user-agent']?.substring(0, 100),
-    disclosuresAccepted: !!disclosuresAccepted,
+    disclosuresAccepted: disclosuresAccepted === true,
   });
+  if (status === 'REVOKED') repository.stopJourneySession(sessionId, 'CONSENT_REVOKED');
 
   return res.json({ success: true, sessionId, status });
 });
@@ -52,6 +58,12 @@ trackingRouter.post('/session/start', (req: Request, res: Response) => {
 
   if (!busId || !routeId) {
     return res.status(400).json({ error: 'busId and routeId are required' });
+  }
+  const bus = repository.getBusById(String(busId));
+  const route = repository.getRouteById(String(routeId));
+  if (!route) return res.status(404).json({ error: 'Route not found' });
+  if (!bus || !bus.isActive || bus.routeId !== routeId) {
+    return res.status(422).json({ error: 'Live tracking is available only for an active bus explicitly linked to this route.' });
   }
 
   const sessionId = `sess-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
@@ -100,6 +112,22 @@ trackingRouter.post('/observation', (req: Request, res: Response) => {
   const session = repository.getJourneySession(sessionId);
   if (!session || !session.isActive) {
     return res.status(403).json({ error: 'Invalid or inactive journey session' });
+  }
+  if (session.busId !== busId || session.routeId !== routeId) {
+    return res.status(403).json({ error: 'Observation does not match the active journey session.' });
+  }
+  const consent = repository.getConsent(sessionId);
+  if (!consent || consent.status !== 'GRANTED' || consent.disclosuresAccepted !== true) {
+    return res.status(403).json({ error: 'Explicit location-sharing consent is required before sending GPS observations.' });
+  }
+  if (!Number.isFinite(Number(latitude)) || Number(latitude) < -90 || Number(latitude) > 90 ||
+      !Number.isFinite(Number(longitude)) || Number(longitude) < -180 || Number(longitude) > 180 ||
+      !Number.isFinite(Number(accuracyMeters)) || Number(accuracyMeters) <= 0) {
+    return res.status(400).json({ error: 'Invalid GPS coordinates or accuracy.' });
+  }
+  if (Date.now() >= new Date(session.maxExpiryTime).getTime()) {
+    repository.stopJourneySession(sessionId, 'SESSION_EXPIRED');
+    return res.status(410).json({ error: 'Journey tracking session has expired. Start a new session if you still want to share.' });
   }
 
   // 2. Fetch associated route

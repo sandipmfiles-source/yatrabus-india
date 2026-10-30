@@ -5,6 +5,7 @@ import { storage, RecentSearchItem } from '../services/storage.js';
 import { api } from '../services/api.js';
 import { PlaceSearchResult } from '@shared/types/places.js';
 import { Search, ArrowUpDown, Clock, MapPin, PlusCircle, ShieldCheck, Sparkles, Navigation } from 'lucide-react';
+import { BusIllustration } from '../assets/BusIllustration.js';
 
 export const HomePage: React.FC = () => {
   const { t } = useLanguage();
@@ -121,7 +122,7 @@ export const HomePage: React.FC = () => {
             {/* Origin Input */}
             <div className="relative">
               <label htmlFor="from-input" className="block text-xs font-bold text-yatriwarm-700 uppercase tracking-wider mb-1.5 flex items-center gap-1">
-                <MapPin className="w-3.5 h-3.5 text-yatribrand-700" />
+                <BusIllustration variant="icon" className="w-4 h-4 text-yatribrand-700" />
                 {t('label_from')}
               </label>
               <input
@@ -178,7 +179,7 @@ export const HomePage: React.FC = () => {
             {/* Destination Input */}
             <div className="relative">
               <label htmlFor="to-input" className="block text-xs font-bold text-yatriwarm-700 uppercase tracking-wider mb-1.5 flex items-center gap-1">
-                <MapPin className="w-3.5 h-3.5 text-emerald-600" />
+                <BusIllustration variant="icon" className="w-4 h-4 text-emerald-600" />
                 {t('label_to')}
               </label>
               <input

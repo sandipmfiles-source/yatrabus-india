@@ -1,0 +1,13 @@
+.git
+.github
+node_modules
+dist
+android
+.env
+.env.*
+*.apk
+*.aab
+*.patch
+*.tar.gz
+*.backup
+data/*.json

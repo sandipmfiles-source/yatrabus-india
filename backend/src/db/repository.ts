@@ -52,27 +52,21 @@ export class TransitRepository {
     for (const r of SEED_ROUTES) {
       this.routes.set(r.id, r);
     }
-    // Seed Buses & initial Location Aggregates
+    // Seed buses with an explicit unavailable location state. Never fabricate a GPS
+    // position or label a demo coordinate as a live/estimated bus location.
     for (const b of SEED_BUSES) {
       this.buses.set(b.id, b);
+      const routeId = b.routeId || '';
       this.busLocations.set(b.id, {
         busId: b.id,
-        routeId: b.publicIdentifier.includes('534') ? 'route-dtc-534-up' : 'route-dtc-429-up',
-        displayState: 'ESTIMATED',
-        latitude: 28.6469,
-        longitude: 77.3160,
-        accuracyMeters: 25,
-        bearing: 140,
-        speedKmh: 24,
-        confidenceCategory: 'MODERATE',
-        confidenceScore: 65,
+        routeId,
+        displayState: 'UNAVAILABLE',
+        confidenceCategory: 'LOW',
+        confidenceScore: 0,
         observationCount: 0,
         independentContributorsCount: 0,
-        lastObservedAt: new Date().toISOString(),
-        estimatedNextStopName: 'Sarai Kale Khan ISBT',
-        estimatedArrivalMinutes: 12,
         isLive: false,
-        statusExplanation: 'Scheduled timetable estimate — waiting for passenger GPS corroboration',
+        statusExplanation: 'No passenger GPS observation has been received. Use the published timetable for schedule estimates.',
         updatedAt: new Date().toISOString(),
       });
     }
@@ -216,7 +210,10 @@ export class TransitRepository {
   public getBusesForRoute(routeId: string): Bus[] {
     const route = this.routes.get(routeId);
     if (!route) return [];
-    return Array.from(this.buses.values()).filter(b => b.operatorId === route.operatorId && b.isActive);
+    return Array.from(this.buses.values()).filter(b => b.isActive && (
+      b.routeId === routeId ||
+      (!b.routeId && b.operatorId === route.operatorId)
+    ));
   }
 
   public addBus(bus: Bus): Bus {
@@ -242,16 +239,44 @@ export class TransitRepository {
     return this.journeySessions.get(sessionId);
   }
 
+  private pruneExpiredTrackingData(nowMs: number = Date.now()): void {
+    const retentionCutoff = nowMs - 12 * 60 * 60 * 1000;
+    const inactiveSessionIds = new Set<string>();
+    for (const [sessionId, session] of this.journeySessions) {
+      const expiryMs = new Date(session.maxExpiryTime).getTime();
+      if (session.isActive && Number.isFinite(expiryMs) && nowMs >= expiryMs) {
+        session.isActive = false;
+        session.stoppedReason = 'SESSION_EXPIRED';
+        session.lastActiveTime = new Date(nowMs).toISOString();
+        const consent = this.consentRecords.get(sessionId);
+        if (consent?.status === 'GRANTED') {
+          this.consentRecords.set(sessionId, { ...consent, status: 'REVOKED', revokedAt: new Date(nowMs).toISOString() });
+        }
+      }
+      if (!session.isActive) inactiveSessionIds.add(sessionId);
+    }
+    this.observations = this.observations.filter(observation =>
+      !inactiveSessionIds.has(observation.sessionId) &&
+      new Date(observation.timestamp).getTime() >= retentionCutoff
+    );
+  }
+
   public stopJourneySession(sessionId: string, reason: JourneySession['stoppedReason']): boolean {
     const sess = this.journeySessions.get(sessionId);
     if (!sess) return false;
     sess.isActive = false;
     sess.stoppedReason = reason;
     sess.lastActiveTime = new Date().toISOString();
+    const consent = this.consentRecords.get(sessionId);
+    if (consent?.status === 'GRANTED') {
+      this.consentRecords.set(sessionId, { ...consent, status: 'REVOKED', revokedAt: new Date().toISOString() });
+    }
+    this.pruneExpiredTrackingData();
     return true;
   }
 
   public ingestObservation(obs: LocationObservation): void {
+    this.pruneExpiredTrackingData();
     this.observations.push(obs);
     // Increment session counter
     const sess = this.journeySessions.get(obs.sessionId);
@@ -262,6 +287,7 @@ export class TransitRepository {
   }
 
   public getDistinctSessionsForBus(busId: string, sinceIso: string): number {
+    this.pruneExpiredTrackingData();
     const sinceMs = new Date(sinceIso).getTime();
     const sessions = new Set<string>();
     for (const obs of this.observations) {
@@ -380,6 +406,7 @@ export class TransitRepository {
   }
 
   public exportState(): Record<string, unknown> {
+    this.pruneExpiredTrackingData();
     return {
       places: Array.from(this.places.values()),
       operators: Array.from(this.operators.values()),
@@ -419,6 +446,7 @@ export class TransitRepository {
     restore(this.automationRules, snapshot.automationRules, item => (item as any).id);
     restore(this.adminUsers, snapshot.adminUsers, item => (item as any).id);
     if (Array.isArray(snapshot.observations)) this.observations = (snapshot.observations as LocationObservation[]).slice(-10000);
+    this.pruneExpiredTrackingData();
     if (Array.isArray(snapshot.auditLogs)) this.auditLogs = (snapshot.auditLogs as AuditLogEntry[]).slice(0, 500);
   }
 

@@ -42,6 +42,8 @@ export interface Bus {
   id: string;
   publicIdentifier: string; // Public bus name or number shown on front LED/board
   operatorId: string;
+  /** Route served by this bus; prevents same-operator buses being mixed across corridors. */
+  routeId?: string;
   operatorName?: string;
   contributedBy?: string;
   fleetRegistrationNumber?: string; // Optional (e.g. DL 1PC 4432)
@@ -94,6 +96,8 @@ export interface Route {
   firstDepartureTime: string; // HH:MM
   lastDepartureTime: string;  // HH:MM
   frequencyMinutes?: number;
+  /** Exact published departure times for routes where per-bus arrival details are not yet available. */
+  departureTimes?: string[];
   /** Individually scheduled and admin-approved departures for this route. */
   departures?: TimetableDeparture[];
   stops: RouteStop[];

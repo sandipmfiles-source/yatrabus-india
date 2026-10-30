@@ -24,6 +24,9 @@ interface TrackingContextType {
   declineConsent: () => void;
   stopSharing: () => Promise<void>;
   observationsCount: number;
+  trackingError: string;
+  isBackgroundTrackingActive: boolean;
+  trackingWarning: string;
 }
 
 const BackgroundGeolocation = registerPlugin<any>('BackgroundGeolocation');
@@ -34,6 +37,9 @@ export const TrackingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [isConsentModalOpen, setIsConsentModalOpen] = useState(false);
   const [pendingBusForTracking, setPendingBus] = useState<{ busId: string; routeId: string; routeNumber?: string } | null>(null);
   const [observationsCount, setObservationsCount] = useState(0);
+  const [trackingError, setTrackingError] = useState('');
+  const [isBackgroundTrackingActive, setIsBackgroundTrackingActive] = useState(false);
+  const [trackingWarning, setTrackingWarning] = useState('');
   const nativeWatcherIdRef = useRef<string | null>(null);
   const webWatchIdRef = useRef<number | null>(null);
 
@@ -71,6 +77,8 @@ export const TrackingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     };
 
     if (!activeSession) {
+      setIsBackgroundTrackingActive(false);
+      setTrackingWarning('');
       if (nativeWatcherIdRef.current) {
         void BackgroundGeolocation.removeWatcher({ id: nativeWatcherIdRef.current }).catch(() => undefined);
         nativeWatcherIdRef.current = null;
@@ -93,6 +101,7 @@ export const TrackingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         },
         (location: any, error: any) => {
           if (error) {
+            setTrackingWarning(error.message || 'Background location service reported an error.');
             console.warn('Background location error:', error.message || error.code);
             return;
           }
@@ -103,8 +112,12 @@ export const TrackingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           void BackgroundGeolocation.removeWatcher({ id: watcherId });
         } else {
           nativeWatcherIdRef.current = watcherId;
+          setIsBackgroundTrackingActive(true);
+          setTrackingWarning('');
         }
       }).catch((error: unknown) => {
+        setIsBackgroundTrackingActive(false);
+        setTrackingWarning(error instanceof Error ? error.message : 'Background GPS could not start. Check Android permissions and notification settings.');
         console.error('Unable to start native background tracking:', error);
       });
     } else if (navigator.geolocation) {
@@ -119,6 +132,8 @@ export const TrackingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         error => console.warn('Browser location error:', error.message),
         { enableHighAccuracy: true, maximumAge: 10000, timeout: 20000 }
       );
+      setIsBackgroundTrackingActive(true);
+      setTrackingWarning('');
     }
 
     return () => {
@@ -142,12 +157,18 @@ export const TrackingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const closeConsentModal = () => {
     setIsConsentModalOpen(false);
     setPendingBus(null);
+    setTrackingError('');
   };
 
   const grantConsentAndStartTracking = async () => {
     if (!pendingBusForTracking) return;
+    setTrackingError('');
     try {
       if (Capacitor.isNativePlatform()) {
+        const apiBase = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') || '';
+        if (!apiBase || !/^https:\/\//i.test(apiBase)) {
+          throw new Error('Live background GPS requires a deployed HTTPS backend. Configure VITE_API_BASE_URL and rebuild the APK before starting a tracked journey.');
+        }
         try {
           await LocalNotifications.requestPermissions();
         } catch (permissionError) {
@@ -167,12 +188,14 @@ export const TrackingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         busId: pendingBusForTracking.busId,
         routeId: pendingBusForTracking.routeId,
         routeNumber: pendingBusForTracking.routeNumber,
-        startedAt: new Date().toISOString(),
+        startedAt: session.startTime || new Date().toISOString(),
       };
       setActiveSession(sessionData);
       storage.setActiveSession(sessionData);
       closeConsentModal();
     } catch (e) {
+      const message = e instanceof Error ? e.message : 'Live tracking could not start. Check your connection and try again.';
+      setTrackingError(message);
       console.error('Failed to start tracking session', e);
     }
   };
@@ -190,10 +213,24 @@ export const TrackingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setObservationsCount(0);
   };
 
+  useEffect(() => {
+    if (!activeSession) return;
+    const startedAt = new Date(activeSession.startedAt).getTime();
+    if (!Number.isFinite(startedAt)) {
+      storage.clearActiveSession();
+      setActiveSession(null);
+      return;
+    }
+    const expiresAt = startedAt + 12 * 60 * 60 * 1000;
+    const timeoutId = window.setTimeout(() => { void stopSharing(); }, Math.max(0, expiresAt - Date.now()));
+    return () => window.clearTimeout(timeoutId);
+  }, [activeSession]);
+
   return (
     <TrackingContext.Provider value={{
       activeSession, isConsentModalOpen, pendingBusForTracking, openConsentModalForBus,
-      closeConsentModal, grantConsentAndStartTracking, declineConsent, stopSharing, observationsCount,
+      closeConsentModal, grantConsentAndStartTracking, declineConsent, stopSharing, observationsCount, trackingError,
+      isBackgroundTrackingActive, trackingWarning,
     }}>
       {children}
     </TrackingContext.Provider>

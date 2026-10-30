@@ -9,6 +9,7 @@ export const AdminSubmissionsPage: React.FC = () => {
   const [submissions, setSubmissions] = useState<CommunitySubmission[]>([]);
   const [selectedSub, setSelectedSub] = useState<CommunitySubmission | null>(null);
   const [decisionReason, setDecisionReason] = useState('');
+  const [verifyTimetable, setVerifyTimetable] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -40,10 +41,11 @@ export const AdminSubmissionsPage: React.FC = () => {
     setError('');
     setMessage('');
     try {
-      const result = await api.reviewAdminSubmission(token, selectedSub.id, decision, decisionReason.trim());
+      const result = await api.reviewAdminSubmission(token, selectedSub.id, decision, decisionReason.trim(), decision === 'ADMIN_VERIFIED' && verifyTimetable);
       setMessage(result.message || `Submission ${selectedSub.referenceId} updated.`);
       setSelectedSub(null);
       setDecisionReason('');
+      setVerifyTimetable(false);
       await loadSubmissions();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Review failed. Please try again.');
@@ -70,7 +72,7 @@ export const AdminSubmissionsPage: React.FC = () => {
           <div className="text-xs font-bold uppercase tracking-wider text-yatriwarm-500 pb-2 border-b border-yatriwarm-100">Pending ({submissions.length})</div>
           {isLoading ? <p className="text-xs text-yatriwarm-500 p-4">Loading submissions…</p> : submissions.length === 0 ? <p className="text-xs text-yatriwarm-500 p-4">No pending submissions.</p> : (
             <div className="space-y-2 max-h-[600px] overflow-y-auto">
-              {submissions.map(sub => <button type="button" key={sub.id} onClick={() => setSelectedSub(sub)} className={`w-full text-left p-3 rounded-2xl border text-xs transition-all ${selectedSub?.id === sub.id ? 'border-yatribrand-800 bg-yatribrand-50' : 'border-yatriwarm-200 hover:bg-yatriwarm-50'}`}>
+              {submissions.map(sub => <button type="button" key={sub.id} onClick={() => { setSelectedSub(sub); setDecisionReason(''); setVerifyTimetable(false); }} className={`w-full text-left p-3 rounded-2xl border text-xs transition-all ${selectedSub?.id === sub.id ? 'border-yatribrand-800 bg-yatribrand-50' : 'border-yatriwarm-200 hover:bg-yatriwarm-50'}`}>
                 <div className="flex items-center justify-between gap-2"><span className="font-mono font-bold text-yatribrand-900">{sub.referenceId}</span><span className="text-[10px] font-semibold">{sub.status.replace('_', ' ')}</span></div>
                 <div className="font-medium text-yatriwarm-800 mt-1">{sub.submissionType}</div><div className="text-[11px] text-yatriwarm-500 line-clamp-1">{sub.contributorNote || 'No notes'}</div>
               </button>)}
@@ -83,6 +85,8 @@ export const AdminSubmissionsPage: React.FC = () => {
             <div className="flex items-center justify-between pb-3 border-b border-yatriwarm-200"><div><h2 className="text-base font-bold text-yatriwarm-900">Reference: <span className="font-mono">{selectedSub.referenceId}</span></h2><p className="text-xs text-yatriwarm-500 mt-1">Type: {selectedSub.submissionType} • Source: {selectedSub.sourceCategory || 'PUBLIC'} • Submitted: {new Date(selectedSub.createdAt).toLocaleString()}</p></div><span className="px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-800">{selectedSub.status}</span></div>
             <div><h3 className="text-xs font-bold text-yatriwarm-700 uppercase tracking-wider mb-2">Proposed Details</h3><pre className="p-3 bg-yatriwarm-50 rounded-xl border border-yatriwarm-200 text-xs font-mono text-yatriwarm-800 overflow-x-auto whitespace-pre-wrap">{JSON.stringify({ ...selectedSub.proposedData, communityVotes: selectedSub.communityVotes || {} }, null, 2)}</pre></div>
             {selectedSub.contributorNote && <div><h3 className="text-xs font-bold text-yatriwarm-700 uppercase tracking-wider mb-1">Contributor Note</h3><p className="text-xs text-yatriwarm-700 p-3 bg-yatriwarm-50 rounded-xl border border-yatriwarm-200">{selectedSub.contributorNote}</p></div>}
+            {typeof selectedSub.proposedData?.evidenceUrl === 'string' && /^https?:\/\//i.test(selectedSub.proposedData.evidenceUrl) && <div><h3 className="text-xs font-bold text-yatriwarm-700 uppercase tracking-wider mb-1">Official timetable / operator evidence</h3><a href={selectedSub.proposedData.evidenceUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-yatribrand-900 underline break-all">Open submitted evidence link</a></div>}
+            {selectedSub.proposedData?.evidenceUrl && /^https:\/\//i.test(String(selectedSub.proposedData.evidenceUrl)) && (selectedSub.submissionType === 'SUGGEST_ROUTE' || selectedSub.proposedData?.timetableEntry === true || selectedSub.proposedData?.action === 'UPDATE_ROUTE' || selectedSub.proposedData?.action === 'UPDATE_BUS_TIMETABLE') && <label className="flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-900"><input type="checkbox" checked={verifyTimetable} onChange={e => setVerifyTimetable(e.target.checked)} className="mt-0.5" /><span><b>Timetable evidence checked.</b> Tick only after opening the official source and confirming the submitted departure times and operating days. This marks the published schedule as verified.</span></label>}
             <div className="space-y-3 pt-4 border-t border-yatriwarm-200"><label className="block text-xs font-medium text-yatriwarm-700">Verification Note / Rejection Reason</label><textarea rows={3} value={decisionReason} onChange={e => setDecisionReason(e.target.value)} placeholder="Write how you verified this bus or why it is rejected…" className="w-full px-3 py-2 bg-yatriwarm-50 border border-yatriwarm-200 rounded-xl text-xs" />
               <div className="flex flex-wrap gap-2">
                 <button type="button" disabled={isReviewing} onClick={() => void handleReview('ADMIN_VERIFIED')} className="px-4 py-2 bg-emerald-700 disabled:opacity-50 text-white text-xs font-semibold rounded-xl flex items-center gap-1.5"><CheckCircle className="w-4 h-4" />Approve & Verify</button>

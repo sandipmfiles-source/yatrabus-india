@@ -19,6 +19,7 @@ export const BusDetailPage: React.FC = () => {
 
   const [isLoading, setIsLoading] = useState(true);
   const [route, setRoute] = useState<Route | null>(null);
+  const [activeBusId, setActiveBusId] = useState<string | null>(null);
   const [location, setLocation] = useState<AggregatedBusLocation | null>(null);
   const [stopETAs, setStopETAs] = useState<ETAResult[]>([]);
   const [corrections, setCorrections] = useState<any[]>([]);
@@ -42,20 +43,39 @@ export const BusDetailPage: React.FC = () => {
     if (!id) return;
 
     setIsLoading(true);
+    setActiveBusId(null);
+    setLocation(null);
     api.getRouteById(id).then(res => {
       if (res.route) {
         setRoute(res.route);
-        // Also fetch bus location if bus exists
-        if (res.buses && res.buses.length > 0) {
-          api.getBusById(res.buses[0].id).then(busRes => {
-            setLocation(busRes.location);
-            setStopETAs(busRes.stopETAs);
-          });
-        }
+        const routeBus = res.buses?.find((bus: any) => bus.routeId === res.route.id);
+        if (routeBus?.id) setActiveBusId(routeBus.id);
       }
       setIsLoading(false);
     });
   }, [id]);
+
+  useEffect(() => {
+    if (!activeBusId || !route?.id) return;
+    let cancelled = false;
+    const refreshBusLocation = async () => {
+      try {
+        const busRes = await api.getBusById(activeBusId, route.id);
+        if (!cancelled) {
+          setLocation(busRes.location || null);
+          setStopETAs(busRes.stopETAs || []);
+        }
+      } catch {
+        // Keep the last confirmed location visible if a temporary refresh fails.
+      }
+    };
+    void refreshBusLocation();
+    const intervalId = window.setInterval(() => { void refreshBusLocation(); }, 15000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+    };
+  }, [activeBusId, route?.id]);
 
   useEffect(() => {
     if (!route?.id) return;
@@ -193,11 +213,11 @@ export const BusDetailPage: React.FC = () => {
       </div>
 
       {/* Journey Confirmation Prompt */}
-      <JourneyConfirmBanner
-        busId={route.id}
+      {activeBusId && <JourneyConfirmBanner
+        busId={activeBusId}
         routeId={route.id}
         routeNumber={route.routeNumber}
-      />
+      />}
 
       {/* Hero Visual Card with SVG Artwork */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -390,6 +410,27 @@ export const BusDetailPage: React.FC = () => {
             <Edit3 className="w-3.5 h-3.5 text-yatribrand-700" />
             Suggest Correction
           </Link>
+          <Link
+            to={`/contribute?routeId=${route.id}&type=UPDATE_ROUTE&source=OPERATOR`}
+            className="px-3 py-1.5 bg-white hover:bg-yatribrand-50 text-yatribrand-900 font-semibold rounded-xl border border-yatriwarm-300 transition-colors flex items-center gap-1.5"
+          >
+            <Edit3 className="w-3.5 h-3.5" />
+            {t('owner_route_update')}
+          </Link>
+          {activeBusId && <Link
+            to={`/contribute?routeId=${route.id}&busId=${activeBusId}&type=CORRECT_TIMETABLE&source=OPERATOR`}
+            className="px-3 py-1.5 bg-white hover:bg-yatribrand-50 text-yatribrand-900 font-semibold rounded-xl border border-yatriwarm-300 transition-colors flex items-center gap-1.5"
+          >
+            <Edit3 className="w-3.5 h-3.5" />
+            {t('owner_timetable_update')}
+          </Link>}
+          {activeBusId && <Link
+            to={`/contribute?routeId=${route.id}&busId=${activeBusId}&type=DELETE_BUS&source=OPERATOR`}
+            className="px-3 py-1.5 bg-white hover:bg-rose-50 text-rose-700 font-semibold rounded-xl border border-yatriwarm-300 transition-colors flex items-center gap-1.5"
+          >
+            <Flag className="w-3.5 h-3.5" />
+            {t('request_bus_removal')}
+          </Link>}
           <Link
             to={`/contribute?routeId=${route.id}&type=REPORT_CHANGED_ROUTE`}
             className="px-3 py-1.5 bg-white hover:bg-rose-50 text-rose-700 font-semibold rounded-xl border border-yatriwarm-300 transition-colors flex items-center gap-1.5"

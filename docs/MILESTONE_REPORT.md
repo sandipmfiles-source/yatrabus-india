@@ -1,51 +1,64 @@
-# YatriBus Implementation & Milestone Verification Report
+# YatriBus India — implementation status (30 October 2026)
 
-## Verification Checklist
+This report separates code implemented in the repository from services that are actually deployed. A checked box means the code or workflow exists; it does not mean a production backend or nationwide timetable feed is live.
 
-### Milestone 1 — Foundation & Core Architecture
-- [x] **Repository Structure**: Clean monorepo with `apps/`, `backend/`, `packages/shared/`, `data/`, `docs/`, `android/`, `.github/`.
-- [x] **UI Design System**: Warm off-white (`#FBFBF9`), deep green primary brand (`#0E4D34`), emerald live tracking accents, crisp typography.
-- [x] **Custom SVG Bus Artwork**: Vector illustration component (`BusIllustration.tsx`) replacing missing photos with modern Indian EV/CNG transit bus artwork. No broken image icons.
-- [x] **Database Schema & Migrations**: 4 sequential SQL migrations (`001_initial_schema.sql` through `004_admin_automation.sql`) for PostgreSQL & PostGIS.
-- [x] **Health Checks**: `/health` and `/api/health` endpoints returning server status and ₹0 architecture metadata.
+## Implemented in the repository
 
-### Milestone 2 — Places & Bus Directory
-- [x] **Indian Administrative Places Master Directory**: Country, State/UT, District, Tehsil/Taluka, City/Town/Village, Locality, Bus Stop/Terminal.
-- [x] **Search Normalization & Transliterations**: Case, whitespace, Unicode NFKD, and Indian city transliterations (Dilli, Calcutta, Bangalore, Poona, Allahabad, etc.).
-- [x] **Typo-Tolerant Search Engine**: Levenshtein distance, token Jaccard similarity, and administrative disambiguation by district and state.
-- [x] **Verified Corridors Seeded**: Real routes, buses, stops, and schedules for Delhi NCR (DTC), Mumbai/Pune (BEST/MSRTC), Bengaluru (BMTC), Kolkata (WBTC).
+### 1. App foundation and interface
+- [x] React + TypeScript + Vite frontend, Capacitor Android wrapper, Express API source and shared TypeScript packages.
+- [x] Custom SVG bus artwork and responsive app shell.
+- [x] Premium charcoal / signal-yellow YatriBus header, white YatriBus wordmark, animated bus and reduced-motion-aware effects.
+- [x] English, Hindi and Bengali language dictionaries with matching keys. Public search, bus detail, contribution, operator verification and privacy pages use translations. Some owner/admin console labels remain English-only.
 
-### Milestone 3 — Community Contribution Without Accounts
-- [x] **No Mandatory Passenger Accounts**: Public users search and contribute immediately without phone numbers, emails, or logins.
-- [x] **Public Reference IDs**: Submissions generate human-readable tracking codes (`YB-SUB-2026-XXXX`) so contributors can check review status.
-- [x] **Client & Server Duplicate Detection**: Flags duplicate candidate stops (<150m) and routes before submission.
-- [x] **Audit History & Rollback**: Timetable revisions preserve prior snapshots and proposed schedules with administrative decision notes.
+### 2. Places, search and route data
+- [x] India-focused administrative place hierarchy and typo-tolerant search (normalization, transliteration and disambiguation).
+- [x] Route graph for direct and one-transfer journeys, timetable-based ETAs and service-state labels.
+- [x] Timetable, stop sequence and bus data structures, plus admin review and versioning code.
+- [x] Route submissions can identify outbound (UP) and return (DOWN) directions; Super Admin approval preserves the selected direction.
+- [x] Bus records are linked to their route so tracking sessions and route details use the correct bus/route pair.
+- [ ] Nationwide verified schedules are NOT complete. The current seed dataset contains four sample route records and four sample buses (Delhi, Mumbai and Kolkata examples). These seed routes/buses are marked UNVERIFIED / SCHEDULE_UNVERIFIED until a Super Admin checks current operator data. This is not a complete India-wide bus timetable.
 
-### Milestone 4 — Consent-Based Passenger-Assisted Tracking
-- [x] **Explicit Consent**: Contextual permission modal explaining anonymous aggregation and safety limits without coercive urgency.
-- [x] **Journey Confirmation Decision Engine**: Evaluates whether to ask *"Are you travelling on this bus?"* based on departure window (±20 mins), schedule active today, and dismissal limits.
-- [x] **Multi-Signal GPS Confidence Engine**:
-  - GPS horizontal accuracy penalty (>100m rejected)
-  - Observation freshness (<120s Live, <600s Last Known, >600s Unavailable)
-  - Cross-track route polyline matching (<150m)
-  - Speed plausibility (0 - 110 km/h)
-  - Independent corroboration (distinct sessions count)
-  - Contradiction penalty
-- [x] **Bus-Level Aggregation**: Personal movement traces are never stored or exposed; public map shows only bus-level state.
-- [x] **Session Safety Limit**: Maximum 12-hour session timeout with prominent "Stop Sharing" control.
+### 3. Public contributions and moderation
+- [x] Account-free passenger submissions and public reference IDs.
+- [x] Account-free bus-owner submissions with contact verification details and a separate Super Admin owner-review queue; no Google sign-in or passenger account is offered.
+- [x] Correction suggestions, community corroboration/voting, duplicate candidates and submission status lookup.
+- [x] Super Admin review endpoints and dashboard source. Admin access is owner-controlled; there is no public admin registration.
+- [ ] Public submissions and moderation are not live across devices until the backend is deployed and the APK is configured with its API URL.
 
-### Milestone 5 — Route Graph, ETAs & Service Statuses
-- [x] **Route Graph Algorithm**: Discovers both direct bus routes and 1-transfer connections with interchange wait times.
-- [x] **Stop-by-Stop ETAs**: Distinguishes live GPS estimates from timetable predictions.
-- [x] **Service Statuses**: Operating as scheduled, Schedule unverified, Possible delay, Route changed, Disruption reported, Under review.
+### 4. Passenger-assisted GPS tracking
+- [x] Explicit consent prompt, journey session, GPS confidence checks, route matching, freshness checks and bus-level public location state.
+- [x] Android startup foreground-location permission gate is mounted; background-location permission is declared for use during an explicitly consented journey. Granting device permission does not itself start GPS sharing.
+- [x] Bus detail refreshes the selected bus location and stop ETAs every 15 seconds while the page is open.
+- [x] Seed buses no longer display fabricated coordinates; without a passenger GPS observation, location is shown as unavailable.
+- [x] Server rejects observations without recorded consent, mismatched bus/route IDs, invalid coordinates or expired sessions.
+- [x] Session ends on Stop Sharing or at the 12-hour limit. Per-session coordinate observations are deleted when the session ends/expires; only the latest bus-level location aggregate remains available.
+- [ ] No physical Android device test has been performed in this workflow. Real cross-device live tracking requires the deployed backend and API URL.
 
-### Milestone 6 — Mobile App & Automated Android APK Build
-- [x] **Capacitor Configuration**: `in.yatribus.app` with fine location plugin and Android scheme.
-- [x] **Android Manifest**: Declares fine location, coarse location, foreground service, and notification permissions.
-- [x] **GitHub Actions Workflow**: `.github/workflows/android-apk.yml` sets up Node 20, Java 17, Android SDK, runs tests, builds Vite web bundle, syncs Capacitor, runs Gradle assembleDebug, verifies APK output, and uploads the downloadable artifact.
-- [x] **Installation Guide**: Complete step-by-step instructions in `docs/APK_INSTALLATION.md`.
+### 5. Free route preview
+- [x] Owner and public route builders include origin, destination, route number/name, UP/DOWN direction, intermediate stops and a vertical ordered-stop preview.
+- [x] Owner and passenger submissions are free to use across all 28 States and 8 Union Territories; no subscription or payment gateway is included.
+- [x] Stops can be moved up/down without changing the fixed origin/destination endpoints; adding an intermediate stop inserts it before the destination.
+- [x] Both owner and public route submissions require a successful OpenStreetMap / OSRM road-path check in the exact submitted stop order before submission; the owner preview displays road geometry, distance and estimated duration.
+- [x] The public route form supports all 28 Indian states and 8 union territories.
+- [ ] Route preview needs coordinates for each point (saved local place coordinates or Name | latitude | longitude). The public OSRM demo is best-effort and has no production SLA.
+- [ ] Road routing checks a drivable path, not whether a public bus actually operates there; admin verification is required.
 
-### Milestone 7 — Production Readiness & ₹0 Strategy
-- [x] **Security & Rate Limiting**: In-memory rate limiters protecting search (120/min) and contributions (20/hr).
-- [x] **Admin Authentication**: Bearer token authorization and role-based access control.
-- [x] **Automated Tests**: Unit suites covering normalizer, typo search, duplicate detector, route matcher, confidence engine, stale detector, route graph, ETAs, and journey confirmation.
+### 6. Android build and downloads
+- [x] GitHub Actions builds the web bundle, runs tests, syncs Capacitor and assembles the Android debug APK.
+- [x] APK artifact retention set to 90 days.
+- [x] Workflow is configured to publish a GitHub pre-release APK when a successful build is triggered by a push to mx-local-preserve after merge.
+- [ ] A stable release-signed APK is not configured. The current output is a debug APK; stable in-place updates require a persistent private signing key.
+
+## Not yet deployed / deferred
+
+- [x] Google sign-in has been removed for passengers and bus owners for the launch period. Owner submissions use a no-account form and a separate review queue; only the Super Admin uses protected sign-in.
+- [ ] Express backend hosting — not deployed.
+- [ ] Durable production database — runtime currently uses JSON-file persistence. SQL migrations exist, but a PostgreSQL adapter is not yet wired into repository reads/writes.
+- [ ] Cloudflare Pages / Workers and Neon are documented as free-tier targets, but no provider account has been connected and the existing Express API needs adaptation plus durable storage before production launch.
+- [ ] GitHub repository variable VITE_API_BASE_URL must point to the deployed HTTPS API ending in /api before shared submissions, admin review and live GPS can work from the installed APK.
+- [ ] Nationwide timetable data collection and operator verification remain ongoing work; no mass outreach to all Indian bus operators has been performed.
+- [ ] Admin and owner consoles still need full Hindi/Bengali localization.
+
+## Validation boundary
+
+CI success proves that the repository's automated tests and Android debug APK build passed for that commit. It does not prove a physical device install, a live backend deployment, Google OAuth, nationwide timetable completeness or real-world bus GPS coverage.

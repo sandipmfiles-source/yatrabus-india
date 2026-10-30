@@ -1,11 +1,20 @@
 import { Router, Request, Response } from 'express';
 import { CONFIG } from '../config.js';
 import { TimetableDeparture, Route, RouteStop, Operator, Bus } from '../../../packages/shared/src/types/bus.js';
+import { Place, IndianState } from '../../../packages/shared/src/types/places.js';
 import { repository } from '../db/repository.js';
 import { createAdminSessionToken, requireAdminAuth, verifyAdminPassword } from '../middleware/auth.js';
 import { adminLoginLimiter } from '../middleware/rateLimiter.js';
 
 export const adminRouter = Router();
+
+const ALL_OPERATING_DAYS: Route['operatingDays'] = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+function normalizeOperatingDays(value: unknown): Route['operatingDays'] {
+  if (!Array.isArray(value) || value.length === 0 || value.some(day => String(day).trim().toLowerCase() === 'daily')) return ALL_OPERATING_DAYS;
+  const allowed = new Set<string>(ALL_OPERATING_DAYS);
+  const normalized = value.map(day => String(day).trim().slice(0, 3).toUpperCase()).filter(day => allowed.has(day));
+  return normalized.length ? Array.from(new Set(normalized)) as Route['operatingDays'] : ALL_OPERATING_DAYS;
+}
 
 // POST /api/admin/login — one configured Super Admin only.
 adminRouter.post('/login', adminLoginLimiter, (req: Request, res: Response) => {
@@ -64,7 +73,7 @@ adminRouter.get('/submissions', requireAdminAuth('SUPER_ADMIN'), (req: Request, 
 
 // POST /api/admin/submissions/:id/review
 adminRouter.post('/submissions/:id/review', requireAdminAuth('SUPER_ADMIN'), (req: Request, res: Response) => {
-  const { decision, reason } = req.body;
+  const { decision, reason, verifyTimetable } = req.body;
   const adminId = (req as any).admin.id;
 
   if (!decision || !['ADMIN_VERIFIED', 'COMMUNITY_CORROBORATED', 'REJECTED'].includes(decision)) {
@@ -78,6 +87,44 @@ adminRouter.post('/submissions/:id/review', requireAdminAuth('SUPER_ADMIN'), (re
   if (!pendingSubmission) return res.status(404).json({ error: 'Submission not found' });
   if (pendingSubmission.status !== 'PENDING_REVIEW') {
     return res.status(409).json({ error: 'This submission has already been reviewed.' });
+  }
+  const evidenceUrl = typeof pendingSubmission.proposedData?.evidenceUrl === 'string' ? pendingSubmission.proposedData.evidenceUrl.trim() : '';
+  const hasHttpsEvidence = /^https:\/\//i.test(evidenceUrl);
+  if (verifyTimetable === true && (decision !== 'ADMIN_VERIFIED' || !hasHttpsEvidence)) {
+    return res.status(422).json({ error: 'Timetable verification requires Super Admin approval and a valid HTTPS official evidence link.' });
+  }
+  if (decision === 'ADMIN_VERIFIED' && pendingSubmission.entityType === 'STOP' && pendingSubmission.submissionType === 'ADD_STOP') {
+    const data = pendingSubmission.proposedData || {};
+    const canonicalName = typeof data.name === 'string' ? data.name.trim().slice(0, 160) : '';
+    const latitude = Number(data.latitude ?? data.originLatitude);
+    const longitude = Number(data.longitude ?? data.originLongitude);
+    if (canonicalName.length < 2 || !Number.isFinite(latitude) || latitude < 6 || latitude > 38 ||
+        !Number.isFinite(longitude) || longitude < 68 || longitude > 98) {
+      return res.status(422).json({ error: 'A bus stop name and valid India latitude/longitude are required.' });
+    }
+    const duplicate = repository.searchPlaces(canonicalName, 8).some(item =>
+      item.place.canonicalName.toLocaleLowerCase() === canonicalName.toLocaleLowerCase()
+    );
+    if (duplicate) return res.status(409).json({ error: 'A place with this exact name already exists. Review the existing place instead of creating a duplicate.' });
+    const now = new Date().toISOString();
+    const place: Place = {
+      id: `place-community-${pendingSubmission.id}`,
+      canonicalName,
+      names: { en: canonicalName, hi: canonicalName, bn: canonicalName },
+      placeType: 'BUS_STOP',
+      district: typeof data.district === 'string' ? data.district.trim().slice(0, 100) : undefined,
+      state: typeof data.state === 'string' ? data.state as IndianState : undefined,
+      latitude,
+      longitude,
+      sourceDataset: 'COMMUNITY_SUBMISSION',
+      sourceRecordId: pendingSubmission.referenceId,
+      sourceLicense: 'Community contribution',
+      verificationStatus: 'ADMIN_VERIFIED',
+      aliases: [],
+      createdAt: now,
+      updatedAt: now,
+    };
+    repository.addPlace(place);
   }
   if (decision === 'ADMIN_VERIFIED' && pendingSubmission.proposedData?.action === 'UPDATE_ROUTE') {
     const data = pendingSubmission.proposedData;
@@ -97,7 +144,18 @@ adminRouter.post('/submissions/:id/review', requireAdminAuth('SUPER_ADMIN'), (re
         !Number.isFinite(Number(stop.longitude)) || Number(stop.longitude) < -180 || Number(stop.longitude) > 180)) {
       return res.status(422).json({ error: 'Every route stop must have a name and valid coordinates.' });
     }
+    const updateStopNames = stopsInput.map((stop: any) => String(stop.name).trim().toLocaleLowerCase());
+    const updateStopCoordinates = stopsInput.map((stop: any) => `${Number(stop.latitude).toFixed(5)},${Number(stop.longitude).toFixed(5)}`);
+    if (new Set(updateStopNames).size !== updateStopNames.length || new Set(updateStopCoordinates).size !== updateStopCoordinates.length) {
+      return res.status(422).json({ error: 'Route stops must have unique names and coordinates in travel order.' });
+    }
     let distanceFromStartKm = 0;
+    const requestedDepartureTimes = Array.isArray(data.departureTimes)
+      ? data.departureTimes.map((time: unknown) => String(time).trim()).filter(Boolean).sort()
+      : route.departureTimes;
+    if (requestedDepartureTimes && (requestedDepartureTimes.some((time: string) => !validTime(time)) || new Set(requestedDepartureTimes).size !== requestedDepartureTimes.length)) {
+      return res.status(422).json({ error: 'Exact departure times must be unique 24-hour HH:MM values.' });
+    }
     const updatedStops: RouteStop[] = stopsInput.map((stop: any, index: number) => {
       if (index > 0) {
         const previous = stopsInput[index - 1];
@@ -133,6 +191,12 @@ adminRouter.post('/submissions/:id/review', requireAdminAuth('SUPER_ADMIN'), (re
       typicalDurationMinutes: durationMinutes,
       firstDepartureTime: data.firstDepartureTime,
       lastDepartureTime: data.lastDepartureTime,
+      direction: data.direction === 'DOWN' || data.direction === 'CIRCULAR' ? data.direction : data.direction === 'UP' ? 'UP' : route.direction,
+      operatingDays: Array.isArray(data.operatingDays) ? normalizeOperatingDays(data.operatingDays) : route.operatingDays,
+      departureTimes: requestedDepartureTimes,
+      frequencyMinutes: Number.isFinite(Number(data.frequencyMinutes)) && Number(data.frequencyMinutes) > 0
+        ? Number(data.frequencyMinutes) : undefined,
+      serviceStatus: verifyTimetable === true ? 'OPERATING_SCHEDULED' : route.serviceStatus,
       stops: updatedStops,
       geometry: updatedStops.map(stop => ({ latitude: stop.latitude, longitude: stop.longitude })),
       updatedAt: new Date().toISOString(),
@@ -149,6 +213,12 @@ adminRouter.post('/submissions/:id/review', requireAdminAuth('SUPER_ADMIN'), (re
     const validTime = (value: unknown) => typeof value === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
     const distanceKm = Number(data.distanceKm);
     const durationMinutes = Number(data.typicalDurationMinutes);
+    const departureTimes = Array.isArray(data.departureTimes)
+      ? data.departureTimes.map((time: unknown) => String(time).trim()).filter(Boolean).sort()
+      : [];
+    if (departureTimes.some((time: string) => !validTime(time)) || new Set(departureTimes).size !== departureTimes.length) {
+      return res.status(422).json({ error: 'Exact departure times must be unique 24-hour HH:MM values.' });
+    }
     if (!routeNumber || !routeName || !operatorName || stopsInput.length < 2 ||
         !validTime(data.firstDepartureTime) || !validTime(data.lastDepartureTime) ||
         !Number.isFinite(distanceKm) || distanceKm <= 0 ||
@@ -165,6 +235,11 @@ adminRouter.post('/submissions/:id/review', requireAdminAuth('SUPER_ADMIN'), (re
     );
     if (!stopsAreValid) {
       return res.status(422).json({ error: 'Every stop must have a name and valid latitude/longitude coordinates.' });
+    }
+    const createStopNames = stopsInput.map((stop: any) => String(stop.name).trim().toLocaleLowerCase());
+    const createStopCoordinates = stopsInput.map((stop: any) => `${Number(stop.latitude).toFixed(5)},${Number(stop.longitude).toFixed(5)}`);
+    if (new Set(createStopNames).size !== createStopNames.length || new Set(createStopCoordinates).size !== createStopCoordinates.length) {
+      return res.status(422).json({ error: 'Route stops must have unique names and coordinates in travel order.' });
     }
     const now = new Date().toISOString();
     let operator = repository.getOperatorByName(operatorName);
@@ -218,18 +293,19 @@ adminRouter.post('/submissions/:id/review', requireAdminAuth('SUPER_ADMIN'), (re
       operatorId: operator.id,
       operatorName: operator.name,
       contributedBy: pendingSubmission.contributorDisplayName || pendingSubmission.contributorNote || undefined,
-      direction: 'UP',
+      direction: data.direction === 'DOWN' || data.direction === 'CIRCULAR' ? data.direction : 'UP',
       distanceKm,
       typicalDurationMinutes: durationMinutes,
-      operatingDays: ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'],
+      operatingDays: normalizeOperatingDays(data.operatingDays),
       firstDepartureTime: data.firstDepartureTime,
       lastDepartureTime: data.lastDepartureTime,
       frequencyMinutes: Number.isFinite(Number(data.frequencyMinutes)) && Number(data.frequencyMinutes) > 0
         ? Number(data.frequencyMinutes) : undefined,
+      departureTimes: departureTimes.length ? departureTimes : undefined,
       stops,
       geometry: stops.map(stop => ({ latitude: stop.latitude, longitude: stop.longitude })),
       verificationStatus: 'ADMIN_VERIFIED',
-      serviceStatus: 'SCHEDULE_UNVERIFIED',
+      serviceStatus: verifyTimetable === true ? 'OPERATING_SCHEDULED' : 'SCHEDULE_UNVERIFIED',
       createdAt: now,
       updatedAt: now,
     };
@@ -300,14 +376,25 @@ adminRouter.post('/submissions/:id/review', requireAdminAuth('SUPER_ADMIN'), (re
       publicIdentifier: String(data.busIdentifier).trim().slice(0, 80),
       operatorName: typeof data.operatorName === 'string' ? data.operatorName.trim().slice(0, 120) : targetBus.operatorName,
       contributedBy: pendingSubmission.contributorDisplayName || targetBus.contributedBy,
+      serviceStatus: verifyTimetable === true ? 'OPERATING_SCHEDULED' : targetBus.serviceStatus,
       updatedAt: new Date().toISOString(),
     });
+    if (verifyTimetable === true) repository.addRoute({ ...route, serviceStatus: 'OPERATING_SCHEDULED', updatedAt: new Date().toISOString() });
   }
 
   if (decision === 'ADMIN_VERIFIED' && pendingSubmission?.submissionType === 'DELETE_BUS') {
     const busId = pendingSubmission.targetEntityId || '';
-    const bus = busId ? repository.getBusById(busId) : undefined;
-    if (!bus) return res.status(404).json({ error: 'Bus record was not found for removal.' });
+    const proposedIdentifier = typeof pendingSubmission.proposedData?.busIdentifier === 'string'
+      ? pendingSubmission.proposedData.busIdentifier.trim().toLocaleLowerCase() : '';
+    const routeNumber = typeof pendingSubmission.proposedData?.routeNumber === 'string'
+      ? pendingSubmission.proposedData.routeNumber.trim() : '';
+    const route = routeNumber ? repository.getRouteByNumber(routeNumber) : undefined;
+    const bus = (busId ? repository.getBusById(busId) : undefined) ||
+      (proposedIdentifier && route
+        ? repository.getAllBuses().find(item => item.isActive && item.routeId === route.id &&
+            item.publicIdentifier.trim().toLocaleLowerCase() === proposedIdentifier)
+        : undefined);
+    if (!bus) return res.status(404).json({ error: 'Matching active bus record was not found. Check the route number and exact bus name / number before approving removal.' });
     repository.addBus({ ...bus, isActive: false, updatedAt: new Date().toISOString() });
   }
 
@@ -322,9 +409,11 @@ adminRouter.post('/submissions/:id/review', requireAdminAuth('SUPER_ADMIN'), (re
         typeof data.arrivalTime !== 'string' || !/^([01]\d|2[0-3]):[0-5]\d$/.test(data.arrivalTime)) {
       return res.status(422).json({ error: 'A valid departure and arrival time are required before publishing.' });
     }
-    const days = (Array.isArray(data.operatingDays)
-      ? data.operatingDays.filter((day: string) => ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'].includes(day))
-      : ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']) as TimetableDeparture['operatingDays'];
+    const requestedDays = Array.isArray(data.operatingDays)
+      ? data.operatingDays.map((day: unknown) => String(day).trim().slice(0, 3).toUpperCase())
+        .filter((day: string) => ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'].includes(day))
+      : [];
+    const days = (requestedDays.length ? Array.from(new Set(requestedDays)) : route.operatingDays) as TimetableDeparture['operatingDays'];
     const stopTimes = (Array.isArray(data.stops) ? data.stops : []).flatMap((input: any) => {
       const matched = typeof input?.name === 'string'
         ? route.stops.find(stop => stop.stopName.trim().toLowerCase() === input.name.trim().toLowerCase())
@@ -350,18 +439,20 @@ adminRouter.post('/submissions/:id/review', requireAdminAuth('SUPER_ADMIN'), (re
     if (!repository.addTimetableDeparture(route.id, departure, Number(data.frequencyMinutes))) {
       return res.status(409).json({ error: 'This bus and departure time already exist on the selected route.' });
     }
+    if (verifyTimetable === true) repository.addRoute({ ...route, serviceStatus: 'OPERATING_SCHEDULED', updatedAt: new Date().toISOString() });
     const busIdentifier = typeof data.busIdentifier === 'string' ? data.busIdentifier.trim().slice(0, 80) : '';
     if (busIdentifier && !repository.getBusesForRoute(route.id).some(bus => bus.publicIdentifier.toLowerCase() === busIdentifier.toLowerCase())) {
       const now = new Date().toISOString();
       const bus: Bus = {
         id: `bus-community-${pendingSubmission.id}`,
+        routeId: route.id,
         publicIdentifier: busIdentifier,
         operatorId: route.operatorId,
         operatorName: route.operatorName,
         contributedBy: pendingSubmission.contributorDisplayName || pendingSubmission.contributorNote || undefined,
         vehicleType: 'ORDINARY',
         hasCustomSvgIllustration: true,
-        serviceStatus: 'SCHEDULE_UNVERIFIED',
+        serviceStatus: verifyTimetable === true ? 'OPERATING_SCHEDULED' : 'SCHEDULE_UNVERIFIED',
         verificationStatus: 'ADMIN_VERIFIED',
         isActive: true,
         createdAt: now,
@@ -448,6 +539,7 @@ adminRouter.put('/routes/:id', requireAdminAuth('SUPER_ADMIN'), (req: Request, r
     routeName: typeof data.routeName === 'string' ? data.routeName.trim().slice(0, 160) : existing.routeName,
     firstDepartureTime: validTime(data.firstDepartureTime) ? data.firstDepartureTime : existing.firstDepartureTime,
     lastDepartureTime: validTime(data.lastDepartureTime) ? data.lastDepartureTime : existing.lastDepartureTime,
+    direction: data.direction === 'UP' || data.direction === 'DOWN' || data.direction === 'CIRCULAR' ? data.direction : existing.direction,
     stops,
     updatedAt: new Date().toISOString(),
   };

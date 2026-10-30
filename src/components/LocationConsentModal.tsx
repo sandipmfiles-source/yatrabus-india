@@ -4,7 +4,7 @@ import { useTracking } from '../context/TrackingContext.js';
 import { ShieldCheck, MapPin, X } from 'lucide-react';
 
 export const LocationConsentModal: React.FC = () => {
-  const { isConsentModalOpen, pendingBusForTracking, grantConsentAndStartTracking, declineConsent } = useTracking();
+  const { isConsentModalOpen, pendingBusForTracking, grantConsentAndStartTracking, declineConsent, trackingError } = useTracking();
   const { t } = useLanguage();
 
   if (!isConsentModalOpen || !pendingBusForTracking) return null;
@@ -42,6 +42,7 @@ export const LocationConsentModal: React.FC = () => {
             </div>
           </div>
           <p className="text-[11px] text-yatriwarm-500">{t('tracking_background_note')}</p>
+          {trackingError && <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800">{trackingError}</p>}
         </div>
 
         <div className="mt-6 flex flex-col gap-2">
