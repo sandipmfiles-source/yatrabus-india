@@ -21,6 +21,19 @@ export const ContributePage: React.FC = () => {
   const [arrivalTime, setArrivalTime] = useState('');
   const [busIdentifier, setBusIdentifier] = useState('');
   const [frequencyMinutes, setFrequencyMinutes] = useState('');
+  const [routeName, setRouteName] = useState('');
+  const [operatorName, setOperatorName] = useState('');
+  const [routeDistanceKm, setRouteDistanceKm] = useState('');
+  const [routeDurationMinutes, setRouteDurationMinutes] = useState('');
+  const [firstDepartureTime, setFirstDepartureTime] = useState('');
+  const [lastDepartureTime, setLastDepartureTime] = useState('');
+  const [routeStops, setRouteStops] = useState([
+    { name: '', latitude: '', longitude: '', arrivalTime: '', departureTime: '' },
+    { name: '', latitude: '', longitude: '', arrivalTime: '', departureTime: '' },
+  ]);
+  const updateRouteStop = (index: number, field: string, value: string) => {
+    setRouteStops(current => current.map((stop, i) => i === index ? { ...stop, [field]: value } : stop));
+  };
   const [notes, setNotes] = useState('');
 
   // Status check state
@@ -39,7 +52,7 @@ export const ContributePage: React.FC = () => {
     try {
       const res = await api.submitContribution({
         submissionType,
-        entityType: submissionType === 'ADD_STOP' ? 'STOP' : (submissionType === 'ADD_BUS' || submissionType === 'CORRECT_TIMETABLE') ? 'TIMETABLE' : 'BUS',
+        entityType: submissionType === 'SUGGEST_ROUTE' ? 'ROUTE' : submissionType === 'ADD_STOP' ? 'STOP' : (submissionType === 'ADD_BUS' || submissionType === 'CORRECT_TIMETABLE') ? 'TIMETABLE' : 'BUS',
         contributorNote: notes,
         proposedData: {
           name: name || routeNumber,
@@ -52,6 +65,17 @@ export const ContributePage: React.FC = () => {
           busIdentifier,
           frequencyMinutes: frequencyMinutes ? Number(frequencyMinutes) : undefined,
           timetableEntry: submissionType === 'ADD_BUS' || submissionType === 'CORRECT_TIMETABLE',
+          routeName,
+          operatorName,
+          distanceKm: routeDistanceKm ? Number(routeDistanceKm) : undefined,
+          typicalDurationMinutes: routeDurationMinutes ? Number(routeDurationMinutes) : undefined,
+          firstDepartureTime,
+          lastDepartureTime,
+          stops: routeStops.map(stop => ({
+            ...stop,
+            latitude: stop.latitude === '' ? undefined : Number(stop.latitude),
+            longitude: stop.longitude === '' ? undefined : Number(stop.longitude),
+          })),
           operatingDays: ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'],
         },
       });
@@ -168,9 +192,10 @@ export const ContributePage: React.FC = () => {
                 <label className="block text-xs font-bold text-yatriwarm-700 uppercase tracking-wider mb-2">
                   What would you like to contribute?
                 </label>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
                   {[
                     { id: 'ADD_BUS' as SubmissionType, label: 'Add Bus to Route' },
+                    { id: 'SUGGEST_ROUTE' as SubmissionType, label: 'Add New Route' },
                     { id: 'ADD_STOP' as SubmissionType, label: 'Add Stop' },
                     { id: 'CORRECT_TIMETABLE' as SubmissionType, label: 'Add / Fix Timetable' },
                     { id: 'REPORT_CHANGED_ROUTE' as SubmissionType, label: 'Report Issue' },
@@ -244,7 +269,7 @@ export const ContributePage: React.FC = () => {
                   </select>
                 </div>
 
-                <div>
+                {submissionType !== 'SUGGEST_ROUTE' && <div>
                   <label className="block text-xs font-medium text-yatriwarm-700 mb-1">
                     Origin Terminal
                   </label>
@@ -258,7 +283,7 @@ export const ContributePage: React.FC = () => {
                   />
                 </div>
 
-                <div>
+                {submissionType !== 'SUGGEST_ROUTE' && <div>
                   <label className="block text-xs font-medium text-yatriwarm-700 mb-1">
                     Destination Terminal
                   </label>
@@ -270,8 +295,65 @@ export const ContributePage: React.FC = () => {
                     placeholder="e.g. Mehrauli Terminal"
                     className="w-full px-3.5 py-2.5 bg-yatriwarm-50 border border-yatriwarm-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-yatribrand-800 focus:bg-white"
                   />
-                </div>
+                </div>}
               </div>
+
+              {submissionType === 'SUGGEST_ROUTE' && (
+                <section className="rounded-2xl border border-amber-300 bg-amber-50/70 p-4 space-y-4">
+                  <div>
+                    <h3 className="text-sm font-bold text-yatriwarm-900">New route details</h3>
+                    <p className="text-[11px] text-yatriwarm-600 mt-1">Add stops in travel order. Latitude and longitude are required for every stop. The route stays private until Super Admin approval.</p>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <label className="text-xs font-medium text-yatriwarm-700">Route number
+                      <input required value={routeNumber} onChange={e => setRouteNumber(e.target.value)} placeholder="e.g. JGM-01" className="mt-1 w-full px-3 py-2.5 bg-white border border-yatriwarm-300 rounded-xl" />
+                    </label>
+                    <label className="text-xs font-medium text-yatriwarm-700">Route name
+                      <input required value={routeName} onChange={e => setRouteName(e.target.value)} placeholder="e.g. Jhargram to Gopiballavpur" className="mt-1 w-full px-3 py-2.5 bg-white border border-yatriwarm-300 rounded-xl" />
+                    </label>
+                    <label className="text-xs font-medium text-yatriwarm-700">Bus operator / service name
+                      <input required value={operatorName} onChange={e => setOperatorName(e.target.value)} placeholder="Operator name" className="mt-1 w-full px-3 py-2.5 bg-white border border-yatriwarm-300 rounded-xl" />
+                    </label>
+                    <label className="text-xs font-medium text-yatriwarm-700">Total route distance (km)
+                      <input required type="number" min="0.1" step="0.1" value={routeDistanceKm} onChange={e => setRouteDistanceKm(e.target.value)} placeholder="e.g. 42" className="mt-1 w-full px-3 py-2.5 bg-white border border-yatriwarm-300 rounded-xl" />
+                    </label>
+                    <label className="text-xs font-medium text-yatriwarm-700">Typical journey duration (minutes)
+                      <input required type="number" min="1" value={routeDurationMinutes} onChange={e => setRouteDurationMinutes(e.target.value)} placeholder="e.g. 90" className="mt-1 w-full px-3 py-2.5 bg-white border border-yatriwarm-300 rounded-xl" />
+                    </label>
+                    <label className="text-xs font-medium text-yatriwarm-700">First departure (IST)
+                      <input required type="time" value={firstDepartureTime} onChange={e => setFirstDepartureTime(e.target.value)} className="mt-1 w-full px-3 py-2.5 bg-white border border-yatriwarm-300 rounded-xl" />
+                    </label>
+                    <label className="text-xs font-medium text-yatriwarm-700">Last departure (IST)
+                      <input required type="time" value={lastDepartureTime} onChange={e => setLastDepartureTime(e.target.value)} className="mt-1 w-full px-3 py-2.5 bg-white border border-yatriwarm-300 rounded-xl" />
+                    </label>
+                    <label className="text-xs font-medium text-yatriwarm-700">Frequency in minutes (optional)
+                      <input type="number" min="1" max="1440" value={frequencyMinutes} onChange={e => setFrequencyMinutes(e.target.value)} placeholder="e.g. 30" className="mt-1 w-full px-3 py-2.5 bg-white border border-yatriwarm-300 rounded-xl" />
+                    </label>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-xs font-bold text-yatriwarm-800">Ordered route stops</h4>
+                      <button type="button" onClick={() => setRouteStops(current => [...current, { name: '', latitude: '', longitude: '', arrivalTime: '', departureTime: '' }])} className="text-xs font-semibold text-red-700">+ Add stop</button>
+                    </div>
+                    {routeStops.map((stop, index) => (
+                      <div key={index} className="rounded-xl border border-yatriwarm-200 bg-white p-3 space-y-2">
+                        <div className="flex items-center justify-between"><span className="text-xs font-bold text-yatriwarm-800">Stop {index + 1} {index === 0 ? '(Origin)' : index === routeStops.length - 1 ? '(Destination)' : '(Intermediate)'}</span>
+                          {routeStops.length > 2 && <button type="button" onClick={() => setRouteStops(current => current.filter((_, i) => i !== index))} className="text-[11px] text-red-700">Remove</button>}
+                        </div>
+                        <input required value={stop.name} onChange={e => updateRouteStop(index, 'name', e.target.value)} placeholder="Stop / place name" className="w-full px-3 py-2 bg-yatriwarm-50 border border-yatriwarm-200 rounded-lg text-xs" />
+                        <div className="grid grid-cols-2 gap-2">
+                          <input required type="number" min="-90" max="90" step="any" value={stop.latitude} onChange={e => updateRouteStop(index, 'latitude', e.target.value)} placeholder="Latitude" className="w-full px-3 py-2 bg-yatriwarm-50 border border-yatriwarm-200 rounded-lg text-xs" />
+                          <input required type="number" min="-180" max="180" step="any" value={stop.longitude} onChange={e => updateRouteStop(index, 'longitude', e.target.value)} placeholder="Longitude" className="w-full px-3 py-2 bg-yatriwarm-50 border border-yatriwarm-200 rounded-lg text-xs" />
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <label className="text-[10px] text-yatriwarm-600">Arrival (optional)<input type="time" value={stop.arrivalTime} onChange={e => updateRouteStop(index, 'arrivalTime', e.target.value)} className="mt-1 w-full px-2 py-2 bg-yatriwarm-50 border border-yatriwarm-200 rounded-lg text-xs" /></label>
+                          <label className="text-[10px] text-yatriwarm-600">Departure (optional)<input type="time" value={stop.departureTime} onChange={e => updateRouteStop(index, 'departureTime', e.target.value)} className="mt-1 w-full px-2 py-2 bg-yatriwarm-50 border border-yatriwarm-200 rounded-lg text-xs" /></label>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
 
               {(submissionType === 'ADD_BUS' || submissionType === 'CORRECT_TIMETABLE') && (
                 <div className="rounded-2xl border border-amber-300 bg-amber-50/70 p-4 space-y-3 sm:col-span-2">
