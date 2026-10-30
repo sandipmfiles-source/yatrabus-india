@@ -321,13 +321,42 @@ export const ContributePage: React.FC = () => {
                     onChange={e => setStateName(e.target.value)}
                     className="w-full px-3.5 py-2.5 bg-yatriwarm-50 border border-yatriwarm-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-yatribrand-800 focus:bg-white"
                   >
-                    <option value="West Bengal">West Bengal</option>
-                    <option value="Delhi">Delhi</option>
-                    <option value="Maharashtra">Maharashtra</option>
-                    <option value="Karnataka">Karnataka</option>
-                    <option value="Tamil Nadu">Tamil Nadu</option>
-                    <option value="Uttar Pradesh">Uttar Pradesh</option>
+                    <option value="Andhra Pradesh">Andhra Pradesh</option>
+                    <option value="Arunachal Pradesh">Arunachal Pradesh</option>
+                    <option value="Assam">Assam</option>
+                    <option value="Bihar">Bihar</option>
+                    <option value="Chhattisgarh">Chhattisgarh</option>
+                    <option value="Goa">Goa</option>
                     <option value="Gujarat">Gujarat</option>
+                    <option value="Haryana">Haryana</option>
+                    <option value="Himachal Pradesh">Himachal Pradesh</option>
+                    <option value="Jharkhand">Jharkhand</option>
+                    <option value="Karnataka">Karnataka</option>
+                    <option value="Kerala">Kerala</option>
+                    <option value="Madhya Pradesh">Madhya Pradesh</option>
+                    <option value="Maharashtra">Maharashtra</option>
+                    <option value="Manipur">Manipur</option>
+                    <option value="Meghalaya">Meghalaya</option>
+                    <option value="Mizoram">Mizoram</option>
+                    <option value="Nagaland">Nagaland</option>
+                    <option value="Odisha">Odisha</option>
+                    <option value="Punjab">Punjab</option>
+                    <option value="Rajasthan">Rajasthan</option>
+                    <option value="Sikkim">Sikkim</option>
+                    <option value="Tamil Nadu">Tamil Nadu</option>
+                    <option value="Telangana">Telangana</option>
+                    <option value="Tripura">Tripura</option>
+                    <option value="Uttar Pradesh">Uttar Pradesh</option>
+                    <option value="Uttarakhand">Uttarakhand</option>
+                    <option value="West Bengal">West Bengal</option>
+                    <option value="Andaman and Nicobar Islands">Andaman and Nicobar Islands</option>
+                    <option value="Chandigarh">Chandigarh</option>
+                    <option value="Dadra and Nagar Haveli and Daman and Diu">Dadra and Nagar Haveli and Daman and Diu</option>
+                    <option value="Delhi">Delhi</option>
+                    <option value="Jammu and Kashmir">Jammu and Kashmir</option>
+                    <option value="Ladakh">Ladakh</option>
+                    <option value="Lakshadweep">Lakshadweep</option>
+                    <option value="Puducherry">Puducherry</option>
                   </select>
                 </div>
 
@@ -396,7 +425,7 @@ export const ContributePage: React.FC = () => {
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <h4 className="text-xs font-bold text-yatriwarm-800">Ordered route stops</h4>
-                      <button type="button" onClick={() => setRouteStops(current => [...current, { name: '', latitude: '', longitude: '', arrivalTime: '', departureTime: '' }])} className="text-xs font-semibold text-red-700">+ Add stop</button>
+                      <button type="button" onClick={() => setRouteStops(current => [...current.slice(0, -1), { name: '', latitude: '', longitude: '', arrivalTime: '', departureTime: '' }, current[current.length - 1]])} className="text-xs font-semibold text-red-700">+ Add intermediate stop</button>
                     </div>
                     {routeStops.map((stop, index) => (
                       <div key={index} className="rounded-xl border border-yatriwarm-200 bg-white p-3 space-y-2">
