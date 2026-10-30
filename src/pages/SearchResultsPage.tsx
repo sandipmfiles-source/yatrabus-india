@@ -55,8 +55,8 @@ export const SearchResultsPage: React.FC = () => {
       <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2">
         <div className="rounded-xl bg-yatriwarm-50 p-2"><div className="text-[10px] text-yatriwarm-500">{t('first_bus')}</div><div className="text-sm font-bold text-yatriwarm-900">{route.firstDepartureTime}</div></div>
         <div className="rounded-xl bg-yatriwarm-50 p-2"><div className="text-[10px] text-yatriwarm-500">{t('last_bus')}</div><div className="text-sm font-bold text-yatriwarm-900">{route.lastDepartureTime}</div></div>
-        <div className="rounded-xl bg-yatriwarm-50 p-2"><div className="text-[10px] text-yatriwarm-500">{t('frequency')}</div><div className="text-sm font-bold text-yatriwarm-900">{frequency ? `${t('every')} ${frequency} ${t('minutes')}` : {t('not_provided')}}</div></div>
-        <div className="rounded-xl bg-yatriwarm-50 p-2"><div className="text-[10px] text-yatriwarm-500">{t('trips_per_day')}</div><div className="text-sm font-bold text-yatriwarm-900">{trips === null ? {t('not_verified')} : `~${trips}`}</div></div>
+        <div className="rounded-xl bg-yatriwarm-50 p-2"><div className="text-[10px] text-yatriwarm-500">{t('frequency')}</div><div className="text-sm font-bold text-yatriwarm-900">{frequency ? `${t('every')} ${frequency} ${t('minutes')}`  : t('not_provided')}</div></div>
+        <div className="rounded-xl bg-yatriwarm-50 p-2"><div className="text-[10px] text-yatriwarm-500">{t('trips_per_day')}</div><div className="text-sm font-bold text-yatriwarm-900">{trips === null ? t('not_verified') : `~${trips}`}</div></div>
       </div>
       <p className="mt-2 flex items-center gap-1 text-[11px] text-yatriwarm-500"><CalendarDays className="w-3.5 h-3.5" /> {t('operating_days')}: {route.operatingDays?.join(', ') || t('not_provided')} {trips !== null ? `• ${t('calculated_trip_note')}` : ''}</p>
       <div className="mt-4">
