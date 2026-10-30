@@ -13,6 +13,7 @@ export const AdminSubmissionsPage: React.FC = () => {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isReviewing, setIsReviewing] = useState(false);
+  const [sourceCategory, setSourceCategory] = useState<'PUBLIC' | 'OPERATOR'>('PUBLIC');
   const token = localStorage.getItem('yatribus_admin_token');
 
   const loadSubmissions = useCallback(async () => {
@@ -20,7 +21,7 @@ export const AdminSubmissionsPage: React.FC = () => {
     setIsLoading(true);
     setError('');
     try {
-      const data = await api.getAdminSubmissions(token, 'PENDING_REVIEW');
+      const data = await api.getAdminSubmissions(token, 'PENDING_REVIEW', sourceCategory);
       setSubmissions(data.submissions || []);
       setSelectedSub(current => current ? (data.submissions || []).find((item: CommunitySubmission) => item.id === current.id) || null : null);
     } catch (err) {
@@ -29,7 +30,7 @@ export const AdminSubmissionsPage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [token, navigate]);
+  }, [token, navigate, sourceCategory]);
 
   useEffect(() => { void loadSubmissions(); }, [loadSubmissions]);
 
@@ -58,7 +59,7 @@ export const AdminSubmissionsPage: React.FC = () => {
           <Link to="/admin/dashboard" className="p-2 rounded-xl bg-white border border-yatriwarm-200 text-yatriwarm-700"><ArrowLeft className="w-5 h-5" /></Link>
           <div><h1 className="text-xl font-bold text-yatriwarm-950">Bus & Route Submissions</h1><p className="text-xs text-yatriwarm-500">Only you, as Super Admin, can review these requests.</p></div>
         </div>
-        <button type="button" onClick={() => void loadSubmissions()} disabled={isLoading} className="px-3 py-2 rounded-xl border border-yatriwarm-200 text-xs flex items-center gap-2"><RefreshCw className="w-4 h-4" />Refresh</button>
+        <div className="flex items-center gap-2"><select aria-label="Submission source" value={sourceCategory} onChange={e => setSourceCategory(e.target.value as 'PUBLIC' | 'OPERATOR')} className="px-3 py-2 rounded-xl border border-yatriwarm-200 text-xs bg-white"><option value="PUBLIC">Passenger submissions</option><option value="OPERATOR">Bus owner / driver submissions</option></select><button type="button" onClick={() => void loadSubmissions()} disabled={isLoading} className="px-3 py-2 rounded-xl border border-yatriwarm-200 text-xs flex items-center gap-2"><RefreshCw className="w-4 h-4" />Refresh</button></div>
       </div>
 
       {message && <div role="status" className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800">{message}</div>}
@@ -79,8 +80,8 @@ export const AdminSubmissionsPage: React.FC = () => {
 
         <section className="md:col-span-2 bg-white rounded-3xl p-6 border border-yatriwarm-200 shadow-card">
           {selectedSub ? <div className="space-y-5">
-            <div className="flex items-center justify-between pb-3 border-b border-yatriwarm-200"><div><h2 className="text-base font-bold text-yatriwarm-900">Reference: <span className="font-mono">{selectedSub.referenceId}</span></h2><p className="text-xs text-yatriwarm-500 mt-1">Type: {selectedSub.submissionType} • Submitted: {new Date(selectedSub.createdAt).toLocaleString()}</p></div><span className="px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-800">{selectedSub.status}</span></div>
-            <div><h3 className="text-xs font-bold text-yatriwarm-700 uppercase tracking-wider mb-2">Proposed Details</h3><pre className="p-3 bg-yatriwarm-50 rounded-xl border border-yatriwarm-200 text-xs font-mono text-yatriwarm-800 overflow-x-auto whitespace-pre-wrap">{JSON.stringify(selectedSub.proposedData, null, 2)}</pre></div>
+            <div className="flex items-center justify-between pb-3 border-b border-yatriwarm-200"><div><h2 className="text-base font-bold text-yatriwarm-900">Reference: <span className="font-mono">{selectedSub.referenceId}</span></h2><p className="text-xs text-yatriwarm-500 mt-1">Type: {selectedSub.submissionType} • Source: {selectedSub.sourceCategory || 'PUBLIC'} • Submitted: {new Date(selectedSub.createdAt).toLocaleString()}</p></div><span className="px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-800">{selectedSub.status}</span></div>
+            <div><h3 className="text-xs font-bold text-yatriwarm-700 uppercase tracking-wider mb-2">Proposed Details</h3><pre className="p-3 bg-yatriwarm-50 rounded-xl border border-yatriwarm-200 text-xs font-mono text-yatriwarm-800 overflow-x-auto whitespace-pre-wrap">{JSON.stringify({ ...selectedSub.proposedData, communityVotes: selectedSub.communityVotes || {} }, null, 2)}</pre></div>
             {selectedSub.contributorNote && <div><h3 className="text-xs font-bold text-yatriwarm-700 uppercase tracking-wider mb-1">Contributor Note</h3><p className="text-xs text-yatriwarm-700 p-3 bg-yatriwarm-50 rounded-xl border border-yatriwarm-200">{selectedSub.contributorNote}</p></div>}
             <div className="space-y-3 pt-4 border-t border-yatriwarm-200"><label className="block text-xs font-medium text-yatriwarm-700">Verification Note / Rejection Reason</label><textarea rows={3} value={decisionReason} onChange={e => setDecisionReason(e.target.value)} placeholder="Write how you verified this bus or why it is rejected…" className="w-full px-3 py-2 bg-yatriwarm-50 border border-yatriwarm-200 rounded-xl text-xs" />
               <div className="flex flex-wrap gap-2">
