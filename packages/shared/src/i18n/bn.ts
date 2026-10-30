@@ -119,4 +119,5 @@ export const bn = {
   submission_type: "জমার ধরন",
   submitted: "জমার তারিখ",
   reviewer_note: "পর্যালোচকের মন্তব্য",
+  scheduled_departures: "প্রকাশিত বাস ছাড়ার সময়",
 };
