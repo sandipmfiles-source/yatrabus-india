@@ -94,6 +94,31 @@ contributionsRouter.post('/vote/:refId', contributionLimiter, (req: Request, res
   return res.json({ success: true, counts: result.counts, message: 'Your community vote was counted.' });
 });
 
+
+
+// GET /api/contributions/corrections/:routeId — anonymous timetable suggestions and vote totals.
+contributionsRouter.get('/corrections/:routeId', (req: Request, res: Response) => {
+  const corrections = repository.listSubmissions().filter(item =>
+    item.targetEntityId === String(req.params.routeId) &&
+    item.submissionType === 'CORRECT_TIMETABLE' &&
+    (item.status === 'PENDING_REVIEW' || item.status === 'COMMUNITY_CORROBORATED')
+  );
+  const totals: Record<string, { field: string; value: string; votes: number }> = {};
+  for (const correction of corrections) {
+    for (const [key, count] of Object.entries(correction.communityVotes || {})) {
+      const split = key.indexOf(':');
+      if (split < 1) continue;
+      const field = key.slice(0, split);
+      const value = key.slice(split + 1);
+      const totalKey = field + ':' + value;
+      totals[totalKey] = totals[totalKey] || { field, value, votes: 0 };
+      totals[totalKey].votes += count;
+    }
+  }
+  const consensus = Object.values(totals).sort((a, b) => b.votes - a.votes)[0] || null;
+  return res.json({ corrections, consensus });
+});
+
 // GET /api/contributions/status/:refId
 // Public check of review status without account
 contributionsRouter.get('/status/:refId', (req: Request, res: Response) => {
