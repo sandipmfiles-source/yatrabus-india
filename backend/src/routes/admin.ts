@@ -376,8 +376,8 @@ adminRouter.post('/submissions/:id/review', requireAdminAuth('SUPER_ADMIN'), (re
       contributedBy: pendingSubmission.contributorDisplayName || targetBus.contributedBy,
       serviceStatus: verifyTimetable === true ? 'OPERATING_SCHEDULED' : targetBus.serviceStatus,
       updatedAt: new Date().toISOString(),
-      if (verifyTimetable === true) repository.addRoute({ ...route, serviceStatus: 'OPERATING_SCHEDULED', updatedAt: new Date().toISOString() });
-  });
+    });
+    if (verifyTimetable === true) repository.addRoute({ ...route, serviceStatus: 'OPERATING_SCHEDULED', updatedAt: new Date().toISOString() });
   }
 
   if (decision === 'ADMIN_VERIFIED' && pendingSubmission?.submissionType === 'DELETE_BUS') {
