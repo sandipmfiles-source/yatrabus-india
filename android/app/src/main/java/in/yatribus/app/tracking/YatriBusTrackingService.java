@@ -35,6 +35,7 @@ public class YatriBusTrackingService extends Service implements LocationListener
     private String busId;
     private String routeId;
     private String apiBase;
+    private long startedAtMs;
 
     @Override
     public void onCreate() {
@@ -53,6 +54,7 @@ public class YatriBusTrackingService extends Service implements LocationListener
         busId = intent.getStringExtra("busId");
         routeId = intent.getStringExtra("routeId");
         apiBase = intent.getStringExtra("apiBase");
+        startedAtMs = intent.getLongExtra("startedAtMs", System.currentTimeMillis());
         Intent launchIntent = getPackageManager().getLaunchIntentForPackage(getPackageName());
         PendingIntent pendingIntent = launchIntent == null ? null : PendingIntent.getActivity(this, 0, launchIntent,
             Build.VERSION.SDK_INT >= 23 ? PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT : PendingIntent.FLAG_UPDATE_CURRENT);
@@ -87,6 +89,10 @@ public class YatriBusTrackingService extends Service implements LocationListener
 
     @Override
     public void onLocationChanged(Location location) {
+        if (System.currentTimeMillis() - startedAtMs >= 12L * 60L * 60L * 1000L) {
+            stopSelf();
+            return;
+        }
         if (sessionId == null || apiBase == null) return;
         final JSONObject payload = new JSONObject();
         try {
