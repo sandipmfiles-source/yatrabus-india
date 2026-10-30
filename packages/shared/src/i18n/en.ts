@@ -163,4 +163,5 @@ export const en = {
   privacy_location_on_demand: "On Android, location permission and the device Location switch are required before you can continue. Granting permission does not start bus tracking; GPS sharing begins only after separate journey consent. Nearby-stop lookup uses your location only when you request it.",
   location_services_disabled: 'Turn on Location in Android Quick Settings, then retry. A fresh GPS fix is required to continue; mobile data is not required when GPS is available.',
   location_gate_instruction: 'YatriBus stays on this screen until Android location permission is granted and device Location is switched on. GPS sharing for a bus still requires separate journey consent.',
+  location_retry: 'Check Location Again',
 };
