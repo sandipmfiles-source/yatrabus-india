@@ -4,13 +4,15 @@ import { JourneyCandidate } from '@shared/types/bus.js';
 import { StatusBadge } from './StatusBadge.js';
 import { ConfidenceBadge } from './ConfidenceBadge.js';
 import { BusIllustration } from '../assets/BusIllustration.js';
-import { Clock, ArrowRight, MapPin, Split } from 'lucide-react';
+import { Clock, ArrowRight, MapPin, Split, BusFront } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext.js';
 
 interface BusCardProps {
   journey: JourneyCandidate;
 }
 
 export const BusCard: React.FC<BusCardProps> = ({ journey }) => {
+  const { t } = useLanguage();
   const { route, isDirect, transfers, departureTime, arrivalTime, durationMinutes, boardingStop, alightingStop, locationStatus, serviceStatus } = journey;
 
   return (
@@ -51,7 +53,7 @@ export const BusCard: React.FC<BusCardProps> = ({ journey }) => {
             <div>
               <div className="text-base font-bold text-yatriwarm-900">{departureTime}</div>
               <div className="text-[11px] text-yatriwarm-500 font-medium flex items-center gap-1 mt-0.5">
-                <MapPin className="w-3 h-3 text-yatribrand-700" />
+                <BusFront className="w-4 h-4 text-yatribrand-700 shrink-0" />
                 <span className="line-clamp-1">{boardingStop.stopName}</span>
               </div>
             </div>
@@ -66,7 +68,7 @@ export const BusCard: React.FC<BusCardProps> = ({ journey }) => {
                 <div className="absolute w-2 h-2 rounded-full bg-emerald-500 -top-[3px] right-0"></div>
               </div>
               <span className="text-[9px] text-yatriwarm-400">
-                {route.stops.length} stops
+                {journey.intermediateStops ? journey.intermediateStops.length + 2 : route.stops.length} stops
               </span>
             </div>
 
@@ -74,7 +76,7 @@ export const BusCard: React.FC<BusCardProps> = ({ journey }) => {
               <div className="text-base font-bold text-yatriwarm-900">{arrivalTime}</div>
               <div className="text-[11px] text-yatriwarm-500 font-medium flex items-center justify-end gap-1 mt-0.5">
                 <span className="line-clamp-1">{alightingStop.stopName}</span>
-                <MapPin className="w-3 h-3 text-emerald-600" />
+                <BusFront className="w-4 h-4 text-emerald-600 shrink-0" />
               </div>
             </div>
           </div>
