@@ -55,15 +55,17 @@ export const api = {
     return { route, stopsCount: route?.stops.length || 0, buses };
   },
 
-  async getBusById(id: string) {
+  async getBusById(id: string, routeId?: string) {
     try {
-      const res = await fetch(`${API_BASE}/buses/${id}`);
+      const query = routeId ? `?routeId=${encodeURIComponent(routeId)}` : '';
+      const res = await fetch(`${API_BASE}/buses/${id}${query}`);
       if (res.ok) return await res.json();
     } catch {}
     const bus = repository.getBusById(id);
     const loc = repository.getBusLocation(id);
     const routes = repository.getAllRoutes();
-    const route = routes.find(r => r.operatorId === bus?.operatorId) || routes[0];
+    const route = (routeId ? routes.find(r => r.id === routeId && r.operatorId === bus?.operatorId) : undefined) ||
+      routes.find(r => r.id === bus?.routeId) || routes.find(r => r.operatorId === bus?.operatorId) || routes[0];
     const stopETAs = calculateStopETAs(route.stops, 0.35, loc?.isLive ? { latitude: loc.latitude!, longitude: loc.longitude!, speedKmh: loc.speedKmh, isLive: true } : undefined);
     return { bus, location: loc, route, stopETAs };
   },
