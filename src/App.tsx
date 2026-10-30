@@ -6,6 +6,7 @@ import { Navbar } from './components/Navbar.js';
 import { Footer } from './components/Footer.js';
 import { LocationConsentModal } from './components/LocationConsentModal.js';
 import { ActiveTrackingWidget } from './components/ActiveTrackingWidget.js';
+import { StartupGate } from './components/StartupGate.js';
 
 import { HomePage } from './pages/HomePage.js';
 import { SearchResultsPage } from './pages/SearchResultsPage.js';
@@ -29,6 +30,7 @@ export const App: React.FC = () => {
     <LanguageProvider>
       <TrackingProvider>
         <BrowserRouter>
+          <StartupGate>
           <div className="flex flex-col min-h-screen">
             <Navbar />
             <main className="flex-1">
@@ -58,6 +60,7 @@ export const App: React.FC = () => {
             <LocationConsentModal />
             <ActiveTrackingWidget />
           </div>
+          </StartupGate>
         </BrowserRouter>
       </TrackingProvider>
     </LanguageProvider>
