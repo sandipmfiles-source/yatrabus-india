@@ -57,7 +57,7 @@ export class TransitRepository {
       this.buses.set(b.id, b);
       this.busLocations.set(b.id, {
         busId: b.id,
-        routeId: b.publicIdentifier.includes('534') ? 'route-dtc-534-up' : 'route-dtc-429-up',
+        routeId: b.routeId || (b.publicIdentifier.includes('534') ? 'route-dtc-534-up' : 'route-dtc-429-up'),
         displayState: 'ESTIMATED',
         latitude: 28.6469,
         longitude: 77.3160,
