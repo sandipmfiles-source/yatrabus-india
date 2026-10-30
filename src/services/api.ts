@@ -130,6 +130,13 @@ export const api = {
     return result;
   },
 
+  async getRouteCorrections(routeId: string) {
+    const res = await fetch(`${API_BASE}/contributions/corrections/${encodeURIComponent(routeId)}`);
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.message || data.error || 'Unable to load community corrections');
+    return data;
+  },
+
   async getSubmissionStatus(refId: string) {
     const res = await fetch(`${API_BASE}/contributions/status/${encodeURIComponent(refId)}`);
     const data = await res.json().catch(() => ({}));
