@@ -7,7 +7,7 @@ export const StartupLocationPermission: React.FC = () => {
   const { t } = useLanguage();
   const [visible, setVisible] = useState(() => Capacitor.isNativePlatform());
   const [requesting, setRequesting] = useState(false);
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState<'' | 'location_permission_denied' | 'location_services_disabled'>('');
   const [hasPermission, setHasPermission] = useState(false);
 
   const verifyLocationReady = async (requestPermission: boolean) => {
@@ -20,7 +20,7 @@ export const StartupLocationPermission: React.FC = () => {
       if (permission.location !== 'granted') {
         setHasPermission(false);
         setVisible(true);
-        if (requestPermission) setMessage(t('location_permission_denied'));
+        if (requestPermission) setMessage('location_permission_denied');
         return;
       }
       setHasPermission(true);
@@ -31,7 +31,7 @@ export const StartupLocationPermission: React.FC = () => {
       setMessage('');
     } catch {
       setVisible(true);
-      setMessage(t('location_services_disabled'));
+      setMessage('location_services_disabled');
     } finally {
       setRequesting(false);
     }
@@ -56,7 +56,7 @@ export const StartupLocationPermission: React.FC = () => {
         <h1 id="startup-location-title" className="mt-2 text-center text-2xl font-extrabold text-signal-charcoal-950">{t('location_startup_title')}</h1>
         <p className="mt-4 text-sm leading-relaxed text-signal-charcoal-700">{t('location_startup_description')}</p>
         <p className="mt-2 text-xs text-signal-charcoal-600">{t('location_startup_privacy')}</p>
-        {message && <p role="alert" className="mt-3 rounded-xl bg-amber-50 p-3 text-xs text-amber-900">{message}</p>}
+        {message && <p role="alert" className="mt-3 rounded-xl bg-amber-50 p-3 text-xs text-amber-900"{t(message)}</p>}
         <div className="mt-5 flex flex-col gap-2">
           <button type="button" disabled={requesting} onClick={allowLocation} className="w-full rounded-xl bg-signal-charcoal-950 px-4 py-3 text-sm font-bold text-white disabled:opacity-60">
             {requesting ? t('requesting_permission') : hasPermission ? t('location_retry') : t('allow_location')}
