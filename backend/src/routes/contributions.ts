@@ -152,7 +152,7 @@ contributionsRouter.post('/operator-submit', contributionLimiter, (req: Request,
   const allowed: string[] = ['ADD_BUS', 'SUGGEST_ROUTE', 'CORRECT_TIMETABLE', 'DELETE_BUS', 'ADD_INTERMEDIATE_STOP'];
   if (!allowed.includes(submissionType) || !['BUS', 'ROUTE', 'TIMETABLE', 'STOP'].includes(entityType) ||
       !proposedData || typeof proposedData !== 'object' || Array.isArray(proposedData) ||
-      contactName.length < 2 || operatorName.length < 2 || contactPhone.replace(/\\D/g, '').length < 10) {
+      contactName.length < 2 || operatorName.length < 2 || contactPhone.replace(/\D/g, '').length < 10) {
     return res.status(400).json({ error: 'Provide a valid submission, operator name, contact person and 10-digit contact phone.' });
   }
   const referenceId = 'YB-OWN-' + Math.floor(100000 + Math.random() * 900000).toString();
