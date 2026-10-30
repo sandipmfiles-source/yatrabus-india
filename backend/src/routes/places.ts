@@ -4,6 +4,44 @@ import { publicSearchLimiter } from '../middleware/rateLimiter.js';
 
 export const placesRouter = Router();
 
+const geocodeCache = new Map<string, { expiresAt: number; results: any[] }>();
+let lastGeocodeRequestAt = 0;
+
+// Free OpenStreetMap Nominatim suggestions. Queries are cached and throttled to respect
+// the public service usage policy; selected coordinates are sent with route submissions.
+placesRouter.get('/geocode-search', publicSearchLimiter, async (req: Request, res: Response) => {
+  const query = typeof req.query.q === 'string' ? req.query.q.trim() : '';
+  if (query.length < 3 || query.length > 120) return res.json({ query, results: [] });
+  const key = query.toLocaleLowerCase();
+  const cached = geocodeCache.get(key);
+  if (cached && cached.expiresAt > Date.now()) return res.json({ query, results: cached.results, cache: 'HIT' });
+  const waitMs = 1100 - (Date.now() - lastGeocodeRequestAt);
+  if (waitMs > 0) await new Promise(resolve => setTimeout(resolve, waitMs));
+  lastGeocodeRequestAt = Date.now();
+  try {
+    const url = 'https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&countrycodes=in&limit=6&q=' + encodeURIComponent(query);
+    const response = await fetch(url, {
+      headers: { 'User-Agent': 'YatraBusIndia/1.0 (+https://github.com/sandipmfiles-source/yatrabus-india)', 'Accept-Language': 'en,hi,bn' },
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!response.ok) return res.status(502).json({ error: 'PLACE_SEARCH_UNAVAILABLE', message: 'OpenStreetMap place search is temporarily unavailable. Use GPS or try again.' });
+    const data = await response.json() as any[];
+    const results = (Array.isArray(data) ? data : []).map(item => ({
+      id: String(item.place_id),
+      name: String(item.name || item.display_name?.split(',')[0] || query),
+      address: String(item.display_name || ''),
+      latitude: Number(item.lat),
+      longitude: Number(item.lon),
+      source: 'OPENSTREETMAP_NOMINATIM',
+    })).filter(item => Number.isFinite(item.latitude) && Number.isFinite(item.longitude));
+    if (geocodeCache.size > 500) geocodeCache.delete(geocodeCache.keys().next().value as string);
+    geocodeCache.set(key, { expiresAt: Date.now() + 24 * 60 * 60 * 1000, results });
+    return res.json({ query, results, source: 'OPENSTREETMAP_NOMINATIM', attribution: '© OpenStreetMap contributors' });
+  } catch {
+    return res.status(502).json({ error: 'PLACE_SEARCH_UNAVAILABLE', message: 'OpenStreetMap place search is temporarily unavailable. Use GPS or try again.' });
+  }
+});
+
 // Free local catalogue search. External paid geocoding is deliberately not required.
 placesRouter.get('/search', publicSearchLimiter, (req: Request, res: Response) => {
   const query = typeof req.query.q === 'string' ? req.query.q.trim() : '';
@@ -72,7 +110,7 @@ placesRouter.post('/route-preview', publicSearchLimiter, async (req: Request, re
   const stopsRaw = (Array.isArray(req.body?.stops) ? req.body.stops : [])
     .filter((value: unknown): value is string => typeof value === 'string')
     .map((value: string) => value.trim()).filter(Boolean);
-  if (stopsRaw.length > 23) return res.status(400).json({ error: 'TOO_MANY_STOPS', message: 'A route can contain at most 23 intermediate stops.' });
+  if (stopsRaw.length > 98) return res.status(400).json({ error: 'TOO_MANY_STOPS', message: 'This free road-routing service supports up to 98 intermediate stops per route check. Your stop list can still be saved for admin review.' });
   const points = [originRaw, ...stopsRaw, destinationRaw].map(resolveRoutePoint);
   const missingIndex = points.findIndex(point => point === null);
   if (missingIndex >= 0) {
