@@ -20,7 +20,7 @@ export const api = {
   async previewRoadRoute(origin: string, destination: string, stops: string[] = []) {
     const res = await fetch(`${API_BASE}/places/route-preview`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ origin, destination, stops }) });
     const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.message || data.error || 'Google Maps route preview is unavailable.');
+    if (!res.ok) throw new Error(data.message || data.error || 'Free OpenStreetMap road-route preview is unavailable.');
     return data;
   },
 
