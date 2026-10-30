@@ -15,20 +15,20 @@ export const Navbar: React.FC = () => {
     <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-yatriwarm-200">
       <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
         {/* Brand identity */}
-        <Link to="/" className="flex items-center gap-2.5 group">
-          <div className="w-10 h-10 rounded-xl bg-yatribrand-900 flex items-center justify-center shadow-subtle group-hover:bg-yatribrand-800 transition-colors">
+        <Link to="/" className="flex items-center gap-3 group yb-brand-lockup">
+          <div className="yb-brand-mark w-11 h-11 rounded-2xl flex items-center justify-center shadow-subtle transition-all">
             <BusIllustration variant="icon" className="w-6 h-6" />
           </div>
           <div>
             <div className="flex items-center gap-1.5">
-              <span className="text-lg font-bold tracking-tight text-yatribrand-900">
+              <span className="yb-brand-name text-lg font-extrabold tracking-tight text-white">
                 YatriBus
               </span>
-              <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-yatribrand-100 text-yatribrand-800">
+              <span className="yb-brand-country text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded-md">
                 India
               </span>
             </div>
-            <p className="text-[10px] text-yatriwarm-500 font-medium hidden sm:block">
+            <p className="yb-brand-tagline text-[10px] font-medium hidden sm:block">
               {t('nav_tagline')}
             </p>
           </div>
