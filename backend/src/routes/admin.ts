@@ -180,7 +180,7 @@ adminRouter.post('/submissions/:id/review', requireAdminAuth('SUPER_ADMIN'), (re
   if (decision === 'ADMIN_VERIFIED' && pendingSubmission?.proposedData?.action === 'CORRECT_STOP_TIME') {
     const data = pendingSubmission.proposedData;
     const route = typeof data.routeNumber === 'string' ? repository.getRouteByNumber(data.routeNumber) : undefined;
-    const validTime = (value: unknown) => typeof value === 'string' && /^([01]\\d|2[0-3]):[0-5]\\d$/.test(value);
+    const validTime = (value: unknown) => typeof value === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
     const field = data.field === 'scheduledDepartureTime' ? 'scheduledDepartureTime' : 'scheduledArrivalTime';
     if (!route || !validTime(data.value)) return res.status(422).json({ error: 'A valid route and HH:MM stop time are required.' });
     const stopExists = route.stops.some(stop => stop.id === data.stopId || stop.stopId === data.stopId);
@@ -214,7 +214,7 @@ adminRouter.post('/submissions/:id/review', requireAdminAuth('SUPER_ADMIN'), (re
   if (decision === 'ADMIN_VERIFIED' && pendingSubmission?.proposedData?.action === 'UPDATE_BUS_TIMETABLE') {
     const data = pendingSubmission.proposedData;
     const route = typeof data.routeNumber === 'string' ? repository.getRouteByNumber(data.routeNumber) : undefined;
-    const validTime = (value: unknown) => typeof value === 'string' && /^([01]\\d|2[0-3]):[0-5]\\d$/.test(value);
+    const validTime = (value: unknown) => typeof value === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
     if (!route || !data.busIdentifier || !validTime(data.departureTime) || !validTime(data.arrivalTime)) {
       return res.status(422).json({ error: 'Valid route, bus name, departure and arrival times are required.' });
     }
@@ -339,7 +339,7 @@ adminRouter.put('/routes/:id', requireAdminAuth('SUPER_ADMIN'), (req: Request, r
   const existing = repository.getRouteById(String(req.params.id));
   if (!existing) return res.status(404).json({ error: 'Route not found' });
   const data = req.body || {};
-  const validTime = (value: unknown) => typeof value === 'string' && /^([01]\\d|2[0-3]):[0-5]\\d$/.test(value);
+  const validTime = (value: unknown) => typeof value === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
   const stops = Array.isArray(data.stops) ? data.stops : existing.stops;
   if (!stops.length || stops.some((stop: any) => typeof stop?.stopName !== 'string' || !stop.stopName.trim() ||
       !Number.isFinite(Number(stop.latitude)) || !Number.isFinite(Number(stop.longitude)))) {
