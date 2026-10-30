@@ -43,6 +43,7 @@ export const SearchResultsPage: React.FC = () => {
   const allJourneys = [...directRoutes, ...transferRoutes];
 
   const timetablePanel = (journey: JourneyCandidate) => {
+    if (!journey.isDirect) return null;
     const route = journey.route;
     const departures = (route.departures || []).filter(item => !item.isCancelled)
       .slice().sort((a, b) => a.departureTime.localeCompare(b.departureTime));
