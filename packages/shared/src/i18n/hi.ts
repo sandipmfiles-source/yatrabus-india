@@ -154,6 +154,10 @@ export const hi = {
   owner_account_free_description: 'आपका आवेदन Super Admin की अलग समीक्षा सूची में जाएगा। संपर्क जानकारी का उपयोग केवल ऑपरेटर के दावे की पुष्टि के लिए होगा।',
   owner_contact_person: 'आपका नाम / संपर्क व्यक्ति',
   owner_submission_contact_error: 'बस मालिक: ऑपरेटर / फ्लीट का नाम, संपर्क व्यक्ति और सही 10 अंकों का फोन नंबर भरें। अकाउंट या Google साइन-इन की आवश्यकता नहीं है।',
+  request_bus_removal: 'बस हटाने का अनुरोध',
+  existing_route_number: 'मौजूदा रूट नंबर',
+  bus_name_number_to_remove: 'हटाई जाने वाली बस का नाम / नंबर',
+
 
   contribute_submit_tab: 'नई जानकारी भेजें',
   contribute_status_tab: 'आवेदन की स्थिति देखें',
