@@ -168,6 +168,7 @@ export const OwnerDashboardPage: React.FC = () => {
     setBusName(String(data.name || data.busIdentifier || ''));
     setOperatorName(String(data.operatorName || ''));
     setRouteNumber(String(data.routeNumber || ''));
+    setDirection(data.direction === 'DOWN' ? 'DOWN' : 'UP');
     setRouteName(String(data.routeName || ''));
     setOrigin(String(data.origin || ''));
     setDestination(String(data.destination || ''));
