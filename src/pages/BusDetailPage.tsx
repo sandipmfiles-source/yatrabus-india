@@ -10,7 +10,7 @@ import { ConfidenceBadge } from '../components/ConfidenceBadge.js';
 import { JourneyConfirmBanner } from '../components/JourneyConfirmBanner.js';
 import { BusIllustration } from '../assets/BusIllustration.js';
 import { MapView } from '../components/MapView.js';
-import { ArrowLeft, Clock, MapPin, ShieldCheck, AlertTriangle, Edit3, Flag } from 'lucide-react';
+import { ArrowLeft, Clock, MapPin, ShieldCheck, AlertTriangle, Edit3, Flag, BusFront } from 'lucide-react';
 
 export const BusDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -81,6 +81,30 @@ export const BusDetailPage: React.FC = () => {
     if (!route?.id) return;
     api.getRouteCorrections(route.id).then(data => setCorrections(data.corrections || [])).catch(() => setCorrections([]));
   }, [route?.id]);
+
+  // Project a fresh GPS fix onto the ordered stop-to-stop corridor.
+  // The timeline marker is intentionally hidden unless GPS is genuinely live.
+  const liveBusProgress = (() => {
+    if (!location?.isLive || typeof location.latitude !== 'number' || typeof location.longitude !== 'number' || route.stops.length < 2) return null;
+    const stops = route.stops;
+    let best: { ratio: number; error: number } | null = null;
+    for (let i = 0; i < stops.length - 1; i++) {
+      const a = stops[i], b = stops[i + 1];
+      const meanLat = ((a.latitude + b.latitude) / 2) * Math.PI / 180;
+      const sx = (b.longitude - a.longitude) * Math.cos(meanLat), sy = b.latitude - a.latitude;
+      const px = (location.longitude - a.longitude) * Math.cos(meanLat), py = location.latitude - a.latitude;
+      const lengthSquared = sx * sx + sy * sy;
+      const fraction = lengthSquared > 0 ? Math.max(0, Math.min(1, (px * sx + py * sy) / lengthSquared)) : 0;
+      const dx = px - fraction * sx, dy = py - fraction * sy;
+      const error = Math.sqrt(dx * dx + dy * dy);
+      const startKm = a.distanceFromStartKm || 0;
+      const endKm = b.distanceFromStartKm || startKm;
+      const ratio = route.distanceKm > 0 ? (startKm + (endKm - startKm) * fraction) / route.distanceKm : (i + fraction) / (stops.length - 1);
+      if (!best || error < best.error) best = { ratio: Math.max(0, Math.min(1, ratio)), error };
+    }
+    // Do not place a bus on this route when its GPS fix is far off the corridor.
+    return best && best.error < 0.08 ? best.ratio : null;
+  })();
 
   const refreshCorrections = async () => {
     if (!route) return;
@@ -303,13 +327,13 @@ export const BusDetailPage: React.FC = () => {
           </span>
         </div>
 
-        <div className="relative pl-6 space-y-6 before:absolute before:left-2.5 before:top-3 before:bottom-3 before:w-0.5 before:bg-yatriwarm-200">
+        <div className="relative pl-6 space-y-6 before:absolute before:left-2.5 before:top-3 before:bottom-3 before:w-0.5 before:bg-yatriwarm-200">\n          {liveBusProgress !== null && (\n            <div className="absolute z-20 -left-[1px] -translate-x-1/2 -translate-y-1/2 pointer-events-none" style={{ top: `${liveBusProgress * 100}%` }} aria-label="Live bus position on route timeline" title="Live GPS bus position">\n              <span className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-yatribrand-900 text-white shadow-lg ring-2 ring-emerald-300">\n                <BusFront className="h-4 w-4" aria-hidden="true" />\n              </span>\n            </div>\n          )}
           {route.stops.map((stop, idx) => {
             const eta = stopETAs.find(e => e.stopId === stop.stopId);
             const isTerminus = idx === 0 || idx === route.stops.length - 1;
 
             return (
-              <div key={stop.id} className="relative flex items-start justify-between gap-4">
+              <div key={stop.id} className="relative flex min-h-[56px] items-start justify-between gap-4">
                 {/* Timeline node */}
                 <div
                   className={`absolute -left-6 top-1 w-3.5 h-3.5 rounded-full border-2 border-white shadow-xs ${
