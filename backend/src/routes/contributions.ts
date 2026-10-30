@@ -102,6 +102,7 @@ contributionsRouter.get('/corrections/:routeId', (req: Request, res: Response) =
   const corrections = repository.listSubmissions().filter(item =>
     item.targetEntityId === String(req.params.routeId) &&
     item.submissionType === 'CORRECT_TIMETABLE' && item.sourceCategory !== 'OPERATOR' &&
+    typeof item.proposedData?.field === 'string' && typeof item.proposedData?.value === 'string' &&
     (item.status === 'PENDING_REVIEW' || item.status === 'COMMUNITY_CORROBORATED')
   );
   const totals: Record<string, { field: string; value: string; votes: number }> = {};
