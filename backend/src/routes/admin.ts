@@ -50,7 +50,7 @@ function publishVerifiedRoute(submission: CommunitySubmission): Route {
   const destination = String(data.destination || '').trim();
   const routeNumber = String(data.routeNumber || '').trim();
   const exactDepartureTimes = Array.isArray(data.departureTimes) ? data.departureTimes.map((time: unknown) => String(time).trim()).filter(Boolean).sort() : [];
-  if (exactDepartureTimes.some((time: string) => !/^([01]\\d|2[0-3]):[0-5]\\d$/.test(time))) {
+  if (exactDepartureTimes.some((time: string) => !/^([01]\d|2[0-3]):[0-5]\d$/.test(time))) {
     throw new Error('Exact departures must use 24-hour HH:MM format.');
   }
   const firstDepartureTime = exactDepartureTimes[0] || String(data.firstDepartureTime || '').trim();
