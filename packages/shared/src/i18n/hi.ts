@@ -7,6 +7,8 @@ export const hi = {
   last_bus: 'आखिरी बस',
   frequency: 'बस अंतराल',
   not_provided: 'उपलब्ध नहीं',
+  not_verified: 'सत्यापित नहीं',
+
   trips_per_day: 'प्रति संचालन दिवस यात्राएँ',
   every: 'हर',
   minutes: 'मिनट',
