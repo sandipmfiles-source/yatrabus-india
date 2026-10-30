@@ -216,7 +216,10 @@ export class TransitRepository {
   public getBusesForRoute(routeId: string): Bus[] {
     const route = this.routes.get(routeId);
     if (!route) return [];
-    return Array.from(this.buses.values()).filter(b => b.operatorId === route.operatorId && b.isActive);
+    return Array.from(this.buses.values()).filter(b => b.isActive && (
+      b.routeId === routeId ||
+      (!b.routeId && b.operatorId === route.operatorId)
+    ));
   }
 
   public addBus(bus: Bus): Bus {
