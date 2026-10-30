@@ -180,7 +180,7 @@ export const ContributePage: React.FC = () => {
   }, [routeIdParam, submissionType]);
 
   useEffect(() => {
-    if (!busIdParam || !routeIdParam || submissionType !== 'CORRECT_TIMETABLE' || !isOperatorSubmission) return;
+    if (!busIdParam || !routeIdParam || !['CORRECT_TIMETABLE', 'DELETE_BUS'].includes(submissionType) || !isOperatorSubmission) return;
     let cancelled = false;
     api.getBusById(busIdParam, routeIdParam).then((result: any) => {
       if (cancelled) return;
