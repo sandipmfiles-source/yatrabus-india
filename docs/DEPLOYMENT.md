@@ -7,7 +7,7 @@ This plan keeps the initial build at ₹0 by using open-source data and free tie
 | Layer | Service | What is free | Important limit / status |
 |---|---|---|---|
 | Source code | GitHub public repository | Public source, issues and pull requests | Keep secrets out of commits |
-| Android build | GitHub Actions standard hosted runners | Free for public repositories | Uploaded APK artifact currently expires after 14 days; download and keep a release copy |
+| Android build | GitHub Actions standard hosted runners | Free for public repositories | Uploaded APK artifact currently expires after 90 days; download and keep a release copy |
 | Web frontend | Cloudflare Pages Free | Static frontend hosting, HTTPS, free subdomain | 500 builds/month; 20,000 files/site; 25 MiB per file |
 | API runtime (future migration) | Cloudflare Workers Free | 100,000 requests/day | Current API is Express + Node filesystem; it is NOT deployed to Workers yet and needs a compatibility rewrite before using this option |
 | PostgreSQL (future durable DB) | Neon Free | 1 GB storage/project, 100 CU-hours/project/month, 5 GB public transfer/project/month | Current repository uses an in-process repository + JSON file persistence; Neon migrations exist but are NOT wired into runtime yet |
