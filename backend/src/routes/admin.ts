@@ -78,8 +78,8 @@ adminRouter.post('/submissions/:id/review', requireAdminAuth('SUPER_ADMIN'), (re
     if (!route) {
       return res.status(422).json({ error: 'Route number was not found. Add and verify the route before approving this bus timetable entry.' });
     }
-    if (typeof data.departureTime !== 'string' || !/^([01]\\d|2[0-3]):[0-5]\\d$/.test(data.departureTime) ||
-        typeof data.arrivalTime !== 'string' || !/^([01]\\d|2[0-3]):[0-5]\\d$/.test(data.arrivalTime)) {
+    if (typeof data.departureTime !== 'string' || !/^([01]\d|2[0-3]):[0-5]\d$/.test(data.departureTime) ||
+        typeof data.arrivalTime !== 'string' || !/^([01]\d|2[0-3]):[0-5]\d$/.test(data.arrivalTime)) {
       return res.status(422).json({ error: 'A valid departure and arrival time are required before publishing.' });
     }
     const days = Array.isArray(data.operatingDays)
