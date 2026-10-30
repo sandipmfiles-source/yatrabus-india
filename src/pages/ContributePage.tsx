@@ -430,7 +430,7 @@ export const ContributePage: React.FC = () => {
                   {[
                     { id: 'ADD_BUS' as SubmissionType, label: 'Add Bus to Route' },
                     { id: 'SUGGEST_ROUTE' as SubmissionType, label: 'Add New Route' },
-                    ...(routeIdParam ? [{ id: 'UPDATE_ROUTE' as SubmissionType, label: 'Update Existing Route' }] : []),
+                    ...(routeIdParam ? [{ id: 'UPDATE_ROUTE' as SubmissionType, label: t('update_existing_route') }] : []),
                     { id: 'ADD_STOP' as SubmissionType, label: 'Add Stop' },
                     { id: 'CORRECT_TIMETABLE' as SubmissionType, label: 'Add / Fix Timetable' },
                     { id: 'REPORT_CHANGED_ROUTE' as SubmissionType, label: 'Report Issue' },
