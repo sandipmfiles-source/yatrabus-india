@@ -9,6 +9,7 @@ import { ConfidenceBadge } from '../components/ConfidenceBadge.js';
 import { JourneyConfirmBanner } from '../components/JourneyConfirmBanner.js';
 import { BusIllustration } from '../assets/BusIllustration.js';
 import { MapView } from '../components/MapView.js';
+import { haversineDistanceMeters } from '@shared/engine/routeMatcher.js';
 import { ArrowLeft, Clock, MapPin, ShieldCheck, AlertTriangle, Edit3, Flag } from 'lucide-react';
 
 export const BusDetailPage: React.FC = () => {
@@ -57,6 +58,13 @@ export const BusDetailPage: React.FC = () => {
       </div>
     );
   }
+
+  const nearestListedStop = location?.isLive && typeof location.latitude === 'number' && typeof location.longitude === 'number'
+    ? route.stops.reduce((nearest, stop) => {
+        const distance = haversineDistanceMeters(location.latitude!, location.longitude!, stop.latitude, stop.longitude);
+        return !nearest || distance < nearest.distance ? { stop, distance } : nearest;
+      }, null as { stop: RouteStop; distance: number } | null)
+    : null;
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
@@ -125,6 +133,7 @@ export const BusDetailPage: React.FC = () => {
                   ✓ Fresh observation corroboration active
                 </div>
               )}
+              {nearestListedStop && <div className="text-xs text-yatriwarm-700">Nearest listed stop: <strong>{nearestListedStop.stop.stopName}</strong> ({(nearestListedStop.distance / 1000).toFixed(1)} km away)</div>}
               {!location?.isLive && (
                 <div className="text-yatriwarm-500">
                   Note: Location is calculated from scheduled stop pace. Confirm journey to contribute live GPS.
