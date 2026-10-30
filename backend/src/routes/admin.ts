@@ -449,6 +449,7 @@ adminRouter.put('/routes/:id', requireAdminAuth('SUPER_ADMIN'), (req: Request, r
     routeName: typeof data.routeName === 'string' ? data.routeName.trim().slice(0, 160) : existing.routeName,
     firstDepartureTime: validTime(data.firstDepartureTime) ? data.firstDepartureTime : existing.firstDepartureTime,
     lastDepartureTime: validTime(data.lastDepartureTime) ? data.lastDepartureTime : existing.lastDepartureTime,
+    direction: data.direction === 'UP' || data.direction === 'DOWN' || data.direction === 'CIRCULAR' ? data.direction : existing.direction,
     stops,
     updatedAt: new Date().toISOString(),
   };
