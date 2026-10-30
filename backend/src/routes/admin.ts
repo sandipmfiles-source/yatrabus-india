@@ -380,9 +380,11 @@ adminRouter.post('/submissions/:id/review', requireAdminAuth('SUPER_ADMIN'), (re
         typeof data.arrivalTime !== 'string' || !/^([01]\d|2[0-3]):[0-5]\d$/.test(data.arrivalTime)) {
       return res.status(422).json({ error: 'A valid departure and arrival time are required before publishing.' });
     }
-    const days = (Array.isArray(data.operatingDays)
-      ? data.operatingDays.filter((day: string) => ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'].includes(day))
-      : ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']) as TimetableDeparture['operatingDays'];
+    const requestedDays = Array.isArray(data.operatingDays)
+      ? data.operatingDays.map((day: unknown) => String(day).trim().slice(0, 3).toUpperCase())
+        .filter((day: string) => ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'].includes(day))
+      : [];
+    const days = (requestedDays.length ? Array.from(new Set(requestedDays)) : route.operatingDays) as TimetableDeparture['operatingDays'];
     const stopTimes = (Array.isArray(data.stops) ? data.stops : []).flatMap((input: any) => {
       const matched = typeof input?.name === 'string'
         ? route.stops.find(stop => stop.stopName.trim().toLowerCase() === input.name.trim().toLowerCase())
