@@ -147,4 +147,5 @@ export const en = {
   scheduled: "Scheduled",
   incorrect_schedule_notice: "Noticed an incorrect timetable or temporary diversion on this bus?",
   no_bus_linked_tracking: "Live GPS sharing will be available after a bus is added and verified for this route.",
+  of_total: "of",
 };
