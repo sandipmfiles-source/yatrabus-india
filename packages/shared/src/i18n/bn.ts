@@ -1,5 +1,14 @@
 export const bn = {
   app_title: 'যাত্রীবাস (YatriBus)',
+  startup_location_title: 'অবস্থানের অনুমতি প্রয়োজন',
+  startup_location_description: 'YatraBus-এ এগোতে এবং কাছের বাস স্টপের সুবিধা ব্যবহার করতে অবস্থানের অনুমতি দিন। এতে লাইভ ট্র্যাকিং শুরু হয় না।',
+  startup_location_privacy: 'অ্যাপ খুললেই আপনার GPS ভাগ করা হয় না। আলাদা যাত্রা নিশ্চিতকরণ ও সম্মতির পরেই বাস ট্র্যাকিং শুরু হয়।',
+  startup_location_allow: 'অবস্থানের অনুমতি দিন',
+  startup_location_requesting: 'অনুমতি চাওয়া হচ্ছে…',
+  startup_location_denied: 'অবস্থানের অনুমতি এখনও বন্ধ। Android Settings-এ চালু করে আবার চেষ্টা করুন।',
+  startup_location_settings: 'অনুমতি চাওয়া যায়নি। Android Settings → Apps → YatriBus → Permissions → Location খুলুন।',
+  startup_location_check_error: 'অবস্থানের অনুমতি পরীক্ষা করা যায়নি। এগোতে অনুমতি দিন।',
+  startup_location_footer: 'কাছের স্টপ ও যাত্রার সুবিধার জন্য অবস্থান ব্যবহৃত হয়। GPS ভাগ করা যেকোনো সময় বন্ধ করতে পারবেন.'
   tagline: 'ভারতজোড়া স্মার্ট বাস ডিরেক্টরি এবং যাত্রী-সহায়তায় লাইভ ট্র্যাকিং',
   search_placeholder_from: 'শুরুর স্থান (শহর, বাস টার্মিনাস, স্টপ)',
   search_placeholder_to: 'গন্তব্য স্থান (শহর, বাস টার্মিনাস, স্টপ)',
