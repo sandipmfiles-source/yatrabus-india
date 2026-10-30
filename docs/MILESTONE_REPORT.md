@@ -26,7 +26,7 @@ This report separates code implemented in the repository from services that are 
 
 ### 4. Passenger-assisted GPS tracking
 - [x] Explicit consent prompt, journey session, GPS confidence checks, route matching, freshness checks and bus-level public location state.
-- [x] Android startup permission gate is mounted in the app; granting device permission does not itself start GPS sharing.
+- [x] Android startup foreground-location permission gate is mounted; background-location permission is declared for use during an explicitly consented journey. Granting device permission does not itself start GPS sharing.
 - [x] Bus detail refreshes the selected bus location and stop ETAs every 15 seconds while the page is open.
 - [x] Seed buses no longer display fabricated coordinates; without a passenger GPS observation, location is shown as unavailable.
 - [x] Server rejects observations without recorded consent, mismatched bus/route IDs, invalid coordinates or expired sessions.
@@ -34,8 +34,10 @@ This report separates code implemented in the repository from services that are 
 - [ ] No physical Android device test has been performed in this workflow. Real cross-device live tracking requires the deployed backend and API URL.
 
 ### 5. Free route preview
-- [x] Owner route builder includes origin, destination, intermediate stops, bus number/name and ordered stop list.
-- [x] Free low-volume OpenStreetMap / OSRM road-route preview, with manual check, rate limit, short cache, distance, duration and route geometry.
+- [x] Owner and public route builders include origin, destination, route number/name, UP/DOWN direction, intermediate stops and a vertical ordered-stop preview.
+- [x] Stops can be moved up/down without changing the fixed origin/destination endpoints; adding an intermediate stop inserts it before the destination.
+- [x] Both owner and public route submissions require a successful OpenStreetMap / OSRM road-path check in the exact submitted stop order before submission; the owner preview displays road geometry, distance and estimated duration.
+- [x] The public route form supports all 28 Indian states and 8 union territories.
 - [ ] Route preview needs coordinates for each point (saved local place coordinates or Name | latitude | longitude). The public OSRM demo is best-effort and has no production SLA.
 - [ ] Road routing checks a drivable path, not whether a public bus actually operates there; admin verification is required.
 
@@ -47,7 +49,8 @@ This report separates code implemented in the repository from services that are 
 
 ## Not yet deployed / deferred
 
-- [ ] Google OAuth / owner sign-in — intentionally deferred until the user requests it.
+- [x] Google Identity Services owner sign-in and owner-scoped submit/edit/delete requests are implemented in the frontend and Express API.
+- [ ] Owner sign-in is not active until the backend is deployed with GOOGLE_OAUTH_CLIENT_ID and OWNER_JWT_SECRET and the APK build receives the matching VITE_GOOGLE_CLIENT_ID.
 - [ ] Express backend hosting — not deployed.
 - [ ] Durable production database — runtime currently uses JSON-file persistence. SQL migrations exist, but a PostgreSQL adapter is not yet wired into repository reads/writes.
 - [ ] Cloudflare Pages / Workers and Neon are documented as free-tier targets, but no provider account has been connected and the existing Express API needs adaptation plus durable storage before production launch.
