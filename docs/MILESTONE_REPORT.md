@@ -14,6 +14,8 @@ This report separates code implemented in the repository from services that are 
 - [x] India-focused administrative place hierarchy and typo-tolerant search (normalization, transliteration and disambiguation).
 - [x] Route graph for direct and one-transfer journeys, timetable-based ETAs and service-state labels.
 - [x] Timetable, stop sequence and bus data structures, plus admin review and versioning code.
+- [x] Route submissions can identify outbound (UP) and return (DOWN) directions; Super Admin approval preserves the selected direction.
+- [x] Bus records are linked to their route so tracking sessions and route details use the correct bus/route pair.
 - [ ] Nationwide verified schedules are NOT complete. The current seed dataset contains four sample route records and four sample buses (Delhi, Mumbai and Kolkata examples). These seed routes/buses are marked UNVERIFIED / SCHEDULE_UNVERIFIED until a Super Admin checks current operator data. This is not a complete India-wide bus timetable.
 
 ### 3. Public contributions and moderation
@@ -24,6 +26,9 @@ This report separates code implemented in the repository from services that are 
 
 ### 4. Passenger-assisted GPS tracking
 - [x] Explicit consent prompt, journey session, GPS confidence checks, route matching, freshness checks and bus-level public location state.
+- [x] Android startup permission gate is mounted in the app; granting device permission does not itself start GPS sharing.
+- [x] Bus detail refreshes the selected bus location and stop ETAs every 15 seconds while the page is open.
+- [x] Seed buses no longer display fabricated coordinates; without a passenger GPS observation, location is shown as unavailable.
 - [x] Server rejects observations without recorded consent, mismatched bus/route IDs, invalid coordinates or expired sessions.
 - [x] Session ends on Stop Sharing or at the 12-hour limit. Per-session coordinate observations are deleted when the session ends/expires; only the latest bus-level location aggregate remains available.
 - [ ] No physical Android device test has been performed in this workflow. Real cross-device live tracking requires the deployed backend and API URL.
