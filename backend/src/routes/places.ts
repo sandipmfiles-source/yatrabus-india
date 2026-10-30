@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { repository } from '../db/repository.js';
+import { repository } from '../db/persistentRepository.js';
 import { publicSearchLimiter } from '../middleware/rateLimiter.js';
 
 export const placesRouter = Router();
