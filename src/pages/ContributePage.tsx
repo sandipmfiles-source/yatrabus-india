@@ -207,6 +207,12 @@ export const ContributePage: React.FC = () => {
               </div>
 
               {/* Dynamic form fields */}
+              <datalist id="yatribus-known-stops">
+                <option value="Jhargram New Bus Stand" />
+                <option value="KGP Bus Stand" />
+                <option value="Howrah Station Bus Stand" />
+                <option value="Esplanade (Dharmatala)" />
+              </datalist>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {(submissionType === 'ADD_BUS' || submissionType === 'SUGGEST_ROUTE') && (
                   <div>
@@ -279,6 +285,7 @@ export const ContributePage: React.FC = () => {
                   </label>
                   <input
                     type="text"
+                    list="yatribus-known-stops"
                     required
                     value={destination}
                     onChange={e => { const value = e.target.value; setDestination(value); if (/^kgp bus stand$/i.test(value.trim()) || /^kharagpur bus stand$/i.test(value.trim()) || /^kharagpur central bus stand$/i.test(value.trim())) { setDestinationLatitude('22.34298'); setDestinationLongitude('87.32404'); } }}
