@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { CONFIG } from '../config.js';
-import { TimetableDeparture, Route, RouteStop, Operator } from '../../../packages/shared/src/types/bus.js';
+import { TimetableDeparture, Route, RouteStop, Operator, Bus } from '../../../packages/shared/src/types/bus.js';
 import { repository } from '../db/repository.js';
 import { createAdminSessionToken, requireAdminAuth, verifyAdminPassword } from '../middleware/auth.js';
 import { adminLoginLimiter } from '../middleware/rateLimiter.js';
@@ -157,6 +157,7 @@ adminRouter.post('/submissions/:id/review', requireAdminAuth('SUPER_ADMIN'), (re
       destinationStopName: stops[stops.length - 1].stopName,
       operatorId: operator.id,
       operatorName: operator.name,
+      contributedBy: pendingSubmission.contributorDisplayName || pendingSubmission.contributorNote || undefined,
       direction: 'UP',
       distanceKm,
       typicalDurationMinutes: durationMinutes,
@@ -201,6 +202,25 @@ adminRouter.post('/submissions/:id/review', requireAdminAuth('SUPER_ADMIN'), (re
     };
     if (!repository.addTimetableDeparture(route.id, departure, Number(data.frequencyMinutes))) {
       return res.status(409).json({ error: 'This bus and departure time already exist on the selected route.' });
+    }
+    const busIdentifier = typeof data.busIdentifier === 'string' ? data.busIdentifier.trim().slice(0, 80) : '';
+    if (busIdentifier && !repository.getBusesForRoute(route.id).some(bus => bus.publicIdentifier.toLowerCase() === busIdentifier.toLowerCase())) {
+      const now = new Date().toISOString();
+      const bus: Bus = {
+        id: `bus-community-${pendingSubmission.id}`,
+        publicIdentifier: busIdentifier,
+        operatorId: route.operatorId,
+        operatorName: route.operatorName,
+        contributedBy: pendingSubmission.contributorDisplayName || pendingSubmission.contributorNote || undefined,
+        vehicleType: 'ORDINARY',
+        hasCustomSvgIllustration: true,
+        serviceStatus: 'SCHEDULE_UNVERIFIED',
+        verificationStatus: 'ADMIN_VERIFIED',
+        isActive: true,
+        createdAt: now,
+        updatedAt: now,
+      };
+      repository.addBus(bus);
     }
   }
 
