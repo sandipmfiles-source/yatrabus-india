@@ -97,11 +97,11 @@ export const BusDetailPage: React.FC = () => {
       </div>
 
       {/* Journey Confirmation Prompt */}
-      <JourneyConfirmBanner
-        busId={trackedBusId || route.id}
-        routeId={route.id}
-        routeNumber={route.routeNumber}
-      />
+      {trackedBusId ? (
+        <JourneyConfirmBanner busId={trackedBusId} routeId={route.id} routeNumber={route.routeNumber} />
+      ) : (
+        <div className="rounded-xl border border-yatriwarm-200 bg-yatriwarm-50 p-3 text-xs text-yatriwarm-700">{t('no_bus_linked_tracking')}</div>
+      )}
 
       {/* Hero Visual Card with SVG Artwork */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
