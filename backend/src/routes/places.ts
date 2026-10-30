@@ -50,7 +50,7 @@ async function loadBlockDirectory() {
       });
       if (!response.ok) throw new Error('Block directory download failed');
       const csv = await response.text();
-      return csv.split(/\\r?\\n/).slice(1).map(line => {
+      return csv.split(/\r?\n/).slice(1).map(line => {
         const cols = line.split(',').map(value => value.trim().replace(/^"|"$/g, ''));
         return { code: cols[5], name: cols[7], districtName: cols[4], stateName: cols[2] };
       }).filter(row => row.name);
@@ -79,9 +79,8 @@ async function fetchLgdDirectorySuggestions(query: string) {
   }
   try {
     const blocks = await loadBlockDirectory();
-    const needle = key;
     for (const block of blocks) {
-      if (String(block.name).toLocaleLowerCase('en-IN').includes(needle)) {
+      if (String(block.name).toLocaleLowerCase('en-IN').includes(key)) {
         results.push({
           id: 'lgd-block-' + block.code,
           name: block.name,
@@ -94,13 +93,10 @@ async function fetchLgdDirectorySuggestions(query: string) {
   } catch {
     // Continue with state, district, sub-district and town matches if blocks are offline.
   }
-    const unique = Array.from(new Map(results.map(item => [item.id, item])).values()).slice(0, 8);
-    if (lgdSuggestionCache.size > 500) lgdSuggestionCache.delete(lgdSuggestionCache.keys().next().value as string);
-    lgdSuggestionCache.set(key, { expiresAt: Date.now() + 24 * 60 * 60 * 1000, results: unique });
-    return unique;
-  } catch {
-    return [];
-  }
+  const unique = Array.from(new Map(results.map(item => [item.id, item])).values()).slice(0, 8);
+  if (lgdSuggestionCache.size > 500) lgdSuggestionCache.delete(lgdSuggestionCache.keys().next().value as string);
+  lgdSuggestionCache.set(key, { expiresAt: Date.now() + 24 * 60 * 60 * 1000, results: unique });
+  return unique;
 }
 
 
