@@ -121,4 +121,7 @@ export const hi = {
   contribution_save_reference: 'खाता बनाए बिना स्थिति देखने के लिए यह कोड सुरक्षित रखें।',
   contribution_submit_another: 'एक और योगदान भेजें',
   contribution_backend_error: 'योगदान भेजा नहीं जा सका। इंटरनेट कनेक्शन जाँचकर फिर प्रयास करें।',
+  feature_no_account: 'खाता आवश्यक नहीं',
+  feature_gps_confidence: 'GPS विश्वसनीयता की स्पष्ट जानकारी',
+  feature_free_ai: '₹0 सशुल्क AI API',
 };
