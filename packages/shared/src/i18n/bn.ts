@@ -41,4 +41,7 @@ export const bn = {
   consent_decline: 'না, ধন্যবাদ',
   view_route_details: 'রুট ও স্টপ বিস্তারিত দেখুন',
   privacy_guarantee: '₹০ খরচে • অ্যাকাউন্ট ছাড়াই ব্যবহার • সুরক্ষিত গোপনীয়তা',
+  approx_daily_departures: 'প্রতিদিন আনুমানিক বাস ছাড়ে',
+  every_minutes: 'প্রতি {minutes} মিনিটে',
+  intermediate_stops: 'এই যাত্রার মাঝের স্টপগুলি',
 };
