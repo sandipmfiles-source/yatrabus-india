@@ -79,6 +79,66 @@ adminRouter.post('/submissions/:id/review', requireAdminAuth('SUPER_ADMIN'), (re
   if (pendingSubmission.status !== 'PENDING_REVIEW') {
     return res.status(409).json({ error: 'This submission has already been reviewed.' });
   }
+  if (decision === 'ADMIN_VERIFIED' && pendingSubmission.proposedData?.action === 'UPDATE_ROUTE') {
+    const data = pendingSubmission.proposedData;
+    const route = pendingSubmission.targetEntityId
+      ? repository.getRouteById(pendingSubmission.targetEntityId)
+      : (typeof data.routeNumber === 'string' ? repository.getRouteByNumber(data.routeNumber) : undefined);
+    const stopsInput = Array.isArray(data.stops) ? data.stops : [];
+    const validTime = (value: unknown) => typeof value === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
+    const distanceKm = Number(data.distanceKm);
+    const durationMinutes = Number(data.typicalDurationMinutes);
+    if (!route || stopsInput.length < 2 || !validTime(data.firstDepartureTime) || !validTime(data.lastDepartureTime) ||
+        !Number.isFinite(distanceKm) || distanceKm <= 0 || !Number.isFinite(durationMinutes) || durationMinutes <= 0) {
+      return res.status(422).json({ error: 'Route update needs an existing route, two or more stops, valid service times, distance and duration.' });
+    }
+    if (stopsInput.some((stop: any) => typeof stop?.name !== 'string' || stop.name.trim().length < 2 ||
+        !Number.isFinite(Number(stop.latitude)) || Number(stop.latitude) < -90 || Number(stop.latitude) > 90 ||
+        !Number.isFinite(Number(stop.longitude)) || Number(stop.longitude) < -180 || Number(stop.longitude) > 180)) {
+      return res.status(422).json({ error: 'Every route stop must have a name and valid coordinates.' });
+    }
+    let distanceFromStartKm = 0;
+    const updatedStops: RouteStop[] = stopsInput.map((stop: any, index: number) => {
+      if (index > 0) {
+        const previous = stopsInput[index - 1];
+        const lat1 = Number(previous.latitude) * Math.PI / 180;
+        const lat2 = Number(stop.latitude) * Math.PI / 180;
+        const dLat = lat2 - lat1;
+        const dLon = (Number(stop.longitude) - Number(previous.longitude)) * Math.PI / 180;
+        const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2;
+        distanceFromStartKm += 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      }
+      return {
+        id: `${route.id}-stop-${index + 1}`,
+        routeId: route.id,
+        stopId: `${route.id}-place-${index + 1}`,
+        stopName: stop.name.trim().slice(0, 120),
+        stopSequence: index + 1,
+        latitude: Number(stop.latitude),
+        longitude: Number(stop.longitude),
+        distanceFromStartKm: Number(distanceFromStartKm.toFixed(2)),
+        scheduledArrivalTime: validTime(stop.arrivalTime) ? stop.arrivalTime : undefined,
+        scheduledDepartureTime: validTime(stop.departureTime) ? stop.departureTime : undefined,
+      };
+    });
+    repository.addRoute({
+      ...route,
+      routeNumber: typeof data.routeNumber === 'string' ? data.routeNumber.trim().slice(0, 40) : route.routeNumber,
+      routeName: typeof data.routeName === 'string' ? data.routeName.trim().slice(0, 160) : route.routeName,
+      originStopId: updatedStops[0].stopId,
+      originStopName: updatedStops[0].stopName,
+      destinationStopId: updatedStops[updatedStops.length - 1].stopId,
+      destinationStopName: updatedStops[updatedStops.length - 1].stopName,
+      distanceKm,
+      typicalDurationMinutes: durationMinutes,
+      firstDepartureTime: data.firstDepartureTime,
+      lastDepartureTime: data.lastDepartureTime,
+      stops: updatedStops,
+      geometry: updatedStops.map(stop => ({ latitude: stop.latitude, longitude: stop.longitude })),
+      updatedAt: new Date().toISOString(),
+    });
+  }
+
   if (decision === 'ADMIN_VERIFIED' && pendingSubmission.submissionType === 'SUGGEST_ROUTE' &&
       pendingSubmission.entityType === 'ROUTE') {
     const data = pendingSubmission.proposedData || {};
