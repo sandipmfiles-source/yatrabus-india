@@ -203,12 +203,12 @@ export class TransitRepository {
     return this.buses.get(id);
   }
 
-  public updateTimetableDeparture(routeId: string, busIdentifier: string, departureTime: string, arrivalTime: string): boolean {
+  public updateTimetableDeparture(routeId: string, busIdentifier: string, departureTime: string, arrivalTime: string, newBusIdentifier?: string): boolean {
     const route = this.routes.get(routeId);
     if (!route || !route.departures?.length) return false;
     const index = route.departures.findIndex(item => (item.busIdentifier || '').toLowerCase() === busIdentifier.toLowerCase() && !item.isCancelled);
     if (index < 0) return false;
-    route.departures[index] = { ...route.departures[index], departureTime, arrivalTime };
+    route.departures[index] = { ...route.departures[index], departureTime, arrivalTime, busIdentifier: newBusIdentifier || route.departures[index].busIdentifier };
     route.updatedAt = new Date().toISOString();
     return true;
   }
