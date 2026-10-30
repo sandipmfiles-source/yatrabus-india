@@ -160,5 +160,7 @@ export const en = {
   privacy_session_body: "A journey session terminates immediately when you tap Stop Sharing. An automated safety rule also terminates all sessions after a maximum of 12 hours.",
   privacy_contact_title: "5. Contact & Data Deletion Requests",
   privacy_contact_body: "Passenger searches do not create a passenger profile. When owner sign-in is configured, the verified account email and display name may be stored with that owner's bus submissions so the owner can view and manage them. Browser/app cache is only a convenience and may be erased when the app is uninstalled. For account or data deletion requests, operator listing queries or verifications, contact",
-  privacy_location_on_demand: "Android location permission is required to open the app and use nearby-stop features. Granting permission does not start tracking; sharing begins only after separate journey consent.",
+  privacy_location_on_demand: "On Android, location permission and the device Location switch are required before you can continue. Granting permission does not start bus tracking; GPS sharing begins only after separate journey consent. Nearby-stop lookup uses your location only when you request it.",
+  location_services_disabled: 'Turn on Location in Android Quick Settings, then retry. A fresh GPS fix is required to continue; mobile data is not required when GPS is available.',
+  location_gate_instruction: 'YatriBus stays on this screen until Android location permission is granted and device Location is switched on. GPS sharing for a bus still requires separate journey consent.',
 };
