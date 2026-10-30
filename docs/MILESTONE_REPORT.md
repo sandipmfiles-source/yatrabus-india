@@ -20,6 +20,7 @@ This report separates code implemented in the repository from services that are 
 
 ### 3. Public contributions and moderation
 - [x] Account-free passenger submissions and public reference IDs.
+- [x] Account-free bus-owner submissions with contact verification details and a separate Super Admin owner-review queue; no Google sign-in or passenger account is offered.
 - [x] Correction suggestions, community corroboration/voting, duplicate candidates and submission status lookup.
 - [x] Super Admin review endpoints and dashboard source. Admin access is owner-controlled; there is no public admin registration.
 - [ ] Public submissions and moderation are not live across devices until the backend is deployed and the APK is configured with its API URL.
@@ -35,6 +36,7 @@ This report separates code implemented in the repository from services that are 
 
 ### 5. Free route preview
 - [x] Owner and public route builders include origin, destination, route number/name, UP/DOWN direction, intermediate stops and a vertical ordered-stop preview.
+- [x] Owner and passenger submissions are free to use across all 28 States and 8 Union Territories; no subscription or payment gateway is included.
 - [x] Stops can be moved up/down without changing the fixed origin/destination endpoints; adding an intermediate stop inserts it before the destination.
 - [x] Both owner and public route submissions require a successful OpenStreetMap / OSRM road-path check in the exact submitted stop order before submission; the owner preview displays road geometry, distance and estimated duration.
 - [x] The public route form supports all 28 Indian states and 8 union territories.
@@ -49,8 +51,7 @@ This report separates code implemented in the repository from services that are 
 
 ## Not yet deployed / deferred
 
-- [x] Google Identity Services owner sign-in and owner-scoped submit/edit/delete requests are implemented in the frontend and Express API.
-- [ ] Owner sign-in is not active until the backend is deployed with GOOGLE_OAUTH_CLIENT_ID and OWNER_JWT_SECRET and the APK build receives the matching VITE_GOOGLE_CLIENT_ID.
+- [x] Google sign-in has been removed for passengers and bus owners for the launch period. Owner submissions use a no-account form and a separate review queue; only the Super Admin uses protected sign-in.
 - [ ] Express backend hosting — not deployed.
 - [ ] Durable production database — runtime currently uses JSON-file persistence. SQL migrations exist, but a PostgreSQL adapter is not yet wired into repository reads/writes.
 - [ ] Cloudflare Pages / Workers and Neon are documented as free-tier targets, but no provider account has been connected and the existing Express API needs adaptation plus durable storage before production launch.
