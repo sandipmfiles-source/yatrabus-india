@@ -283,7 +283,7 @@ export const HomePage: React.FC = () => {
       )}
 
       {/* Nearby Bus Stops Widget */}
-      <div className="bg-white rounded-2xl p-5 border border-yatriwarm-200 shadow-subtle">
+      <div className="yb-nearby-stop-panel rounded-2xl p-5 border shadow-subtle">
         <div className="flex items-center justify-between mb-3">
           <div>
             <h3 className="text-sm font-bold text-yatriwarm-900 flex items-center gap-1.5">
@@ -298,7 +298,7 @@ export const HomePage: React.FC = () => {
           <button
             onClick={handleFindNearbyStops}
             disabled={isLocating}
-            className="px-3 py-1.5 bg-yatribrand-50 hover:bg-yatribrand-100 text-yatribrand-900 text-xs font-semibold rounded-xl border border-yatribrand-200 transition-colors flex items-center gap-1 shrink-0"
+            className="yb-nearby-stop-button px-3 py-2 text-white text-xs font-bold rounded-xl border transition-all flex items-center gap-1.5 shrink-0 shadow-sm"
           >
             <Navigation className={`w-3.5 h-3.5 ${isLocating ? 'animate-spin' : ''}`} />
             {isLocating ? t('location_searching') : t('find_nearby_stops')}
