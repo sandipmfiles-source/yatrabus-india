@@ -133,6 +133,7 @@ export interface JourneyCandidate {
   id: string;
   route: Route;
   bus?: Bus;
+  busIdentifier?: string;
   departureTime: string;
   arrivalTime: string;
   durationMinutes: number;
