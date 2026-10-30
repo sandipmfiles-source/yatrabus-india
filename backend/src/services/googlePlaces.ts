@@ -69,7 +69,7 @@ export async function searchGooglePlaces(query: string, limit: number): Promise<
       canonicalName: name,
       names: { en: name },
       placeType: isBusStop ? 'BUS_TERMINAL' as const : 'LOCALITY' as const,
-      state: (state || 'West Bengal') as IndianState,
+      ...(state ? { state } : {}),
       sourceDataset: 'GOOGLE_PLACES_AUTOCOMPLETE',
       sourceRecordId: prediction.placeId,
       sourceLicense: 'Google Maps Platform',
