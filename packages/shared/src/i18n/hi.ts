@@ -45,4 +45,7 @@ export const hi = {
   every_minutes: 'हर {minutes} मिनट में',
   intermediate_stops: 'इस यात्रा के बीच के स्टॉप',
   service_hours: 'सेवा का समय',
+  verified_departures: 'सत्यापित बस प्रस्थान',
+  admin_verified: 'एडमिन द्वारा सत्यापित',
+  arrival_short: 'पहुंचें',
 };
