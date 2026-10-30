@@ -80,7 +80,7 @@ router.get('/me/submissions', requireOwner, (req: Request & { owner?: OwnerIdent
   const submissions = repository.listSubmissions()
     .filter(item => item.sourceCategory === 'OPERATOR' && item.contributorEmail === req.owner?.email)
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-  return res.json({ count: submissions.length, submissions });
+  return res.json({ count: submissions.length, submissions, user: { id: req.owner?.sub, email: req.owner?.email, name: req.owner?.name } });
 });
 
 // Owners can submit bus, route, timetable, correction and deletion requests.
