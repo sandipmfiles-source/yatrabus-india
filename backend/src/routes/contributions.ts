@@ -78,14 +78,15 @@ contributionsRouter.post('/submit', contributionLimiter, (req: Request, res: Res
 // POST /api/contributions/vote/:refId — one anonymous correction vote per app/browser install.
 contributionsRouter.post('/vote/:refId', contributionLimiter, (req: Request, res: Response) => {
   const submission = repository.getSubmissionByReference(String(req.params.refId));
-  if (!submission) return res.status(404).json({ error: 'Correction not found' });
+  if (!submission || submission.sourceCategory === 'OPERATOR') return res.status(404).json({ error: 'Correction not found' });
   if (submission.status !== 'PENDING_REVIEW' && submission.status !== 'COMMUNITY_CORROBORATED') {
     return res.status(409).json({ error: 'This correction is no longer open for voting' });
   }
   const field = typeof req.body?.field === 'string' ? req.body.field.trim() : '';
   const value = typeof req.body?.value === 'string' ? req.body.value.trim() : '';
   const visitorId = typeof req.body?.visitorId === 'string' ? req.body.visitorId : '';
-  if (!field || !value || visitorId.length < 16 || visitorId.length > 128) {
+  if (!field || !value || visitorId.length < 16 || visitorId.length > 128 ||
+      submission.proposedData?.field !== field || String(submission.proposedData?.value || '') !== value) {
     return res.status(400).json({ error: 'A correction field, proposed value and anonymous visitor ID are required' });
   }
   const voterKey = createHash('sha256').update(visitorId).digest('hex');
@@ -100,7 +101,7 @@ contributionsRouter.post('/vote/:refId', contributionLimiter, (req: Request, res
 contributionsRouter.get('/corrections/:routeId', (req: Request, res: Response) => {
   const corrections = repository.listSubmissions().filter(item =>
     item.targetEntityId === String(req.params.routeId) &&
-    item.submissionType === 'CORRECT_TIMETABLE' &&
+    item.submissionType === 'CORRECT_TIMETABLE' && item.sourceCategory !== 'OPERATOR' &&
     (item.status === 'PENDING_REVIEW' || item.status === 'COMMUNITY_CORROBORATED')
   );
   const totals: Record<string, { field: string; value: string; votes: number }> = {};
