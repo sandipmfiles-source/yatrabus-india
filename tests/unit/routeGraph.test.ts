@@ -19,6 +19,7 @@ export function runRouteGraphTests(assert: (desc: string, pass: boolean) => void
       operatingDays: ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'],
       firstDepartureTime: '06:00',
       lastDepartureTime: '22:00',
+      frequencyMinutes: 20,
       stops: [
         { id: '1', routeId: 'r1', stopId: 'sa', stopName: 'Stop A', stopSequence: 1, latitude: 28.60, longitude: 77.20, distanceFromStartKm: 0 },
         { id: '2', routeId: 'r1', stopId: 'sb', stopName: 'Stop B (Interchange)', stopSequence: 2, latitude: 28.65, longitude: 77.20, distanceFromStartKm: 7 },
