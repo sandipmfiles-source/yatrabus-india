@@ -81,6 +81,28 @@ export const BusCard: React.FC<BusCardProps> = ({ journey }) => {
             </div>
           </div>
 
+          {journey.dailyTripCount !== undefined && (
+            <div className="mt-3 pt-2 border-t border-yatriwarm-200 text-[11px] text-yatriwarm-700 flex flex-wrap items-center gap-x-3 gap-y-1">
+              <span className="font-semibold">{t('approx_daily_departures')}: {journey.dailyTripCount}</span>
+              {journey.frequencyMinutes && <span>{t('every_minutes').replace('{minutes}', String(journey.frequencyMinutes))}</span>}
+            </div>
+          )}
+
+          {journey.intermediateStops && journey.intermediateStops.length > 0 && (
+            <div className="mt-3 pt-2 border-t border-yatriwarm-200">
+              <div className="text-[11px] font-bold text-yatriwarm-700 mb-2">{t('intermediate_stops')}</div>
+              <ol className="space-y-1.5">
+                {journey.intermediateStops.map((stop, index) => (
+                  <li key={stop.id} className="flex items-center gap-2 text-[11px] text-yatriwarm-600">
+                    <span className="w-4 h-4 rounded-full bg-yatriwarm-200 text-yatriwarm-700 flex items-center justify-center text-[9px] font-bold shrink-0">{index + 1}</span>
+                    <span className="min-w-0 flex-1">{stop.stopName}</span>
+                    {stop.scheduledArrivalTime && <span className="font-semibold tabular-nums">{stop.scheduledArrivalTime}</span>}
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
+
           {/* Transfer notice if applicable */}
           {!isDirect && transfers.length > 0 && (
             <div className="mt-2.5 pt-2 border-t border-yatriwarm-200 text-[11px] text-purple-900 flex items-center justify-between">
