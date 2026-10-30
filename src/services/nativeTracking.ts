@@ -13,6 +13,9 @@ export async function startNativeTracking(session: { sessionId: string; busId: s
   if (!apiBase) {
     throw new Error('Background GPS requires VITE_API_BASE_URL pointing to the deployed YatriBus backend.');
   }
+  if (!/^https:\/\//i.test(apiBase)) {
+    throw new Error('Background GPS requires an HTTPS backend URL for secure location uploads.');
+  }
   await BackgroundTracking.start({ ...session, apiBase });
   return true;
 }
