@@ -27,7 +27,7 @@ A Dockerfile and `docker-compose.yml` are now included. They build the passenger
 - Road-route preview using OSRM when every point has coordinates. Use Name | latitude | longitude for a point that is not in the local YatraBus catalogue.
 - Hindi, Bengali and English UI resources already included in the app source.
 
-Google Identity Services owner sign-in is implemented in the frontend and Express backend. It becomes active after configuring the same Web Client ID as `GOOGLE_OAUTH_CLIENT_ID` and `VITE_GOOGLE_CLIENT_ID`, plus a private 32+ character `OWNER_JWT_SECRET`. Google Maps / Places is not required for the free route-preview path.
+Bus owners and passengers can submit information without Google sign-in or an account. Owner submissions are routed to a separate Super Admin review queue and require contact details for manual verification. Google Maps / Places is not required for the free OpenStreetMap / OSRM route-preview path.
 
 ## 4. Important service boundaries
 
@@ -49,8 +49,6 @@ Configure only on the backend host, never in the APK:
     ADMIN_EMAIL=
     ADMIN_PASSWORD_HASH=
     ADMIN_JWT_SECRET=
-    OWNER_JWT_SECRET=
-    GOOGLE_OAUTH_CLIENT_ID=
     MAX_JOURNEY_SESSION_HOURS=12
     GPS_ACCURACY_THRESHOLD_METERS=100
     GPS_FRESHNESS_LIVE_SECONDS=120
