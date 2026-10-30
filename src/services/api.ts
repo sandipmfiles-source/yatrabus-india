@@ -196,6 +196,17 @@ export const api = {
     return data;
   },
 
+  async submitOperatorContribution(data: { submissionType: string; entityType: string; targetEntityId?: string; contributorNote?: string; proposedData: Record<string, any>; operatorName: string; contactName: string; contactPhone: string; officialEmail?: string }) {
+    const res = await fetch(`${API_BASE}/contributions/operator-submit`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    const result = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(result.message || result.error || 'Owner submission service is unavailable.');
+    return result;
+  },
+
   async submitOperatorClaim(data: any) {
     const res = await fetch(`${API_BASE}/contributions/operator-claim`, {
       method: 'POST',
