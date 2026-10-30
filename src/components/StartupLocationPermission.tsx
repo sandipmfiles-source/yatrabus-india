@@ -34,10 +34,10 @@ export const StartupLocationPermission: React.FC = () => {
         localStorage.setItem(DISMISSED_KEY, 'true');
         setVisible(false);
       } else {
-        setMessage('{t('location_permission_denied')}');
+        setMessage(t('location_permission_denied'));
       }
     } catch {
-      setMessage('{t('location_permission_error')}');
+      setMessage(t('location_permission_error'));
     } finally {
       setRequesting(false);
     }
@@ -56,9 +56,7 @@ export const StartupLocationPermission: React.FC = () => {
         <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-100 text-2xl" aria-hidden="true">📍</div>
         <h2 id="startup-location-title" className="text-center text-xl font-extrabold text-slate-950">{t('location_startup_title')}</h2>
         <p className="mt-2 text-center text-sm text-slate-700"></p>
-        <p className="mt-4 text-sm leading-relaxed text-slate-700">
-          YatraBus uses your location to find nearby bus stops and, only when you separately confirm a journey, help share anonymous bus GPS updates. Location is not shared just by opening the app.
-        </p>
+        <p className="mt-4 text-sm leading-relaxed text-slate-700">{t('location_startup_description')}</p>
         <p className="mt-2 text-xs text-slate-500">
           {t('location_startup_privacy')}
         </p>
@@ -68,7 +66,7 @@ export const StartupLocationPermission: React.FC = () => {
             {requesting ? t('requesting_permission') : t('allow_location')}
           </button>
           <button type="button" onClick={notNow} className="w-full rounded-xl bg-slate-100 px-4 py-2.5 text-sm font-semibold text-slate-700">
-            Not now
+            {t('location_not_now')}
           </button>
         </div>
       </section>
