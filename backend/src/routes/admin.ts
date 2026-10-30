@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { CONFIG } from '../config.js';
 import { TimetableDeparture, Route, RouteStop, Operator, Bus } from '../../../packages/shared/src/types/bus.js';
+import { Place, IndianState } from '../../../packages/shared/src/types/places.js';
 import { repository } from '../db/repository.js';
 import { createAdminSessionToken, requireAdminAuth, verifyAdminPassword } from '../middleware/auth.js';
 import { adminLoginLimiter } from '../middleware/rateLimiter.js';
@@ -86,6 +87,39 @@ adminRouter.post('/submissions/:id/review', requireAdminAuth('SUPER_ADMIN'), (re
   if (!pendingSubmission) return res.status(404).json({ error: 'Submission not found' });
   if (pendingSubmission.status !== 'PENDING_REVIEW') {
     return res.status(409).json({ error: 'This submission has already been reviewed.' });
+  }
+  if (decision === 'ADMIN_VERIFIED' && pendingSubmission.entityType === 'STOP' && pendingSubmission.submissionType === 'ADD_STOP') {
+    const data = pendingSubmission.proposedData || {};
+    const canonicalName = typeof data.name === 'string' ? data.name.trim().slice(0, 160) : '';
+    const latitude = Number(data.latitude ?? data.originLatitude);
+    const longitude = Number(data.longitude ?? data.originLongitude);
+    if (canonicalName.length < 2 || !Number.isFinite(latitude) || latitude < 6 || latitude > 38 ||
+        !Number.isFinite(longitude) || longitude < 68 || longitude > 98) {
+      return res.status(422).json({ error: 'A bus stop name and valid India latitude/longitude are required.' });
+    }
+    const duplicate = repository.searchPlaces(canonicalName, 8).some(item =>
+      item.place.canonicalName.toLocaleLowerCase() === canonicalName.toLocaleLowerCase()
+    );
+    if (duplicate) return res.status(409).json({ error: 'A place with this exact name already exists. Review the existing place instead of creating a duplicate.' });
+    const now = new Date().toISOString();
+    const place: Place = {
+      id: `place-community-${pendingSubmission.id}`,
+      canonicalName,
+      names: { en: canonicalName, hi: canonicalName, bn: canonicalName },
+      placeType: 'BUS_STOP',
+      district: typeof data.district === 'string' ? data.district.trim().slice(0, 100) : undefined,
+      state: typeof data.state === 'string' ? data.state as IndianState : undefined,
+      latitude,
+      longitude,
+      sourceDataset: 'COMMUNITY_SUBMISSION',
+      sourceRecordId: pendingSubmission.referenceId,
+      sourceLicense: 'Community contribution',
+      verificationStatus: 'ADMIN_VERIFIED',
+      aliases: [],
+      createdAt: now,
+      updatedAt: now,
+    };
+    repository.addPlace(place);
   }
   if (decision === 'ADMIN_VERIFIED' && pendingSubmission.proposedData?.action === 'UPDATE_ROUTE') {
     const data = pendingSubmission.proposedData;
