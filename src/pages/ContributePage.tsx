@@ -16,8 +16,13 @@ export const ContributePage: React.FC = () => {
   const [routeNumber, setRouteNumber] = useState('');
   const [origin, setOrigin] = useState('');
   const [destination, setDestination] = useState('');
-  const [stateName, setStateName] = useState('Delhi');
+  const [stateName, setStateName] = useState('West Bengal');
   const [departureTime, setDepartureTime] = useState('');
+  const [firstDepartureTime, setFirstDepartureTime] = useState('');
+  const [lastDepartureTime, setLastDepartureTime] = useState('');
+  const [frequencyMinutes, setFrequencyMinutes] = useState('');
+  const [intermediateStops, setIntermediateStops] = useState('');
+  const [operatingDays, setOperatingDays] = useState('Daily');
   const [notes, setNotes] = useState('');
 
   // Status check state
@@ -36,7 +41,7 @@ export const ContributePage: React.FC = () => {
     try {
       const res = await api.submitContribution({
         submissionType,
-        entityType: submissionType === 'ADD_STOP' ? 'STOP' : 'BUS',
+        entityType: submissionType === 'ADD_STOP' ? 'STOP' : submissionType === 'SUGGEST_ROUTE' ? 'ROUTE' : submissionType === 'CORRECT_TIMETABLE' ? 'TIMETABLE' : 'BUS',
         contributorNote: notes,
         proposedData: {
           name: name || routeNumber,
@@ -45,6 +50,11 @@ export const ContributePage: React.FC = () => {
           destination,
           state: stateName,
           departureTime,
+          firstDepartureTime,
+          lastDepartureTime,
+          frequencyMinutes: frequencyMinutes ? Number(frequencyMinutes) : undefined,
+          operatingDays: operatingDays.split(',').map(day => day.trim()).filter(Boolean),
+          intermediateStops: intermediateStops.split(',').map(stop => stop.trim()).filter(Boolean),
         },
       });
 
@@ -159,6 +169,7 @@ export const ContributePage: React.FC = () => {
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {[
                     { id: 'ADD_BUS' as SubmissionType, label: 'Add Bus' },
+                    { id: 'SUGGEST_ROUTE' as SubmissionType, label: 'Add Route / Timetable' },
                     { id: 'ADD_STOP' as SubmissionType, label: 'Add Stop' },
                     { id: 'CORRECT_TIMETABLE' as SubmissionType, label: 'Fix Schedule' },
                     { id: 'REPORT_CHANGED_ROUTE' as SubmissionType, label: 'Report Issue' },
@@ -181,7 +192,7 @@ export const ContributePage: React.FC = () => {
 
               {/* Dynamic form fields */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {submissionType === 'ADD_BUS' && (
+                {(submissionType === 'ADD_BUS' || submissionType === 'SUGGEST_ROUTE') && (
                   <div>
                     <label className="block text-xs font-medium text-yatriwarm-700 mb-1">
                       Bus Route Number
@@ -260,6 +271,29 @@ export const ContributePage: React.FC = () => {
                   />
                 </div>
               </div>
+
+              {submissionType === 'SUGGEST_ROUTE' && (
+                <div className="space-y-4 rounded-2xl border border-yatriwarm-200 bg-yatriwarm-50 p-4">
+                  <h3 className="text-sm font-bold text-yatriwarm-800">Route timetable details</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <label className="text-xs font-medium text-yatriwarm-700">First departure
+                      <input type="time" required value={firstDepartureTime} onChange={e => setFirstDepartureTime(e.target.value)} className="mt-1 w-full px-3 py-2.5 bg-white border border-yatriwarm-200 rounded-xl" />
+                    </label>
+                    <label className="text-xs font-medium text-yatriwarm-700">Last departure
+                      <input type="time" required value={lastDepartureTime} onChange={e => setLastDepartureTime(e.target.value)} className="mt-1 w-full px-3 py-2.5 bg-white border border-yatriwarm-200 rounded-xl" />
+                    </label>
+                    <label className="text-xs font-medium text-yatriwarm-700">Frequency (minutes)
+                      <input type="number" min="1" max="1440" value={frequencyMinutes} onChange={e => setFrequencyMinutes(e.target.value)} placeholder="e.g. 30" className="mt-1 w-full px-3 py-2.5 bg-white border border-yatriwarm-200 rounded-xl" />
+                    </label>
+                  </div>
+                  <label className="block text-xs font-medium text-yatriwarm-700">Operating days (comma separated)
+                    <input value={operatingDays} onChange={e => setOperatingDays(e.target.value)} placeholder="Daily or MON,TUE,WED..." className="mt-1 w-full px-3 py-2.5 bg-white border border-yatriwarm-200 rounded-xl" />
+                  </label>
+                  <label className="block text-xs font-medium text-yatriwarm-700">Intermediate stops in order (comma separated)
+                    <textarea rows={2} value={intermediateStops} onChange={e => setIntermediateStops(e.target.value)} placeholder="e.g. Gopiballavpur, Lodhasuli, Jhargram Court" className="mt-1 w-full px-3 py-2.5 bg-white border border-yatriwarm-200 rounded-xl" />
+                  </label>
+                </div>
+              )}
 
               {/* Departure time if schedule correction */}
               {submissionType === 'CORRECT_TIMETABLE' && (

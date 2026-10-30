@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { useLanguage } from '../context/LanguageContext.js';
+import { Capacitor } from '@capacitor/core';
+import { Geolocation } from '@capacitor/geolocation';
 import { MapPin, Languages, Navigation, RefreshCw } from 'lucide-react';
 
 const languageOptions = [
@@ -23,24 +25,31 @@ export const StartupGate: React.FC<{ children: React.ReactNode }> = ({ children 
     setLanguageChosen(true);
   };
 
-  const requestLocation = () => {
-    if (!navigator.geolocation) {
-      setLocationError(language === 'hi' ? 'इस डिवाइस पर लोकेशन उपलब्ध नहीं है।' : language === 'bn' ? 'এই ডিভাইসে লোকেশন পাওয়া যাচ্ছে না।' : 'Location is not available on this device.');
-      return;
-    }
+  const requestLocation = async () => {
     setCheckingLocation(true);
     setLocationError('');
-    navigator.geolocation.getCurrentPosition(
-      () => { setLocationReady(true); setCheckingLocation(false); },
-      error => {
-        setCheckingLocation(false);
-        const message = error.code === error.PERMISSION_DENIED
-          ? (language === 'hi' ? 'ऐप चलाने के लिए Location permission दें।' : language === 'bn' ? 'অ্যাপ চালাতে লোকেশন অনুমতি দিন।' : 'Allow location permission to use YatriBus.')
-          : (language === 'hi' ? 'फोन की Location/GPS चालू करके फिर कोशिश करें। इंटरनेट न होने पर भी GPS permission दी जा सकती है।' : language === 'bn' ? 'ফোনের Location/GPS চালু করে আবার চেষ্টা করুন। ইন্টারনেট না থাকলেও GPS অনুমতি দেওয়া যায়।' : 'Turn on Location/GPS and try again. GPS permission can be granted even without internet.');
-        setLocationError(message);
-      },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
-    );
+    try {
+      // Android permission dialog is requested directly by the native plugin,
+      // so this step does not depend on mobile data or Wi-Fi.
+      if (Capacitor.isNativePlatform()) {
+        const permissions = await Geolocation.requestPermissions();
+        if (permissions.location !== 'granted' && permissions.coarseLocation !== 'granted') {
+          throw new Error('PERMISSION_DENIED');
+        }
+      }
+      await Geolocation.getCurrentPosition({ enableHighAccuracy: true, timeout: 30000, maximumAge: 0 });
+      setLocationReady(true);
+    } catch (error: any) {
+      const denied = error?.message === 'PERMISSION_DENIED' || String(error?.message || '').toLowerCase().includes('permission');
+      const message = language === 'hi'
+        ? (denied ? 'ऐप चलाने के लिए Location permission दें।' : 'फोन की Location/GPS चालू करें और खुले स्थान पर फिर कोशिश करें। इंटरनेट के बिना भी GPS काम कर सकता है।')
+        : language === 'bn'
+        ? (denied ? 'অ্যাপ চালাতে লোকেশন অনুমতি দিন।' : 'ফোনের Location/GPS চালু করে খোলা জায়গায় আবার চেষ্টা করুন। ইন্টারনেট ছাড়াও GPS কাজ করতে পারে।')
+        : (denied ? 'Allow Location permission to use YatriBus.' : 'Turn on Location/GPS and try again in an open area. GPS can work without internet.');
+      setLocationError(message);
+    } finally {
+      setCheckingLocation(false);
+    }
   };
 
   if (!languageChosen) {
