@@ -121,4 +121,7 @@ export const en = {
   contribution_save_reference: 'Save this code to check verification status without creating an account.',
   contribution_submit_another: 'Submit Another Contribution',
   contribution_backend_error: 'Could not submit your contribution. Please check your connection and try again.',
+  feature_no_account: 'No account required',
+  feature_gps_confidence: 'Transparent GPS confidence',
+  feature_free_ai: '₹0 paid AI APIs',
 };
