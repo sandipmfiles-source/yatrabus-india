@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { api } from '../services/api.js';
+import { useLanguage } from '../context/LanguageContext.js';
 import { SubmissionType } from '@shared/types/contribution.js';
 import { PlusCircle, Search, CheckCircle, AlertTriangle, ShieldCheck, ArrowRight } from 'lucide-react';
 
 export const ContributePage: React.FC = () => {
+  const { t } = useLanguage();
   const [searchParams] = useSearchParams();
   const initialType = (searchParams.get('type') as SubmissionType) || 'ADD_BUS';
 
@@ -83,13 +85,13 @@ export const ContributePage: React.FC = () => {
       <div className="text-center space-y-2">
         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-yatribrand-100 text-yatribrand-900 text-xs font-semibold">
           <ShieldCheck className="w-3.5 h-3.5 text-yatribrand-700" />
-          <span>No Passenger Account Required</span>
+          <span>{t('no_account_required')}</span>
         </div>
         <h1 className="text-2xl sm:text-3xl font-bold text-yatriwarm-950">
-          Community Transport Contribution
+          {t('community_contribution')}
         </h1>
         <p className="text-xs sm:text-sm text-yatriwarm-600 max-w-lg mx-auto">
-          Help fellow commuters keep public transport data accurate. Submit updates, verify schedules, or check previous submissions with your Reference ID.
+          {t('contribute_intro')}
         </p>
       </div>
 
@@ -104,7 +106,7 @@ export const ContributePage: React.FC = () => {
               : 'border-transparent text-yatriwarm-500 hover:text-yatriwarm-800'
           }`}
         >
-          Submit Missing Info
+          {t('submit_missing_info')}
         </button>
         <button
           type="button"
@@ -115,7 +117,7 @@ export const ContributePage: React.FC = () => {
               : 'border-transparent text-yatriwarm-500 hover:text-yatriwarm-800'
           }`}
         >
-          Check Submission Status
+          {t('check_submission_status')}
         </button>
       </div>
 
@@ -128,19 +130,19 @@ export const ContributePage: React.FC = () => {
                 <CheckCircle className="w-8 h-8" />
               </div>
               <div className="space-y-1">
-                <h3 className="text-xl font-bold text-yatriwarm-900">Contribution Received!</h3>
+                <h3 className="text-xl font-bold text-yatriwarm-900">{t('contribution_received')}</h3>
                 <p className="text-xs text-yatriwarm-600">
-                  Your update has been placed in the verifier review queue.
+                  {t('pending_queue_msg')}
                 </p>
               </div>
 
               <div className="p-4 bg-yatriwarm-50 rounded-2xl border border-yatriwarm-200 max-w-sm mx-auto">
-                <div className="text-xs text-yatriwarm-500 font-medium">Your Tracking Reference ID</div>
+                <div className="text-xs text-yatriwarm-500 font-medium">{t('reference_id')}</div>
                 <div className="text-lg font-mono font-bold text-yatribrand-900 mt-1 select-all">
                   {submittedRefId}
                 </div>
                 <div className="text-[11px] text-yatriwarm-400 mt-1">
-                  Save this code to check verification status without creating an account.
+                  {t('save_code')}
                 </div>
               </div>
 
@@ -155,7 +157,7 @@ export const ContributePage: React.FC = () => {
                   }}
                   className="px-5 py-2.5 bg-yatribrand-900 text-white rounded-xl text-xs font-semibold shadow-subtle hover:bg-yatribrand-950 transition-colors"
                 >
-                  Submit Another Contribution
+                  {t('submit_another')}
                 </button>
               </div>
             </div>
@@ -164,15 +166,15 @@ export const ContributePage: React.FC = () => {
               {/* Type selection */}
               <div>
                 <label className="block text-xs font-bold text-yatriwarm-700 uppercase tracking-wider mb-2">
-                  What would you like to contribute?
+                  {t('what_contribute')}
                 </label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {[
-                    { id: 'ADD_BUS' as SubmissionType, label: 'Add Bus' },
-                    { id: 'SUGGEST_ROUTE' as SubmissionType, label: 'Add Route / Timetable' },
-                    { id: 'ADD_STOP' as SubmissionType, label: 'Add Stop' },
-                    { id: 'CORRECT_TIMETABLE' as SubmissionType, label: 'Fix Schedule' },
-                    { id: 'REPORT_CHANGED_ROUTE' as SubmissionType, label: 'Report Issue' },
+                    { id: 'ADD_BUS' as SubmissionType, label: '{t('add_bus')}' },
+                    { id: 'SUGGEST_ROUTE' as SubmissionType, label: t('add_route_timetable') },
+                    { id: 'ADD_STOP' as SubmissionType, label: '{t('add_stop')}' },
+                    { id: 'CORRECT_TIMETABLE' as SubmissionType, label: '{t('fix_schedule')}' },
+                    { id: 'REPORT_CHANGED_ROUTE' as SubmissionType, label: '{t('report_issue')}' },
                   ].map(t => (
                     <button
                       key={t.id}
@@ -195,7 +197,7 @@ export const ContributePage: React.FC = () => {
                 {(submissionType === 'ADD_BUS' || submissionType === 'SUGGEST_ROUTE') && (
                   <div>
                     <label className="block text-xs font-medium text-yatriwarm-700 mb-1">
-                      Bus Route Number
+                      {t('bus_route_number')}
                     </label>
                     <input
                       type="text"
@@ -226,7 +228,7 @@ export const ContributePage: React.FC = () => {
 
                 <div>
                   <label className="block text-xs font-medium text-yatriwarm-700 mb-1">
-                    State / Union Territory
+                    {t('state_ut')}
                   </label>
                   <select
                     value={stateName}
@@ -245,7 +247,7 @@ export const ContributePage: React.FC = () => {
 
                 <div>
                   <label className="block text-xs font-medium text-yatriwarm-700 mb-1">
-                    Origin Terminal
+                    {t('origin_terminal')}
                   </label>
                   <input
                     type="text"
@@ -259,7 +261,7 @@ export const ContributePage: React.FC = () => {
 
                 <div>
                   <label className="block text-xs font-medium text-yatriwarm-700 mb-1">
-                    Destination Terminal
+                    {t('destination_terminal')}
                   </label>
                   <input
                     type="text"
@@ -274,22 +276,22 @@ export const ContributePage: React.FC = () => {
 
               {submissionType === 'SUGGEST_ROUTE' && (
                 <div className="space-y-4 rounded-2xl border border-yatriwarm-200 bg-yatriwarm-50 p-4">
-                  <h3 className="text-sm font-bold text-yatriwarm-800">Route timetable details</h3>
+                  <h3 className="text-sm font-bold text-yatriwarm-800">{t('route_timetable_details')}</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <label className="text-xs font-medium text-yatriwarm-700">First departure
+                    <label className="text-xs font-medium text-yatriwarm-700">{t('first_departure')}
                       <input type="time" required value={firstDepartureTime} onChange={e => setFirstDepartureTime(e.target.value)} className="mt-1 w-full px-3 py-2.5 bg-white border border-yatriwarm-200 rounded-xl" />
                     </label>
-                    <label className="text-xs font-medium text-yatriwarm-700">Last departure
+                    <label className="text-xs font-medium text-yatriwarm-700">{t('last_departure')}
                       <input type="time" required value={lastDepartureTime} onChange={e => setLastDepartureTime(e.target.value)} className="mt-1 w-full px-3 py-2.5 bg-white border border-yatriwarm-200 rounded-xl" />
                     </label>
-                    <label className="text-xs font-medium text-yatriwarm-700">Frequency (minutes)
+                    <label className="text-xs font-medium text-yatriwarm-700">{t('frequency_minutes')}
                       <input type="number" min="1" max="1440" value={frequencyMinutes} onChange={e => setFrequencyMinutes(e.target.value)} placeholder="e.g. 30" className="mt-1 w-full px-3 py-2.5 bg-white border border-yatriwarm-200 rounded-xl" />
                     </label>
                   </div>
-                  <label className="block text-xs font-medium text-yatriwarm-700">Operating days (comma separated)
+                  <label className="block text-xs font-medium text-yatriwarm-700">{t('operating_days_comma')}
                     <input value={operatingDays} onChange={e => setOperatingDays(e.target.value)} placeholder="Daily or MON,TUE,WED..." className="mt-1 w-full px-3 py-2.5 bg-white border border-yatriwarm-200 rounded-xl" />
                   </label>
-                  <label className="block text-xs font-medium text-yatriwarm-700">Intermediate stops in order (comma separated)
+                  <label className="block text-xs font-medium text-yatriwarm-700">{t('intermediate_stops')}
                     <textarea rows={2} value={intermediateStops} onChange={e => setIntermediateStops(e.target.value)} placeholder="e.g. Gopiballavpur, Lodhasuli, Jhargram Court" className="mt-1 w-full px-3 py-2.5 bg-white border border-yatriwarm-200 rounded-xl" />
                   </label>
                 </div>
@@ -299,7 +301,7 @@ export const ContributePage: React.FC = () => {
               {submissionType === 'CORRECT_TIMETABLE' && (
                 <div>
                   <label className="block text-xs font-medium text-yatriwarm-700 mb-1">
-                    Correct Departure Time (IST)
+                    {t('correct_departure_time')}
                   </label>
                   <input
                     type="time"
@@ -314,7 +316,7 @@ export const ContributePage: React.FC = () => {
               {/* Contributor note */}
               <div>
                 <label className="block text-xs font-medium text-yatriwarm-700 mb-1">
-                  Additional Notes / Evidence (Optional)
+                  {t('additional_notes')}
                 </label>
                 <textarea
                   rows={3}
@@ -331,7 +333,7 @@ export const ContributePage: React.FC = () => {
                 className="w-full py-3 bg-yatribrand-900 hover:bg-yatribrand-950 text-white font-bold text-sm rounded-xl transition-all shadow-subtle flex items-center justify-center gap-2"
               >
                 <PlusCircle className="w-4 h-4" />
-                {isSubmitting ? 'Submitting...' : 'Submit Contribution'}
+                {isSubmitting ? '{t('submitting')}' : '{t('submit_contribution')}'}
               </button>
             </form>
           )}
@@ -344,7 +346,7 @@ export const ContributePage: React.FC = () => {
           <form onSubmit={handleCheckStatus} className="space-y-4">
             <div>
               <label className="block text-xs font-bold text-yatriwarm-700 uppercase tracking-wider mb-1.5">
-                Enter Your Submission Reference ID
+                {t('enter_reference_id')}
               </label>
               <div className="flex gap-2">
                 <input
@@ -391,18 +393,18 @@ export const ContributePage: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div>
-                  <span className="text-yatriwarm-500">Submission Type:</span>{' '}
+                  <span className="text-yatriwarm-500">{t('submission_type')}:</span>{' '}
                   <strong className="text-yatriwarm-800">{statusResult.submissionType}</strong>
                 </div>
                 <div>
-                  <span className="text-yatriwarm-500">Submitted:</span>{' '}
+                  <span className="text-yatriwarm-500">{t('submitted')}:</span>{' '}
                   <strong className="text-yatriwarm-800">{new Date(statusResult.submittedAt).toLocaleDateString()}</strong>
                 </div>
               </div>
 
               {statusResult.adminDecisionReason && (
                 <div className="text-xs text-yatriwarm-700 bg-white p-2.5 rounded-lg border border-yatriwarm-200">
-                  <span className="font-semibold">Reviewer Note:</span> {statusResult.adminDecisionReason}
+                  <span className="font-semibold">{t('reviewer_note')}:</span> {statusResult.adminDecisionReason}
                 </div>
               )}
             </div>
