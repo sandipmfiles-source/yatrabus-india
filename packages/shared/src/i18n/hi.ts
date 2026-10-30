@@ -8,7 +8,7 @@ export const hi = {
   startup_location_denied: 'स्थान की अनुमति अभी बंद है। Android Settings में इसे चालू करके फिर कोशिश करें।',
   startup_location_settings: 'अनुमति नहीं माँगी जा सकी। Android Settings → Apps → YatriBus → Permissions → Location खोलें।',
   startup_location_check_error: 'स्थान अनुमति जाँची नहीं जा सकी। आगे बढ़ने के लिए स्थान अनुमति दें।',
-  startup_location_footer: 'स्थान का उपयोग आस-पास के स्टॉप और यात्रा सुविधाओं के लिए होता है। GPS साझा करना कभी भी बंद कर सकते हैं।'
+  startup_location_footer: 'स्थान का उपयोग आस-पास के स्टॉप और यात्रा सुविधाओं के लिए होता है। GPS साझा करना कभी भी बंद कर सकते हैं।',
   tagline: 'अखिल भारतीय स्मार्ट बस निर्देशिका एवं जन-सत्यापित लाइव ट्रैकिंग',
   search_placeholder_from: 'शुरुआती स्थान (शहर, बस अड्डा, स्टॉप)',
   search_placeholder_to: 'गंतव्य स्थान (शहर, बस अड्डा, स्टॉप)',
