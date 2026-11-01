@@ -174,6 +174,7 @@ export const TrackingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             areaCode: Number(cell.areaCode),
             cellId: String(cell.cellId),
             signalDbm: Number(cell.signalDbm),
+            isRegistered: cell.isRegistered === true,
             timestamp: new Date(Number(result.capturedAt) || Date.now()).toISOString(),
           });
         }
