@@ -5,6 +5,7 @@ import {
   JourneySession,
   LocationObservation,
   AggregatedBusLocation,
+  CellTowerObservation,
 } from '../../../packages/shared/src/types/tracking.js';
 import {
   CommunitySubmission,
@@ -26,6 +27,7 @@ export class TransitRepository {
   private journeySessions: Map<string, JourneySession> = new Map();
   private observations: LocationObservation[] = [];
   private busLocations: Map<string, AggregatedBusLocation> = new Map();
+  private cellTowerObservations: CellTowerObservation[] = [];
   private submissions: Map<string, CommunitySubmission> = new Map();
   private duplicateCandidates: Map<string, DuplicateCandidate> = new Map();
   private operatorClaims: Map<string, OperatorClaimRequest> = new Map();
@@ -296,6 +298,27 @@ export class TransitRepository {
       }
     }
     return sessions.size;
+  }
+
+  public ingestCellTowerObservation(observation: CellTowerObservation): void {
+    this.pruneExpiredTrackingData();
+    this.cellTowerObservations.push(observation);
+    const cutoff = Date.now() - 30 * 60 * 1000;
+    this.cellTowerObservations = this.cellTowerObservations.filter(item =>
+      new Date(item.timestamp).getTime() >= cutoff
+    ).slice(-10000);
+    const session = this.journeySessions.get(observation.sessionId);
+    if (session) {
+      session.observationsContributedCount++;
+      session.lastActiveTime = new Date().toISOString();
+    }
+  }
+
+  public getCellTowerObservationsForBus(busId: string, sinceIso: string): CellTowerObservation[] {
+    const since = new Date(sinceIso).getTime();
+    return this.cellTowerObservations.filter(item =>
+      item.busId === busId && new Date(item.timestamp).getTime() >= since
+    );
   }
 
   public getBusLocation(busId: string): AggregatedBusLocation | undefined {
