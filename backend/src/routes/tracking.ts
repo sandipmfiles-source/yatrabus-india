@@ -214,6 +214,107 @@ trackingRouter.post('/observation', (req: Request, res: Response) => {
   });
 });
 
+// POST /api/tracking/cell-observation
+// Cell identifiers are accepted only for an active, explicitly consented journey.
+// Cell-derived positions are always ESTIMATED, never LIVE.
+trackingRouter.post('/cell-observation', async (req: Request, res: Response) => {
+  const { sessionId, busId, routeId, radioType, mcc, mnc, areaCode, cellId, signalDbm, timestamp } = req.body || {};
+  if (!sessionId || !busId || !routeId || !['GSM', 'WCDMA', 'LTE', 'NR'].includes(radioType) ||
+      !/^\\d{3}$/.test(String(mcc)) || !/^\\d{2,3}$/.test(String(mnc)) ||
+      !Number.isInteger(Number(areaCode)) || Number(areaCode) < 0 ||
+      !/^\\d{1,20}$/.test(String(cellId)) || !Number.isFinite(Number(signalDbm)) ||
+      Number(signalDbm) < -160 || Number(signalDbm) > 0) {
+    return res.status(400).json({ error: 'Invalid mobile cell observation.' });
+  }
+
+  const session = repository.getJourneySession(String(sessionId));
+  const consent = repository.getConsent(String(sessionId));
+  if (!session || !session.isActive || session.busId !== String(busId) || session.routeId !== String(routeId) ||
+      !consent || consent.status !== 'GRANTED' || consent.disclosuresAccepted !== true) {
+    return res.status(403).json({ error: 'An active, consented journey session is required.' });
+  }
+  if (Date.now() >= new Date(session.maxExpiryTime).getTime()) {
+    repository.stopJourneySession(String(sessionId), 'SESSION_EXPIRED');
+    return res.status(410).json({ error: 'Journey session expired.' });
+  }
+
+  const observedAt = timestamp ? new Date(timestamp) : new Date();
+  if (!Number.isFinite(observedAt.getTime()) || Math.abs(Date.now() - observedAt.getTime()) > 5 * 60 * 1000) {
+    return res.status(400).json({ error: 'Cell observation timestamp is invalid or stale.' });
+  }
+
+  const observation = {
+    sessionId: String(sessionId), busId: String(busId), routeId: String(routeId),
+    radioType, mcc: String(mcc), mnc: String(mnc), areaCode: Number(areaCode),
+    cellId: String(cellId), signalDbm: Number(signalDbm), timestamp: observedAt.toISOString(),
+  };
+  repository.ingestCellTowerObservation(observation);
+
+  const apiKey = process.env.OPENCELLID_API_KEY;
+  if (!apiKey) {
+    return res.status(202).json({
+      accepted: true, mapped: false, displayState: 'UNAVAILABLE',
+      message: 'Cell sample received. Configure OPENCELLID_API_KEY to resolve tower coordinates.',
+    });
+  }
+
+  try {
+    const params = new URLSearchParams({
+      key: apiKey, mcc: observation.mcc, mnc: observation.mnc,
+      lac: String(observation.areaCode), cellid: observation.cellId, format: 'json',
+    });
+    const lookup = await fetch('https://opencellid.org/cell/get?' + params.toString(), {
+      headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(5000),
+    });
+    if (!lookup.ok) return res.status(202).json({ accepted: true, mapped: false, message: 'Tower lookup is temporarily unavailable.' });
+    const tower: any = await lookup.json();
+    const latitude = Number(tower.lat), longitude = Number(tower.lon);
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude) || latitude < 6 || latitude > 38 || longitude < 68 || longitude > 98) {
+      return res.status(202).json({ accepted: true, mapped: false, message: 'This cell is not mapped in the tower database yet.' });
+    }
+
+    const route = repository.getRouteById(String(routeId));
+    if (!route || route.stops.length < 2) return res.status(202).json({ accepted: true, mapped: false });
+    const haversine = (aLat: number, aLon: number, bLat: number, bLon: number) => {
+      const rad = (value: number) => value * Math.PI / 180;
+      const dLat = rad(bLat - aLat), dLon = rad(bLon - aLon);
+      const x = Math.sin(dLat / 2) ** 2 + Math.cos(rad(aLat)) * Math.cos(rad(bLat)) * Math.sin(dLon / 2) ** 2;
+      return 6371000 * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x));
+    };
+    const nearestStopDistance = Math.min(...route.stops.map(stop =>
+      haversine(latitude, longitude, stop.latitude, stop.longitude)
+    ));
+    const towerRange = Math.max(100, Math.min(10000, Number(tower.range) || 2000));
+    // Reject tower locations too far from the published route corridor.
+    if (nearestStopDistance > Math.max(2500, towerRange)) {
+      return res.status(202).json({ accepted: true, mapped: false, message: 'Tower is outside the expected route corridor.' });
+    }
+
+    const matching = repository.getCellTowerObservationsForBus(String(busId), new Date(Date.now() - 5 * 60 * 1000).toISOString())
+      .filter(item => item.mcc === observation.mcc && item.mnc === observation.mnc &&
+        item.areaCode === observation.areaCode && item.cellId === observation.cellId);
+    const independent = new Set(matching.map(item => item.sessionId)).size;
+    const previous = repository.getBusLocation(String(busId));
+    const shouldReplace = !previous || previous.displayState !== 'LIVE' ||
+      !previous.lastObservedAt || Date.now() - new Date(previous.lastObservedAt).getTime() > 120000;
+    if (shouldReplace) {
+      repository.updateBusLocation(String(busId), {
+        busId: String(busId), routeId: String(routeId), displayState: 'ESTIMATED',
+        latitude, longitude, accuracyMeters: Math.max(towerRange, nearestStopDistance),
+        confidenceCategory: independent >= 2 ? 'MODERATE' : 'LOW',
+        confidenceScore: independent >= 2 ? 45 : 25,
+        observationCount: matching.length, independentContributorsCount: independent,
+        lastObservedAt: observedAt.toISOString(), isLive: false,
+        statusExplanation: 'Approximate mobile tower location. Not GPS; accuracy varies by tower coverage.',
+        updatedAt: new Date().toISOString(),
+      });
+    }
+    return res.json({ accepted: true, mapped: true, displayState: 'ESTIMATED', independentContributors: independent });
+  } catch (error) {
+    return res.status(202).json({ accepted: true, mapped: false, message: 'Tower lookup could not be completed.' });
+  }
+});
+
 // GET /api/tracking/bus/:id/location
 trackingRouter.get('/bus/:id/location', (req: Request, res: Response) => {
   const loc = repository.getBusLocation(String(req.params.id));
