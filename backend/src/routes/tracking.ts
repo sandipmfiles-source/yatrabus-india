@@ -220,6 +220,7 @@ trackingRouter.post('/observation', (req: Request, res: Response) => {
 // Cell-derived positions are always ESTIMATED, never LIVE.
 trackingRouter.post('/cell-observation', async (req: Request, res: Response) => {
   const { sessionId, busId, routeId, radioType, mcc, mnc, areaCode, cellId, signalDbm, timestamp } = req.body || {};
+  const isRegistered = req.body?.isRegistered !== false;
   if (!sessionId || !busId || !routeId || !['GSM', 'WCDMA', 'LTE', 'NR'].includes(radioType) ||
       !/^\\d{3}$/.test(String(mcc)) || !/^\\d{2,3}$/.test(String(mnc)) ||
       !Number.isInteger(Number(areaCode)) || Number(areaCode) < 0 ||
@@ -250,6 +251,13 @@ trackingRouter.post('/cell-observation', async (req: Request, res: Response) => 
     cellId: String(cellId), signalDbm: Number(signalDbm), timestamp: observedAt.toISOString(),
   };
   repository.ingestCellTowerObservation(observation);
+
+  // Neighboring cells improve radio-context confidence, but their tower
+  // coordinates must never be mistaken for the handset/bus position.
+  // Resolve only the currently registered (serving) cell for a coarse fallback.
+  if (!isRegistered) {
+    return res.status(202).json({ accepted: true, mapped: false, role: 'NEIGHBOR_CELL', message: 'Neighbor cell recorded for radio-context corroboration; not used as a location fix.' });
+  }
 
   const apiKey = process.env.OPENCELLID_API_KEY;
   if (!apiKey) {
