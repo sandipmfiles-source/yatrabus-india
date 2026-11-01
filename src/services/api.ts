@@ -148,6 +148,17 @@ export const api = {
     }
   },
 
+  async sendCellObservation(observation: { sessionId: string; busId: string; routeId: string; radioType: string; mcc: string; mnc: string; areaCode: number; cellId: string; signalDbm: number; timestamp: string }) {
+    try {
+      const res = await fetch(`${API_BASE}/tracking/cell-observation`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(observation),
+      });
+      return await res.json().catch(() => ({ accepted: false }));
+    } catch {
+      return { accepted: false };
+    }
+  },
+
   async submitContribution(data: { submissionType: string; entityType: string; targetEntityId?: string; contributorNote?: string; proposedData: Record<string, any> }) {
     const res = await fetch(`${API_BASE}/contributions/submit`, {
       method: 'POST',
