@@ -282,8 +282,12 @@ trackingRouter.post('/cell-observation', async (req: Request, res: Response) => 
       const x = Math.sin(dLat / 2) ** 2 + Math.cos(rad(aLat)) * Math.cos(rad(bLat)) * Math.sin(dLon / 2) ** 2;
       return 6371000 * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x));
     };
-    const nearestStopDistance = Math.min(...route.stops.map(stop =>
-      haversine(latitude, longitude, stop.latitude, stop.longitude)
+    const locatedStops = route.stops.filter(stop =>
+      Number.isFinite(Number(stop.latitude)) && Number.isFinite(Number(stop.longitude))
+    );
+    if (locatedStops.length < 2) return res.status(202).json({ accepted: true, mapped: false, message: 'Route stop coordinates are incomplete.' });
+    const nearestStopDistance = Math.min(...locatedStops.map(stop =>
+      haversine(latitude, longitude, Number(stop.latitude), Number(stop.longitude))
     ));
     const towerRange = Math.max(100, Math.min(10000, Number(tower.range) || 2000));
     // Reject tower locations too far from the published route corridor.
