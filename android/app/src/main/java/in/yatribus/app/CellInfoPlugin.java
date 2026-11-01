@@ -74,7 +74,7 @@ public class CellInfoPlugin extends Plugin {
             JSArray cells = new JSArray();
             if (infos != null) {
                 for (CellInfo info : infos) {
-                    if (info == null || !info.isRegistered()) continue;
+                    if (info == null) continue;
                     JSObject cell = new JSObject();
                     String type = "UNKNOWN";
                     String mcc = null, mnc = null;
@@ -111,7 +111,9 @@ public class CellInfoPlugin extends Plugin {
                     cell.put("areaCode", area);
                     cell.put("cellId", String.valueOf(id));
                     cell.put("signalDbm", dbm);
+                    cell.put("isRegistered", info.isRegistered());
                     cells.put(cell);
+                    if (cells.length() >= 12) break;
                 }
             }
             JSObject result = new JSObject();
