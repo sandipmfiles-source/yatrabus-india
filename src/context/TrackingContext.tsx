@@ -30,6 +30,7 @@ interface TrackingContextType {
 }
 
 const BackgroundGeolocation = registerPlugin<any>('BackgroundGeolocation');
+const CellInfo = registerPlugin<any>('CellInfo');
 const TrackingContext = createContext<TrackingContextType | undefined>(undefined);
 
 export const TrackingProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -146,6 +147,49 @@ export const TrackingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         navigator.geolocation.clearWatch(webWatchIdRef.current);
         webWatchIdRef.current = null;
       }
+    };
+  }, [activeSession]);
+
+  // Collect registered cell-tower samples only while a passenger has an active,
+  // explicitly consented journey. This foreground sampler never reads SIM identity.
+  useEffect(() => {
+    if (!activeSession || !Capacitor.isNativePlatform()) return;
+    let cancelled = false;
+    let collecting = false;
+    const collectCells = async () => {
+      if (collecting || cancelled) return;
+      collecting = true;
+      try {
+        const result = await CellInfo.getCells();
+        const cells = Array.isArray(result?.cells) ? result.cells : [];
+        for (const cell of cells) {
+          if (cancelled) break;
+          await api.sendCellObservation({
+            sessionId: activeSession.sessionId,
+            busId: activeSession.busId,
+            routeId: activeSession.routeId,
+            radioType: cell.radioType,
+            mcc: String(cell.mcc),
+            mnc: String(cell.mnc),
+            areaCode: Number(cell.areaCode),
+            cellId: String(cell.cellId),
+            signalDbm: Number(cell.signalDbm),
+            timestamp: new Date(Number(result.capturedAt) || Date.now()).toISOString(),
+          });
+        }
+      } catch (error) {
+        // Cell access is optional: GPS/network tracking must continue if Android
+        // or the carrier does not expose cell details on this device.
+        console.info('YatraBus cell-assisted fallback unavailable:', error);
+      } finally {
+        collecting = false;
+      }
+    };
+    void collectCells();
+    const timer = window.setInterval(() => { void collectCells(); }, 60000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
     };
   }, [activeSession]);
 
