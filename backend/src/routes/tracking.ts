@@ -192,6 +192,7 @@ trackingRouter.post('/observation', (req: Request, res: Response) => {
       busId,
       routeId,
       displayState: 'LIVE',
+      locationSource: 'GPS',
       latitude,
       longitude,
       accuracyMeters,
@@ -299,7 +300,7 @@ trackingRouter.post('/cell-observation', async (req: Request, res: Response) => 
       !previous.lastObservedAt || Date.now() - new Date(previous.lastObservedAt).getTime() > 120000;
     if (shouldReplace) {
       repository.updateBusLocation(String(busId), {
-        busId: String(busId), routeId: String(routeId), displayState: 'ESTIMATED',
+        busId: String(busId), routeId: String(routeId), displayState: 'ESTIMATED', locationSource: 'CELL_TOWER',
         latitude, longitude, accuracyMeters: Math.max(towerRange, nearestStopDistance),
         confidenceCategory: independent >= 2 ? 'MODERATE' : 'LOW',
         confidenceScore: independent >= 2 ? 45 : 25,
