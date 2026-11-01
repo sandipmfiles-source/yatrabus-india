@@ -76,6 +76,7 @@ export interface AggregatedBusLocation {
   busId: string;
   routeId: string;
   displayState: LocationDisplayState;
+  locationSource?: 'GPS' | 'CELL_TOWER' | 'NETWORK' | 'TIMETABLE';
   latitude?: number;
   longitude?: number;
   accuracyMeters?: number;
