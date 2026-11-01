@@ -24,7 +24,9 @@ Without this key, the backend accepts and temporarily stores the sample but cann
 ## Important operating limits
 
 - Android controls access to cell information. Some phones/carriers return no cell data, cached data, or only partial identifiers.
-- Android rate-limits cell information updates. YatraBus samples at a modest interval and cannot force the modem to refresh.
+- Android rate-limits/caches cell information updates. YatraBus reads up to 12 available serving and neighboring cell records at a modest interval and cannot force the modem to refresh.
+- Neighboring cells are retained as radio-context evidence, but are never plotted as the bus location. Only the registered/serving cell can provide a coarse tower-database fallback. This avoids treating every nearby tower as a bus coordinate.
+- This is not true RF triangulation. Reliable multilateration would require carrier-grade timing/angle/measurement data (for example synchronized timing advance/RTT and antenna-sector information), which ordinary Android apps do not consistently expose. Multiple tower coordinates alone do not reveal the handset position.
 - The current web-layer sampler runs while the consented journey screen/app process is active. It is not a guaranteed background cell collector; Android may suspend WebView timers.
 - A tower's registered location is an approximate coverage-area reference, not the passenger's or bus's exact position. A cell can cover several kilometres and may serve multiple roads.
 - A cell observation is useful only when the passenger has explicitly confirmed the correct bus and route. Never treat one cell sample as proof of bus identity.
