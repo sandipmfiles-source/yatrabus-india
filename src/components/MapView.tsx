@@ -179,12 +179,17 @@ export const MapView: React.FC<MapViewProps> = ({
 
     // Green means an actual fresh GPS fix. Otherwise show only a yellow
     // timetable-based estimate, and never disguise it as a live location.
-    const estimatedPosition = hasLiveGps ? null : estimateBusPosition(route, currentIndiaTime());
+    const hasCellTowerEstimate = !!busLocation && busLocation.displayState === 'ESTIMATED' &&
+      busLocation.locationSource === 'CELL_TOWER' &&
+      validCoordinate(busLocation.latitude, busLocation.longitude);
+    const estimatedPosition = hasLiveGps ? null : hasCellTowerEstimate
+      ? [busLocation!.latitude!, busLocation!.longitude!] as [number, number]
+      : estimateBusPosition(route, currentIndiaTime());
     const busPosition: [number, number] | null = hasLiveGps
       ? [busLocation!.latitude!, busLocation!.longitude!]
       : estimatedPosition;
     if (busPosition) {
-      const color = hasLiveGps ? '#059669' : '#EAB308';
+      const color = hasLiveGps ? '#059669' : hasCellTowerEstimate ? '#2563EB' : '#EAB308';
       const busIcon = L.divIcon({
         className: 'yatribus-bus-icon',
         html: `<div style="width:34px;height:34px;border-radius:50%;background:${color};border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.38);display:flex;align-items:center;justify-content:center;font-size:20px;line-height:1;">🚌</div>`,
@@ -193,7 +198,9 @@ export const MapView: React.FC<MapViewProps> = ({
       L.marker(busPosition, { icon: busIcon, zIndexOffset: 1000 }).addTo(overlay)
         .bindPopup(hasLiveGps
           ? '<strong>🚌 Live GPS location</strong>'
-          : '<strong>🚌 Possible position (timetable estimate)</strong><br/>Not a confirmed live location');
+          : hasCellTowerEstimate
+            ? '<strong>🚌 Approximate mobile tower area</strong><br/>Not an exact bus location or GPS fix'
+            : '<strong>🚌 Possible position (timetable estimate)</strong><br/>Not a confirmed live location');
       boundsPoints.push(busPosition);
     }
 
@@ -209,6 +216,7 @@ export const MapView: React.FC<MapViewProps> = ({
         <span className="rounded-full bg-white/95 px-2.5 py-1 text-[10px] font-semibold text-yatriwarm-800 shadow">● Stops</span>
         <span className="rounded-full bg-white/95 px-2.5 py-1 text-[10px] font-semibold text-amber-700 shadow">● Nearest stop</span>
         <span className="rounded-full bg-white/95 px-2.5 py-1 text-[10px] font-semibold text-emerald-700 shadow">🚌 Live GPS</span>
+        <span className="rounded-full bg-white/95 px-2.5 py-1 text-[10px] font-semibold text-blue-700 shadow">🚌 Mobile tower area</span>
         <span className="rounded-full bg-white/95 px-2.5 py-1 text-[10px] font-semibold text-yellow-700 shadow">🚌 Possible position</span>
       </div>
     </div>
