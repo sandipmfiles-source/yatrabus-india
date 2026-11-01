@@ -1,10 +1,17 @@
 package in.yatribus.app;
 
 import com.getcapacitor.BridgeActivity;
+import android.os.Bundle;
 import android.webkit.WebView;
 
 /** Main Android entry point for the YatraBus Capacitor application. */
 public class MainActivity extends BridgeActivity {
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        registerPlugin(CellInfoPlugin.class);
+        super.onCreate(savedInstanceState);
+    }
+
     @Override
     @SuppressWarnings("deprecation")
     public void onBackPressed() {
