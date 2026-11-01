@@ -80,24 +80,28 @@ public class CellInfoPlugin extends Plugin {
                     String mcc = null, mnc = null;
                     int area = -1;
                     long id = -1;
-                    int dbm = info.getCellSignalStrength().getDbm();
+                    int dbm = -160;
 
                     if (info instanceof CellInfoLte) {
                         CellIdentityLte identity = ((CellInfoLte) info).getCellIdentity();
-                        type = "LTE"; mcc = identity.getMccString(); mnc = identity.getMncString();
+                        type = "LTE"; mcc = String.valueOf(identity.getMcc()); mnc = String.valueOf(identity.getMnc());
                         area = identity.getTac(); id = identity.getCi();
+                        dbm = ((CellInfoLte) info).getCellSignalStrength().getDbm();
                     } else if (info instanceof CellInfoWcdma) {
                         CellIdentityWcdma identity = ((CellInfoWcdma) info).getCellIdentity();
-                        type = "WCDMA"; mcc = identity.getMccString(); mnc = identity.getMncString();
+                        type = "WCDMA"; mcc = String.valueOf(identity.getMcc()); mnc = String.valueOf(identity.getMnc());
                         area = identity.getLac(); id = identity.getCid();
+                        dbm = ((CellInfoWcdma) info).getCellSignalStrength().getDbm();
                     } else if (info instanceof CellInfoGsm) {
                         CellIdentityGsm identity = ((CellInfoGsm) info).getCellIdentity();
-                        type = "GSM"; mcc = identity.getMccString(); mnc = identity.getMncString();
+                        type = "GSM"; mcc = String.valueOf(identity.getMcc()); mnc = String.valueOf(identity.getMnc());
                         area = identity.getLac(); id = identity.getCid();
+                        dbm = ((CellInfoGsm) info).getCellSignalStrength().getDbm();
                     } else if (android.os.Build.VERSION.SDK_INT >= 29 && info instanceof CellInfoNr) {
                         CellIdentityNr identity = (CellIdentityNr) ((CellInfoNr) info).getCellIdentity();
                         type = "NR"; mcc = identity.getMccString(); mnc = identity.getMncString();
                         area = identity.getTac(); id = identity.getNci();
+                        dbm = ((CellInfoNr) info).getCellSignalStrength().getDbm();
                     }
 
                     if (mcc == null || mnc == null || area < 0 || id < 0 || "UNKNOWN".equals(type)) continue;
