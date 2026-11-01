@@ -102,3 +102,17 @@ export interface JourneyPromptEvaluation {
   scheduledDepartureTime?: string;
   timeRemainingMinutes?: number;
 }
+
+/** Cell tower sample captured only during an explicitly consented journey. */
+export interface CellTowerObservation {
+  sessionId: string;
+  busId: string;
+  routeId: string;
+  radioType: 'GSM' | 'WCDMA' | 'LTE' | 'NR';
+  mcc: string;
+  mnc: string;
+  areaCode: number;
+  cellId: string;
+  signalDbm: number;
+  timestamp: string;
+}
