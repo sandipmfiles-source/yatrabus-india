@@ -84,15 +84,19 @@ export function rankTrajectoryCandidates(
     }
     if (!movementConsistent) continue;
 
+    let totalMovementMeters = 0;
     for (let i = 1; i < ordered.length; i++) {
       const a = ordered[i - 1], b = ordered[i];
       const elapsedHours = (parsed[i] - parsed[i - 1]) / 3600000;
       const dLat = (b.latitude - a.latitude) * 111320;
       const dLon = (b.longitude - a.longitude) * 111320 * Math.cos((a.latitude * Math.PI) / 180);
-      const impliedSpeed = Math.hypot(dLat, dLon) / 1000 / elapsedHours;
+      const movementMeters = Math.hypot(dLat, dLon);
+      totalMovementMeters += movementMeters;
+      const impliedSpeed = movementMeters / 1000 / elapsedHours;
       if (impliedSpeed > 120) { movementConsistent = false; break; }
     }
-    if (!movementConsistent) continue;
+    // Repeated stationary fixes cannot independently corroborate a moving vehicle.
+    if (!movementConsistent || totalMovementMeters < 100) continue;
     const sorted = [...entry.scores].sort((a, b) => a - b);
     const median = sorted[Math.floor(sorted.length / 2)];
     const distances = [...entry.distances].sort((a, b) => a - b);
