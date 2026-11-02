@@ -86,13 +86,13 @@ runJourneyPlannerTests(assert);
 console.log('\n15. Testing Multi-Sample Bus Trajectory Corroboration...');
 runTrajectoryMatcherTests(assert);
 
-console.log('\\n16. Testing India States, UTs, Government Operators & Pilot Directory...');
+console.log('\n16. Testing India States, UTs, Government Operators & Pilot Directory...');
 runIndiaCatalogueTests(assert);
 
-console.log('\\n17. Testing LGD Administrative & Town Data Import...');
+console.log('\n17. Testing LGD Administrative & Town Data Import...');
 runLgdImporterTests(assert);
 
-console.log('\\n18. Testing Source-Aware Timetable Availability...');
+console.log('\n18. Testing Source-Aware Timetable Availability...');
 runTimetableEngineTests(assert);
 
 console.log('\n====================================================');
