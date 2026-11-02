@@ -1,6 +1,6 @@
 import { Capacitor } from '@capacitor/core';
 
-const CONFIGURED_API_BASE = (import.meta.env.VITE_API_BASE_URL || '').trim().replace(/\\/$/, '');
+const CONFIGURED_API_BASE = (import.meta.env.VITE_API_BASE_URL || '').trim().replace(/\/$/, '');
 const API_BASE = CONFIGURED_API_BASE || '/api';
 
 // A native APK runs from its own WebView origin. Relative /api requests do not reach
