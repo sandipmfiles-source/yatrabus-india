@@ -53,7 +53,7 @@ busesRouter.get('/:id', (req: Request, res: Response) => {
           speedKmh: loc!.speedKmh,
           accuracyMeters: loc!.accuracyMeters,
           observedAtIso: loc!.lastObservedAt,
-          isLive: loc!.isLive,
+          isLive: loc!.isLive && routeMatch?.isMatched === true,
         }
       : undefined
   );
