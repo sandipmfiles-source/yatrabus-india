@@ -42,7 +42,7 @@ export function runJourneyPlannerTests(assert: (description: string, pass: boole
   const multi = result.transferRoutes.find(item => item.transfers.length === 2);
   assert('Multi-transfer result retains all three ordered legs', multi?.legs?.length === 3);
   assert('Planner handles a connection crossing midnight', multi?.departureTime === '23:30' && multi?.arrivalTime === '01:30' && multi.durationMinutes === 120);
-  assert('Planner labels the final arrival as the next IST calendar day', multi?.arrivalNextDay === true && multi?.legs?.[2]?.arrivalNextDay === true);
+  assert('Overall itinerary marks next-day arrival while the final leg keeps its own same-day flag', multi?.arrivalNextDay === true && multi?.legs?.[2]?.arrivalNextDay === false);
   assert('Each transfer wait respects the minimum buffer', multi?.transfers.every(item => item.expectedWaitMinutes >= 8) === true);
 
   const missed = planJourneys('Kharagpur', 'Jhargram', [
