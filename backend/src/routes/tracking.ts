@@ -404,7 +404,7 @@ trackingRouter.get('/bus/:id/location', (req: Request, res: Response) => {
   if (bus?.routeId) {
     const route = repository.getRouteById(bus.routeId);
     if (route) {
-      const prediction = estimateTimetableBusLocation(bus, route);
+      const prediction = estimateTimetableBusLocation(bus, route, new Date(), repository.getBusesForRoute(route.id).length);
       if (prediction) return res.json(prediction);
     }
   }
