@@ -233,6 +233,8 @@ export const BusDetailPage: React.FC = () => {
             {route.routeName}
           </h1>
           {route.contributedBy && <p className="text-[10px] text-yatriwarm-500 mt-0.5">Helped by {route.contributedBy}</p>}
+          {route.timetableDataStatus === 'UNAVAILABLE' ? <p className="text-[10px] text-amber-800 mt-1">Timetable unavailable · No source-verified departures</p> :
+            route.timetableSource && <p className="text-[10px] text-yatriwarm-500 mt-1">Timetable source: {route.timetableSource}{route.timetableVerifiedAt ? ` · Verified ${route.timetableVerifiedAt}` : ''}{route.timetableSourceUrl ? <> · <a href={route.timetableSourceUrl} target="_blank" rel="noreferrer" className="underline text-yatribrand-800">Open source</a></> : null}</p>}
         </div>
       </div>
 
