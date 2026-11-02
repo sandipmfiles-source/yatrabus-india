@@ -158,7 +158,8 @@ export function planJourneys(
   const maxResults = Math.max(1, Math.min(30, options.maximumResults ?? 8));
   const minimumTransfer = Math.max(3, Math.min(30, options.minimumTransferMinutes ?? 8));
   const maximumWait = Math.max(minimumTransfer, Math.min(180, options.maximumTransferWaitMinutes ?? 90));
-  const usableRoutes = allRoutes.filter(route => route.stops.length >= 2 && route.operatingDays.length > 0).slice(0, 500);
+  const usableRoutes = allRoutes.filter(route => Array.isArray(route.stops) && route.stops.length >= 2 &&
+    Array.isArray(route.operatingDays) && route.operatingDays.length > 0).slice(0, 500);
   const paths = enumeratePaths(origin, destination, usableRoutes, maxTransfers, 500);
   const directRoutes: JourneyCandidate[] = [], transferRoutes: JourneyCandidate[] = [];
 
