@@ -269,7 +269,7 @@ export const api = {
     return data;
   },
 
-  async adminUpdateAutomationRule(token: string, id: string, isEnabled: boolean, parameters: Record<string, unknown>) {
+  async adminUpdateAutomationRule(token: string, id: string, isEnabled: boolean, parameters: object) {
     const res = await fetch(`${API_BASE}/admin/automation/rules/${encodeURIComponent(id)}`, {
       method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({ isEnabled, parameters }),
