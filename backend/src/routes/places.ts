@@ -34,10 +34,10 @@ function normaliseDirectoryRows(payload: any, query: string) {
       results.push({
         id: 'lgd-' + key + '-' + String(row.code || name) + '-' + String(row.districtCode || ''),
         name,
-        address: [level, ...parents].join(' · ') + ' · Government Local Government Directory',
+        address: [level, ...parents].join(' · ') + ' · LGD mirror suggestion — verify against official portal',
         latitude: Number.isFinite(Number(row.latitude)) ? Number(row.latitude) : undefined,
         longitude: Number.isFinite(Number(row.longitude)) ? Number(row.longitude) : undefined,
-        source: 'LOCAL_GOVERNMENT_DIRECTORY',
+        source: 'LGD_EXTERNAL_MIRROR',
         level,
       });
     }
@@ -179,7 +179,7 @@ placesRouter.get('/geocode-search', publicSearchLimiter, async (req: Request, re
     geocodeCache.set(key, { expiresAt: Date.now() + 24 * 60 * 60 * 1000, results });
     return res.json({ query, results, source: 'LGD + OPENSTREETMAP', attribution: 'Government Local Government Directory · © OpenStreetMap contributors' });
   } catch {
-    return res.json({ query, results: directoryResults, source: 'LOCAL_GOVERNMENT_DIRECTORY', attribution: 'Ministry of Panchayati Raj · Local Government Directory' });
+    return res.json({ query, results: directoryResults, source: 'LOCAL_GOVERNMENT_DIRECTORY', attribution: 'Bundled LGD snapshot (2022) and optional third-party LGD mirror suggestions; verify current records at https://lgdirectory.gov.in/' });
   }
 });
 
