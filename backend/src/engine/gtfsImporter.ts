@@ -157,7 +157,7 @@ export function importGtfsZip(base64: string, now = new Date()): GtfsImportResul
   if (errors.length) return { operators: [], routes: [], errors, warnings: [], stats: { agencies: 0, routes: 0, trips: 0, stops: 0, calendars: 0 } };
 
   let agencies: CsvRow[], sourceRoutes: CsvRow[], stops: CsvRow[], trips: CsvRow[], stopTimes: CsvRow[];
-  let calendars: CsvRow[] = [], calendarDates: CsvRow[] = [], shapes: CsvRow[] = [];
+  let calendars: CsvRow[] = [], calendarDates: CsvRow[] = [], shapes: CsvRow[] = [], frequencies: CsvRow[] = [];
   try {
     agencies = parseGtfsCsv(files.get('agency.txt')!);
     sourceRoutes = parseGtfsCsv(files.get('routes.txt')!);
@@ -167,6 +167,7 @@ export function importGtfsZip(base64: string, now = new Date()): GtfsImportResul
     if (files.has('calendar.txt')) calendars = parseGtfsCsv(files.get('calendar.txt')!);
     if (files.has('calendar_dates.txt')) calendarDates = parseGtfsCsv(files.get('calendar_dates.txt')!);
     if (files.has('shapes.txt')) shapes = parseGtfsCsv(files.get('shapes.txt')!);
+    if (files.has('frequencies.txt')) frequencies = parseGtfsCsv(files.get('frequencies.txt')!);
   } catch (error) {
     return { operators: [], routes: [], errors: [error instanceof Error ? error.message : 'Could not parse GTFS CSV.'], warnings: [], stats: { agencies: 0, routes: 0, trips: 0, stops: 0, calendars: 0 } };
   }
@@ -216,6 +217,11 @@ export function importGtfsZip(base64: string, now = new Date()): GtfsImportResul
     list.push({ sequence, latitude: lat, longitude: lon }); shapePoints.set(row.shape_id, list);
   }
 
+  const frequenciesByTrip = new Map<string, CsvRow[]>();
+  for (const row of frequencies) {
+    const list = frequenciesByTrip.get(row.trip_id) || [];
+    list.push(row); frequenciesByTrip.set(row.trip_id, list);
+  }
   const stopTimesByTrip = new Map<string, CsvRow[]>();
   for (const row of stopTimes) {
     const list = stopTimesByTrip.get(row.trip_id) || []; list.push(row); stopTimesByTrip.set(row.trip_id, list);
@@ -264,7 +270,8 @@ export function importGtfsZip(base64: string, now = new Date()): GtfsImportResul
 
     const departures: TimetableDeparture[] = [];
     const daySet = new Set<Route['operatingDays'][number]>();
-    let minFirst = Number.POSITIVE_INFINITY, maxLast = 0, minDuration = Number.POSITIVE_INFINITY, maxDuration = 0;
+    let minDuration = Number.POSITIVE_INFINITY, maxDuration = 0;
+    const routeHeadways: number[] = [];
     for (const item of items) {
       const serviceId = item.trip.service_id;
       const calendar = calendarByService.get(serviceId);
@@ -279,32 +286,73 @@ export function importGtfsZip(base64: string, now = new Date()): GtfsImportResul
       const firstTime = validTimes[0].departure || validTimes[0].arrival;
       const lastTime = validTimes[validTimes.length - 1].arrival || validTimes[validTimes.length - 1].departure;
       if (!firstTime || !lastTime || lastTime.absoluteMinutes < firstTime.absoluteMinutes) { warnings.push(`Skipped trip ${safeText(item.trip.trip_id, 80)}: invalid trip time sequence.`); continue; }
-      minFirst = Math.min(minFirst, firstTime.absoluteMinutes);
-      maxLast = Math.max(maxLast, firstTime.absoluteMinutes);
       minDuration = Math.min(minDuration, lastTime.absoluteMinutes - firstTime.absoluteMinutes);
       maxDuration = Math.max(maxDuration, lastTime.absoluteMinutes - firstTime.absoluteMinutes);
-      const stopTimeMap = new Map(validTimes.map(value => [value.row.stop_id, {
-        stopId: value.row.stop_id,
-        arrivalTime: value.arrival?.time,
-        departureTime: value.departure?.time,
-        arrivalDayOffset: value.arrival?.dayOffset,
-        departureDayOffset: value.departure?.dayOffset,
-      }]));
-      departures.push({
-        id: `gtfs-trip-${slug(item.trip.trip_id)}`, timetableId: routeId,
-        departureTime: firstTime.time, arrivalTime: lastTime.time,
-        departureDayOffset: firstTime.dayOffset,
-        // GTFS trip_headsign describes a destination sign, not a unique physical bus.
-        tripId: safeText(item.trip.trip_id, 100),
-        stopTimes: Array.from(stopTimeMap.values()),
-        operatingDays: days,
-        serviceId,
-        serviceStartDate: validDate(calendar?.start_date) ? calendar!.start_date : undefined,
-        serviceEndDate: validDate(calendar?.end_date) ? calendar!.end_date : undefined,
-        addedServiceDates: exceptions.added,
-        removedServiceDates: exceptions.removed,
-        confidenceScore: 75, isCancelled: false,
-      });
+      const frequencyRows = frequenciesByTrip.get(item.trip.trip_id) || [];
+      const addTripDeparture = (absoluteStart: number, frequencyRow?: CsvRow, frequencyIndex = 0) => {
+        const shift = absoluteStart - firstTime.absoluteMinutes;
+        const shiftedStopTimes = validTimes.map(value => {
+          const arrivalAbsolute = value.arrival ? value.arrival.absoluteMinutes + shift : undefined;
+          const departureAbsolute = value.departure ? value.departure.absoluteMinutes + shift : undefined;
+          return {
+            stopId: value.row.stop_id,
+            arrivalTime: arrivalAbsolute === undefined ? undefined : timeFromAbsoluteMinutes(arrivalAbsolute),
+            departureTime: departureAbsolute === undefined ? undefined : timeFromAbsoluteMinutes(departureAbsolute),
+            arrivalDayOffset: arrivalAbsolute === undefined ? undefined : Math.floor(arrivalAbsolute / 1440),
+            departureDayOffset: departureAbsolute === undefined ? undefined : Math.floor(departureAbsolute / 1440),
+          };
+        });
+        const shiftedArrival = lastTime.absoluteMinutes + shift;
+        const exactTimes = frequencyRow?.exact_times === '1';
+        const headwaySeconds = frequencyRow ? Number(frequencyRow.headway_secs) : undefined;
+        departures.push({
+          id: frequencyRow
+            ? `gtfs-trip-${slug(item.trip.trip_id)}-freq-${frequencyIndex}-${absoluteStart}`
+            : `gtfs-trip-${slug(item.trip.trip_id)}`,
+          timetableId: routeId,
+          departureTime: timeFromAbsoluteMinutes(absoluteStart),
+          arrivalTime: timeFromAbsoluteMinutes(shiftedArrival),
+          departureDayOffset: Math.floor(absoluteStart / 1440),
+          // GTFS trip_headsign describes a destination sign, not a unique physical bus.
+          tripId: safeText(item.trip.trip_id, 100),
+          stopTimes: shiftedStopTimes,
+          operatingDays: days,
+          serviceId,
+          serviceStartDate: validDate(calendar?.start_date) ? calendar!.start_date : undefined,
+          serviceEndDate: validDate(calendar?.end_date) ? calendar!.end_date : undefined,
+          addedServiceDates: exceptions.added,
+          removedServiceDates: exceptions.removed,
+          isFrequencyBased: !!frequencyRow,
+          exactTimes: frequencyRow ? exactTimes : undefined,
+          headwaySeconds,
+          confidenceScore: frequencyRow && !exactTimes ? 55 : 75,
+          isCancelled: false,
+        });
+      };
+
+      if (frequencyRows.length) {
+        frequencyRows.forEach((frequencyRow, frequencyIndex) => {
+          const start = parseGtfsTime(frequencyRow.start_time || '');
+          const end = parseGtfsTime(frequencyRow.end_time || '');
+          const headwaySeconds = Number(frequencyRow.headway_secs);
+          if (!start || !end || end.absoluteMinutes <= start.absoluteMinutes ||
+              !Number.isInteger(headwaySeconds) || headwaySeconds < 60 || headwaySeconds > 7200 ||
+              !['0', '1', ''].includes(frequencyRow.exact_times || '')) {
+            warnings.push(`Ignored invalid GTFS frequency window for trip ${safeText(item.trip.trip_id, 80)}.`);
+            return;
+          }
+          routeHeadways.push(headwaySeconds);
+          const stepMinutes = headwaySeconds / 60;
+          let generated = 0;
+          for (let minute = start.absoluteMinutes; minute < end.absoluteMinutes && generated < 500; minute += stepMinutes) {
+            addTripDeparture(Math.round(minute), frequencyRow, frequencyIndex);
+            generated++;
+          }
+          if (generated >= 500) warnings.push(`Frequency window for trip ${safeText(item.trip.trip_id, 80)} was capped at 500 departures.`);
+        });
+      } else {
+        addTripDeparture(firstTime.absoluteMinutes);
+      }
     }
     if (!departures.length) { warnings.push(`Route ${sourceRouteId} has no valid trips and was skipped.`); continue; }
     const routeCalendar = items.map(item => calendarByService.get(item.trip.service_id)).filter(Boolean) as CsvRow[];
@@ -333,6 +381,7 @@ export function importGtfsZip(base64: string, now = new Date()): GtfsImportResul
       firstDepartureTime: timeFromAbsoluteMinutes(firstDepartureMinute),
       lastDepartureTime: timeFromAbsoluteMinutes(lastDepartureMinute),
       departures: departures.sort((a, b) => departureMinute(a) - departureMinute(b)),
+      frequencyMinutes: routeHeadways.length && new Set(routeHeadways).size === 1 ? Math.max(1, Math.round(routeHeadways[0] / 60)) : undefined,
       stops: routeStops,
       geometry: geometry && geometry.length >= 2 ? geometry : undefined,
       verificationStatus: 'UNVERIFIED',
