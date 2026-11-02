@@ -231,6 +231,20 @@ export const api = {
     return data;
   },
 
+  async getAdminHealth(token: string) {
+    const res = await fetch(`${API_BASE}/admin/health`, { headers: { Authorization: `Bearer ${token}` } });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.message || data.error || 'Unable to load system health');
+    return data;
+  },
+
+  async getAdminAuditLogs(token: string, limit = 20) {
+    const res = await fetch(`${API_BASE}/admin/audit-logs?limit=${encodeURIComponent(String(limit))}`, { headers: { Authorization: `Bearer ${token}` } });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.message || data.error || 'Unable to load audit logs');
+    return data;
+  },
+
   async getAdminSubmissions(token: string, status?: string, category?: 'PUBLIC' | 'OPERATOR') {
     const params = new URLSearchParams();
     if (status) params.set('status', status);
