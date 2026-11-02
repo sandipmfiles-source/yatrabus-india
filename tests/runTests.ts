@@ -18,6 +18,7 @@ import { runTrackingSessionTests } from './unit/trackingSession.test.js';
 import { runGtfsImporterTests } from './unit/gtfsImporter.test.js';
 import { runJourneyPlannerTests } from './unit/journeyPlanner.test.js';
 import { runTrajectoryMatcherTests } from './unit/trajectoryMatcher.test.js';
+import { runTimetableEngineTests } from './unit/timetableEngine.test.js';
 
 let totalTests = 0;
 let passedTests = 0;
