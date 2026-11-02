@@ -102,7 +102,7 @@ export function rankTrajectoryCandidates(
     const distances = [...entry.distances].sort((a, b) => a - b);
     candidates.push({
       busId, busLabel: entry.bus.publicIdentifier, routeId: route.id, routeName: route.routeName,
-      score: Math.round(median + Math.min(12, (entry.scores.length - 1) * 4)),
+      score: Math.min(100, Math.round(median + Math.min(12, (entry.scores.length - 1) * 4))),
       supportingSamples: entry.scores.length,
       medianRouteDistanceMeters: distances[Math.floor(distances.length / 2)],
       evidence: [...entry.evidence, 'Multiple time-separated samples follow a plausible route trajectory'],
