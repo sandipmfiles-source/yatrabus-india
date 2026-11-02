@@ -44,7 +44,7 @@ function localDateAtMidnightUtc(year: number, month: number, day: number): numbe
 }
 
 function validClock(value: string): number | undefined {
-  const match = /^(\\d{1,3}):([0-5]\\d)(?::([0-5]\\d))?$/.exec(value);
+  const match = /^(\d{1,3}):([0-5]\d)(?::([0-5]\d))?$/.exec(value);
   if (!match) return undefined;
   const hours = Number(match[1]), minutes = Number(match[2]);
   if (hours > 47) return undefined;
