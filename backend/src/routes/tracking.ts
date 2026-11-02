@@ -118,7 +118,14 @@ trackingRouter.post('/session/start', trackingSessionLimiter, (req: Request, res
 
   const sessionId = `sess-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
   const now = new Date();
-  const maxExpiry = new Date(now.getTime() + CONFIG.MAX_JOURNEY_SESSION_HOURS * 3600 * 1000);
+  const sessionRule = repository.getAutomationRuleByCode('SESSION_SAFETY_EXPIRY');
+  const configuredSessionHours = Number(sessionRule?.parameters?.maxJourneySessionHours);
+  // The safety cap can be shortened by the owner, but never extended beyond
+  // the hard 12-hour platform limit, even if a stored rule is misconfigured.
+  const sessionHours = sessionRule?.isEnabled && Number.isFinite(configuredSessionHours)
+    ? Math.max(1, Math.min(CONFIG.MAX_JOURNEY_SESSION_HOURS, configuredSessionHours))
+    : CONFIG.MAX_JOURNEY_SESSION_HOURS;
+  const maxExpiry = new Date(now.getTime() + sessionHours * 3600 * 1000);
 
   const session = repository.createJourneySession({
     sessionId,
@@ -460,7 +467,19 @@ trackingRouter.get('/bus/:id/location', (req: Request, res: Response) => {
   const loc = repository.getBusLocation(busId);
 
   if (loc?.lastObservedAt) {
-    const freshness = evaluateObservationFreshness(loc.lastObservedAt);
+    const freshnessRule = repository.getAutomationRuleByCode('GPS_FRESHNESS_MONITOR');
+    const liveSeconds = freshnessRule?.isEnabled
+      ? Math.max(30, Math.min(300, Number(freshnessRule.parameters?.gpsFreshnessLiveSeconds) || CONFIG.GPS_FRESHNESS_LIVE_SECONDS))
+      : CONFIG.GPS_FRESHNESS_LIVE_SECONDS;
+    const staleSeconds = freshnessRule?.isEnabled
+      ? Math.max(liveSeconds, Math.min(1800, Number(freshnessRule.parameters?.gpsFreshnessStaleSeconds) || CONFIG.GPS_FRESHNESS_STALE_SECONDS))
+      : CONFIG.GPS_FRESHNESS_STALE_SECONDS;
+    const freshness = evaluateObservationFreshness(
+      loc.lastObservedAt,
+      new Date().toISOString(),
+      liveSeconds,
+      staleSeconds
+    );
     if (loc.displayState === 'LIVE' && freshness.displayState !== 'LIVE') {
       loc.displayState = freshness.displayState;
       loc.isLive = false;
