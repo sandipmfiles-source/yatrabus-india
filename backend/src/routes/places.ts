@@ -77,25 +77,31 @@ const lgdCatalogue = (() => {
         sourceUrl: row.sourceUrl || metadata.sourceUrl, sourceLicense: row.sourceLicense || metadata.sourceLicense,
         latitude: row.latitude, longitude: row.longitude,
       }));
+  const merged = new Map<string, any>();
+  const addRows = (payload: any) => {
+    const rows = Array.isArray(payload?.places) ? normaliseRows(payload.places, payload) : [];
+    for (const row of rows) {
+      if (!row.id) continue;
+      const existing = merged.get(row.id);
+      // Prefer the newest dated source snapshot for the same LGD code.
+      if (!existing || String(row.snapshotDate || '') >= String(existing.snapshotDate || '')) merged.set(row.id, row);
+    }
+  };
   try {
     const directory = fileURLToPath(new URL('../../../data/lgd-index/', import.meta.url));
     const files = readdirSync(directory).filter(name => name.toLowerCase().endsWith('.json'));
-    const rows = files.flatMap(name => {
-      const payload = JSON.parse(readFileSync(resolve(directory, name), 'utf8'));
-      return Array.isArray(payload?.places) ? normaliseRows(payload.places, payload) : [];
-    });
-    if (rows.length) return rows;
+    for (const name of files) addRows(JSON.parse(readFileSync(resolve(directory, name), 'utf8')));
   } catch {
-    // Fall back to the older compressed index if a deployment has not packaged the split index.
+    // The compact split index is optional when a deployment uses only the compressed snapshot.
   }
   try {
     const file = new URL('../../../data/india-lgd-directory.json.gz', import.meta.url);
-    const payload = JSON.parse(gunzipSync(readFileSync(file)).toString('utf8'));
-    return Array.isArray(payload?.places) ? normaliseRows(payload.places, payload) : [];
+    addRows(JSON.parse(gunzipSync(readFileSync(file)).toString('utf8')));
   } catch {
-    return [];
+    // A deployment without the optional gzip snapshot still uses any available split indexes.
   }
-})();
+  return Array.from(merged.values());
+})();;
 
 async function fetchLgdDirectorySuggestions(query: string) {
   const key = query.toLocaleLowerCase('en-IN');
