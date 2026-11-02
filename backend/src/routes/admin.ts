@@ -178,6 +178,9 @@ adminRouter.post('/submissions/:id/review', requireAdminAuth('SUPER_ADMIN'), (re
         distanceFromStartKm: Number(distanceFromStartKm.toFixed(2)),
         scheduledArrivalTime: validTime(stop.arrivalTime) ? stop.arrivalTime : undefined,
         scheduledDepartureTime: validTime(stop.departureTime) ? stop.departureTime : undefined,
+        scheduleSourceName: verifyTimetable === true ? 'Super Admin-reviewed community submission' : undefined,
+        scheduleSourceUrl: verifyTimetable === true ? evidenceUrl : undefined,
+        scheduleVerifiedAt: verifyTimetable === true ? new Date().toISOString() : undefined,
       };
     });
     repository.addRoute({
@@ -289,6 +292,9 @@ adminRouter.post('/submissions/:id/review', requireAdminAuth('SUPER_ADMIN'), (re
         distanceFromStartKm: Number(distanceFromStartKm.toFixed(2)),
         scheduledArrivalTime: validTime(stop.arrivalTime) ? stop.arrivalTime : undefined,
         scheduledDepartureTime: validTime(stop.departureTime) ? stop.departureTime : undefined,
+        scheduleSourceName: verifyTimetable === true ? 'Super Admin-reviewed community submission' : undefined,
+        scheduleSourceUrl: verifyTimetable === true ? evidenceUrl : undefined,
+        scheduleVerifiedAt: verifyTimetable === true ? new Date().toISOString() : undefined,
       };
     });
     const route: Route = {
@@ -337,7 +343,14 @@ adminRouter.post('/submissions/:id/review', requireAdminAuth('SUPER_ADMIN'), (re
     const updatedRoute: Route = {
       ...route,
       stops: route.stops.map(stop => (stop.id === data.stopId || stop.stopId === data.stopId)
-        ? { ...stop, [field]: data.value }
+        ? {
+            ...stop, [field]: data.value,
+            ...(verifyTimetable === true ? {
+              scheduleSourceName: 'Super Admin-reviewed community submission',
+              scheduleSourceUrl: evidenceUrl,
+              scheduleVerifiedAt: new Date().toISOString(),
+            } : {}),
+          }
         : stop),
       updatedAt: new Date().toISOString(),
     };
