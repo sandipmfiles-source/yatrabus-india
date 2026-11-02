@@ -14,6 +14,7 @@ interface BusCardProps {
 export const BusCard: React.FC<BusCardProps> = ({ journey }) => {
   const { t } = useLanguage();
   const { route, isDirect, transfers, departureTime, arrivalTime, durationMinutes, boardingStop, alightingStop, locationStatus, serviceStatus } = journey;
+  const timetableUnavailable = route.timetableDataStatus === 'UNAVAILABLE';
 
   return (
     <div className="bg-white rounded-2xl border border-yatriwarm-200 shadow-card hover:shadow-elevated hover:border-yatribrand-300 transition-all overflow-hidden flex flex-col justify-between">
@@ -53,7 +54,7 @@ export const BusCard: React.FC<BusCardProps> = ({ journey }) => {
         <div className="bg-yatriwarm-50/80 rounded-xl p-3 border border-yatriwarm-200/60 my-3">
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-base font-bold text-yatriwarm-900">{departureTime}</div>
+              <div className="text-base font-bold text-yatriwarm-900">{timetableUnavailable ? '—' : departureTime}</div>
               <div className="text-[11px] text-yatriwarm-500 font-medium flex items-center gap-1 mt-0.5">
                 <BusFront className="w-4 h-4 text-yatribrand-700 shrink-0" />
                 <span className="line-clamp-1">{boardingStop.stopName}</span>
@@ -63,7 +64,7 @@ export const BusCard: React.FC<BusCardProps> = ({ journey }) => {
             <div className="flex flex-col items-center px-3">
               <span className="text-[10px] font-medium text-yatriwarm-500 flex items-center gap-1">
                 <Clock className="w-3 h-3" />
-                {durationMinutes} min
+                {timetableUnavailable ? 'Duration unavailable' : `${durationMinutes} min`}
               </span>
               <div className="w-20 sm:w-28 h-0.5 bg-yatriwarm-300 relative my-1">
                 <div className="absolute w-2 h-2 rounded-full bg-yatribrand-700 -top-[3px] left-0"></div>
@@ -75,7 +76,7 @@ export const BusCard: React.FC<BusCardProps> = ({ journey }) => {
             </div>
 
             <div className="text-right">
-              <div className="text-base font-bold text-yatriwarm-900">{arrivalTime}{journey.arrivalNextDay ? <span className="ml-1 text-[9px] font-medium text-yatriwarm-500">Next day</span> : null}</div>
+              <div className="text-base font-bold text-yatriwarm-900">{timetableUnavailable ? '—' : arrivalTime}{!timetableUnavailable && journey.arrivalNextDay ? <span className="ml-1 text-[9px] font-medium text-yatriwarm-500">Next day</span> : null}</div>
               <div className="text-[11px] text-yatriwarm-500 font-medium flex items-center justify-end gap-1 mt-0.5">
                 <span className="line-clamp-1">{alightingStop.stopName}</span>
                 <BusFront className="w-4 h-4 text-emerald-600 shrink-0" />
@@ -84,7 +85,7 @@ export const BusCard: React.FC<BusCardProps> = ({ journey }) => {
           </div>
 
           <div className="mt-3 text-[10px] text-yatriwarm-500">
-            {t('service_hours')}: {route.firstDepartureTime}–{route.lastDepartureTime}
+            {timetableUnavailable ? 'Timetable unavailable — sample times are not shown' : `${t('service_hours')}: ${route.firstDepartureTime}–${route.lastDepartureTime}`}
           </div>
           {journey.timetableDepartures && journey.timetableDepartures.length > 0 && (
             <div className="mt-3 pt-3 border-t border-yatriwarm-200">
