@@ -21,7 +21,7 @@ const labels = {
 
 export const IndiaDirectoryPage: React.FC = () => {
   const { language } = useLanguage();
-  const t = labels[language] || labels.en;
+  const t = labels[language as keyof typeof labels] || labels.en;
   const [catalogue, setCatalogue] = useState<Catalogue | null>(null);
   const [query, setQuery] = useState('');
   const [error, setError] = useState('');
