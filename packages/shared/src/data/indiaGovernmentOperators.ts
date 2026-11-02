@@ -22,6 +22,10 @@ function operator(id: string, name: string, shortCode: string, serviceArea: stri
 }
 
 export const INDIA_GOVERNMENT_OPERATORS: Operator[] = [
+  operator('op-an-sts', 'Andaman and Nicobar Islands State Transport Service', 'ANSTS', 'Andaman and Nicobar Islands', 'https://andaman.gov.in/'),
+  operator('op-mizoram-st', 'Mizoram State Transport', 'MST', 'Mizoram', 'https://mizoram.gov.in/'),
+  operator('op-nagaland-st', 'Nagaland State Transport', 'NST', 'Nagaland', 'https://nagaland.gov.in/'),
+  operator('op-punjab-roadways', 'Punjab Roadways', 'PR', 'Punjab', 'https://punjabroadways.punjab.gov.in/'),
   operator('op-apsrtc', 'Andhra Pradesh State Road Transport Corporation', 'APSRTC', 'Andhra Pradesh', 'https://apsrtc.ap.gov.in/'),
   operator('op-apsts', 'Arunachal Pradesh State Transport Services', 'APSTS', 'Arunachal Pradesh', 'https://arunachalpradesh.gov.in/'),
   operator('op-astc', 'Assam State Transport Corporation', 'ASTC', 'Assam', 'https://astc.assam.gov.in/'),
@@ -42,7 +46,7 @@ export const INDIA_GOVERNMENT_OPERATORS: Operator[] = [
   operator('op-osrtc', 'Odisha State Road Transport Corporation', 'OSRTC', 'Odisha', 'https://osrtc.in/'),
   operator('op-punbus', 'Punjab State Bus Stand Management Company (PUNBUS)', 'PUNBUS', 'Punjab', 'https://punbusonline.com/'),
   operator('op-pepsu', 'PEPSU Road Transport Corporation', 'PRTC', 'Patiala and adjoining Punjab region', 'https://pepsuonline.com/'),
-  operator('op-rsrtc', 'Rajasthan State Road Transport Corporation', 'RSRTC', 'Rajasthan', 'https://rsrtconline.rajasthan.gov.in/'),
+  operator('op-rsrtc', 'Rajasthan State Road Transport Corporation', 'RSRTC', 'Rajasthan', 'https://transport.rajasthan.gov.in/content/transportportal/en/RSRTC.html'),
   operator('op-sikkim-nt', 'Sikkim Nationalised Transport', 'SNT', 'Sikkim', 'https://sikkim.gov.in/'),
   operator('op-setc', 'State Express Transport Corporation Tamil Nadu', 'SETC', 'Tamil Nadu intercity', 'https://www.tnstc.in/'),
   operator('op-tnstc', 'Tamil Nadu State Transport Corporation', 'TNSTC', 'Tamil Nadu', 'https://www.tnstc.in/'),
@@ -52,7 +56,7 @@ export const INDIA_GOVERNMENT_OPERATORS: Operator[] = [
   operator('op-upsrtc', 'Uttar Pradesh State Road Transport Corporation', 'UPSRTC', 'Uttar Pradesh', 'https://www.upsrtconline.co.in/'),
   operator('op-utc', 'Uttarakhand Transport Corporation', 'UTC', 'Uttarakhand', 'https://utc.uk.gov.in/'),
   operator('op-dtc', 'Delhi Transport Corporation', 'DTC', 'Delhi', 'https://dtc.delhi.gov.in/'),
-  operator('op-ctu', 'Chandigarh Transport Undertaking', 'CTU', 'Chandigarh', 'https://chdctu.gov.in/'),
+  operator('op-ctu', 'Chandigarh Transport Undertaking', 'CTU', 'Chandigarh', 'https://www.chdctu.gov.in/'),
   operator('op-prtc-puducherry', 'Puducherry Road Transport Corporation', 'PRTC', 'Puducherry', 'https://prtc.in/'),
   operator('op-wbtc', 'West Bengal Transport Corporation', 'WBTC', 'Kolkata and suburban West Bengal', 'https://wbtconline.in/'),
   operator('op-sbstc', 'South Bengal State Transport Corporation', 'SBSTC', 'South and South-Western West Bengal', 'https://sbstc.co.in/'),
