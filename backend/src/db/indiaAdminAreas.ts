@@ -1,72 +1,76 @@
-import { Place } from '../../../packages/shared/src/types/places.js';
+import type { Place } from '../../../packages/shared/src/types/places.js';
+import { INDIA_ADMINISTRATIVE_UNITS } from '../../../packages/shared/src/data/indiaCatalogue.js';
 
-const now = '2026-10-30T00:00:00.000Z';
-const areas: Array<{ state: Place['state']; capital: string; aliases?: string[] }> = [
-  { state: 'Andhra Pradesh', capital: 'Amaravati', aliases: ['Vijayawada'] },
-  { state: 'Arunachal Pradesh', capital: 'Itanagar' },
-  { state: 'Assam', capital: 'Dispur', aliases: ['Guwahati'] },
-  { state: 'Bihar', capital: 'Patna' },
-  { state: 'Chhattisgarh', capital: 'Raipur' },
-  { state: 'Goa', capital: 'Panaji', aliases: ['Panjim'] },
-  { state: 'Gujarat', capital: 'Gandhinagar', aliases: ['Ahmedabad'] },
-  { state: 'Haryana', capital: 'Chandigarh' },
-  { state: 'Himachal Pradesh', capital: 'Shimla', aliases: ['Dharamshala'] },
-  { state: 'Jharkhand', capital: 'Ranchi' },
-  { state: 'Karnataka', capital: 'Bengaluru', aliases: ['Bangalore'] },
-  { state: 'Kerala', capital: 'Thiruvananthapuram', aliases: ['Trivandrum'] },
-  { state: 'Madhya Pradesh', capital: 'Bhopal' },
-  { state: 'Maharashtra', capital: 'Mumbai' },
-  { state: 'Manipur', capital: 'Imphal' },
-  { state: 'Meghalaya', capital: 'Shillong' },
-  { state: 'Mizoram', capital: 'Aizawl' },
-  { state: 'Nagaland', capital: 'Kohima' },
-  { state: 'Odisha', capital: 'Bhubaneswar' },
-  { state: 'Punjab', capital: 'Chandigarh' },
-  { state: 'Rajasthan', capital: 'Jaipur' },
-  { state: 'Sikkim', capital: 'Gangtok' },
-  { state: 'Tamil Nadu', capital: 'Chennai' },
-  { state: 'Telangana', capital: 'Hyderabad' },
-  { state: 'Tripura', capital: 'Agartala' },
-  { state: 'Uttar Pradesh', capital: 'Lucknow' },
-  { state: 'Uttarakhand', capital: 'Dehradun', aliases: ['Gairsain'] },
-  { state: 'West Bengal', capital: 'Kolkata', aliases: ['Calcutta'] },
-  { state: 'Delhi', capital: 'New Delhi', aliases: ['National Capital Territory of Delhi'] },
-  { state: 'Jammu and Kashmir', capital: 'Srinagar', aliases: ['Jammu'] },
-  { state: 'Ladakh', capital: 'Leh', aliases: ['Kargil'] },
-  { state: 'Chandigarh', capital: 'Chandigarh' },
-  { state: 'Puducherry', capital: 'Puducherry', aliases: ['Pondicherry'] },
-  { state: 'Dadra and Nagar Haveli and Daman and Diu', capital: 'Daman', aliases: ['Silvassa'] },
-  { state: 'Andaman and Nicobar Islands', capital: 'Sri Vijaya Puram', aliases: ['Port Blair'] },
-  { state: 'Lakshadweep', capital: 'Kavaratti' },
-];
+const catalogueDate = '2026-11-03';
 
-export const INDIA_ADMIN_AREA_PLACES: Place[] = areas.flatMap((area, index) => {
-  const state = area.state!;
+const administrativePlaces: Place[] = INDIA_ADMINISTRATIVE_UNITS.flatMap((unit, index) => {
   const statePlace: Place = {
-    id: 'india-state-' + index,
-    canonicalName: state,
-    names: { en: state },
-    placeType: 'STATE',
-    state,
-    sourceDataset: 'YATRIBUS_INDIA_ADMIN_INDEX',
-    sourceLicense: 'YatriBus reference data',
+    id: 'india-admin-' + unit.kind.toLowerCase() + '-' + index,
+    canonicalName: unit.name,
+    names: { en: unit.name },
+    placeType: unit.kind === 'STATE' ? 'STATE' : 'STATE',
+    state: unit.name,
+    sourceDataset: 'INDIA_ADMINISTRATIVE_REFERENCE_CATALOGUE',
+    sourceLicense: 'Government public administrative reference; source link retained per record',
+    sourceUrl: unit.officialReference,
+    sourceVerifiedAt: unit.lastReviewedAt,
     verificationStatus: 'UNVERIFIED',
     aliases: [],
-    createdAt: now,
-    updatedAt: now,
+    createdAt: catalogueDate + 'T00:00:00.000Z',
+    updatedAt: catalogueDate + 'T00:00:00.000Z',
   };
-  const cityPlace: Place = {
-    id: 'india-capital-' + index,
-    canonicalName: area.capital,
-    names: { en: area.capital },
+  const capitalPlace: Place = {
+    id: 'india-admin-capital-' + index,
+    canonicalName: unit.capital,
+    names: { en: unit.capital },
     placeType: 'CITY',
-    state,
-    sourceDataset: 'YATRIBUS_INDIA_ADMIN_INDEX',
-    sourceLicense: 'YatriBus reference data',
+    state: unit.name,
+    sourceDataset: 'INDIA_ADMINISTRATIVE_REFERENCE_CATALOGUE',
+    sourceLicense: 'Government public administrative reference; source link retained per record',
+    sourceUrl: unit.officialReference,
+    sourceVerifiedAt: unit.lastReviewedAt,
     verificationStatus: 'UNVERIFIED',
-    aliases: area.aliases || [],
-    createdAt: now,
-    updatedAt: now,
+    aliases: unit.aliases,
+    createdAt: catalogueDate + 'T00:00:00.000Z',
+    updatedAt: catalogueDate + 'T00:00:00.000Z',
   };
-  return [statePlace, cityPlace];
+  return [statePlace, capitalPlace];
 });
+
+/**
+ * Pilot town names are searchable but deliberately carry no fabricated coordinates,
+ * bus-stop IDs or timetable claims. They are queued for LGD/municipal source reconciliation.
+ */
+const westBengalPilotTowns: Array<{ name: string; district: string; aliases?: string[] }> = [
+  { name: 'Jhargram', district: 'Jhargram', aliases: ['ঝাড়গ্রাম', 'Jhargram Town'] },
+  { name: 'Kharagpur', district: 'Paschim Medinipur', aliases: ['খড়গপুর', 'KGP'] },
+  { name: 'Midnapore', district: 'Paschim Medinipur', aliases: ['Medinipur', 'মেদিনীপুর'] },
+  { name: 'Salboni', district: 'Paschim Medinipur', aliases: ['শালবনি'] },
+  { name: 'Debra', district: 'Paschim Medinipur', aliases: ['দেবরা'] },
+  { name: 'Panskura', district: 'Purba Medinipur', aliases: ['পাঁশকুড়া'] },
+  { name: 'Kolaghat', district: 'Purba Medinipur', aliases: ['কোলাঘাট'] },
+  { name: 'Uluberia', district: 'Howrah', aliases: ['উলুবেড়িয়া'] },
+  { name: 'Howrah', district: 'Howrah', aliases: ['হাওড়া'] },
+  { name: 'Kolkata', district: 'Kolkata', aliases: ['Calcutta', 'কলকাতা'] },
+  { name: 'Santragachi', district: 'Howrah', aliases: ['সাঁতরাগাছি'] },
+  { name: 'Lodhasuli', district: 'Jhargram', aliases: ['লোধাশুলি'] },
+  { name: 'Gopiballavpur', district: 'Jhargram', aliases: ['গোপীবল্লভপুর'] },
+  { name: 'Belpahari', district: 'Jhargram', aliases: ['বেলপাহাড়ি'] },
+];
+
+const pilotTownPlaces: Place[] = westBengalPilotTowns.map((town, index) => ({
+  id: 'wb-pilot-town-' + index,
+  canonicalName: town.name,
+  names: { en: town.name, bn: town.aliases?.find(alias => /[\u0980-\u09FF]/.test(alias)) },
+  placeType: 'TOWN',
+  district: town.district,
+  state: 'West Bengal',
+  sourceDataset: 'YATRIBUS_WEST_BENGAL_PILOT_TOWN_INDEX',
+  sourceLicense: 'YatriBus community reference index; reconcile against official LGD before verification',
+  verificationStatus: 'UNVERIFIED',
+  aliases: town.aliases || [],
+  createdAt: catalogueDate + 'T00:00:00.000Z',
+  updatedAt: catalogueDate + 'T00:00:00.000Z',
+}));
+
+export const INDIA_ADMIN_AREA_PLACES: Place[] = [...administrativePlaces, ...pilotTownPlaces];
