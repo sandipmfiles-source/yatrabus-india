@@ -159,6 +159,7 @@ export interface JourneyCandidate {
   arrivalTime: string;
   departureDayOffset?: number;
   arrivalDayOffset?: number;
+  arrivalNextDay?: boolean;
   durationMinutes: number;
   boardingStop: RouteStop;
   alightingStop: RouteStop;
@@ -193,6 +194,9 @@ export interface JourneyLeg {
   arrivalTime: string;
   departureDayOffset?: number;
   arrivalDayOffset?: number;
+  departureTimeIso?: string;
+  arrivalTimeIso?: string;
+  arrivalNextDay?: boolean;
   busIdentifier?: string;
   serviceId?: string;
   durationMinutes: number;
