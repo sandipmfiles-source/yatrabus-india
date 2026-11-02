@@ -69,7 +69,7 @@ export function calculateStopETAs(
     const isPast = index < currentStopIndex;
     let scheduledMinutes = currentTotalMinutes;
     const scheduledValue = stop.scheduledArrivalTime || '';
-    const timeMatch = /^([01]\\d|2[0-3]):[0-5]\\d$/.exec(scheduledValue);
+    const timeMatch = /^([01]\d|2[0-3]):[0-5]\d$/.exec(scheduledValue);
     if (timeMatch) {
       const [hours, minutes] = scheduledValue.split(':').map(Number);
       scheduledMinutes = hours * 60 + minutes;
