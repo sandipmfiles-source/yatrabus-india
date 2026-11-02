@@ -60,6 +60,7 @@ export interface LocationObservation {
   accuracyMeters: number;
   speedKmh?: number;
   headingDegrees?: number;
+  locationSource?: 'GPS' | 'NETWORK';
   timestamp: string;
   distanceFromRouteMeters: number;
   isRouteMatched: boolean;
