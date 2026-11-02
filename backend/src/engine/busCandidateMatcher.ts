@@ -10,7 +10,7 @@ export interface BusCandidateScore {
   evidence: string[];
 }
 export interface BusCandidateResult {
-  status: 'VERIFIED_CANDIDATE' | 'AMBIGUOUS' | 'NO_MATCH';
+  status: 'LIKELY_CANDIDATE' | 'AMBIGUOUS' | 'NO_MATCH';
   selected?: BusCandidateScore;
   candidates: BusCandidateScore[];
   explanation: string;
@@ -100,6 +100,6 @@ export function rankBusCandidates(buses:Bus[], routes:Route[], input:BusCandidat
  if(!scores.length) return {status:'NO_MATCH',candidates:[],explanation:'No active scheduled bus has a route corridor compatible with this location and time.'};
  const first=scores[0], second=scores[1];
  // A single point can only produce a candidate, never final bus identity verification.
- if(first.score>=75&&(!second||first.score-second.score>=18)) return {status:'VERIFIED_CANDIDATE',selected:first,candidates:scores.slice(0,5),explanation:'Strong route/time candidate only. Confirm with a second independent time-separated movement sample before attaching passenger evidence to this bus.'};
+ if(first.score>=75&&(!second||first.score-second.score>=18)) return {status:'LIKELY_CANDIDATE',selected:first,candidates:scores.slice(0,5),explanation:'Likely route/time candidate only. A single location sample cannot prove bus identity; require a second independent, time-separated movement sample before attaching passenger evidence.'};
  return {status:'AMBIGUOUS',candidates:scores.slice(0,5),explanation:'Multiple buses or insufficient evidence. Do not assign this passenger to a bus yet; collect a second consented sample and compare movement over time.'};
 }
