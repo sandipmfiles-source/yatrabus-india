@@ -31,5 +31,5 @@ export function runIndiaCatalogueTests(assert: (description: string, pass: boole
   ));
   assert('Every administrative state/UT and capital has source provenance', INDIA_ADMIN_AREA_PLACES
     .filter(item => item.id.startsWith('india-admin-'))
-    .every(item => !!item.sourceUrl && !!item.sourceSnapshotDate && item.verificationStatus === 'UNVERIFIED'));
+    .every(item => !!item.sourceUrl && !!item.sourceCheckedAt && item.verificationStatus === 'UNVERIFIED'));
 }
