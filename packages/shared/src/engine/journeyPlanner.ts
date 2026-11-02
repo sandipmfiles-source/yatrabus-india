@@ -109,6 +109,8 @@ function materializeJourney(
     busIdentifier: firstService.busIdentifier,
     departureTime: firstService.departureTime,
     arrivalTime: finalService.arrivalTime,
+    departureDayOffset: firstService.departureDayOffset,
+    arrivalDayOffset: finalService.arrivalDayOffset,
     durationMinutes: Math.max(1, Math.round(
       (new Date(finalService.arrivalTimeIso).getTime() - new Date(firstService.departureTimeIso).getTime()) / 60000
     )),
