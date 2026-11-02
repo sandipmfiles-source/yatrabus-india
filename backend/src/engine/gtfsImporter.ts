@@ -198,7 +198,7 @@ export function importGtfsZip(base64: string, now = new Date()): GtfsImportResul
     }
     const id = `gtfs-operator-${slug(agencyId)}`;
     operatorById.set(agencyId, {
-      id, name, shortCode: safeText(agency.agency_phone, 24) || undefined,
+      id, name, shortCode: safeText(agencyId, 24) || undefined,
       operatorType: 'PRIVATE_FLEET', serviceArea: 'India',
       contactWebsite: safeText(agency.agency_url, 300),
       verificationStatus: 'COMMUNITY_LISTED', isClaimed: false,
@@ -294,7 +294,8 @@ export function importGtfsZip(base64: string, now = new Date()): GtfsImportResul
         id: `gtfs-trip-${slug(item.trip.trip_id)}`, timetableId: routeId,
         departureTime: firstTime.time, arrivalTime: lastTime.time,
         departureDayOffset: firstTime.dayOffset,
-        busIdentifier: safeText(item.trip.trip_headsign, 100) || undefined,
+        // GTFS trip_headsign describes a destination sign, not a unique physical bus.
+        tripId: safeText(item.trip.trip_id, 100),
         stopTimes: Array.from(stopTimeMap.values()),
         operatingDays: days,
         serviceId,
