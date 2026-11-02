@@ -2,9 +2,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { gzipSync } from 'node:zlib';
 
-// Build a compact State/district/subdistrict/block/town index from LGD CSV exports.
+// Build a compact State/district/subdistrict/block/town index from a mirror of official LGD CSV exports.
 const inputDir = process.argv[2] || '/tmp/lgd';
 const outputFile = process.argv[3] || 'backend/data/india-lgd-directory.json.gz';
+const snapshotDate = process.argv[4] || new Date().toISOString().slice(0, 10);
 
 function parseCsv(text) {
   const rows = [];
@@ -99,7 +100,7 @@ const payload = {
   source: 'Ministry of Panchayati Raj - Local Government Directory',
   sourceUrl: 'https://lgdirectory.gov.in/',
   sourceLicense: 'Government Open Data License - India (GODL-India)',
-  snapshotDate: '2026-10-21',
+  snapshotDate,
   importedAt: new Date().toISOString(),
   counts,
   places: compactPlaces,
