@@ -32,7 +32,7 @@ export function runIndiaCatalogueTests(assert: (description: string, pass: boole
   const pilotTerminals = INDIA_ADMIN_AREA_PLACES.filter(item => item.id.startsWith('wb-pilot-terminal-'));
   assert('West Bengal pilot includes source-linked official bus terminal references', pilotTerminals.length >= 12 && pilotTerminals.every(item =>
     item.placeType === 'BUS_TERMINAL' && item.sourceUrl?.includes('transport.wb.gov.in') &&
-    item.sourceSnapshotDate === '2017-03-03' && item.verificationStatus === 'UNVERIFIED'
+    item.sourceSnapshotDate === '2017-03-03' && item.sourceRecordId === undefined && item.verificationStatus === 'UNVERIFIED'
   ));
   assert('Historical terminal records do not invent coordinates', pilotTerminals.every(item => item.latitude === undefined && item.longitude === undefined));
   assert('Every administrative state/UT and capital has source provenance', INDIA_ADMIN_AREA_PLACES
