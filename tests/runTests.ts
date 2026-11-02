@@ -13,6 +13,7 @@ import { runRouteGraphTests } from './unit/routeGraph.test.js';
 import { runETACalculatorTests } from './unit/etaCalculator.test.js';
 import { runJourneyConfirmationTests } from './unit/journeyConfirmation.test.js';
 import { runTimetableVersioningTests } from './unit/timetableVersioning.test.js';
+import { runBusCandidateMatcherTests } from './unit/busCandidateMatcher.test.js';
 
 let totalTests = 0;
 let passedTests = 0;
@@ -62,6 +63,9 @@ runJourneyConfirmationTests(assert);
 
 console.log('\n10. Testing Timetable Versioning & Audit Traceability...');
 runTimetableVersioningTests(assert);
+
+console.log('\\n11. Testing Privacy-Safe Bus Candidate Matching & Ambiguity Handling...');
+runBusCandidateMatcherTests(assert);
 
 console.log('\n====================================================');
 console.log(`SUMMARY: ${passedTests}/${totalTests} Tests Passed (${failedTests} Failed)`);
