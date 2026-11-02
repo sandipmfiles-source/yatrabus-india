@@ -26,7 +26,7 @@ export interface Operator {
   id: string;
   name: string;
   shortCode?: string; // e.g. DTC, BEST, BMTC, KSRTC, MSRTC, WBTC
-  operatorType: 'GOVERNMENT_STATE' | 'MUNICIPAL' | 'PRIVATE_FLEET' | 'COMMUNITY_COOPERATIVE';
+  operatorType: 'GOVERNMENT_STATE' | 'MUNICIPAL' | 'PRIVATE_FLEET' | 'COMMUNITY_COOPERATIVE' | 'UNCLASSIFIED';
   serviceArea: string; // State or city
   contactPhone?: string; // Public helpline
   contactWebsite?: string;
