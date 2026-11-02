@@ -16,18 +16,27 @@ export function createServer() {
   repository.ensureSuperAdmin(CONFIG.ADMIN_EMAIL);
   const app = express();
 
-  // Basic security and parsing middleware
-  app.use(express.json({ limit: '1mb' }));
-  app.use(express.urlencoded({ extended: true }));
+  // Reduce avoidable information disclosure and browser-side attack surface.
+  app.disable('x-powered-by');
+  app.use((_req: Request, res: Response, next: NextFunction) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('Referrer-Policy', 'no-referrer');
+    res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=(self)');
+    next();
+  });
 
-  // CORS headers
+  // Bound request bodies to reduce memory-exhaustion risk from oversized payloads.
+  app.use(express.json({ limit: '1mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '1mb', parameterLimit: 100 }));
+
+  // Public read/search APIs are intentionally cross-origin accessible.
+  // Admin endpoints remain protected by the Super Admin bearer-token middleware.
   app.use((req: Request, res: Response, next: NextFunction) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
-    if (req.method === 'OPTIONS') {
-      return res.sendStatus(200);
-    }
+    if (req.method === 'OPTIONS') return res.sendStatus(204);
     next();
   });
 
@@ -71,14 +80,19 @@ export function createServer() {
     res.status(404).json({ error: 'Endpoint Not Found', path: req.path });
   });
 
-  // Global Error Handler
-  app.use((err: any, req: Request, res: Response, next: NextFunction) => {
-    // eslint-disable-next-line no-console
+  // Never send internal exception messages, file paths or stack details to clients.
+  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     console.error('Server error:', err);
-    res.status(500).json({
-      error: 'Internal Server Error',
-      message: err?.message || 'Unexpected backend exception',
-    });
+    const status = Number.isInteger(err?.status) && err.status >= 400 && err.status < 500
+      ? err.status
+      : 500;
+    if (status === 413) {
+      return res.status(413).json({ error: 'Request body is too large. Maximum allowed size is 1 MB.' });
+    }
+    if (status === 400) {
+      return res.status(400).json({ error: 'Invalid request body.' });
+    }
+    return res.status(500).json({ error: 'Internal Server Error' });
   });
 
   return app;
@@ -88,9 +102,7 @@ export const app = createServer();
 
 if (process.env.NODE_ENV !== 'test') {
   app.listen(CONFIG.PORT, () => {
-    // eslint-disable-next-line no-console
-    console.log(`🚌 YatriBus Backend API listening on port ${CONFIG.PORT}`);
-    // eslint-disable-next-line no-console
-    console.log(`📍 Environment: ${CONFIG.NODE_ENV} | Primary Market: India`);
+    console.log(`YatriBus Backend API listening on port ${CONFIG.PORT}`);
+    console.log(`Environment: ${CONFIG.NODE_ENV} | Primary Market: India`);
   });
 }
