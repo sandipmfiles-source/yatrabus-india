@@ -385,13 +385,19 @@ export const BusDetailPage: React.FC = () => {
                     }));
                     const winner = Object.entries(totals).sort((a, b) => b[1] - a[1])[0];
                     const useConsensus = !!winner && winner[1] >= 2;
+                    const hasVerifiedStopTime = !!stop.scheduleVerifiedAt && !!stop.scheduleSourceUrl;
                     return <>
                       <div className="text-xs font-bold text-yatriwarm-900">
-                        {useConsensus ? winner[0] : (route.timetableDataStatus === 'UNAVAILABLE' && eta?.calculationType !== 'OBSERVATION_BASED' ? '—' : (eta?.predictedTime || stop.scheduledArrivalTime || '—'))}
+                        {useConsensus ? winner[0] : eta?.calculationType === 'OBSERVATION_BASED' ? eta.predictedTime :
+                          hasVerifiedStopTime ? (stop.scheduledArrivalTime || stop.scheduledDepartureTime || '—') :
+                          route.timetableDataStatus === 'UNAVAILABLE' ? '—' : (eta?.predictedTime || stop.scheduledArrivalTime || '—')}
                       </div>
                       <div className="text-[10px] text-yatriwarm-500">
-                        {useConsensus ? `Community majority · ${winner[1]} votes` : eta?.calculationType === 'OBSERVATION_BASED' ? `Live ETA · ${eta.confidenceScore}% ${eta.confidenceCategory.toLowerCase()} confidence` : route.timetableDataStatus === 'UNAVAILABLE' ? 'No source-verified timetable' : `Timetable estimate · ${eta?.confidenceScore ?? 0}% confidence`}
+                        {useConsensus ? `Community majority · ${winner[1]} votes` : eta?.calculationType === 'OBSERVATION_BASED' ? `Live ETA · ${eta.confidenceScore}% ${eta.confidenceCategory.toLowerCase()} confidence` :
+                          hasVerifiedStopTime ? `Source-verified stop time · ${stop.scheduleVerifiedAt}` :
+                          route.timetableDataStatus === 'UNAVAILABLE' ? 'No source-verified timetable' : `Timetable estimate · ${eta?.confidenceScore ?? 0}% confidence`}
                       </div>
+                      {hasVerifiedStopTime && <a href={stop.scheduleSourceUrl} target="_blank" rel="noreferrer" className="text-[9px] text-yatribrand-800 underline">Open time source</a>}
                       {!useConsensus && eta?.confidenceNote && <div className="mt-0.5 text-[9px] text-yatriwarm-400">{eta.confidenceNote}</div>}
                     </>;
                   })()}
