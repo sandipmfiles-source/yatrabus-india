@@ -49,14 +49,15 @@ export const SearchResultsPage: React.FC = () => {
       .slice().sort((a, b) => ((a.departureDayOffset || 0) * 1440 + Number(a.departureTime.slice(0, 2)) * 60 + Number(a.departureTime.slice(3))) -
         ((b.departureDayOffset || 0) * 1440 + Number(b.departureTime.slice(0, 2)) * 60 + Number(b.departureTime.slice(3))));
     const exactTimes = (route.departureTimes || []).slice().sort();
-    const exactDepartures = departures.length > 0 || exactTimes.length > 0;
+    const verifiedExactDepartures = departures.filter(item => !item.isFrequencyBased || item.exactTimes === true);
+    const exactDepartures = verifiedExactDepartures.length > 0 || exactTimes.length > 0;
     const estimate = estimateDailyTripCount(route.firstDepartureTime, route.lastDepartureTime, route.frequencyMinutes);
     const dayCounts = (route.operatingDays || []).map(day =>
       verifiedExactDepartures.filter(item => !item.operatingDays?.length || item.operatingDays.includes(day)).length
     );
     const exactCount = exactDepartures
-      ? departures.length
-        ? (dayCounts.length ? { min: Math.min(...dayCounts), max: Math.max(...dayCounts) } : { min: departures.length, max: departures.length })
+      ? verifiedExactDepartures.length
+        ? (dayCounts.length ? { min: Math.min(...dayCounts), max: Math.max(...dayCounts) } : { min: verifiedExactDepartures.length, max: verifiedExactDepartures.length })
         : { min: exactTimes.length, max: exactTimes.length }
       : null;
     const countLabel = exactTimes.length
