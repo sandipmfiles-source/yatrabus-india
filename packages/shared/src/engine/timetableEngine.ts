@@ -56,7 +56,7 @@ function activeOnDate(departure: TimetableDeparture, serviceDate: string, weekda
   if (departure.addedServiceDates?.includes(serviceDate)) return true;
   if (departure.serviceStartDate && serviceDate < departure.serviceStartDate) return false;
   if (departure.serviceEndDate && serviceDate > departure.serviceEndDate) return false;
-  return departure.operatingDays.includes(weekday as any);
+  return Array.isArray(departure.operatingDays) && departure.operatingDays.includes(weekday as any);
 }
 
 function stopOffsetMinutes(
@@ -140,7 +140,7 @@ export function getUpcomingServiceDepartures(
       }
     } else {
       const first = validClock(route.firstDepartureTime), last = validClock(route.lastDepartureTime);
-      if (first !== undefined && last !== undefined && route.operatingDays.includes(weekday as any)) {
+      if (first !== undefined && last !== undefined && Array.isArray(route.operatingDays) && route.operatingDays.includes(weekday as any)) {
         const end = last < first ? last + 1440 : last;
         const frequency = route.frequencyMinutes && route.frequencyMinutes > 0 ? route.frequencyMinutes : undefined;
         const step = frequency || Math.max(1, end - first + 1);
