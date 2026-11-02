@@ -42,7 +42,9 @@ jobs:
             expected="${digest#sha256:}"
             echo "$expected  /tmp/$file" | sha256sum --check -
             7z e -y -o/tmp/lgd "/tmp/$file"
-            mv "/tmp/lgd/$file" "/tmp/lgd/$dataset.csv"
+            extracted="${file%.7z}"
+            test -s "/tmp/lgd/$extracted"
+            mv "/tmp/lgd/$extracted" "/tmp/lgd/$dataset.csv"
           done
           snapshot_iso=$(date -d "${snapshot:0:2} ${snapshot:2:3} ${snapshot:5:4}" +%F)
           echo "LGD_SNAPSHOT_DATE=$snapshot_iso" >> "$GITHUB_ENV"
