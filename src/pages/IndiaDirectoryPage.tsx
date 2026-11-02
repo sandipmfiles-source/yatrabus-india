@@ -100,7 +100,7 @@ export const IndiaDirectoryPage: React.FC = () => {
                 <div><div className="text-xs font-bold text-yatriwarm-900">{place.name}</div><div className="text-[10px] text-yatriwarm-500 mt-0.5">{place.address || place.level || 'India place reference'}</div>
                   <div className="text-[9px] text-yatriwarm-400 mt-1">{t.placeSource}: {place.sourceDataset || 'Place directory'}{place.sourceSnapshotDate ? ` · Snapshot ${place.sourceSnapshotDate}` : ''} · {place.verificationStatus || 'UNVERIFIED'}</div>
                 </div>
-                {place.sourceUrl && <a href={place.sourceUrl} target="_blank" rel="noreferrer" className="shrink-0 text-[10px] text-yatribrand-800 underline">Source</a>}
+                {place.sourceUrl && <a href={place.sourceUrl} target="_blank" rel="noreferrer" className="shrink-0 text-[10px] text-yatribrand-800 underline">{t.placeSource}</a>}
               </div>)}
             </div> : <p className="text-xs text-yatriwarm-500">{t.placeSearchEmpty}</p>}
         </section>
