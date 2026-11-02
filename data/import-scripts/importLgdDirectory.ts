@@ -60,15 +60,17 @@ export function convertLgdRows(rows: Row[], level: LgdLevel, snapshotDate: strin
   const places: any[] = [];
   for (const row of rows) {
     const code = value(row, 'lgdCode', 'villageCode', 'districtCode', 'subDistrictCode', 'blockCode', 'localBodyCode', 'stateCode', 'code', 'id');
-    const name = value(row, 'nameEnglish', 'stateNameEnglish', 'districtNameEnglish', 'subDistrictNameEnglish', 'villageNameEnglish', 'localBodyNameEnglish', 'name', 'villageName', 'districtName', 'subDistrictName', 'stateName');
+    const name = value(row, 'nameEnglish', 'stateNameEnglish', 'districtNameEnglish', 'subDistrictNameEnglish', 'villageNameEnglish', 'localBodyNameEnglish', 'name', 'villageName', 'districtName', 'subDistrictName', 'localBodyName', 'stateName');
     if (!code || !name) continue;
     const state = value(row, 'stateNameEnglish', 'stateName', 'state');
     const district = value(row, 'districtNameEnglish', 'districtName', 'district');
     const subdistrict = value(row, 'subDistrictNameEnglish', 'subdistrictName', 'subDistrictName', 'tehsilName');
-    const localName = value(row, 'nameLocal', 'localLanguageName', 'villageNameLocal', 'districtNameLocal');
+    const localName = value(row, 'nameLocal', 'localLanguageName', 'villageNameLocal', 'districtNameLocal', 'localBodyNameInLocal', 'stateNameLocal', 'subDistrictNameLocal');
     const latitude = Number(value(row, 'latitude', 'lat'));
     const longitude = Number(value(row, 'longitude', 'lon', 'lng'));
-    const type = level === 'TOWN' && /village|gram/i.test(value(row, 'localBodyType', 'category')) ? 'VILLAGE' : level;
+    const type: LgdLevel = level === 'STATE' && value(row, 'stateOrUT') === 'U'
+      ? 'UNION_TERRITORY'
+      : level === 'TOWN' && /village|gram/i.test(value(row, 'localBodyType', 'category')) ? 'VILLAGE' : level;
     places.push({
       id: recordId(type, code),
       canonicalName: name,
