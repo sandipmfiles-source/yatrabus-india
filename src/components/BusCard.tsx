@@ -53,7 +53,7 @@ export const BusCard: React.FC<BusCardProps> = ({ journey }) => {
         <div className="bg-yatriwarm-50/80 rounded-xl p-3 border border-yatriwarm-200/60 my-3">
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-base font-bold text-yatriwarm-900">{departureTime}{journey.departureDayOffset ? <span className="ml-1 text-[9px] font-medium text-yatriwarm-500">+{journey.departureDayOffset} day</span> : null}</div>
+              <div className="text-base font-bold text-yatriwarm-900">{departureTime}</div>
               <div className="text-[11px] text-yatriwarm-500 font-medium flex items-center gap-1 mt-0.5">
                 <BusFront className="w-4 h-4 text-yatribrand-700 shrink-0" />
                 <span className="line-clamp-1">{boardingStop.stopName}</span>
@@ -75,7 +75,7 @@ export const BusCard: React.FC<BusCardProps> = ({ journey }) => {
             </div>
 
             <div className="text-right">
-              <div className="text-base font-bold text-yatriwarm-900">{arrivalTime}{journey.arrivalDayOffset ? <span className="ml-1 text-[9px] font-medium text-yatriwarm-500">+{journey.arrivalDayOffset} day</span> : null}</div>
+              <div className="text-base font-bold text-yatriwarm-900">{arrivalTime}{journey.arrivalNextDay ? <span className="ml-1 text-[9px] font-medium text-yatriwarm-500">Next day</span> : null}</div>
               <div className="text-[11px] text-yatriwarm-500 font-medium flex items-center justify-end gap-1 mt-0.5">
                 <span className="line-clamp-1">{alightingStop.stopName}</span>
                 <BusFront className="w-4 h-4 text-emerald-600 shrink-0" />
@@ -140,7 +140,7 @@ export const BusCard: React.FC<BusCardProps> = ({ journey }) => {
                 <div key={leg.route.id + '-' + index} className="rounded-xl border border-purple-100 bg-purple-50/60 p-3">
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-[11px] font-bold text-purple-950">Bus {leg.route.routeNumber} · Leg {index + 1}</span>
-                    <span className="text-[10px] font-semibold tabular-nums text-purple-900">{leg.departureTime} → {leg.arrivalTime}</span>
+                    <span className="text-[10px] font-semibold tabular-nums text-purple-900">{leg.departureTime} → {leg.arrivalTime}{leg.arrivalNextDay ? ' (next day)' : ''}</span>
                   </div>
                   <div className="mt-1 text-[10px] text-purple-900">{leg.boardingStop.stopName} → {leg.alightingStop.stopName}</div>
                   {index < journey.legs!.length - 1 && (
