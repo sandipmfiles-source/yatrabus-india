@@ -579,6 +579,12 @@ adminRouter.put('/routes/:id', requireAdminAuth('SUPER_ADMIN'), (req: Request, r
     timetableSourceUrl,
     timetableDataStatus: confirmTimetableVerification ? 'SCHEDULED' : data.timetableDataStatus === 'UNAVAILABLE' ? 'UNAVAILABLE' : existing.timetableDataStatus,
     timetableVerifiedAt: confirmTimetableVerification ? now : data.timetableDataStatus === 'UNAVAILABLE' ? undefined : existing.timetableVerifiedAt,
+    departures: existing.departures?.map(departure => confirmTimetableVerification ? ({
+      ...departure, sourceName: timetableSource, sourceUrl: timetableSourceUrl,
+      sourceVerifiedAt: now, dataStatus: 'SCHEDULED' as const,
+    }) : data.timetableDataStatus === 'UNAVAILABLE' ? ({
+      ...departure, dataStatus: 'UNAVAILABLE' as const, sourceVerifiedAt: undefined,
+    }) : departure),
     verificationStatus: confirmTimetableVerification ? 'ADMIN_VERIFIED' : existing.verificationStatus,
     serviceStatus: confirmTimetableVerification ? 'SCHEDULE_UNVERIFIED' : existing.serviceStatus,
     stops,
