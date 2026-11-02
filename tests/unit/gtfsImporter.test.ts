@@ -1,4 +1,3 @@
-import { deflateRawSync } from 'node:zlib';
 import { importGtfsZip, parseGtfsCsv } from '../../backend/src/engine/gtfsImporter.js';
 
 function makeStoredZip(files: Record<string, string>): string {
@@ -30,23 +29,23 @@ function makeStoredZip(files: Record<string, string>): string {
 }
 
 export function runGtfsImporterTests(assert: (description: string, pass: boolean) => void) {
-  const csv = parseGtfsCsv('id,name,description\\r\\n1,"Stop, Main","A ""quoted"" place"\\r\\n');
+  const csv = parseGtfsCsv('id,name,description\r\n1,"Stop, Main","A ""quoted"" place"\r\n');
   assert('GTFS CSV parser handles quoted commas and escaped quotes', csv[0]?.name === 'Stop, Main' && csv[0]?.description === 'A "quoted" place');
 
   const zip = makeStoredZip({
-    'agency.txt': 'agency_id,agency_name,agency_url\\nwb,West Bengal Demo Transit,https://example.org\\n',
-    'routes.txt': 'route_id,agency_id,route_short_name,route_long_name\\nr1,wb,WB1,Kharagpur to Jhargram\\n',
-    'stops.txt': 'stop_id,stop_name,stop_lat,stop_lon\\na,Kharagpur,22.346,87.232\\nb,Jhargram,22.453,86.994\\n',
-    'trips.txt': 'route_id,service_id,trip_id,direction_id,shape_id\\nr1,weekday,t1,0,\\n',
-    'stop_times.txt': 'trip_id,arrival_time,departure_time,stop_id,stop_sequence\\nt1,23:50:00,23:50:00,a,1\\nt1,24:40:00,24:40:00,b,2\\n',
-    'calendar.txt': 'service_id,monday,tuesday,wednesday,thursday,friday,saturday,sunday,start_date,end_date\\nweekday,1,1,1,1,1,0,0,20261102,20261231\\n',
-    'calendar_dates.txt': 'service_id,date,exception_type\\nweekday,20261103,2\\n',
+    'agency.txt': 'agency_id,agency_name,agency_url\nwb,West Bengal Demo Transit,https://example.org\n',
+    'routes.txt': 'route_id,agency_id,route_short_name,route_long_name\nr1,wb,WB1,Kharagpur to Jhargram\n',
+    'stops.txt': 'stop_id,stop_name,stop_lat,stop_lon\na,Kharagpur,22.346,87.232\nb,Jhargram,22.453,86.994\n',
+    'trips.txt': 'route_id,service_id,trip_id,direction_id,shape_id\nr1,weekday,t1,0,\n',
+    'stop_times.txt': 'trip_id,arrival_time,departure_time,stop_id,stop_sequence\nt1,23:50:00,23:50:00,a,1\nt1,24:40:00,24:40:00,b,2\n',
+    'calendar.txt': 'service_id,monday,tuesday,wednesday,thursday,friday,saturday,sunday,start_date,end_date\nweekday,1,1,1,1,1,0,0,20261102,20261231\n',
+    'calendar_dates.txt': 'service_id,date,exception_type\nweekday,20261103,2\n',
   });
   const imported = importGtfsZip(zip, new Date('2026-11-02T00:00:00.000Z'));
   assert('GTFS ZIP imports a route, operator and trip', imported.errors.length === 0 && imported.routes.length === 1 && imported.operators.length === 1);
   assert('GTFS 24:40 trip arrival retains next-day offset', imported.routes[0]?.departures?.[0]?.arrivalTime === '00:40' && imported.routes[0]?.departures?.[0]?.stopTimes?.[1]?.arrivalDayOffset === 1);
   assert('GTFS service calendar and removed-date exception are retained', imported.routes[0]?.departures?.[0]?.operatingDays.includes('MON') === true && imported.routes[0]?.departures?.[0]?.removedServiceDates?.includes('20261103') === true);
   assert('Imported GTFS routes remain unverified until Super Admin review', imported.routes[0]?.verificationStatus === 'UNVERIFIED' && imported.routes[0]?.serviceStatus === 'SCHEDULE_UNVERIFIED');
-  const missing = importGtfsZip(makeStoredZip({ 'agency.txt': 'agency_name\\nDemo\\n' }));
+  const missing = importGtfsZip(makeStoredZip({ 'agency.txt': 'agency_name\nDemo\n' }));
   assert('Missing required GTFS files are reported without applying partial data', missing.errors.some(error => error.includes('Missing required GTFS file')));
 }
