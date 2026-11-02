@@ -37,7 +37,7 @@
 ## 🚀 Quick Start Guide
 
 ### Prerequisites
-- Node.js 20 or newer
+- Node.js 22 or newer
 - npm 9 or newer
 
 ### 1. Clone & Install Dependencies
