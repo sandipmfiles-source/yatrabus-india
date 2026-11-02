@@ -241,6 +241,7 @@ export const BusDetailPage: React.FC = () => {
         busId={activeBusId}
         routeId={route.id}
         routeNumber={route.routeNumber}
+        destinationStopId={route.destinationStopId}
       />}
 
       {/* Hero Visual Card with SVG Artwork */}
