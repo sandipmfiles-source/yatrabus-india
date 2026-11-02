@@ -33,7 +33,7 @@ Bus owners and passengers can submit information without Google sign-in or an ac
 
 ## 4. Important service boundaries
 
-- A successful APK build does not deploy the backend. The app must be configured with a reachable VITE_API_BASE_URL for shared submissions, admin review and live GPS to work across devices.
+- A successful APK build does not deploy the backend. Every Android APK must be rebuilt with `VITE_API_BASE_URL=https://YOUR-BACKEND-HOST.example/api`; the app runs from Capacitor's local WebView origin, so a relative `/api` URL will not reach your hosted server. For a browser web build served from the same origin as the API, relative `/api` can be used.
 - The current Express backend writes JSON state to its local filesystem. A host with ephemeral storage can lose data on restart. Do not launch community submissions on an ephemeral instance as if it were durable.
 - PostgreSQL migrations are present, but a database adapter and production migration runner still need to be connected before Neon/Supabase is a real production database.
 - Cloudflare Pages can host the static frontend, but the existing Express server cannot simply be uploaded as a Pages static site. Cloudflare Workers requires an API-runtime migration.
