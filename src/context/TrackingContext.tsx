@@ -74,6 +74,12 @@ export const TrackingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         speedKmh: Number.isFinite(location.speed) && location.speed !== null ? location.speed * 3.6 : undefined,
         headingDegrees: Number.isFinite(location.bearing) ? location.bearing : undefined,
       }).then(result => {
+        if (result?.journeyCompleted) {
+          storage.clearActiveSession();
+          setActiveSession(null);
+          setTrackingWarning('Destination reached. YatraBus has automatically stopped location sharing.');
+          return;
+        }
         if (result?.accepted) setObservationsCount(count => count + 1);
       });
     };
