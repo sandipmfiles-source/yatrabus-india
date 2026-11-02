@@ -114,10 +114,9 @@ export function getUpcomingServiceDepartures(
 
   for (let dayOffset = 0; dayOffset <= daysAhead; dayOffset++) {
     const date = new Date(startUtc + dayOffset * DAY_MS);
-    const year = Number(new Intl.DateTimeFormat('en', { timeZone: 'Asia/Kolkata', year: 'numeric' }).format(date));
-    const month = Number(new Intl.DateTimeFormat('en', { timeZone: 'Asia/Kolkata', month: '2-digit' }).format(date));
-    const day = Number(new Intl.DateTimeFormat('en', { timeZone: 'Asia/Kolkata', day: '2-digit' }).format(date));
-    const weekday = DAY_CODES[date.getUTCDay()];
+    const serviceParts = istParts(date);
+    const year = serviceParts.year, month = serviceParts.month, day = serviceParts.day;
+    const weekday = serviceParts.weekday;
     const serviceDate = dateKey(year, month, day);
     const midnight = startUtc + dayOffset * DAY_MS;
     const candidates: Array<{ departure?: TimetableDeparture; firstMinutes: number; duration: number; busIdentifier?: string; confidence: number }> = [];
