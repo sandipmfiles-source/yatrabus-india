@@ -352,6 +352,13 @@ export const api = {
     return data;
   },
 
+  async adminGetRoutes(token: string, query = '') {
+    const res = await fetch(`${getApiBase()}/admin/routes?q=${encodeURIComponent(query)}`, { headers: { Authorization: `Bearer ${token}` } });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.message || data.error || 'Unable to load route review queue');
+    return data;
+  },
+
   async adminUpdateRoute(token: string, id: string, route: Record<string, any>) {
     const res = await fetch(`${getApiBase()}/admin/routes/${encodeURIComponent(id)}`, {
       method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(route),
