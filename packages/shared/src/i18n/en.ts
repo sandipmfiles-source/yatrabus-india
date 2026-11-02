@@ -85,6 +85,7 @@ export const en = {
   arrival_short: 'Arr.',
 
   nav_find_buses: 'Find Buses',
+  nav_india_directory: 'India directory',
   nav_contribute: 'Contribute Info',
   nav_operator_portal: 'Operator Portal',
   nav_admin_title: 'Transit Verifier & Administrator Portal',
