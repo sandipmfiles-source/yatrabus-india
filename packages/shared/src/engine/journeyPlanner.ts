@@ -74,19 +74,28 @@ function enumeratePaths(
   return found;
 }
 
+function localServiceDate(iso: string): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).format(new Date(iso));
+}
+
 function materializeJourney(
   path: RouteLegPath[],
   firstService: ServiceDepartureInstance,
   services: ServiceDepartureInstance[],
 ): JourneyCandidate {
-  const legs: JourneyLeg[] = services.map(service => ({
-    route: path[services.indexOf(service)].route,
+  const legs: JourneyLeg[] = services.map((service, index) => ({
+    route: path[index].route,
     boardingStop: service.boardingStop,
     alightingStop: service.alightingStop,
     departureTime: service.departureTime,
     arrivalTime: service.arrivalTime,
     departureDayOffset: service.departureDayOffset,
     arrivalDayOffset: service.arrivalDayOffset,
+    departureTimeIso: service.departureTimeIso,
+    arrivalTimeIso: service.arrivalTimeIso,
+    arrivalNextDay: localServiceDate(service.arrivalTimeIso) !== localServiceDate(service.departureTimeIso),
     busIdentifier: service.busIdentifier,
     serviceId: service.serviceId,
     durationMinutes: service.durationMinutes,
@@ -111,6 +120,7 @@ function materializeJourney(
     arrivalTime: finalService.arrivalTime,
     departureDayOffset: firstService.departureDayOffset,
     arrivalDayOffset: finalService.arrivalDayOffset,
+    arrivalNextDay: localServiceDate(finalService.arrivalTimeIso) !== localServiceDate(firstService.departureTimeIso),
     durationMinutes: Math.max(1, Math.round(
       (new Date(finalService.arrivalTimeIso).getTime() - new Date(firstService.departureTimeIso).getTime()) / 60000
     )),
