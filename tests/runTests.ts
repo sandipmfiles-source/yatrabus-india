@@ -20,6 +20,7 @@ import { runJourneyPlannerTests } from './unit/journeyPlanner.test.js';
 import { runTrajectoryMatcherTests } from './unit/trajectoryMatcher.test.js';
 import { runTimetableEngineTests } from './unit/timetableEngine.test.js';
 import { runIndiaCatalogueTests } from './unit/indiaCatalogue.test.js';
+import { runLgdImporterTests } from './unit/lgdImporter.test.js';
 
 let totalTests = 0;
 let passedTests = 0;
@@ -88,7 +89,10 @@ runTrajectoryMatcherTests(assert);
 console.log('\\n16. Testing India States, UTs, Government Operators & Pilot Directory...');
 runIndiaCatalogueTests(assert);
 
-console.log('\\n17. Testing Source-Aware Timetable Availability...');
+console.log('\\n17. Testing LGD Administrative & Town Data Import...');
+runLgdImporterTests(assert);
+
+console.log('\\n18. Testing Source-Aware Timetable Availability...');
 runTimetableEngineTests(assert);
 
 console.log('\n====================================================');
