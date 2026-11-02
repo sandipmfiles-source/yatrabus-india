@@ -86,6 +86,8 @@ export interface Place {
   sourceUrl?: string;
   /** Date this record was last checked against its stated source (YYYY-MM-DD). */
   sourceVerifiedAt?: string;
+  /** Date the source page was checked for catalogue maintenance; not record verification. */
+  sourceCheckedAt?: string;
   /** Retrieval date of a source snapshot; distinct from record verification. */
   sourceSnapshotDate?: string;
   verificationStatus: 'UNVERIFIED' | 'COMMUNITY_VERIFIED' | 'ADMIN_VERIFIED';
