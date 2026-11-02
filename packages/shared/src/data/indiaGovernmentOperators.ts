@@ -12,7 +12,7 @@ function operator(id: string, name: string, shortCode: string, serviceArea: stri
   return {
     id, name, shortCode, serviceArea, operatorType: type,
     ...(website ? { contactWebsite: website, sourceUrl: website } : {}),
-    sourceVerifiedAt: reviewedAt,
+    sourceCheckedAt: reviewedAt,
     verificationStatus: 'COMMUNITY_LISTED',
     isClaimed: false,
     sourceDataset: source,
