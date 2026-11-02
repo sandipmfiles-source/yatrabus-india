@@ -28,10 +28,12 @@ The full all-India LGD download is large and changes over time. Do not put the 6
 Then build the compact, searchable administrative/town index:
 
 ```bash
-node --loader ts-node/esm data/import-scripts/importLgdDirectory.ts data/lgd-source data/india-lgd-directory.json.gz 2026-11-03
+node --loader ts-node/esm data/import-scripts/importLgdDirectory.ts data/lgd-source backend/data/india-lgd-directory.json.gz 2026-11-03
 ```
 
-The generated `data/india-lgd-directory.json.gz` is loaded by the backend place autocomplete. Keep the original source exports and retrieval date for audit/reproducibility; do not commit sensitive or restricted source files.
+The generated `backend/data/india-lgd-directory.json.gz` is loaded by the backend place autocomplete as a dated supplemental snapshot. The backend merges it with the compact split indexes under `data/lgd-index/` and prefers the newest dated record for a matching LGD code. Keep the original source exports and retrieval date for audit/reproducibility; do not commit sensitive or restricted source files.
+
+The automated GitHub Actions refresh currently uses the pinned 21 October 2026 LGD mirror export. Its village CSV is read only to recover parent state/district/subdistrict codes; individual village records are deliberately excluded from passenger autocomplete. The runtime index contains administrative, block and urban-local-body/town records, not the 676k+ village roster.
 
 The importer:
 - preserves LGD codes as `sourceRecordId`;
