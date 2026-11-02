@@ -124,6 +124,8 @@ export interface TimetableDeparture {
   operatingDays: ('MON' | 'TUE' | 'WED' | 'THU' | 'FRI' | 'SAT' | 'SUN')[];
   /** GTFS service calendar metadata. Dates use YYYYMMDD in the feed's local timezone. */
   serviceId?: string;
+  /** GTFS trip_id; it is not a public bus registration or vehicle identity. */
+  tripId?: string;
   serviceStartDate?: string;
   serviceEndDate?: string;
   addedServiceDates?: string[];
