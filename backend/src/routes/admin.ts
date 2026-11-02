@@ -580,7 +580,7 @@ adminRouter.put('/routes/:id', requireAdminAuth('SUPER_ADMIN'), (req: Request, r
     timetableDataStatus: confirmTimetableVerification ? 'SCHEDULED' : data.timetableDataStatus === 'UNAVAILABLE' ? 'UNAVAILABLE' : existing.timetableDataStatus,
     timetableVerifiedAt: confirmTimetableVerification ? now : data.timetableDataStatus === 'UNAVAILABLE' ? undefined : existing.timetableVerifiedAt,
     verificationStatus: confirmTimetableVerification ? 'ADMIN_VERIFIED' : existing.verificationStatus,
-    serviceStatus: confirmTimetableVerification ? 'OPERATING_SCHEDULED' : existing.serviceStatus,
+    serviceStatus: confirmTimetableVerification ? 'SCHEDULE_UNVERIFIED' : existing.serviceStatus,
     stops,
     updatedAt: now,
   };
