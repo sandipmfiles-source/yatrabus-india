@@ -9,6 +9,7 @@ import { ActiveTrackingWidget } from './components/ActiveTrackingWidget.js';
 import { FirstLaunchLanguagePrompt } from './components/FirstLaunchLanguagePrompt.js';
 
 import { HomePage } from './pages/HomePage.js';
+import { IndiaDirectoryPage } from './pages/IndiaDirectoryPage.js';
 import { SearchResultsPage } from './pages/SearchResultsPage.js';
 import { BusDetailPage } from './pages/BusDetailPage.js';
 import { ContributePage } from './pages/ContributePage.js';
@@ -38,6 +39,7 @@ export const App: React.FC = () => {
               <Routes>
                 <Route path="/" element={<HomePage />} />
                 <Route path="/search" element={<SearchResultsPage />} />
+                <Route path="/india-directory" element={<IndiaDirectoryPage />} />
                 <Route path="/routes/:id" element={<BusDetailPage />} />
                 <Route path="/contribute" element={<ContributePage />} />
                 <Route path="/operator" element={<OwnerDashboardPage />} />
