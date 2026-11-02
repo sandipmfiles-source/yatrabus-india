@@ -5,101 +5,118 @@ export interface ETAResult {
   stopId: string;
   stopName: string;
   stopSequence: number;
-  scheduledTime: string; // HH:MM IST
-  predictedTime: string; // HH:MM IST
+  scheduledTime: string;
+  predictedTime: string;
   etaMinutes: number;
   calculationType: 'OBSERVATION_BASED' | 'SCHEDULE_BASED';
   confidenceNote: string;
+  confidenceScore: number;
+  confidenceCategory: 'LOW' | 'MODERATE' | 'HIGH';
+}
+
+function getIstClock(date: Date): { hours: number; minutes: number } {
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+  }).formatToParts(date);
+  return {
+    hours: Number(parts.find(item => item.type === 'hour')?.value || 0),
+    minutes: Number(parts.find(item => item.type === 'minute')?.value || 0),
+  };
+}
+
+function confidenceCategory(score: number): ETAResult['confidenceCategory'] {
+  return score >= 80 ? 'HIGH' : score >= 55 ? 'MODERATE' : 'LOW';
 }
 
 /**
- * Calculates estimated arrival times for remaining stops along a bus route.
- * Clearly differentiates live GPS observation-based ETAs from scheduled timetable predictions.
+ * Produces stop ETAs with an explicit confidence estimate.
+ * Live GPS is used only when the observation is fresh; stale fixes fall back to timetable estimates.
  */
 export function calculateStopETAs(
   stops: RouteStop[],
-  currentProgressRatio: number, // 0.0 to 1.0 along route
+  currentProgressRatio: number,
   currentLocation?: {
     latitude: number;
     longitude: number;
     speedKmh?: number;
+    accuracyMeters?: number;
+    observedAtIso?: string;
     isLive: boolean;
   },
   currentServerTimeIso: string = new Date().toISOString()
 ): ETAResult[] {
   const now = new Date(currentServerTimeIso);
-  const nowHours = now.getHours();
-  const nowMinutes = now.getMinutes();
-  const currentTotalMinutes = nowHours * 60 + nowMinutes;
-
+  if (!Number.isFinite(now.getTime()) || stops.length === 0) return [];
+  const clock = getIstClock(now);
+  const currentTotalMinutes = clock.hours * 60 + clock.minutes;
   const totalStops = stops.length;
-  if (totalStops === 0) return [];
-
-  // Determine current stop index
-  const currentStopFloatIndex = currentProgressRatio * (totalStops - 1);
+  const progress = Math.max(0, Math.min(1, Number.isFinite(currentProgressRatio) ? currentProgressRatio : 0));
+  const currentStopFloatIndex = progress * (totalStops - 1);
   const currentStopIndex = Math.min(totalStops - 1, Math.floor(currentStopFloatIndex));
+  const speed = currentLocation?.speedKmh;
+  const effectiveSpeedKmh = speed !== undefined && Number.isFinite(speed) && speed > 5 && speed <= 90 ? speed : 22;
+  const observedAt = currentLocation?.observedAtIso ? new Date(currentLocation.observedAtIso).getTime() : undefined;
+  const observationAgeSeconds = observedAt === undefined ? undefined : (now.getTime() - observedAt) / 1000;
+  const observationFresh = currentLocation?.isLive === true &&
+    (observationAgeSeconds === undefined || (observationAgeSeconds >= -30 && observationAgeSeconds <= 120));
+  const firstDistance = stops[0].distanceFromStartKm;
+  const lastDistance = stops[stops.length - 1].distanceFromStartKm;
+  const hasUsableDistances = Number.isFinite(firstDistance) && Number.isFinite(lastDistance) && lastDistance > firstDistance;
+  const routeDistance = hasUsableDistances ? lastDistance - firstDistance : 0;
+  const currentDistance = hasUsableDistances ? firstDistance + progress * routeDistance : 0;
 
-  // Default urban Indian transit pace: 22 km/h (allowing for signals & congestion)
-  const effectiveSpeedKmh =
-    currentLocation?.speedKmh && currentLocation.speedKmh > 5 && currentLocation.speedKmh <= 90
-      ? currentLocation.speedKmh
-      : 22;
-
-  const results: ETAResult[] = [];
-
-  for (let i = 0; i < totalStops; i++) {
-    const stop = stops[i];
-    const isPast = i < currentStopIndex;
-    const isNext = i === Math.ceil(currentStopFloatIndex);
-
-    // Parse scheduled time
+  return stops.map((stop, index) => {
+    const isPast = index < currentStopIndex;
     let scheduledMinutes = currentTotalMinutes;
-    if (stop.scheduledArrivalTime) {
-      const [sh, sm] = stop.scheduledArrivalTime.split(':').map(Number);
-      if (!isNaN(sh) && !isNaN(sm)) {
-        scheduledMinutes = sh * 60 + sm;
-      }
+    const timeMatch = stop.scheduledArrivalTime && /^([01]\\d|2[0-3]):[0-5]\\d$/.exec(stop.scheduledArrivalTime);
+    if (timeMatch) {
+      const [hours, minutes] = stop.scheduledArrivalTime.split(':').map(Number);
+      scheduledMinutes = hours * 60 + minutes;
     }
 
     let etaMinutes = 0;
-    let calculationType: 'OBSERVATION_BASED' | 'SCHEDULE_BASED' = 'SCHEDULE_BASED';
-    let note = 'Based on scheduled timetable';
+    let calculationType: ETAResult['calculationType'] = 'SCHEDULE_BASED';
+    let note = 'Timetable schedule prediction; no fresh GPS observation is available.';
+    let confidence = stop.scheduledArrivalTime ? 48 : 30;
 
     if (isPast) {
-      etaMinutes = -Math.max(1, Math.round((currentStopFloatIndex - i) * 5));
-      note = 'Departed';
-    } else if (currentLocation && currentLocation.isLive) {
-      // Calculate remaining distance in km
+      etaMinutes = -Math.max(1, Math.round((currentStopFloatIndex - index) * 5));
+      note = 'Bus has passed this stop according to the current route progress.';
+      confidence = 70;
+    } else if (currentLocation && observationFresh) {
       calculationType = 'OBSERVATION_BASED';
-      const stopDistanceMeters = haversineDistanceMeters(
-        currentLocation.latitude,
-        currentLocation.longitude,
-        stop.latitude,
-        stop.longitude
-      );
-      const remainingKm = Math.max(0.2, stopDistanceMeters / 1000);
-
-      // Travel time in minutes + stop dwell buffer (1 min per intermediate stop)
-      const intermediateStopsCount = Math.max(0, i - Math.floor(currentStopFloatIndex) - 1);
+      let remainingKm: number;
+      if (hasUsableDistances) {
+        remainingKm = Math.max(0, stop.distanceFromStartKm - currentDistance);
+      } else {
+        const distanceMeters = haversineDistanceMeters(
+          currentLocation.latitude, currentLocation.longitude, stop.latitude, stop.longitude,
+        );
+        remainingKm = Math.max(0.1, distanceMeters / 1000);
+      }
+      const intermediateStopsCount = Math.max(0, index - Math.floor(currentStopFloatIndex) - 1);
       const dwellDelay = intermediateStopsCount * 1.5;
-      const travelTimeMinutes = (remainingKm / effectiveSpeedKmh) * 60;
-
-      etaMinutes = Math.max(1, Math.round(travelTimeMinutes + dwellDelay));
-      note = `Live estimate (~${Math.round(remainingKm * 10) / 10} km remaining at ${Math.round(effectiveSpeedKmh)} km/h)`;
+      etaMinutes = Math.max(0, Math.round((remainingKm / effectiveSpeedKmh) * 60 + dwellDelay));
+      confidence = 62;
+      if (speed !== undefined && Number.isFinite(speed) && speed > 5 && speed <= 90) confidence += 8;
+      if (currentLocation.accuracyMeters !== undefined && currentLocation.accuracyMeters <= 30) confidence += 12;
+      else if (currentLocation.accuracyMeters !== undefined && currentLocation.accuracyMeters <= 100) confidence += 6;
+      if (observationAgeSeconds !== undefined && observationAgeSeconds <= 60) confidence += 8;
+      if (stop.scheduledArrivalTime) confidence += 3;
+      note = `Fresh GPS estimate: about ${remainingKm.toFixed(1)} km remaining at ${Math.round(effectiveSpeedKmh)} km/h; confidence reflects fix accuracy and age.`;
     } else {
-      // Fallback to schedule difference
-      calculationType = 'SCHEDULE_BASED';
-      etaMinutes = Math.max(0, scheduledMinutes - currentTotalMinutes);
-      note = 'Timetable schedule prediction';
+      const difference = scheduledMinutes - currentTotalMinutes;
+      etaMinutes = difference < -720 ? difference + 1440 : Math.max(0, difference);
+      if (currentLocation?.isLive && !observationFresh) {
+        note = 'GPS observation is stale; showing timetable prediction instead.';
+        confidence = 25;
+      }
     }
 
-    // Compute predicted time string HH:MM
-    const predTotalMins = (currentTotalMinutes + Math.max(0, etaMinutes)) % (24 * 60);
-    const predH = String(Math.floor(predTotalMins / 60)).padStart(2, '0');
-    const predM = String(predTotalMins % 60).padStart(2, '0');
-    const predictedTime = `${predH}:${predM}`;
-
-    results.push({
+    const predictedTotal = ((currentTotalMinutes + Math.max(0, etaMinutes)) % 1440 + 1440) % 1440;
+    const predictedTime = String(Math.floor(predictedTotal / 60)).padStart(2, '0') + ':' + String(predictedTotal % 60).padStart(2, '0');
+    const boundedConfidence = Math.max(0, Math.min(95, Math.round(confidence)));
+    return {
       stopId: stop.stopId,
       stopName: stop.stopName,
       stopSequence: stop.stopSequence,
@@ -108,8 +125,8 @@ export function calculateStopETAs(
       etaMinutes,
       calculationType,
       confidenceNote: note,
-    });
-  }
-
-  return results;
+      confidenceScore: boundedConfidence,
+      confidenceCategory: confidenceCategory(boundedConfidence),
+    };
+  });
 }
