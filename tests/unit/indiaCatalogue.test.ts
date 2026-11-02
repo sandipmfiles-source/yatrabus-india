@@ -1,6 +1,7 @@
 import { INDIA_ADMINISTRATIVE_UNITS, INDIA_STATE_COUNT, INDIA_UT_COUNT } from '../../packages/shared/src/data/indiaCatalogue.js';
 import { INDIA_GOVERNMENT_OPERATORS } from '../../packages/shared/src/data/indiaGovernmentOperators.js';
 import { INDIA_ADMIN_AREA_PLACES } from '../../backend/src/db/indiaAdminAreas.js';
+import { LGD_INDEX_METADATA } from '../../packages/shared/src/data/lgdSnapshot.js';
 
 export function runIndiaCatalogueTests(assert: (description: string, pass: boolean) => void) {
   const states = INDIA_ADMINISTRATIVE_UNITS.filter(item => item.kind === 'STATE');
@@ -9,6 +10,8 @@ export function runIndiaCatalogueTests(assert: (description: string, pass: boole
   assert('Administrative catalogue contains exactly 8 Union Territories', INDIA_UT_COUNT === 8 && uts.length === 8);
   assert('All 36 administrative unit names are unique', new Set(INDIA_ADMINISTRATIVE_UNITS.map(item => item.name)).size === 36);
   assert('Every administrative unit has a capital and HTTPS government reference', INDIA_ADMINISTRATIVE_UNITS.every(item => !!item.capital && /^https:\/\//.test(item.officialReference)));
+  assert('Bundled LGD snapshot exposes its historical date and 14,207 record count', LGD_INDEX_METADATA.snapshotDate === '2022-03-11' && LGD_INDEX_METADATA.totalRecords === 14207);
+  assert('Bundled LGD snapshot includes 4,814 urban local bodies', LGD_INDEX_METADATA.urbanLocalBodies === 4814);
   assert('Seasonal and shared capital distinctions are retained', INDIA_ADMINISTRATIVE_UNITS.some(item => item.name === 'Jammu and Kashmir' && item.capitalNote?.includes('winter capital')) &&
     INDIA_ADMINISTRATIVE_UNITS.some(item => item.name === 'Uttarakhand' && item.capitalNote?.includes('summer capital')));
 
