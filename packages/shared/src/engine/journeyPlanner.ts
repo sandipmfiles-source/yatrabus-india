@@ -115,9 +115,11 @@ function enumeratePaths(
 }
 
 function localServiceDate(iso: string): string {
-  return new Intl.DateTimeFormat('en-CA', {
+  const parts = new Intl.DateTimeFormat('en-GB', {
     timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit',
-  }).format(new Date(iso));
+  }).formatToParts(new Date(iso));
+  const value = (type: string) => parts.find(part => part.type === type)?.value || '';
+  return value('year') + '-' + value('month') + '-' + value('day');
 }
 
 function materializeJourney(
