@@ -35,7 +35,7 @@ Archive protections: 10 MB compressed upload limit, 30 MB total expanded content
 ## Timetable engine and journey planning
 
 - All schedule-date and clock calculations use Asia/Kolkata (IST).
-- Exact trips, frequency-based departures, calendar exceptions and 24:xx overnight times are considered.
+- Exact trips, frequency-based departures, calendar exceptions and 24:xx overnight times are considered. The previous service date is also checked for trips that began before midnight and continue after it.
 - Route search considers direct trips and up to two transfers (three legs).
 - Default interchange minimum is 8 minutes; the maximum accepted wait is 90 minutes. Connections outside that window are rejected rather than advertised as feasible.
 - Results include ordered legs, route/stop/time details, transfer waits and an explicit next-day flag.
