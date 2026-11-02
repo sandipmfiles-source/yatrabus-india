@@ -85,6 +85,7 @@ export const bn = {
   arrival_short: 'পৌঁছায়',
 
   nav_find_buses: 'বাস খুঁজুন',
+  nav_india_directory: 'ভারত নির্দেশিকা',
   nav_contribute: 'তথ্য যোগ করুন',
   nav_operator_portal: 'অপারেটর পোর্টাল',
   nav_admin_title: 'যাচাইকারী ও প্রশাসক পোর্টাল',
