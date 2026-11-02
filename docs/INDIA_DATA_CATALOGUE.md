@@ -2,7 +2,7 @@
 
 ## Scope and current coverage
 
-YatraBus now ships a structured administrative reference catalogue for all 28 States and 8 Union Territories, plus a searchable starter index for the Jhargram–Kharagpur–Kolkata pilot corridor.
+YatraBus now ships a structured administrative reference catalogue for all 28 States and 8 Union Territories, plus a searchable LGD baseline of 14,207 administrative/urban-body records: 36 States/UTs, 763 districts, 6,921 sub-districts, 1,673 blocks and 4,814 urban local bodies. The source snapshot is dated **11 March 2022** and is explicitly historical; it must be refreshed against the current LGD export before it is treated as a current master. A separate searchable starter index covers the Jhargram–Kharagpur–Kolkata pilot corridor.
 
 The catalogue stores administrative type, capital/administrative seat, aliases, region, official government reference URL and review date. Seasonal and shared capital distinctions are noted instead of flattening them into a misleading single-capital claim.
 
