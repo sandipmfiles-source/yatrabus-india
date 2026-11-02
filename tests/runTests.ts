@@ -64,7 +64,7 @@ runJourneyConfirmationTests(assert);
 console.log('\n10. Testing Timetable Versioning & Audit Traceability...');
 runTimetableVersioningTests(assert);
 
-console.log('\\n11. Testing Privacy-Safe Bus Candidate Matching & Ambiguity Handling...');
+console.log('\n11. Testing Privacy-Safe Bus Candidate Matching & Ambiguity Handling...');
 runBusCandidateMatcherTests(assert);
 
 console.log('\n====================================================');
