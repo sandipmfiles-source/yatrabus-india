@@ -39,8 +39,8 @@ busesRouter.get('/:id', (req: Request, res: Response) => {
 
   // Derive progress from the actual route geometry; never use a hard-coded 35% position.
   const hasCoordinates = loc && Number.isFinite(loc.latitude) && Number.isFinite(loc.longitude);
-  const routeMatch = hasCoordinates && loc.isLive
-    ? matchPointToRoute(loc.latitude!, loc.longitude!, route, Math.max(250, (loc.accuracyMeters || 50) * 2))
+  const routeMatch = hasCoordinates && loc?.isLive === true
+    ? matchPointToRoute(loc!.latitude!, loc!.longitude!, route, Math.max(250, (loc!.accuracyMeters || 50) * 2))
     : undefined;
   const progressRatio = routeMatch?.isMatched ? routeMatch.estimatedProgressRatio : 0;
   const etas = calculateStopETAs(
