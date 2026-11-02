@@ -72,7 +72,7 @@ function parseZip(base64: string): Map<string, string> {
     const dataEnd = dataStart + compressedSize;
     if (dataEnd > buffer.length) throw new Error(`Truncated ZIP data for ${basename}.`);
     const compressed = buffer.subarray(dataStart, dataEnd);
-    const data = method === 0 ? Buffer.from(compressed) : inflateRawSync(compressed, { maxOutputLength: MAX_UNCOMPRESSED_BYTES });
+    const data = method === 0 ? Buffer.from(compressed) : inflateRawSync(compressed, { maxOutputLength: Math.max(1, uncompressedSize + 1) });
     if (data.length !== uncompressedSize) throw new Error(`Uncompressed size mismatch for ${basename}.`);
     expandedTotal += data.length;
     if (files.has(basename)) throw new Error(`GTFS archive contains duplicate ${basename} files.`);
