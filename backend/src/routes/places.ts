@@ -63,9 +63,15 @@ async function loadBlockDirectory() {
 
 const lgdCatalogue = (() => {
   try {
-    const file = new URL('../../data/india-lgd-directory.json.gz', import.meta.url);
+    const file = new URL('../../../data/india-lgd-directory.json.gz', import.meta.url);
     const payload = JSON.parse(gunzipSync(readFileSync(file)).toString('utf8'));
-    return Array.isArray(payload?.places) ? payload.places.map((row: any) => Array.isArray(row) ? ({ id: row[0], code: row[1], name: row[2], level: row[3], state: row[4], district: row[5], subdistrict: row[6] }) : row) : [];
+    return Array.isArray(payload?.places) ? payload.places.map((row: any) => Array.isArray(row)
+      ? ({ id: row[0], code: row[1], name: row[2], level: row[3], state: row[4], district: row[5], subdistrict: row[6] })
+      : ({
+          id: row.id, code: row.sourceRecordId || row.code, name: row.canonicalName || row.name,
+          level: row.level || row.placeType, state: row.state, district: row.district, subdistrict: row.subdistrict,
+          latitude: row.latitude, longitude: row.longitude,
+        })) : [];
   } catch {
     return [];
   }
@@ -200,7 +206,7 @@ placesRouter.get('/search', publicSearchLimiter, async (req: Request, res: Respo
     const prefix = name.toLocaleLowerCase('en-IN').startsWith(needle);
     const levelKey = level.toLocaleLowerCase('en-IN').replace(/[^a-z]/g, '');
     const typeByLevel: Record<string, string> = {
-      state: 'STATE', stateut: 'STATE', district: 'DISTRICT',
+      state: 'STATE', stateut: 'UNION_TERRITORY', unionterritory: 'UNION_TERRITORY', district: 'DISTRICT',
       subdistrict: 'TEHSIL', subdistricttehsil: 'TEHSIL', tehsil: 'TEHSIL',
       block: 'BLOCK', urbanlocalbody: 'CITY', citytown: 'TOWN', town: 'TOWN', village: 'VILLAGE',
     };
@@ -214,6 +220,7 @@ placesRouter.get('/search', publicSearchLimiter, async (req: Request, res: Respo
       sourceDataset: 'INDIA_LOCAL_GOVERNMENT_DIRECTORY',
       sourceRecordId: item.code ? String(item.code) : undefined,
       sourceLicense: 'Government Open Data License - India (GODL-India)',
+      sourceUrl: 'https://lgdirectory.gov.in/',
       verificationStatus: 'UNVERIFIED',
       aliases: [],
       createdAt: importedAt,
