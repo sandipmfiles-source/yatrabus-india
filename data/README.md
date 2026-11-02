@@ -10,6 +10,25 @@ This folder contains the India administrative reference index, source-aware inge
 - Government transport undertakings are maintained separately as directory candidates; an entry does not mean that an operator has claimed or authenticated its profile.
 - Timetable and place provenance are explicit. Records without source-backed verification remain UNVERIFIED / UNAVAILABLE.
 
+## Bundled LGD baseline (14,207 records)
+
+The repository includes a reproducible **11 March 2022** LGD snapshot:
+- 36 States/UTs
+- 763 districts
+- 6,921 sub-districts
+- 1,673 blocks
+- 4,814 urban local bodies (municipal corporations, municipalities and town bodies)
+
+The original CSV inputs are in `data/lgd-source-snapshot-2022/`; the compact passenger-search indexes are in `data/lgd-index/`. This is a historical baseline, not a claim that the counts or boundaries are current in 2026. Newly created districts and changed local bodies must be synchronized from a newer official LGD export. All imported records remain UNVERIFIED.
+
+To rebuild the bundled index from the included source snapshot:
+
+```bash
+node --loader ts-node/esm data/import-scripts/importLgdDirectory.ts data/lgd-source-snapshot-2022 data/india-lgd-directory.json.gz 2022-03-11
+```
+
+The runtime currently loads the split JSON files in `data/lgd-index/`; the gzip output is supported for compact future snapshots.
+
 ## Full town and administrative directory from LGD
 
 The Ministry of Panchayati Raj's Local Government Directory (LGD) is the source of record for administrative entities and unique LGD codes:
