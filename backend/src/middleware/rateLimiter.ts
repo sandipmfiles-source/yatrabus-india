@@ -12,6 +12,8 @@ export function createRateLimiter(options: RateLimitOptions) {
     // Express req.ip respects the explicitly configured trust-proxy policy.
     // Do not read X-Forwarded-For directly: clients can spoof that header.
     const ip = String(req.ip || req.socket?.remoteAddress || 'unknown-client');
+    // Keep each limiter's counter independent even when two limiters share a window.
+    const key = `${options.message}:${ip}`;
     const now = Date.now();
 
     requestsSinceCleanup++;
@@ -24,9 +26,9 @@ export function createRateLimiter(options: RateLimitOptions) {
       }
     }
 
-    const record = clientRequestCounts.get(ip);
+    const record = clientRequestCounts.get(key);
     if (!record || now > record.resetTime) {
-      clientRequestCounts.set(ip, { count: 1, resetTime: now + options.windowMs });
+      clientRequestCounts.set(key, { count: 1, resetTime: now + options.windowMs });
       return next();
     }
 
