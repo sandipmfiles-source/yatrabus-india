@@ -26,6 +26,13 @@ function getApiBase() {
 }
 
 export const api = {
+  async getIndiaCatalogue() {
+    const res = await fetch(`${getApiBase()}/india/catalogue`);
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.message || data.error || 'India directory is temporarily unavailable.');
+    return data;
+  },
+
   async searchPlaces(query: string, limit = 8) {
     const res = await fetch(`${getApiBase()}/places/search?q=${encodeURIComponent(query)}&limit=${limit}`);
     const data = await res.json().catch(() => ({}));
