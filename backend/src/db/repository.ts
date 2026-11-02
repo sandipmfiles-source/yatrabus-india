@@ -217,12 +217,21 @@ export class TransitRepository {
     return this.buses.get(id);
   }
 
-  public updateTimetableDeparture(routeId: string, busIdentifier: string, departureTime: string, arrivalTime: string, newBusIdentifier?: string, stopTimes?: NonNullable<Route['departures']>[number]['stopTimes']): boolean {
+  public updateTimetableDeparture(
+    routeId: string, busIdentifier: string, departureTime: string, arrivalTime: string,
+    newBusIdentifier?: string, stopTimes?: NonNullable<Route['departures']>[number]['stopTimes'],
+    verification?: { sourceName: string; sourceUrl: string; sourceVerifiedAt: string }
+  ): boolean {
     const route = this.routes.get(routeId);
     if (!route || !route.departures?.length) return false;
     const index = route.departures.findIndex(item => (item.busIdentifier || '').toLowerCase() === busIdentifier.toLowerCase() && !item.isCancelled);
     if (index < 0) return false;
-    route.departures[index] = { ...route.departures[index], departureTime, arrivalTime, busIdentifier: newBusIdentifier || route.departures[index].busIdentifier, stopTimes: stopTimes || route.departures[index].stopTimes };
+    route.departures[index] = {
+      ...route.departures[index], departureTime, arrivalTime,
+      busIdentifier: newBusIdentifier || route.departures[index].busIdentifier,
+      stopTimes: stopTimes || route.departures[index].stopTimes,
+      ...(verification ? { ...verification, dataStatus: 'SCHEDULED' as const } : {}),
+    };
     route.updatedAt = new Date().toISOString();
     return true;
   }
