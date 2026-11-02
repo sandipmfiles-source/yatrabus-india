@@ -98,11 +98,11 @@ export const BusCard: React.FC<BusCardProps> = ({ journey }) => {
                 {journey.timetableDepartures.map(item => (
                   <div key={item.id} className="flex items-center justify-between gap-2 rounded-lg border border-signal-yellow-200 bg-white px-3 py-2">
                     <div className="min-w-0">
-                      <div className="text-[11px] font-semibold text-signal-charcoal-900 truncate">{item.busIdentifier || route.routeNumber}</div>
+                      <div className="text-[11px] font-semibold text-signal-charcoal-900 truncate">{item.busIdentifier || (item.tripId ? `Trip ${item.tripId}` : 'Scheduled service')}</div>
                       <div className="text-[9px] text-yatriwarm-500">{item.operatingDays.join(', ')}</div>
                     </div>
                     <div className="text-right shrink-0">
-                      <div className="text-xs font-bold tabular-nums text-signal-red-700">{item.departureTime}</div>
+                      <div className="text-xs font-bold tabular-nums text-signal-red-700">{item.isFrequencyBased && item.exactTimes !== true ? '~' : ''}{item.departureTime}</div>
                       <div className="text-[9px] text-yatriwarm-500">{t('arrival_short')} {item.arrivalTime}</div>
                     </div>
                   </div>
