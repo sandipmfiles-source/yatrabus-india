@@ -390,6 +390,17 @@ export function importGtfsZip(base64: string, now = new Date()): GtfsImportResul
     });
   }
 
+  const routeIdCounts = new Map<string, number>();
+  resultRoutes.forEach(route => routeIdCounts.set(route.id, (routeIdCounts.get(route.id) || 0) + 1));
+  for (const [id, count] of routeIdCounts) if (count > 1) errors.push(`GTFS route IDs collide after safe normalization: ${id}.`);
+  const operatorIdCounts = new Map<string, number>();
+  Array.from(operatorById.values()).forEach(operator => operatorIdCounts.set(operator.id, (operatorIdCounts.get(operator.id) || 0) + 1));
+  for (const [id, count] of operatorIdCounts) if (count > 1) errors.push(`GTFS agency IDs collide after safe normalization: ${id}.`);
+  for (const route of resultRoutes) {
+    const tripIds = route.departures?.map(item => item.id) || [];
+    if (new Set(tripIds).size !== tripIds.length) errors.push(`GTFS trip IDs collide after safe normalization within route ${route.id}.`);
+  }
+
   if (!resultRoutes.length) errors.push('No importable routes were found. Check stop coordinates, trips and stop_times.');
   if (!calendars.length && !calendarDates.length) warnings.push('No calendar.txt or calendar_dates.txt found; service-day availability cannot be verified and imported trips have no operating-day guarantee.');
   return {
