@@ -48,3 +48,11 @@ export const adminLoginLimiter = createRateLimiter({
   maxRequests: 5,
   message: 'Too many administrator login attempts. Please wait 15 minutes before trying again.',
 });
+
+
+// Limit creation of anonymous tracking sessions to reduce session-flood abuse.
+export const trackingSessionLimiter = createRateLimiter({
+  windowMs: 60 * 60 * 1000,
+  maxRequests: 20,
+  message: 'Too many journey sessions were started from this connection. Please try again later.',
+});
