@@ -170,7 +170,8 @@ export function getUpcomingServiceDepartures(
         departureTime: board.time, arrivalTime: alight.time,
         departureDayOffset: board.dayOffset, arrivalDayOffset: alight.dayOffset,
         durationMinutes: Math.max(1, Math.round((arrivalMs - departureMs) / 60000)),
-        confidenceScore: candidate.confidence, isExactTimetable: !!candidate.departure,
+        confidenceScore: candidate.confidence,
+        isExactTimetable: !!candidate.departure && (!candidate.departure.isFrequencyBased || candidate.departure.exactTimes === true),
       });
     }
   }
