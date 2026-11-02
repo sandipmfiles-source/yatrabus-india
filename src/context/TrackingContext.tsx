@@ -18,8 +18,8 @@ interface ActiveSessionData {
 interface TrackingContextType {
   activeSession: ActiveSessionData | null;
   isConsentModalOpen: boolean;
-  pendingBusForTracking: { busId: string; routeId: string; routeNumber?: string } | null;
-  openConsentModalForBus: (bus: { busId: string; routeId: string; routeNumber?: string }) => void;
+  pendingBusForTracking: { busId: string; routeId: string; routeNumber?: string; destinationStopId?: string } | null;
+  openConsentModalForBus: (bus: { busId: string; routeId: string; routeNumber?: string; destinationStopId?: string }) => void;
   closeConsentModal: () => void;
   grantConsentAndStartTracking: () => Promise<void>;
   declineConsent: () => void;
@@ -37,7 +37,7 @@ const TrackingContext = createContext<TrackingContextType | undefined>(undefined
 export const TrackingProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [activeSession, setActiveSession] = useState<ActiveSessionData | null>(null);
   const [isConsentModalOpen, setIsConsentModalOpen] = useState(false);
-  const [pendingBusForTracking, setPendingBus] = useState<{ busId: string; routeId: string; routeNumber?: string } | null>(null);
+  const [pendingBusForTracking, setPendingBus] = useState<{ busId: string; routeId: string; routeNumber?: string; destinationStopId?: string } | null>(null);
   const [observationsCount, setObservationsCount] = useState(0);
   const [trackingError, setTrackingError] = useState('');
   const [isBackgroundTrackingActive, setIsBackgroundTrackingActive] = useState(false);
@@ -240,7 +240,7 @@ export const TrackingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     };
   }, [activeSession]);
 
-  const openConsentModalForBus = (bus: { busId: string; routeId: string; routeNumber?: string }) => {
+  const openConsentModalForBus = (bus: { busId: string; routeId: string; routeNumber?: string; destinationStopId?: string }) => {
     setPendingBus(bus);
     setIsConsentModalOpen(true);
   };
@@ -266,7 +266,7 @@ export const TrackingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           console.warn('Notification permission was not granted; Android may limit visible tracking notices.', permissionError);
         }
       }
-      const res = await api.startJourneySession(pendingBusForTracking.busId, pendingBusForTracking.routeId);
+      const res = await api.startJourneySession(pendingBusForTracking.busId, pendingBusForTracking.routeId, pendingBusForTracking.destinationStopId);
       const session = res.session;
       try {
         await api.recordConsent(session.sessionId, 'GRANTED', true);
