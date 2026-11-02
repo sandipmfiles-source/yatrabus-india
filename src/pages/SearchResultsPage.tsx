@@ -46,13 +46,21 @@ export const SearchResultsPage: React.FC = () => {
     if (!journey.isDirect) return null;
     const route = journey.route;
     if (route.timetableDataStatus === 'UNAVAILABLE') {
+      const verifiedStopTimes = route.stops.filter(stop => !!stop.scheduleVerifiedAt && !!stop.scheduleSourceUrl &&
+        !!(stop.scheduledArrivalTime || stop.scheduledDepartureTime));
       return (
         <section key={journey.id + '-timetable'} className="mt-3 rounded-2xl border border-amber-200 bg-amber-50/60 p-4 space-y-2">
           <div className="flex items-center justify-between gap-2">
             <h3 className="text-sm font-bold text-yatriwarm-900">{t('timetable_panel_title')}</h3>
             <span className="text-[10px] rounded-full px-2 py-1 font-semibold bg-slate-100 text-slate-700">UNAVAILABLE</span>
           </div>
-          <p className="text-xs text-yatriwarm-700">No source-verified timetable is loaded for this route. Earlier sample times are hidden to avoid misleading passengers.</p>
+          <p className="text-xs text-yatriwarm-700">{verifiedStopTimes.length
+            ? 'Only the following individual stop times have verified source evidence; the complete route timetable is still unavailable.'
+            : 'No source-verified timetable is loaded for this route. Earlier sample times are hidden to avoid misleading passengers.'}</p>
+          {verifiedStopTimes.map(stop => <div key={stop.id} className="flex items-center justify-between gap-2 text-[11px] text-yatriwarm-700 border-t border-yatriwarm-100 pt-2">
+            <span>{stop.stopName} · {stop.scheduledArrivalTime || stop.scheduledDepartureTime}</span>
+            <a href={stop.scheduleSourceUrl} target="_blank" rel="noreferrer" className="underline text-yatribrand-800">Source checked {stop.scheduleVerifiedAt}</a>
+          </div>)}
           {route.timetableSourceUrl && <a href={route.timetableSourceUrl} target="_blank" rel="noreferrer" className="text-[11px] underline text-yatribrand-800">{route.timetableSource || 'Timetable source'}</a>}
           {route.timetableVerifiedAt && <p className="text-[10px] text-yatriwarm-500">Last verified: {route.timetableVerifiedAt}</p>}
         </section>
