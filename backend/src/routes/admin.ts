@@ -461,7 +461,7 @@ adminRouter.post('/submissions/:id/review', requireAdminAuth('SUPER_ADMIN'), (re
     if (!repository.addTimetableDeparture(route.id, departure, Number(data.frequencyMinutes))) {
       return res.status(409).json({ error: 'This bus and departure time already exist on the selected route.' });
     }
-    if (verifyTimetable === true) repository.addRoute({ ...route, serviceStatus: 'OPERATING_SCHEDULED', updatedAt: new Date().toISOString() });
+    // One reviewed departure is not proof that the complete route is operating as scheduled.
     const busIdentifier = typeof data.busIdentifier === 'string' ? data.busIdentifier.trim().slice(0, 80) : '';
     if (busIdentifier && !repository.getBusesForRoute(route.id).some(bus => bus.publicIdentifier.toLowerCase() === busIdentifier.toLowerCase())) {
       const now = new Date().toISOString();
