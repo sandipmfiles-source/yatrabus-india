@@ -64,7 +64,9 @@ All endpoints accept and return `application/json`. Timestamps use ISO 8601 UTC 
 
 ### 8. Start Journey Session
 - **Endpoint**: `POST /api/tracking/session/start`
-- **Body**: `{ "busId": "...", "routeId": "..." }`
+- **Body**: `{ "busId": "...", "routeId": "...", "destinationStopId": "optional-route-stop-id" }`
+
+A session with a valid `destinationStopId` is automatically completed only after two publishable, accurate GPS fixes at the destination geofence (within 200m, at least 20 seconds apart and no more than 5 minutes apart). Network and cell-tower estimates never auto-complete a journey. The server revokes consent and the Android client stops its background watcher after receiving the completion response.
 
 ### 9. Stop Journey Session
 - **Endpoint**: `POST /api/tracking/session/stop`
@@ -106,6 +108,14 @@ All endpoints accept and return `application/json`. Timestamps use ISO 8601 UTC 
 
 ## Administrator APIs (Protected by Bearer Token)
 - `POST /api/admin/login`
+- `GET /api/admin/places?q=` (backend directory search)
+- `GET /api/admin/tracking` (bus-level aggregates only)
+- `GET /api/admin/duplicates`
+- `POST /api/admin/duplicates/:id/resolve`
+- `GET /api/admin/automation/rules`
+- `PUT /api/admin/automation/rules/:id`
+- `GET /api/admin/health`
+- `GET /api/admin/audit-logs?limit=`
 - `GET /api/admin/overview`
 - `GET /api/admin/submissions`
 - `POST /api/admin/submissions/:id/review`
