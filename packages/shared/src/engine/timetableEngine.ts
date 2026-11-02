@@ -112,7 +112,8 @@ export function getUpcomingServiceDepartures(
   const maxResults = Math.max(1, Math.min(100, options.maxResults ?? 20));
   const results: ServiceDepartureInstance[] = [];
 
-  for (let dayOffset = 0; dayOffset <= daysAhead; dayOffset++) {
+  // Include the previous service date: a GTFS trip may start before midnight and stop after midnight.
+  for (let dayOffset = -1; dayOffset <= daysAhead; dayOffset++) {
     const date = new Date(startUtc + dayOffset * DAY_MS);
     const serviceParts = istParts(date);
     const year = serviceParts.year, month = serviceParts.month, day = serviceParts.day;
