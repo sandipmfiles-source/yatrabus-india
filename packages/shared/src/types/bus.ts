@@ -37,6 +37,7 @@ export interface Operator {
   /** Official registry or agency page used to identify this transport undertaking. */
   sourceUrl?: string;
   sourceVerifiedAt?: string;
+  sourceCheckedAt?: string;
   createdAt: string;
   updatedAt: string;
 }
