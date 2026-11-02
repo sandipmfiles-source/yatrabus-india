@@ -5,6 +5,7 @@ import { Place, IndianState } from '../../../packages/shared/src/types/places.js
 import { repository } from '../db/repository.js';
 import { createAdminSessionToken, requireAdminAuth, verifyAdminPassword } from '../middleware/auth.js';
 import { adminLoginLimiter } from '../middleware/rateLimiter.js';
+import { importGtfsZip } from '../engine/gtfsImporter.js';
 
 export const adminRouter = Router();
 
@@ -657,6 +658,64 @@ adminRouter.put('/automation/rules/:id', requireAdminAuth('SUPER_ADMIN'), (req: 
     reason: `Automation rule ${isEnabled ? 'enabled' : 'disabled'} with validated runtime parameters`, timestamp: new Date().toISOString(),
   });
   return res.json({ success: true, message: 'Automation rule updated' });
+});
+
+// POST /api/admin/gtfs/preview — parse and validate a GTFS ZIP without changing live data.
+adminRouter.post('/gtfs/preview', requireAdminAuth('SUPER_ADMIN'), (req: Request, res: Response) => {
+  const zipBase64 = typeof req.body?.zipBase64 === 'string' ? req.body.zipBase64 : '';
+  if (!zipBase64) return res.status(400).json({ error: 'zipBase64 is required.' });
+  try {
+    const result = importGtfsZip(zipBase64);
+    const routeConflicts = result.routes.filter(route => repository.getRouteById(route.id)).map(route => route.id);
+    const operatorConflicts = result.operators.filter(operator => repository.getOperatorByName(operator.name)).map(operator => operator.name);
+    return res.status(result.errors.length ? 422 : 200).json({
+      valid: result.errors.length === 0 && routeConflicts.length === 0 && operatorConflicts.length === 0,
+      stats: result.stats,
+      errors: result.errors,
+      warnings: result.warnings,
+      routeConflicts,
+      operatorConflicts,
+      reviewPolicy: 'Preview only. Imported routes remain UNVERIFIED and SCHEDULE_UNVERIFIED. No bus identity is inferred from GTFS trip IDs.',
+    });
+  } catch (error) {
+    return res.status(400).json({ error: error instanceof Error ? error.message : 'Invalid GTFS ZIP archive.' });
+  }
+});
+
+// POST /api/admin/gtfs/import — explicit Super Admin apply after a successful preview.
+adminRouter.post('/gtfs/import', requireAdminAuth('SUPER_ADMIN'), (req: Request, res: Response) => {
+  if (req.body?.confirmImport !== true) {
+    return res.status(400).json({ error: 'Set confirmImport=true only after reviewing the GTFS preview.' });
+  }
+  const zipBase64 = typeof req.body?.zipBase64 === 'string' ? req.body.zipBase64 : '';
+  if (!zipBase64) return res.status(400).json({ error: 'zipBase64 is required.' });
+  try {
+    const result = importGtfsZip(zipBase64);
+    if (result.errors.length) return res.status(422).json({ error: 'GTFS validation failed; no data was imported.', errors: result.errors, warnings: result.warnings });
+    const routeConflicts = result.routes.filter(route => repository.getRouteById(route.id)).map(route => route.id);
+    const operatorConflicts = result.operators.filter(operator => repository.getOperatorByName(operator.name)).map(operator => operator.name);
+    if (routeConflicts.length || operatorConflicts.length) {
+      return res.status(409).json({ error: 'Import conflicts with existing route or operator records; no data was imported.', routeConflicts, operatorConflicts });
+    }
+
+    result.operators.forEach(operator => repository.addOperator(operator));
+    result.routes.forEach(route => repository.addRoute(route));
+    const adminId = (req as any).admin.id;
+    repository.createAuditLog({
+      id: `audit-${Date.now()}`, entityType: 'GTFS_IMPORT', entityId: result.routes.map(route => route.id).join(',').slice(0, 180),
+      action: 'CREATE', actorId: adminId, actorRole: 'SUPER_ADMIN',
+      reason: `Imported ${result.routes.length} unverified GTFS routes and ${result.stats.trips} trips; timetable verification remains pending.`,
+      timestamp: new Date().toISOString(),
+    });
+    return res.status(201).json({
+      success: true, stats: result.stats, warnings: result.warnings,
+      importedRouteIds: result.routes.map(route => route.id),
+      verificationStatus: 'UNVERIFIED',
+      message: 'GTFS data imported as unverified timetable proposals. Verify official source, stop patterns and operating dates before marking any service as verified.',
+    });
+  } catch (error) {
+    return res.status(400).json({ error: error instanceof Error ? error.message : 'Invalid GTFS ZIP archive.' });
+  }
 });
 
 // GET /api/admin/audit-logs
