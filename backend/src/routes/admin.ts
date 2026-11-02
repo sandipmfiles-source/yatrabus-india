@@ -562,6 +562,11 @@ adminRouter.post('/duplicates/:id/resolve', requireAdminAuth('SUPER_ADMIN'), (re
   }
   const success = repository.resolveDuplicateCandidate(String(req.params.id), resolution, adminId);
   if (!success) return res.status(404).json({ error: 'Duplicate candidate not found' });
+  repository.createAuditLog({
+    id: `audit-${Date.now()}`, entityType: 'DUPLICATE_CANDIDATE', entityId: String(req.params.id),
+    action: resolution === 'MERGED' ? 'MERGE' : 'UPDATE', actorId: adminId, actorRole: 'SUPER_ADMIN',
+    reason: `Resolved duplicate candidate as ${resolution}`, timestamp: new Date().toISOString(),
+  });
   return res.json({ success: true, resolution });
 });
 
@@ -602,6 +607,12 @@ adminRouter.put('/automation/rules/:id', requireAdminAuth('SUPER_ADMIN'), (req: 
   }
   const success = repository.updateAutomationRule(String(req.params.id), isEnabled, parameters || {});
   if (!success) return res.status(404).json({ error: 'Automation rule not found' });
+  const adminId = (req as any).admin.id;
+  repository.createAuditLog({
+    id: `audit-${Date.now()}`, entityType: 'AUTOMATION_RULE', entityId: String(req.params.id),
+    action: 'UPDATE', actorId: adminId, actorRole: 'SUPER_ADMIN',
+    reason: `Automation rule ${isEnabled ? 'enabled' : 'disabled'}`, timestamp: new Date().toISOString(),
+  });
   return res.json({ success: true, message: 'Automation rule updated' });
 });
 
