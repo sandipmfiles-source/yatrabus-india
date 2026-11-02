@@ -531,9 +531,27 @@ adminRouter.put('/routes/:id', requireAdminAuth('SUPER_ADMIN'), (req: Request, r
       !Number.isFinite(Number(stop.latitude)) || !Number.isFinite(Number(stop.longitude)))) {
     return res.status(422).json({ error: 'Every route stop must have a name and valid coordinates.' });
   }
+  const confirmTimetableVerification = data.confirmTimetableVerification === true;
+  const verificationReason = typeof data.verificationReason === 'string' ? data.verificationReason.trim().slice(0, 500) : '';
+  const timetableSource = typeof data.timetableSource === 'string' ? data.timetableSource.trim().slice(0, 180) : existing.timetableSource;
+  const timetableSourceUrl = typeof data.timetableSourceUrl === 'string' ? data.timetableSourceUrl.trim().slice(0, 500) : existing.timetableSourceUrl;
+  if (data.timetableDataStatus === 'SCHEDULED' && !confirmTimetableVerification) {
+    return res.status(403).json({ error: 'A timetable can only be marked SCHEDULED through explicit Super Admin verification.' });
+  }
+  if (confirmTimetableVerification && (
+      !timetableSource || !timetableSourceUrl || !/^https:\/\//i.test(timetableSourceUrl) ||
+      verificationReason.length < 10
+  )) {
+    return res.status(422).json({ error: 'Timetable verification requires a named source, HTTPS source URL and a reason of at least 10 characters.' });
+  }
+  if (data.timetableDataStatus !== undefined && !['SCHEDULED', 'UNAVAILABLE'].includes(data.timetableDataStatus)) {
+    return res.status(422).json({ error: 'Timetable data status must be SCHEDULED or UNAVAILABLE. Live GPS is tracked separately.' });
+  }
+  const now = new Date().toISOString();
+  const { confirmTimetableVerification: _confirm, verificationReason: _reason, ...routeData } = data;
   const updated: Route = {
     ...existing,
-    ...data,
+    ...routeData,
     id: existing.id,
     operatorId: existing.operatorId,
     routeNumber: typeof data.routeNumber === 'string' ? data.routeNumber.trim().slice(0, 40) : existing.routeNumber,
@@ -541,10 +559,25 @@ adminRouter.put('/routes/:id', requireAdminAuth('SUPER_ADMIN'), (req: Request, r
     firstDepartureTime: validTime(data.firstDepartureTime) ? data.firstDepartureTime : existing.firstDepartureTime,
     lastDepartureTime: validTime(data.lastDepartureTime) ? data.lastDepartureTime : existing.lastDepartureTime,
     direction: data.direction === 'UP' || data.direction === 'DOWN' || data.direction === 'CIRCULAR' ? data.direction : existing.direction,
+    timetableSource,
+    timetableSourceUrl,
+    timetableDataStatus: confirmTimetableVerification ? 'SCHEDULED' : data.timetableDataStatus === 'UNAVAILABLE' ? 'UNAVAILABLE' : existing.timetableDataStatus,
+    timetableVerifiedAt: confirmTimetableVerification ? now : data.timetableDataStatus === 'UNAVAILABLE' ? undefined : existing.timetableVerifiedAt,
+    verificationStatus: confirmTimetableVerification ? 'ADMIN_VERIFIED' : existing.verificationStatus,
+    serviceStatus: confirmTimetableVerification ? 'OPERATING_SCHEDULED' : existing.serviceStatus,
     stops,
-    updatedAt: new Date().toISOString(),
+    updatedAt: now,
   };
   repository.addRoute(updated);
+  repository.createAuditLog({
+    id: `audit-${Date.now()}`, entityType: 'ROUTE_TIMETABLE', entityId: existing.id,
+    action: confirmTimetableVerification ? 'VERIFY' : 'UPDATE',
+    actorId: (req as any).admin.id, actorRole: 'SUPER_ADMIN',
+    reason: confirmTimetableVerification ? verificationReason : 'Updated route or timetable metadata.',
+    previousPayload: { timetableSource: existing.timetableSource, timetableSourceUrl: existing.timetableSourceUrl, timetableDataStatus: existing.timetableDataStatus, timetableVerifiedAt: existing.timetableVerifiedAt },
+    newPayload: { timetableSource: updated.timetableSource, timetableSourceUrl: updated.timetableSourceUrl, timetableDataStatus: updated.timetableDataStatus, timetableVerifiedAt: updated.timetableVerifiedAt },
+    timestamp: now,
+  });
   return res.json({ success: true, route: updated });
 });
 
