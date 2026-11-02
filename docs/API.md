@@ -87,6 +87,13 @@ All endpoints accept and return `application/json`. Timestamps use ISO 8601 UTC 
 }
 ```
 
+### 10A. One-Time Bus Candidate Check (No Tracking Started)
+- **Endpoint**: `POST /api/tracking/verify-bus-candidate`
+- **Consent**: Body must include `"disclosuresAccepted": true`; the sample is evaluated in memory and is not stored by this endpoint.
+- **Body**: `{ "routeId": "route-id", "latitude": 22.47, "longitude": 87.36, "accuracyMeters": 20, "speedKmh": 30, "headingDegrees": 55, "timestamp": "2026-11-02T00:30:00Z", "disclosuresAccepted": true }`
+- **Returns**: `LIKELY_CANDIDATE`, `AMBIGUOUS`, or `NO_MATCH`. A single sample never verifies a bus identity and never starts tracking. A second independent time-separated movement sample is required before future identity corroboration can be considered.
+- **Limits**: Uses route geometry, schedule plausibility, GPS accuracy, speed and heading; it does not use cell-tower data to prove a bus identity. Requests use the public search rate limiter.
+
 ## Community Contribution APIs (No Account Required)
 
 ### 11. Submit Missing Info or Timetable Fix
