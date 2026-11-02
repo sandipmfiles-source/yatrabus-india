@@ -99,7 +99,6 @@ const pilotTerminalPlaces: Place[] = westBengalPilotTerminals.map((terminal, ind
   district: terminal.district,
   state: 'West Bengal',
   sourceDataset: 'WEST_BENGAL_TRANSPORT_DEPARTMENT_BUS_TERMINALS',
-  sourceRecordId: 'wb-transport-depots-2017-' + index,
   sourceLicense: 'West Bengal Government public transport directory reference',
   sourceUrl: 'https://transport.wb.gov.in/infrastructure/bus-depots-terminals/',
   sourceSnapshotDate: '2017-03-03',
