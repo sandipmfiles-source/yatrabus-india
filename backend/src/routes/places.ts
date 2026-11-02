@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { readFileSync, readdirSync } from 'node:fs';
+import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
 import { gunzipSync } from 'node:zlib';
@@ -78,7 +78,13 @@ const lgdCatalogue = (() => {
         latitude: row.latitude, longitude: row.longitude,
       }));
   try {
-    const directory = fileURLToPath(new URL('../../../data/lgd-index/', import.meta.url));
+    const directoryCandidates = [
+      fileURLToPath(new URL('../../../data/lgd-index/', import.meta.url)),
+      fileURLToPath(new URL('../../../../data/lgd-index/', import.meta.url)),
+      resolve(process.cwd(), 'data/lgd-index'),
+    ];
+    const directory = directoryCandidates.find(candidate => existsSync(candidate));
+    if (!directory) throw new Error('Bundled LGD index directory not found.');
     const files = readdirSync(directory).filter(name => name.toLowerCase().endsWith('.json'));
     const rows = files.flatMap(name => {
       const payload = JSON.parse(readFileSync(resolve(directory, name), 'utf8'));
@@ -89,8 +95,14 @@ const lgdCatalogue = (() => {
     // Fall back to the older compressed index if a deployment has not packaged the split index.
   }
   try {
-    const file = new URL('../../../data/india-lgd-directory.json.gz', import.meta.url);
-    const payload = JSON.parse(gunzipSync(readFileSync(file)).toString('utf8'));
+    const archiveCandidates = [
+      fileURLToPath(new URL('../../../data/india-lgd-directory.json.gz', import.meta.url)),
+      fileURLToPath(new URL('../../../../data/india-lgd-directory.json.gz', import.meta.url)),
+      resolve(process.cwd(), 'data/india-lgd-directory.json.gz'),
+    ];
+    const archive = archiveCandidates.find(candidate => existsSync(candidate));
+    if (!archive) throw new Error('No compressed LGD archive found.');
+    const payload = JSON.parse(gunzipSync(readFileSync(archive)).toString('utf8'));
     return Array.isArray(payload?.places) ? normaliseRows(payload.places, payload) : [];
   } catch {
     return [];
