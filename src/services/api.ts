@@ -148,7 +148,7 @@ export const api = {
     }
   },
 
-  async sendCellObservation(observation: { sessionId: string; busId: string; routeId: string; radioType: string; mcc: string; mnc: string; areaCode: number; cellId: string; signalDbm: number; timestamp: string }) {
+  async sendCellObservation(observation: { sessionId: string; busId: string; routeId: string; radioType: string; mcc: string; mnc: string; areaCode: number; cellId: string; signalDbm: number; isRegistered: boolean; timestamp: string }) {
     try {
       const res = await fetch(`${API_BASE}/tracking/cell-observation`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(observation),
