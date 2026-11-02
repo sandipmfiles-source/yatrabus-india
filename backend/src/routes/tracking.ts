@@ -4,6 +4,7 @@ import { evaluateLocationConfidence } from '../../../packages/shared/src/engine/
 import { evaluateJourneyPrompt } from '../../../packages/shared/src/engine/journeyConfirmationEngine.js';
 import { evaluateObservationFreshness } from '../../../packages/shared/src/engine/staleDetector.js';
 import { CONFIG } from '../config.js';
+import { estimateTimetableBusLocation } from '../engine/timetablePosition.js';
 
 export const trackingRouter = Router();
 
@@ -381,29 +382,40 @@ trackingRouter.post('/cell-observation', async (req: Request, res: Response) => 
 });
 
 // GET /api/tracking/bus/:id/location
+// Fresh device signals take priority; timetable interpolation is a clearly labelled fallback.
 trackingRouter.get('/bus/:id/location', (req: Request, res: Response) => {
-  const loc = repository.getBusLocation(String(req.params.id));
-  if (!loc) {
-    return res.json({
-      busId: String(req.params.id),
-      displayState: 'UNAVAILABLE',
-      isLive: false,
-      confidenceCategory: 'LOW',
-      confidenceScore: 0,
-      statusExplanation: 'No passenger location observation reported recently',
-    });
-  }
+  const busId = String(req.params.id);
+  const bus = repository.getBusById(busId);
+  const loc = repository.getBusLocation(busId);
 
-  // Freshness check
-  if (loc.lastObservedAt) {
+  if (loc?.lastObservedAt) {
     const freshness = evaluateObservationFreshness(loc.lastObservedAt);
     if (loc.displayState === 'LIVE' && freshness.displayState !== 'LIVE') {
       loc.displayState = freshness.displayState;
       loc.isLive = false;
       loc.statusExplanation = freshness.label;
-      repository.updateBusLocation(String(req.params.id), loc);
+      repository.updateBusLocation(busId, loc);
+    }
+    const ageMs = Date.now() - new Date(loc.lastObservedAt).getTime();
+    // Never replace a fresh GPS fix or a recent device estimate with timetable-only data.
+    if (ageMs <= (loc.locationSource === 'GPS' ? 120000 : 180000)) return res.json(loc);
+  }
+
+  if (bus?.routeId) {
+    const route = repository.getRouteById(bus.routeId);
+    if (route) {
+      const prediction = estimateTimetableBusLocation(bus, route);
+      if (prediction) return res.json(prediction);
     }
   }
 
-  return res.json(loc);
+  if (loc) return res.json(loc);
+  return res.json({
+    busId,
+    displayState: 'UNAVAILABLE',
+    isLive: false,
+    confidenceCategory: 'LOW',
+    confidenceScore: 0,
+    statusExplanation: 'No current device signal or valid timetable prediction is available.',
+  });
 });
