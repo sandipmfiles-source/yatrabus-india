@@ -121,8 +121,8 @@ function parseGtfsTime(value: string): { time: string; dayOffset: number; absolu
   };
 }
 
-function validDate(value: string): boolean {
-  if (!/^\\d{8}$/.test(value)) return false;
+function validDate(value?: string): boolean {
+  if (!value || !/^\\d{8}$/.test(value)) return false;
   const year = Number(value.slice(0, 4)), month = Number(value.slice(4, 6)), day = Number(value.slice(6, 8));
   const date = new Date(Date.UTC(year, month - 1, day));
   return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
