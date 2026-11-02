@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { INDIA_ADMINISTRATIVE_UNITS, INDIA_STATE_COUNT, INDIA_UT_COUNT } from '../../../packages/shared/src/data/indiaCatalogue.js';
 import { INDIA_GOVERNMENT_OPERATORS } from '../../../packages/shared/src/data/indiaGovernmentOperators.js';
 import { INDIA_ADMIN_AREA_PLACES } from '../db/indiaAdminAreas.js';
+import { LGD_INDEX_METADATA } from '../../../packages/shared/src/data/lgdSnapshot.js';
 
 export const indiaCatalogueRouter = Router();
 
@@ -19,9 +20,13 @@ indiaCatalogueRouter.get('/', (_req, res) => {
       administrativeUnits: INDIA_ADMINISTRATIVE_UNITS.length,
       governmentOperatorDirectoryEntries: INDIA_GOVERNMENT_OPERATORS.length,
       pilotTownIndexEntries: pilotTowns.length,
+      lgdIndexRecords: LGD_INDEX_METADATA.totalRecords,
+      lgdUrbanLocalBodies: LGD_INDEX_METADATA.urbanLocalBodies,
+      lgdSnapshotDate: LGD_INDEX_METADATA.snapshotDate,
     },
     states,
     unionTerritories,
+    lgdIndex: LGD_INDEX_METADATA,
     operators: INDIA_GOVERNMENT_OPERATORS.map(operator => ({
       id: operator.id,
       name: operator.name,
