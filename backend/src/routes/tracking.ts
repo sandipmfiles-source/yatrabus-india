@@ -357,8 +357,11 @@ trackingRouter.post('/cell-observation', async (req: Request, res: Response) => 
         item.areaCode === observation.areaCode && item.cellId === observation.cellId);
     const independent = new Set(matching.map(item => item.sessionId)).size;
     const previous = repository.getBusLocation(String(busId));
-    const shouldReplace = !previous || previous.displayState !== 'LIVE' ||
-      !previous.lastObservedAt || Date.now() - new Date(previous.lastObservedAt).getTime() > 120000;
+    const previousAgeMs = previous?.lastObservedAt ? Date.now() - new Date(previous.lastObservedAt).getTime() : Number.POSITIVE_INFINITY;
+    const previousFreshGps = !!previous && previous.displayState === 'LIVE' && previous.locationSource === 'GPS' && previousAgeMs <= 120000;
+    const previousFreshNetwork = !!previous && previous.locationSource === 'NETWORK' && previousAgeMs <= 180000;
+    const shouldReplace = !previousFreshGps && !previousFreshNetwork &&
+      (!previous?.lastObservedAt || observedAt.getTime() >= new Date(previous.lastObservedAt).getTime());
     if (shouldReplace) {
       repository.updateBusLocation(String(busId), {
         busId: String(busId), routeId: String(routeId), displayState: 'ESTIMATED', locationSource: 'CELL_TOWER',
