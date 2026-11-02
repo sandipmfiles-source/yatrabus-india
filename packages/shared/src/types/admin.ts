@@ -40,6 +40,7 @@ export interface AutomationRule {
     gpsFreshnessStaleSeconds?: number;
     autoPublishLowRiskMinorCorrections?: boolean;
     duplicateSimilarityThreshold?: number;
+    duplicateMaxDistanceMeters?: number;
     maxJourneySessionHours?: number;
     staleTimetableWarningDays?: number;
   };
