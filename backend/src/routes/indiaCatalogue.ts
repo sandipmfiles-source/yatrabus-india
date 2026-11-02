@@ -68,7 +68,7 @@ indiaCatalogueRouter.get('/', (_req, res) => {
           { stop: 'Mela Prangan, Salt Lake', arrival: '14:00' },
         ],
         status: 'HISTORICAL_REFERENCE_ONLY',
-        warning: 'This was a dated special-event package service in 2019. It is not a current or recurring bus timetable and must never be shown as today's departure schedule.',
+        warning: "This was a dated special-event package service in 2019. It is not a current or recurring bus timetable and must never be shown as today's departure schedule.",
       },
       timetableStatus: 'UNAVAILABLE',
       liveGpsStatus: 'UNAVAILABLE',
