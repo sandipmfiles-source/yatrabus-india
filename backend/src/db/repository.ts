@@ -161,7 +161,10 @@ export class TransitRepository {
 
   // ==================== ROUTES & BUSES ====================
   public getAllRoutes(): Route[] {
-    return Array.from(this.routes.values());
+    return Array.from(this.routes.values()).map(route => ({
+      ...route,
+      timetableDataStatus: route.timetableDataStatus ?? 'UNAVAILABLE',
+    }));
   }
 
   public getAllBuses(): Bus[] {
@@ -169,7 +172,8 @@ export class TransitRepository {
   }
 
   public getRouteById(id: string): Route | undefined {
-    return this.routes.get(id);
+    const route = this.routes.get(id);
+    return route ? { ...route, timetableDataStatus: route.timetableDataStatus ?? 'UNAVAILABLE' } : undefined;
   }
 
   public getRouteByNumber(routeNumber: string): Route | undefined {
@@ -188,8 +192,12 @@ export class TransitRepository {
   }
 
   public addRoute(route: Route): Route {
-    this.routes.set(route.id, route);
-    return route;
+    const normalized = {
+      ...route,
+      timetableDataStatus: route.timetableDataStatus ?? 'UNAVAILABLE',
+    };
+    this.routes.set(route.id, normalized);
+    return normalized;
   }
 
   public addTimetableDeparture(routeId: string, departure: NonNullable<Route['departures']>[number], frequencyMinutes?: number): boolean {
