@@ -35,9 +35,19 @@ function nowIST(date:Date) {
 function routeDistance(point:{latitude:number;longitude:number}, route:Route) {
  const points=route.geometry?.length ? route.geometry : [...route.stops].sort((a,b)=>a.stopSequence-b.stopSequence);
  if(!points.length) return Number.POSITIVE_INFINITY;
+ if(points.length===1) return distance(point,points[0]);
+ // Approximate point-to-segment distance in a local tangent plane, rather than
+ // comparing only vertices (which can be kilometres apart on sparse route shapes).
+ const latScale=111320, lonScale=111320*Math.cos(rad(point.latitude));
+ const xy=(p:{latitude:number;longitude:number})=>({x:(p.longitude-point.longitude)*lonScale,y:(p.latitude-point.latitude)*latScale});
  let best=Number.POSITIVE_INFINITY;
- for(const p of points) best=Math.min(best,distance(point,p));
- return best;
+ for(let i=0;i<points.length-1;i++){
+  const a=xy(points[i]), b=xy(points[i+1]), dx=b.x-a.x, dy=b.y-a.y;
+  const length2=dx*dx+dy*dy;
+  const t=length2?Math.max(0,Math.min(1,-(a.x*dx+a.y*dy)/length2)):0;
+  best=Math.min(best,Math.hypot(a.x+t*dx,a.y+t*dy));
+ }
+ return Math.min(best,...points.map(p=>distance(point,p)));
 }
 /**
  * Ranks possible bus identities using a consented, single GPS/network fix.
