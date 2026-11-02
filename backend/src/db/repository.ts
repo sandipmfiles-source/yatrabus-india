@@ -15,6 +15,7 @@ import {
 import { AdminUser, AuditLogEntry, AutomationRule, SystemHealthStats } from '../../../packages/shared/src/types/admin.js';
 import { SEED_PLACES, SEED_OPERATORS, SEED_ROUTES, SEED_BUSES } from './seedData.js';
 import { INDIA_ADMIN_AREA_PLACES } from './indiaAdminAreas.js';
+import { INDIA_GOVERNMENT_OPERATORS } from '../../../packages/shared/src/data/indiaGovernmentOperators.js';
 import { searchPlaces as runSearchPlaces } from '../../../packages/shared/src/search/typoSearch.js';
 import { haversineDistanceMeters } from '../../../packages/shared/src/engine/routeMatcher.js';
 
@@ -49,6 +50,10 @@ export class TransitRepository {
     // Seed Operators
     for (const op of SEED_OPERATORS) {
       this.operators.set(op.id, op);
+    }
+    // Add further government transport undertakings without overwriting richer legacy seed entries.
+    for (const op of INDIA_GOVERNMENT_OPERATORS) {
+      if (!this.operators.has(op.id)) this.operators.set(op.id, op);
     }
     // Seed Routes
     for (const r of SEED_ROUTES) {
