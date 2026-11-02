@@ -7,12 +7,14 @@ interface JourneyConfirmBannerProps {
   busId: string;
   routeId: string;
   routeNumber: string;
+  destinationStopId?: string;
 }
 
 export const JourneyConfirmBanner: React.FC<JourneyConfirmBannerProps> = ({
   busId,
   routeId,
   routeNumber,
+  destinationStopId,
 }) => {
   const { openConsentModalForBus, activeSession } = useTracking();
   const { t } = useLanguage();
@@ -40,7 +42,7 @@ export const JourneyConfirmBanner: React.FC<JourneyConfirmBannerProps> = ({
           <div className="flex flex-wrap items-center gap-2 mt-3">
             <button
               type="button"
-              onClick={() => openConsentModalForBus({ busId, routeId, routeNumber })}
+              onClick={() => openConsentModalForBus({ busId, routeId, routeNumber, destinationStopId })}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-yatribrand-900 hover:bg-yatribrand-950 text-white text-xs font-medium rounded-lg shadow-xs transition-colors"
             >
               <Check className="w-3.5 h-3.5 text-emerald-400" />
