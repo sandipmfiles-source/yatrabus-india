@@ -10,6 +10,7 @@ indiaCatalogueRouter.get('/', (_req, res) => {
   const states = INDIA_ADMINISTRATIVE_UNITS.filter(unit => unit.kind === 'STATE');
   const unionTerritories = INDIA_ADMINISTRATIVE_UNITS.filter(unit => unit.kind === 'UNION_TERRITORY');
   const pilotTowns = INDIA_ADMIN_AREA_PLACES.filter(place => place.id.startsWith('wb-pilot-town-'));
+  const pilotTerminals = INDIA_ADMIN_AREA_PLACES.filter(place => place.id.startsWith('wb-pilot-terminal-'));
 
   res.setHeader('Cache-Control', 'public, max-age=3600, stale-while-revalidate=86400');
   return res.json({
@@ -20,6 +21,7 @@ indiaCatalogueRouter.get('/', (_req, res) => {
       administrativeUnits: INDIA_ADMINISTRATIVE_UNITS.length,
       governmentOperatorDirectoryEntries: INDIA_GOVERNMENT_OPERATORS.length,
       pilotTownIndexEntries: pilotTowns.length,
+      pilotBusTerminals: pilotTerminals.length,
       lgdIndexRecords: LGD_INDEX_METADATA.totalRecords,
       lgdUrbanLocalBodies: LGD_INDEX_METADATA.urbanLocalBodies,
       lgdSnapshotDate: LGD_INDEX_METADATA.snapshotDate,
@@ -47,6 +49,27 @@ indiaCatalogueRouter.get('/', (_req, res) => {
         id: place.id, name: place.canonicalName, district: place.district,
         sourceDataset: place.sourceDataset, verificationStatus: place.verificationStatus,
       })),
+      terminals: pilotTerminals.map(place => ({
+        id: place.id, name: place.canonicalName, district: place.district,
+        sourceUrl: place.sourceUrl, sourceSnapshotDate: place.sourceSnapshotDate,
+        verificationStatus: place.verificationStatus,
+      })),
+      historicalServiceEvidence: {
+        operator: 'South Bengal State Transport Corporation (SBSTC)',
+        sourceName: 'Special International Book Fair package-tour notice',
+        sourceUrl: 'https://transport.wb.gov.in/wp-content/uploads/2019/01/sbstc.pdf',
+        sourceDate: '2019-01',
+        serviceDates: ['2019-01-31', '2019-02-02', '2019-02-03', '2019-02-09', '2019-02-10', '2019-02-11'],
+        direction: 'Jhargram → Midnapore → Kharagpur → Mela Prangan, Salt Lake',
+        listedTimes: [
+          { stop: 'Jhargram', departure: '10:00' },
+          { stop: 'Midnapore', arrival: '10:50', departure: '11:00' },
+          { stop: 'Kharagpur', arrival: '11:20', departure: '11:25' },
+          { stop: 'Mela Prangan, Salt Lake', arrival: '14:00' },
+        ],
+        status: 'HISTORICAL_REFERENCE_ONLY',
+        warning: 'This was a dated special-event package service in 2019. It is not a current or recurring bus timetable and must never be shown as today's departure schedule.',
+      },
       timetableStatus: 'UNAVAILABLE',
       liveGpsStatus: 'UNAVAILABLE',
       officialOperatorReferences: [
