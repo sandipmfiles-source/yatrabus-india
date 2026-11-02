@@ -43,6 +43,7 @@ export type IndianState =
 export type PlaceType =
   | 'COUNTRY'
   | 'STATE'
+  | 'UNION_TERRITORY'
   | 'DISTRICT'
   | 'SUBDIVISION'
   | 'TEHSIL'
