@@ -273,7 +273,7 @@ placesRouter.get('/search', publicSearchLimiter, async (req: Request, res: Respo
     count: results.length,
     results,
     sources: { local: localResults.length, lgd: lgdResults.length },
-    attribution: 'Ministry of Panchayati Raj · Local Government Directory · Government Open Data License - India',
+    attribution: 'Bundled LGD snapshot (2022, GODL-India) plus optional third-party mirror suggestions; verify current records at https://lgdirectory.gov.in/',
   });
 });
 
