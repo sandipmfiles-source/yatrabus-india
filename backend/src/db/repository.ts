@@ -57,7 +57,12 @@ export class TransitRepository {
     }
     // Seed Routes
     for (const r of SEED_ROUTES) {
-      this.routes.set(r.id, r);
+      // Existing demo/sample route times have no traceable official timetable source.
+      // Keep them searchable for UI development but never classify them as published schedules.
+      this.routes.set(r.id, {
+        ...r,
+        timetableDataStatus: r.timetableSource && r.timetableVerifiedAt ? 'SCHEDULED' : 'UNAVAILABLE',
+      });
     }
     // Seed buses with an explicit unavailable location state. Never fabricate a GPS
     // position or label a demo coordinate as a live/estimated bus location.
