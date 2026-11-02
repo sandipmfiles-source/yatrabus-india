@@ -181,13 +181,69 @@ placesRouter.get('/reverse-geocode', publicSearchLimiter, async (req: Request, r
 });
 
 // Free local catalogue search. External paid geocoding is deliberately not required.
-placesRouter.get('/search', publicSearchLimiter, (req: Request, res: Response) => {
+placesRouter.get('/search', publicSearchLimiter, async (req: Request, res: Response) => {
   const query = typeof req.query.q === 'string' ? req.query.q.trim() : '';
   const requestedLimit = req.query.limit ? Number.parseInt(String(req.query.limit), 10) : 8;
   const limit = Number.isFinite(requestedLimit) ? Math.max(1, Math.min(12, requestedLimit)) : 8;
-  if (query.length < 2) return res.json({ query, count: 0, results: [], sources: { local: 0 } });
-  const results = repository.searchPlaces(query, limit);
-  return res.json({ query, count: results.length, results, sources: { local: results.length } });
+  if (query.length < 2) return res.json({ query, count: 0, results: [], sources: { local: 0, lgd: 0 } });
+
+  // The bundled LGD snapshot is the full administrative search catalogue. Include it
+  // in the main autocomplete endpoint, not only in map/geocoding search.
+  const localResults = repository.searchPlaces(query, limit);
+  const directoryResults = await fetchLgdDirectorySuggestions(query);
+  const needle = query.toLocaleLowerCase('en-IN');
+  const importedAt = new Date().toISOString();
+  const lgdResults = directoryResults.map((item: any) => {
+    const name = String(item.name || '').trim();
+    const level = String(item.level || 'Administrative area');
+    const exact = name.toLocaleLowerCase('en-IN') === needle;
+    const prefix = name.toLocaleLowerCase('en-IN').startsWith(needle);
+    const typeByLevel: Record<string, string> = {
+      'State / UT': 'STATE',
+      'District': 'DISTRICT',
+      'Sub-district / Tehsil': 'TEHSIL',
+      'Block': 'BLOCK',
+      'City / Town': 'TOWN',
+      'Village': 'VILLAGE',
+    };
+    const place = {
+      id: String(item.id),
+      canonicalName: name,
+      names: { en: name },
+      placeType: typeByLevel[level] || 'LOCALITY',
+      state: item.state || undefined,
+      district: item.district || undefined,
+      sourceDataset: 'INDIA_LOCAL_GOVERNMENT_DIRECTORY',
+      sourceRecordId: item.code ? String(item.code) : undefined,
+      sourceLicense: 'Government Open Data License - India (GODL-India)',
+      verificationStatus: 'UNVERIFIED',
+      aliases: [],
+      createdAt: importedAt,
+      updatedAt: importedAt,
+    };
+    return {
+      place,
+      matchScore: exact ? 100 : prefix ? 88 : 74,
+      matchType: exact ? 'EXACT' : 'PREFIX',
+      displayLabel: name,
+      subtitle: String(item.address || level + ' · LGD directory'),
+    };
+  });
+  const merged = new Map<string, any>();
+  for (const result of [...localResults, ...lgdResults]) {
+    const id = result?.place?.id;
+    if (id && !merged.has(id)) merged.set(id, result);
+  }
+  const results = Array.from(merged.values())
+    .sort((a, b) => b.matchScore - a.matchScore || String(a.displayLabel).localeCompare(String(b.displayLabel), 'en-IN'))
+    .slice(0, limit);
+  return res.json({
+    query,
+    count: results.length,
+    results,
+    sources: { local: localResults.length, lgd: lgdResults.length },
+    attribution: 'Ministry of Panchayati Raj · Local Government Directory · Government Open Data License - India',
+  });
 });
 
 // GET /api/places/nearby?lat=28.6675&lon=77.2285&radius=3000
