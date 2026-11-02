@@ -24,12 +24,16 @@ function clockMinutes(value?: string): number | undefined {
   return hour * 60 + minute;
 }
 
-function departureForBus(route: Route, bus: Bus, day: string): TimetableDeparture | undefined {
+function departureForBus(route: Route, bus: Bus, day: string, routeBusCount: number): TimetableDeparture | undefined {
   const candidates = (route.departures || []).filter(item =>
     !item.isCancelled && item.operatingDays.includes(day as any) &&
-    (!item.busIdentifier || item.busIdentifier.trim().toLowerCase() === bus.publicIdentifier.trim().toLowerCase())
+    item.busIdentifier?.trim().toLowerCase() === bus.publicIdentifier.trim().toLowerCase()
   );
-  return candidates.sort((a, b) => a.departureTime.localeCompare(b.departureTime))[0];
+  if (candidates.length) return candidates.sort((a, b) => a.departureTime.localeCompare(b.departureTime))[0];
+  // A shared route timetable cannot identify which of several physical buses is running.
+  if (routeBusCount > 1) return undefined;
+  return (route.departures || []).filter(item => !item.isCancelled && item.operatingDays.includes(day as any) && !item.busIdentifier)
+    .sort((a, b) => a.departureTime.localeCompare(b.departureTime))[0];
 }
 
 function stopClock(stop: RouteStop, departure?: TimetableDeparture): number | undefined {
@@ -46,12 +50,15 @@ export function estimateTimetableBusLocation(
   bus: Bus,
   route: Route,
   now = new Date(),
+  routeBusCount = 1,
 ): AggregatedBusLocation | undefined {
   if (!bus.isActive || !bus.routeId || bus.routeId !== route.id || route.stops.length < 2) return undefined;
   const stops = [...route.stops].sort((a, b) => a.stopSequence - b.stopSequence);
   if (stops.some(stop => !Number.isFinite(stop.latitude) || !Number.isFinite(stop.longitude))) return undefined;
 
-  const departure = departureForBus(route, bus, istDay(now));
+  const departure = departureForBus(route, bus, istDay(now), routeBusCount);
+  if (routeBusCount > 1 && !(route.departures || []).some(item => !item.isCancelled && item.operatingDays.includes(istDay(now) as any) && item.busIdentifier?.trim().toLowerCase() === bus.publicIdentifier.trim().toLowerCase())) return undefined;
+  if (routeBusCount > 1 && !(route.departures || []).length) return undefined;
   const originTime = clockMinutes(departure?.departureTime || route.firstDepartureTime);
   if (originTime === undefined) return undefined;
   const nowMinutes = istClock(now);
