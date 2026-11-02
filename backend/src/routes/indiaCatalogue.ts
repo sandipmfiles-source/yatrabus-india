@@ -73,7 +73,7 @@ indiaCatalogueRouter.get('/', (_req, res) => {
       timetableStatus: 'UNAVAILABLE',
       liveGpsStatus: 'UNAVAILABLE',
       officialOperatorReferences: [
-        { name: 'West Bengal Transport Corporation', url: 'https://transport.wb.gov.in/' },
+        { name: 'West Bengal Transport Corporation', url: 'https://wbtconline.in/' },
         { name: 'South Bengal State Transport Corporation', url: 'https://sbstc.co.in/' },
         { name: 'North Bengal State Transport Corporation', url: 'https://nbstc.in/' },
       ],
