@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { Capacitor, registerPlugin } from '@capacitor/core';
+import { Geolocation } from '@capacitor/geolocation';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { api } from '../services/api.js';
 import { storage } from '../services/storage.js';
@@ -148,6 +149,45 @@ export const TrackingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         webWatchIdRef.current = null;
       }
     };
+  }, [activeSession]);
+
+  // Balanced-power Android location asks the platform for a network/fused fix.
+  // It runs alongside background GPS; the server always labels it ESTIMATED.
+  useEffect(() => {
+    if (!activeSession || !Capacitor.isNativePlatform()) return;
+    let cancelled = false;
+    let requesting = false;
+    const collectNetworkLocation = async () => {
+      if (requesting || cancelled) return;
+      requesting = true;
+      try {
+        const position = await Geolocation.getCurrentPosition({
+          enableHighAccuracy: false,
+          timeout: 15000,
+          maximumAge: 30000,
+        });
+        if (cancelled || !position?.coords) return;
+        await api.sendObservation({
+          sessionId: activeSession.sessionId,
+          busId: activeSession.busId,
+          routeId: activeSession.routeId,
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          accuracyMeters: position.coords.accuracy,
+          speedKmh: position.coords.speed != null ? position.coords.speed * 3.6 : undefined,
+          headingDegrees: position.coords.heading ?? undefined,
+          locationSource: 'NETWORK',
+        });
+      } catch (error) {
+        // Network provider may be unavailable when location services are off.
+        console.info('YatraBus Android network location unavailable:', error);
+      } finally {
+        requesting = false;
+      }
+    };
+    void collectNetworkLocation();
+    const timer = window.setInterval(() => { void collectNetworkLocation(); }, 60000);
+    return () => { cancelled = true; window.clearInterval(timer); };
   }, [activeSession]);
 
   // Collect registered cell-tower samples only while a passenger has an active,
