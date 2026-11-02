@@ -14,6 +14,7 @@ import { runETACalculatorTests } from './unit/etaCalculator.test.js';
 import { runJourneyConfirmationTests } from './unit/journeyConfirmation.test.js';
 import { runTimetableVersioningTests } from './unit/timetableVersioning.test.js';
 import { runBusCandidateMatcherTests } from './unit/busCandidateMatcher.test.js';
+import { runTrackingSessionTests } from './unit/trackingSession.test.js';
 
 let totalTests = 0;
 let passedTests = 0;
@@ -66,6 +67,9 @@ runTimetableVersioningTests(assert);
 
 console.log('\n11. Testing Privacy-Safe Bus Candidate Matching & Ambiguity Handling...');
 runBusCandidateMatcherTests(assert);
+
+console.log('\\n12. Testing Consent-Bound Destination Auto-Completion...');
+runTrackingSessionTests(assert);
 
 console.log('\n====================================================');
 console.log(`SUMMARY: ${passedTests}/${totalTests} Tests Passed (${failedTests} Failed)`);
