@@ -198,19 +198,17 @@ placesRouter.get('/search', publicSearchLimiter, async (req: Request, res: Respo
     const level = String(item.level || 'Administrative area');
     const exact = name.toLocaleLowerCase('en-IN') === needle;
     const prefix = name.toLocaleLowerCase('en-IN').startsWith(needle);
+    const levelKey = level.toLocaleLowerCase('en-IN').replace(/[^a-z]/g, '');
     const typeByLevel: Record<string, string> = {
-      'State / UT': 'STATE',
-      'District': 'DISTRICT',
-      'Sub-district / Tehsil': 'TEHSIL',
-      'Block': 'BLOCK',
-      'City / Town': 'TOWN',
-      'Village': 'VILLAGE',
+      state: 'STATE', stateut: 'STATE', district: 'DISTRICT',
+      subdistrict: 'TEHSIL', subdistricttehsil: 'TEHSIL', tehsil: 'TEHSIL',
+      block: 'BLOCK', urbanlocalbody: 'CITY', citytown: 'TOWN', town: 'TOWN', village: 'VILLAGE',
     };
     const place = {
       id: String(item.id),
       canonicalName: name,
       names: { en: name },
-      placeType: typeByLevel[level] || 'LOCALITY',
+      placeType: typeByLevel[levelKey] || 'LOCALITY',
       state: item.state || undefined,
       district: item.district || undefined,
       sourceDataset: 'INDIA_LOCAL_GOVERNMENT_DIRECTORY',
