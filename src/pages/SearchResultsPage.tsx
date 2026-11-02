@@ -88,7 +88,7 @@ export const SearchResultsPage: React.FC = () => {
     const segmentStops = firstIndex >= 0 && lastIndex >= firstIndex
       ? route.stops.slice(firstIndex, lastIndex + 1)
       : [journey.boardingStop, journey.alightingStop];
-    const scheduleVerified = route.verificationStatus === 'ADMIN_VERIFIED' && route.serviceStatus !== 'SCHEDULE_UNVERIFIED';
+    const scheduleVerified = route.verificationStatus === 'ADMIN_VERIFIED' && route.timetableDataStatus === 'SCHEDULED' && !!route.timetableSource && !!route.timetableVerifiedAt;
 
     return (
       <section key={journey.id + '-timetable'} className="mt-3 rounded-2xl border border-yatriwarm-200 bg-white p-4 space-y-3">
@@ -104,6 +104,7 @@ export const SearchResultsPage: React.FC = () => {
           <div className="rounded-xl bg-yatriwarm-50 p-2"><div className="text-[10px] text-yatriwarm-500">{t('frequency')}</div><div className="text-sm font-bold text-yatriwarm-900">{route.frequencyMinutes ? `${t('every')} ${route.frequencyMinutes} ${t('minutes')}` : t('not_provided')}</div></div>
           <div className="rounded-xl bg-yatriwarm-50 p-2"><div className="text-[10px] text-yatriwarm-500">{t('trips_per_day')}</div><div className="text-sm font-bold text-yatriwarm-900">{countLabel}</div></div>
         </div>
+        {route.timetableSource && <p className="text-[10px] text-yatriwarm-600">Source: {route.timetableSource}{route.timetableVerifiedAt ? ` · Verified ${route.timetableVerifiedAt}` : ''} {route.timetableSourceUrl && <a href={route.timetableSourceUrl} target="_blank" rel="noreferrer" className="underline text-yatribrand-800">Open source</a>}</p>}
         <p className="flex items-center gap-1 text-[11px] text-yatriwarm-500"><CalendarDays className="w-3.5 h-3.5" />{t('operating_days')}: {route.operatingDays?.join(', ') || t('not_provided')}</p>
         {departureSlots.length > 0 && <div>
           <div className="text-[11px] font-semibold text-yatriwarm-700">{t('scheduled_departures')}</div>
