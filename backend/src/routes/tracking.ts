@@ -5,8 +5,48 @@ import { evaluateJourneyPrompt } from '../../../packages/shared/src/engine/journ
 import { evaluateObservationFreshness } from '../../../packages/shared/src/engine/staleDetector.js';
 import { CONFIG } from '../config.js';
 import { estimateTimetableBusLocation } from '../engine/timetablePosition.js';
+import { rankBusCandidates } from '../engine/busCandidateMatcher.js';
 
 export const trackingRouter = Router();
+
+// POST /api/tracking/verify-bus-candidate
+// Privacy-first, non-binding route verification. A single device sample never starts tracking.
+trackingRouter.post('/verify-bus-candidate', (req: Request, res: Response) => {
+  const { routeId, latitude, longitude, accuracyMeters, speedKmh, headingDegrees, timestamp, disclosuresAccepted } = req.body || {};
+  if (disclosuresAccepted !== true) {
+    return res.status(403).json({ error: 'Explicit consent is required to use this location sample for bus candidate matching.' });
+  }
+  if (!routeId || !Number.isFinite(Number(latitude)) || Number(latitude) < 6 || Number(latitude) > 38 ||
+      !Number.isFinite(Number(longitude)) || Number(longitude) < 68 || Number(longitude) > 98 ||
+      !Number.isFinite(Number(accuracyMeters)) || Number(accuracyMeters) <= 0 || Number(accuracyMeters) > 20000) {
+    return res.status(400).json({ error: 'A valid India location, routeId and accuracyMeters are required.' });
+  }
+  const observedAt = timestamp ? new Date(timestamp) : new Date();
+  if (!Number.isFinite(observedAt.getTime()) || Math.abs(Date.now() - observedAt.getTime()) > 2 * 60 * 1000) {
+    return res.status(400).json({ error: 'Location sample is stale or has an invalid timestamp.' });
+  }
+  if (speedKmh !== undefined && (!Number.isFinite(Number(speedKmh)) || Number(speedKmh) < 0 || Number(speedKmh) > 180)) {
+    return res.status(400).json({ error: 'Invalid speed value.' });
+  }
+  if (headingDegrees !== undefined && (!Number.isFinite(Number(headingDegrees)) || Number(headingDegrees) < 0 || Number(headingDegrees) >= 360)) {
+    return res.status(400).json({ error: 'Invalid heading value.' });
+  }
+  const route = repository.getRouteById(String(routeId));
+  if (!route) return res.status(404).json({ error: 'Route not found.' });
+  const candidates = repository.getBusesForRoute(route.id);
+  const result = rankBusCandidates(candidates, [route], {
+    latitude: Number(latitude), longitude: Number(longitude), accuracyMeters: Number(accuracyMeters),
+    speedKmh: speedKmh === undefined ? undefined : Number(speedKmh),
+    headingDegrees: headingDegrees === undefined ? undefined : Number(headingDegrees),
+    observedAt: observedAt.toISOString(),
+  });
+  return res.status(200).json({
+    ...result,
+    trackingStarted: false,
+    requiresSecondSample: result.status !== 'NO_MATCH',
+    privacy: 'This one-time sample is evaluated in memory and is not stored by this endpoint. A separate active journey session and explicit consent are required for ongoing sharing.',
+  });
+});
 
 // POST /api/tracking/evaluate-prompt
 trackingRouter.post('/evaluate-prompt', (req: Request, res: Response) => {
