@@ -7,7 +7,7 @@ import { CONFIG } from '../config.js';
 import { estimateTimetableBusLocation } from '../engine/timetablePosition.js';
 import { rankBusCandidates } from '../engine/busCandidateMatcher.js';
 import { haversineDistanceMeters } from '../../../packages/shared/src/engine/routeMatcher.js';
-import { publicSearchLimiter } from '../middleware/rateLimiter.js';
+import { publicSearchLimiter, trackingSessionLimiter } from '../middleware/rateLimiter.js';
 
 export const trackingRouter = Router();
 
@@ -96,7 +96,7 @@ trackingRouter.post('/consent', (req: Request, res: Response) => {
 });
 
 // POST /api/tracking/session/start
-trackingRouter.post('/session/start', (req: Request, res: Response) => {
+trackingRouter.post('/session/start', trackingSessionLimiter, (req: Request, res: Response) => {
   const { busId, routeId, originStopId, destinationStopId } = req.body;
 
   if (!busId || !routeId) {
@@ -107,6 +107,13 @@ trackingRouter.post('/session/start', (req: Request, res: Response) => {
   if (!route) return res.status(404).json({ error: 'Route not found' });
   if (!bus || !bus.isActive || bus.routeId !== routeId) {
     return res.status(422).json({ error: 'Live tracking is available only for an active bus explicitly linked to this route.' });
+  }
+  const validStopIds = new Set(route.stops.flatMap(stop => [stop.id, stop.stopId]));
+  if (originStopId && !validStopIds.has(String(originStopId))) {
+    return res.status(422).json({ error: 'originStopId must belong to the selected route.' });
+  }
+  if (destinationStopId && !validStopIds.has(String(destinationStopId))) {
+    return res.status(422).json({ error: 'destinationStopId must belong to the selected route.' });
   }
 
   const sessionId = `sess-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
