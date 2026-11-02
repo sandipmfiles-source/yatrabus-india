@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { repository } from '../db/repository.js';
-import { discoverJourneys } from '../../../packages/shared/src/engine/routeGraph.js';
+import { planJourneys } from '../../../packages/shared/src/engine/journeyPlanner.js';
 import { publicSearchLimiter } from '../middleware/rateLimiter.js';
 
 export const routesRouter = Router();
@@ -24,7 +24,13 @@ routesRouter.get('/search', publicSearchLimiter, (req: Request, res: Response) =
   const transfersById = new Map<string, any>();
   for (const originName of Array.from(new Set(originNames))) {
     for (const destinationName of Array.from(new Set(destinationNames))) {
-      const result = discoverJourneys(originName, destinationName, allRoutes);
+      const result = planJourneys(originName, destinationName, allRoutes, {
+        currentTimeIso: new Date().toISOString(),
+        maximumTransfers: 2,
+        minimumTransferMinutes: 8,
+        maximumTransferWaitMinutes: 90,
+        maximumResults: 8,
+      });
       result.directRoutes.forEach(item => directById.set(item.id, item));
       result.transferRoutes.forEach(item => transfersById.set(item.id, item));
     }
