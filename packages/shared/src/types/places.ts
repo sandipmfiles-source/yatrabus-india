@@ -81,6 +81,10 @@ export interface Place {
   sourceDataset: string;
   sourceRecordId?: string;
   sourceLicense: string;
+  /** Source record or official catalogue page used to identify this place. */
+  sourceUrl?: string;
+  /** Date this record was last checked against its stated source (YYYY-MM-DD). */
+  sourceVerifiedAt?: string;
   verificationStatus: 'UNVERIFIED' | 'COMMUNITY_VERIFIED' | 'ADMIN_VERIFIED';
   aliases: string[];
   createdAt: string;
