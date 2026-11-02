@@ -520,6 +520,22 @@ adminRouter.put('/buses/:id', requireAdminAuth('SUPER_ADMIN'), (req: Request, re
   return res.json({ success: true, bus: updated });
 });
 
+// GET /api/admin/routes?q= — Super Admin route/timetable review queue.
+adminRouter.get('/routes', requireAdminAuth('SUPER_ADMIN'), (req: Request, res: Response) => {
+  const query = typeof req.query.q === 'string' ? req.query.q.trim().toLocaleLowerCase() : '';
+  const routes = repository.getAllRoutes().filter(route => !query || [
+    route.routeNumber, route.routeName, route.originStopName, route.destinationStopName,
+    route.operatorName, route.timetableSource,
+  ].filter(Boolean).join(' ').toLocaleLowerCase().includes(query));
+  return res.json({
+    count: routes.length,
+    routes: routes.slice(0, 200).map(route => ({
+      ...route,
+      timetableDataStatus: route.timetableDataStatus || 'UNAVAILABLE',
+    })),
+  });
+});
+
 // PUT /api/admin/routes/:id — full route and stop timetable edit.
 adminRouter.put('/routes/:id', requireAdminAuth('SUPER_ADMIN'), (req: Request, res: Response) => {
   const existing = repository.getRouteById(String(req.params.id));
