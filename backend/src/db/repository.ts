@@ -263,6 +263,31 @@ export class TransitRepository {
     );
   }
 
+  /** Requires two accurate GPS fixes at least 20 seconds apart before auto-completing a trip. */
+  public recordDestinationArrival(sessionId: string, isNearDestination: boolean, observedAt: string): boolean {
+    const session = this.journeySessions.get(sessionId);
+    if (!session || !session.isActive || !session.destinationStopId) return false;
+    if (!isNearDestination) {
+      session.destinationArrivalCount = 0;
+      session.lastDestinationArrivalAt = undefined;
+      return false;
+    }
+    const nowMs = new Date(observedAt).getTime();
+    const previousMs = session.lastDestinationArrivalAt ? new Date(session.lastDestinationArrivalAt).getTime() : NaN;
+    if (!Number.isFinite(nowMs) || nowMs > Date.now() + 60_000) return false;
+    if (!Number.isFinite(previousMs) || nowMs - previousMs < 20_000 || nowMs - previousMs > 5 * 60_000) {
+      session.destinationArrivalCount = 1;
+    } else {
+      session.destinationArrivalCount = (session.destinationArrivalCount || 0) + 1;
+    }
+    session.lastDestinationArrivalAt = observedAt;
+    if ((session.destinationArrivalCount || 0) >= 2) {
+      this.stopJourneySession(sessionId, 'JOURNEY_COMPLETED');
+      return true;
+    }
+    return false;
+  }
+
   public stopJourneySession(sessionId: string, reason: JourneySession['stoppedReason']): boolean {
     const sess = this.journeySessions.get(sessionId);
     if (!sess) return false;
