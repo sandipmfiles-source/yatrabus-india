@@ -31,7 +31,7 @@ node --loader ts-node/esm data/import-scripts/importLgdDirectory.ts data/lgd-sou
 
 The runtime currently loads the split JSON files in `data/lgd-index/`; the gzip output is supported for compact future snapshots.
 
-## Full town and administrative directory from LGD
+## LGD administrative and urban-local-body directory
 
 The Ministry of Panchayati Raj's Local Government Directory (LGD) is the source of record for administrative entities and unique LGD codes:
 - Official portal: https://lgdirectory.gov.in/
