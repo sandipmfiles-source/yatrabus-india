@@ -157,6 +157,8 @@ export interface JourneyCandidate {
   busIdentifier?: string;
   departureTime: string;
   arrivalTime: string;
+  departureDayOffset?: number;
+  arrivalDayOffset?: number;
   durationMinutes: number;
   boardingStop: RouteStop;
   alightingStop: RouteStop;
