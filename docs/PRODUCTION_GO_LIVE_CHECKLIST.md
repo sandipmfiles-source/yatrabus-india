@@ -66,6 +66,8 @@ This is the required release gate before accepting real passenger data. A succes
 4. **Data coverage:** bundled LGD place search is not a verified national bus timetable database. Bus/operator/route coverage must be collected and verified separately.
 5. **Authentication:** Google OAuth remains intentionally deferred. Public passenger and operator contribution flows do not imply verified operator identity; claims require manual Super Admin review.
 6. **Android release:** CI currently builds a debug APK. Before Play Store/public production distribution, configure a protected Android signing key, signed release workflow, versioning and key backup.
+7. **Admin automation:** rule definitions and on/off values are stored and displayed, but not every rule parameter is consumed by runtime services yet. Treat the automation page as a read-only registry until each rule has a tested runtime integration.
+8. **Duplicate resolution:** the current admin action changes a candidate's review status and records an audit event; it does not physically merge or rewrite route/stop/bus records. Perform any actual data merge as a separate reviewed operation.
 
 ## F. Recommended launch sequence
 
