@@ -5,7 +5,8 @@ import { useLanguage } from '../context/LanguageContext.js';
 import { ArrowLeft, Search, MapPin, Building2, BusFront, ExternalLink, ShieldCheck, AlertTriangle } from 'lucide-react';
 
 type Catalogue = {
-  summary: { states: number; unionTerritories: number; administrativeUnits: number; governmentOperatorDirectoryEntries: number; pilotTownIndexEntries: number };
+  summary: { states: number; unionTerritories: number; administrativeUnits: number; governmentOperatorDirectoryEntries: number; pilotTownIndexEntries: number; lgdIndexRecords: number; lgdUrbanLocalBodies: number; lgdSnapshotDate: string };
+  lgdIndex: { snapshotDate: string; districts: number; subdistricts: number; blocks: number; urbanLocalBodies: number; totalRecords: number };
   states: Array<{ name: string; capital: string; aliases: string[]; region: string; capitalNote?: string; officialReference: string }>;
   unionTerritories: Array<{ name: string; capital: string; aliases: string[]; region: string; capitalNote?: string; officialReference: string }>;
   operators: Array<{ id: string; name: string; shortCode: string; serviceArea: string; officialWebsite?: string; sourceUrl?: string; directoryStatus: string }>;
@@ -13,9 +14,9 @@ type Catalogue = {
 };
 
 const labels = {
-  en: { title: 'India Transit Directory', subtitle: 'States, Union Territories, government bus operators and the West Bengal pilot corridor.', states: 'States', uts: 'Union Territories', operators: 'Government operators', search: 'Search state, UT or operator…', statesHeading: '28 States', utsHeading: '8 Union Territories', operatorHeading: 'Government bus operators', pilot: 'Pilot corridor', noMatch: 'No matching directory entries.', notVerified: 'Directory listing · Not an authenticated operator profile', sources: 'Official references', noTimetable: 'Timetable unavailable', noGps: 'Live GPS unavailable', unverifiedTown: 'Town reference · Needs source reconciliation', dataPolicy: 'Data quality policy', loading: 'Loading India directory…' },
-  hi: { title: 'भारत परिवहन निर्देशिका', subtitle: 'राज्य, केंद्र शासित प्रदेश, सरकारी बस ऑपरेटर और पश्चिम बंगाल पायलट कॉरिडोर।', states: 'राज्य', uts: 'केंद्र शासित प्रदेश', operators: 'सरकारी ऑपरेटर', search: 'राज्य, केंद्र शासित प्रदेश या ऑपरेटर खोजें…', statesHeading: '28 राज्य', utsHeading: '8 केंद्र शासित प्रदेश', operatorHeading: 'सरकारी बस ऑपरेटर', pilot: 'पायलट कॉरिडोर', noMatch: 'कोई मिलती-जुलती प्रविष्टि नहीं मिली।', notVerified: 'डायरेक्टरी सूची · ऑपरेटर प्रोफ़ाइल प्रमाणित नहीं', sources: 'आधिकारिक संदर्भ', noTimetable: 'समय-सारणी उपलब्ध नहीं', noGps: 'लाइव GPS उपलब्ध नहीं', unverifiedTown: 'शहर संदर्भ · स्रोत मिलान बाकी', dataPolicy: 'डेटा गुणवत्ता नियम', loading: 'भारत निर्देशिका लोड हो रही है…' },
-  bn: { title: 'ভারত পরিবহন নির্দেশিকা', subtitle: 'রাজ্য, কেন্দ্রশাসিত অঞ্চল, সরকারি বাস অপারেটর এবং পশ্চিমবঙ্গ পাইলট করিডর।', states: 'রাজ্য', uts: 'কেন্দ্রশাসিত অঞ্চল', operators: 'সরকারি অপারেটর', search: 'রাজ্য, কেন্দ্রশাসিত অঞ্চল বা অপারেটর খুঁজুন…', statesHeading: '২৮টি রাজ্য', utsHeading: '৮টি কেন্দ্রশাসিত অঞ্চল', operatorHeading: 'সরকারি বাস অপারেটর', pilot: 'পাইলট করিডর', noMatch: 'কোনও মিল পাওয়া যায়নি।', notVerified: 'ডিরেক্টরি তালিকা · অপারেটর প্রোফাইল যাচাই করা নয়', sources: 'সরকারি সূত্র', noTimetable: 'সময়সূচি উপলব্ধ নয়', noGps: 'লাইভ GPS উপলব্ধ নয়', unverifiedTown: 'শহরের তথ্য · উৎস যাচাই বাকি', dataPolicy: 'তথ্যের মান নীতি', loading: 'ভারত নির্দেশিকা লোড হচ্ছে…' },
+  en: { title: 'India Transit Directory', subtitle: 'States, Union Territories, government bus operators and the West Bengal pilot corridor.', states: 'States', uts: 'Union Territories', operators: 'Government operators', search: 'Search state, UT or operator…', statesHeading: '28 States', utsHeading: '8 Union Territories', operatorHeading: 'Government bus operators', pilot: 'Pilot corridor', noMatch: 'No matching directory entries.', notVerified: 'Directory listing · Not an authenticated operator profile', sources: 'Official references', noTimetable: 'Timetable unavailable', noGps: 'Live GPS unavailable', unverifiedTown: 'Town reference · Needs source reconciliation', dataPolicy: 'Data quality policy', loading: 'Loading India directory…', lgd: 'LGD admin & town records (2022 snapshot)' },
+  hi: { title: 'भारत परिवहन निर्देशिका', subtitle: 'राज्य, केंद्र शासित प्रदेश, सरकारी बस ऑपरेटर और पश्चिम बंगाल पायलट कॉरिडोर।', states: 'राज्य', uts: 'केंद्र शासित प्रदेश', operators: 'सरकारी ऑपरेटर', search: 'राज्य, केंद्र शासित प्रदेश या ऑपरेटर खोजें…', statesHeading: '28 राज्य', utsHeading: '8 केंद्र शासित प्रदेश', operatorHeading: 'सरकारी बस ऑपरेटर', pilot: 'पायलट कॉरिडोर', noMatch: 'कोई मिलती-जुलती प्रविष्टि नहीं मिली।', notVerified: 'डायरेक्टरी सूची · ऑपरेटर प्रोफ़ाइल प्रमाणित नहीं', sources: 'आधिकारिक संदर्भ', noTimetable: 'समय-सारणी उपलब्ध नहीं', noGps: 'लाइव GPS उपलब्ध नहीं', unverifiedTown: 'शहर संदर्भ · स्रोत मिलान बाकी', dataPolicy: 'डेटा गुणवत्ता नियम', loading: 'भारत निर्देशिका लोड हो रही है…', lgd: 'LGD प्रशासनिक और शहर रिकॉर्ड (2022 स्नैपशॉट)' },
+  bn: { title: 'ভারত পরিবহন নির্দেশিকা', subtitle: 'রাজ্য, কেন্দ্রশাসিত অঞ্চল, সরকারি বাস অপারেটর এবং পশ্চিমবঙ্গ পাইলট করিডর।', states: 'রাজ্য', uts: 'কেন্দ্রশাসিত অঞ্চল', operators: 'সরকারি অপারেটর', search: 'রাজ্য, কেন্দ্রশাসিত অঞ্চল বা অপারেটর খুঁজুন…', statesHeading: '২৮টি রাজ্য', utsHeading: '৮টি কেন্দ্রশাসিত অঞ্চল', operatorHeading: 'সরকারি বাস অপারেটর', pilot: 'পাইলট করিডর', noMatch: 'কোনও মিল পাওয়া যায়নি।', notVerified: 'ডিরেক্টরি তালিকা · অপারেটর প্রোফাইল যাচাই করা নয়', sources: 'সরকারি সূত্র', noTimetable: 'সময়সূচি উপলব্ধ নয়', noGps: 'লাইভ GPS উপলব্ধ নয়', unverifiedTown: 'শহরের তথ্য · উৎস যাচাই বাকি', dataPolicy: 'তথ্যের মান নীতি', loading: 'ভারত নির্দেশিকা লোড হচ্ছে…', lgd: 'LGD প্রশাসনিক ও শহর রেকর্ড (২০২২ স্ন্যাপশট)' },
 };
 
 export const IndiaDirectoryPage: React.FC = () => {
@@ -48,12 +49,13 @@ export const IndiaDirectoryPage: React.FC = () => {
       </div>
 
       {catalogue && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
           {[
             [catalogue.summary.states, t.states],
             [catalogue.summary.unionTerritories, t.uts],
             [catalogue.summary.governmentOperatorDirectoryEntries, t.operators],
             [catalogue.summary.pilotTownIndexEntries, t.pilot],
+            [catalogue.summary.lgdIndexRecords.toLocaleString(), t.lgd],
           ].map(([value, label]) => <div key={String(label)} className="rounded-2xl border border-yatriwarm-200 bg-white p-4"><div className="text-2xl font-extrabold text-yatribrand-900">{value}</div><div className="text-[11px] text-yatriwarm-600">{label}</div></div>)}
         </div>
       )}
@@ -68,6 +70,7 @@ export const IndiaDirectoryPage: React.FC = () => {
 
       {catalogue && (
         <>
+          <p className="text-[10px] text-yatriwarm-500">LGD source snapshot: {catalogue.lgdIndex.snapshotDate} · {catalogue.lgdIndex.districts} districts · {catalogue.lgdIndex.subdistricts.toLocaleString()} sub-districts · {catalogue.lgdIndex.blocks.toLocaleString()} blocks · {catalogue.lgdIndex.urbanLocalBodies.toLocaleString()} urban local bodies. Current LGD changes may post-date this baseline.</p>
           <section className="space-y-3">
             <h2 className="text-base font-bold text-yatriwarm-950 flex items-center gap-2"><MapPin className="w-4 h-4" />{t.statesHeading}</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
