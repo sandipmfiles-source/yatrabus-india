@@ -4,7 +4,7 @@ import { pathToFileURL } from 'node:url';
 import { gzipSync } from 'node:zlib';
 
 type Row = Record<string, string>;
-type LgdLevel = 'STATE' | 'DISTRICT' | 'TEHSIL' | 'BLOCK' | 'CITY' | 'TOWN' | 'VILLAGE';
+type LgdLevel = 'STATE' | 'UNION_TERRITORY' | 'DISTRICT' | 'TEHSIL' | 'BLOCK' | 'CITY' | 'TOWN' | 'VILLAGE';
 
 function parseCsv(source: string): Row[] {
   const rows: string[][] = [];
