@@ -110,11 +110,11 @@ export const api = {
     return await res.json();
   },
 
-  async startJourneySession(busId: string, routeId: string) {
+  async startJourneySession(busId: string, routeId: string, destinationStopId?: string) {
     const res = await fetch(`${API_BASE}/tracking/session/start`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ busId, routeId }),
+      body: JSON.stringify({ busId, routeId, destinationStopId }),
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok || !data.session) throw new Error(data.message || 'Live tracking service is unavailable. Please try again when connected.');
