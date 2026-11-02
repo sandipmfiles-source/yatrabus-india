@@ -44,6 +44,8 @@ export function runGtfsImporterTests(assert: (description: string, pass: boolean
   const imported = importGtfsZip(zip, new Date('2026-11-02T00:00:00.000Z'));
   assert('GTFS ZIP imports a route, operator and trip', imported.errors.length === 0 && imported.routes.length === 1 && imported.operators.length === 1);
   assert('GTFS 24:40 trip arrival retains next-day offset', imported.routes[0]?.departures?.[0]?.arrivalTime === '00:40' && imported.routes[0]?.departures?.[0]?.stopTimes?.[1]?.arrivalDayOffset === 1);
+  assert('GTFS frequencies.txt expands approximate headway services', imported.routes[0]?.departures?.length === 2 && imported.routes[0]?.frequencyMinutes === 30);
+  assert('Approximate GTFS headway trips are not labelled as exact schedules', imported.routes[0]?.departures?.[0]?.isFrequencyBased === true && imported.routes[0]?.departures?.[0]?.exactTimes === false && imported.routes[0]?.departures?.[0]?.confidenceScore === 55);
   assert('GTFS service calendar and removed-date exception are retained', imported.routes[0]?.departures?.[0]?.operatingDays.includes('MON') === true && imported.routes[0]?.departures?.[0]?.removedServiceDates?.includes('20261103') === true);
   assert('Imported GTFS routes remain unverified until Super Admin review', imported.routes[0]?.verificationStatus === 'UNVERIFIED' && imported.routes[0]?.serviceStatus === 'SCHEDULE_UNVERIFIED');
   const missing = importGtfsZip(makeStoredZip({ 'agency.txt': 'agency_name\nDemo\n' }));
