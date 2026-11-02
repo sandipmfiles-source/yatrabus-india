@@ -42,7 +42,13 @@ Bus owners and passengers can submit information without Google sign-in or an ac
 - OSM tile policy requires visible attribution, normal interactive viewing only, and respecting caching headers. Do not bulk-download tiles or add offline map prefetch.
 - Public OSRM/Nominatim endpoints are community resources with usage limits, not guaranteed free production infrastructure.
 
-## 5. Backend environment variables
+## 5. India LGD place-index files
+
+The backend place-search route loads the split LGD index from the repository's root `data/lgd-index/` directory. Keep this directory in the production deployment alongside the backend source/build; deploying only the `backend/` folder will omit the index. The server resolves the path from source mode, compiled `dist/` mode and the process working directory.
+
+The bundled index is a historical 11 March 2022 baseline. Keep its four JSON files and source metadata together. A refreshed index must be generated from a newer official LGD export, reviewed for source date/licence, and deployed atomically. The 4,814 urban-local-body layer is not a complete Census Town or village directory.
+
+## 6. Backend environment variables
 
 Configure only on the backend host, never in the APK:
 
@@ -62,7 +68,7 @@ Configure only on the backend host, never in the APK:
 
 Only Super Admin credentials belong in the backend host's private environment. Never put passwords, JWT secrets, or database passwords in GitHub source files or the APK.
 
-## 6. Persistent database activation (future step)
+## 7. Persistent database activation (future step)
 
 Before public launch, connect the runtime repository to PostgreSQL and then run:
 
@@ -73,6 +79,6 @@ Before public launch, connect the runtime repository to PostgreSQL and then run:
 
 The migration files alone do not activate PostgreSQL. Verify reads, writes, restart recovery and backups before accepting real community data.
 
-## 7. Backup
+## 8. Backup
 
 For a persistent PostgreSQL deployment, schedule regular pg_dump backups and test restoration. For the current JSON-file backend, keep the data directory on a persistent disk and back up yatribus-state.json; a container's temporary filesystem is not a backup.
