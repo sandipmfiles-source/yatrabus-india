@@ -249,7 +249,6 @@ placesRouter.get('/search', publicSearchLimiter, async (req: Request, res: Respo
       sourceSnapshotDate: item.snapshotDate,
       verificationStatus: 'UNVERIFIED',
       aliases: item.localName ? [String(item.localName)] : [],
-      sourceSnapshotDate: item.snapshotDate,
       createdAt: importedAt,
       updatedAt: importedAt,
     };
