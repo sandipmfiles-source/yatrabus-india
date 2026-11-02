@@ -197,7 +197,15 @@ adminRouter.post('/submissions/:id/review', requireAdminAuth('SUPER_ADMIN'), (re
       departureTimes: requestedDepartureTimes,
       frequencyMinutes: Number.isFinite(Number(data.frequencyMinutes)) && Number(data.frequencyMinutes) > 0
         ? Number(data.frequencyMinutes) : undefined,
-      serviceStatus: verifyTimetable === true ? 'OPERATING_SCHEDULED' : route.serviceStatus,
+      timetableSource: verifyTimetable === true ? 'Super Admin-reviewed community submission' : route.timetableSource,
+      timetableSourceUrl: verifyTimetable === true ? evidenceUrl : route.timetableSourceUrl,
+      timetableVerifiedAt: verifyTimetable === true ? new Date().toISOString() : route.timetableVerifiedAt,
+      timetableDataStatus: verifyTimetable === true ? 'SCHEDULED' : route.timetableDataStatus || 'UNAVAILABLE',
+      departures: verifyTimetable === true ? route.departures?.map(departure => ({
+        ...departure, sourceName: 'Super Admin-reviewed community submission',
+        sourceUrl: evidenceUrl, sourceVerifiedAt: new Date().toISOString(), dataStatus: 'SCHEDULED' as const,
+      })) : route.departures,
+      serviceStatus: 'SCHEDULE_UNVERIFIED',
       stops: updatedStops,
       geometry: updatedStops.map(stop => ({ latitude: stop.latitude, longitude: stop.longitude })),
       updatedAt: new Date().toISOString(),
@@ -306,7 +314,11 @@ adminRouter.post('/submissions/:id/review', requireAdminAuth('SUPER_ADMIN'), (re
       stops,
       geometry: stops.map(stop => ({ latitude: stop.latitude, longitude: stop.longitude })),
       verificationStatus: 'ADMIN_VERIFIED',
-      serviceStatus: verifyTimetable === true ? 'OPERATING_SCHEDULED' : 'SCHEDULE_UNVERIFIED',
+      timetableSource: verifyTimetable === true ? 'Super Admin-reviewed community submission' : undefined,
+      timetableSourceUrl: verifyTimetable === true ? evidenceUrl : undefined,
+      timetableVerifiedAt: verifyTimetable === true ? now : undefined,
+      timetableDataStatus: verifyTimetable === true ? 'SCHEDULED' : 'UNAVAILABLE',
+      serviceStatus: 'SCHEDULE_UNVERIFIED',
       createdAt: now,
       updatedAt: now,
     };
@@ -368,7 +380,12 @@ adminRouter.post('/submissions/:id/review', requireAdminAuth('SUPER_ADMIN'), (re
         departureTime: validTime(input.departureTime) ? input.departureTime : undefined,
       }];
     });
-    if (!repository.updateTimetableDeparture(route.id, oldBusIdentifier, data.departureTime, data.arrivalTime, String(data.busIdentifier), stopTimes)) {
+    const departureVerification = verifyTimetable === true ? {
+      sourceName: 'Super Admin-reviewed community submission',
+      sourceUrl: evidenceUrl,
+      sourceVerifiedAt: new Date().toISOString(),
+    } : undefined;
+    if (!repository.updateTimetableDeparture(route.id, oldBusIdentifier, data.departureTime, data.arrivalTime, String(data.busIdentifier), stopTimes, departureVerification)) {
       return res.status(404).json({ error: 'Existing timetable departure was not found for this bus.' });
     }
     const targetBus = pendingSubmission.targetEntityId ? repository.getBusById(pendingSubmission.targetEntityId) : undefined;
@@ -377,10 +394,10 @@ adminRouter.post('/submissions/:id/review', requireAdminAuth('SUPER_ADMIN'), (re
       publicIdentifier: String(data.busIdentifier).trim().slice(0, 80),
       operatorName: typeof data.operatorName === 'string' ? data.operatorName.trim().slice(0, 120) : targetBus.operatorName,
       contributedBy: pendingSubmission.contributorDisplayName || targetBus.contributedBy,
-      serviceStatus: verifyTimetable === true ? 'OPERATING_SCHEDULED' : targetBus.serviceStatus,
+      serviceStatus: 'SCHEDULE_UNVERIFIED',
       updatedAt: new Date().toISOString(),
     });
-    if (verifyTimetable === true) repository.addRoute({ ...route, serviceStatus: 'OPERATING_SCHEDULED', updatedAt: new Date().toISOString() });
+    // Verifying one departure does not prove that the entire route is operating today.
   }
 
   if (decision === 'ADMIN_VERIFIED' && pendingSubmission?.submissionType === 'DELETE_BUS') {
@@ -435,6 +452,10 @@ adminRouter.post('/submissions/:id/review', requireAdminAuth('SUPER_ADMIN'), (re
       stopTimes,
       operatingDays: days.length ? days : ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'],
       confidenceScore: 100,
+      sourceName: verifyTimetable === true ? 'Super Admin-reviewed community submission' : undefined,
+      sourceUrl: verifyTimetable === true ? evidenceUrl : undefined,
+      sourceVerifiedAt: verifyTimetable === true ? new Date().toISOString() : undefined,
+      dataStatus: verifyTimetable === true ? 'SCHEDULED' : 'UNAVAILABLE',
       isCancelled: false,
     };
     if (!repository.addTimetableDeparture(route.id, departure, Number(data.frequencyMinutes))) {
@@ -453,7 +474,7 @@ adminRouter.post('/submissions/:id/review', requireAdminAuth('SUPER_ADMIN'), (re
         contributedBy: pendingSubmission.contributorDisplayName || pendingSubmission.contributorNote || undefined,
         vehicleType: 'ORDINARY',
         hasCustomSvgIllustration: true,
-        serviceStatus: verifyTimetable === true ? 'OPERATING_SCHEDULED' : 'SCHEDULE_UNVERIFIED',
+        serviceStatus: 'SCHEDULE_UNVERIFIED',
         verificationStatus: 'ADMIN_VERIFIED',
         isActive: true,
         createdAt: now,
