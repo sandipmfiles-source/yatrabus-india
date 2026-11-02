@@ -206,7 +206,7 @@ placesRouter.get('/search', publicSearchLimiter, async (req: Request, res: Respo
     const prefix = name.toLocaleLowerCase('en-IN').startsWith(needle);
     const levelKey = level.toLocaleLowerCase('en-IN').replace(/[^a-z]/g, '');
     const typeByLevel: Record<string, string> = {
-      state: 'STATE', stateut: 'UNION_TERRITORY', unionterritory: 'UNION_TERRITORY', district: 'DISTRICT',
+      state: 'STATE', stateut: 'STATE', unionterritory: 'UNION_TERRITORY', district: 'DISTRICT',
       subdistrict: 'TEHSIL', subdistricttehsil: 'TEHSIL', tehsil: 'TEHSIL',
       block: 'BLOCK', urbanlocalbody: 'CITY', citytown: 'TOWN', town: 'TOWN', village: 'VILLAGE',
     };
