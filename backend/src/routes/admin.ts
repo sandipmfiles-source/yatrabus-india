@@ -554,8 +554,11 @@ adminRouter.put('/routes/:id', requireAdminAuth('SUPER_ADMIN'), (req: Request, r
   if (data.timetableDataStatus === 'SCHEDULED' && !confirmTimetableVerification) {
     return res.status(403).json({ error: 'A timetable can only be marked SCHEDULED through explicit Super Admin verification.' });
   }
+  if (timetableSourceUrl && !/^https:\/\//i.test(timetableSourceUrl)) {
+    return res.status(422).json({ error: 'Timetable source URL must use HTTPS.' });
+  }
   if (confirmTimetableVerification && (
-      !timetableSource || !timetableSourceUrl || !/^https:\/\//i.test(timetableSourceUrl) ||
+      !timetableSource || !timetableSourceUrl ||
       verificationReason.length < 10
   )) {
     return res.status(422).json({ error: 'Timetable verification requires a named source, HTTPS source URL and a reason of at least 10 characters.' });
