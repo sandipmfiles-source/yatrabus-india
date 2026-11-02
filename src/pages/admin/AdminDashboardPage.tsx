@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../../services/api.js';
 import { SystemHealthStats } from '@shared/types/admin.js';
-import { MapPin, BusFront, Route as RouteIcon, Radio, FileText, Sliders, Activity, LogOut, Copy, FileArchive } from 'lucide-react';
+import { MapPin, BusFront, Route as RouteIcon, Radio, FileText, Sliders, Activity, LogOut, Copy, FileArchive, Clock3 } from 'lucide-react';
 
 export const AdminDashboardPage: React.FC = () => {
   const navigate = useNavigate();
