@@ -541,7 +541,7 @@ export class TransitRepository {
     return {
       status: 'HEALTHY',
       uptimeSeconds: Math.floor((Date.now() - this.startTimeMs) / 1000),
-      databaseConnected: true,
+      databaseConnected: false, // Runtime currently uses JSON-file persistence, not PostgreSQL/PostGIS.
       totalPlaces: this.places.size,
       totalBuses: this.buses.size,
       totalRoutes: this.routes.size,
