@@ -49,6 +49,7 @@ LIVE_GPS is not a timetable status: it is a separate, freshness-bound state deri
 - Ministry of Panchayati Raj — Local Government Directory: https://lgdirectory.gov.in/
 - Ministry of Panchayati Raj LGD overview: https://panchayat.gov.in/en/lgd/
 - Open Government Data Platform — LGD catalogue: https://data.gov.in/catalog/local-government-directory-lgd
+- Monthly refreshed LGD archive mirror referenced by the dataset maintainer: https://ramseraph.github.io/opendata/lgd/ (mirror only; verify the snapshot against official LGD before replacing the bundled index)
 - Ministry of Home Affairs — Union Territories division: https://www.mha.gov.in/union-territories-divisions
 - West Bengal Transport Department: https://transport.wb.gov.in/
 - ASRTU STUs Profile and Performance 2019–20: https://asrtu.org/resource/front/uploads/STUs%20Profile%20and%20Performance%202019-20.pdf
