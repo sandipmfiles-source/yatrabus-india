@@ -1,5 +1,6 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { resolve, basename } from 'node:path';
+import { resolve, basename, dirname } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { gzipSync } from 'node:zlib';
 
 type Row = Record<string, string>;
@@ -71,11 +72,12 @@ export function convertLgdRows(rows: Row[], level: LgdLevel, snapshotDate: strin
     places.push({
       id: recordId(type, code),
       canonicalName: name,
-      names: { en: name, ...(localName ? { bn: localName } : {}) },
+      names: { en: name },
       placeType: type,
       ...(state ? { state } : {}),
       ...(district ? { district } : {}),
-      ...(subdistrict ? { parentName: subdistrict } : {}),
+      ...(subdistrict ? { subdistrict } : {}),
+      level: type,
       ...(Number.isFinite(latitude) && latitude >= 6 && latitude <= 38 ? { latitude } : {}),
       ...(Number.isFinite(longitude) && longitude >= 68 && longitude <= 98 ? { longitude } : {}),
       sourceDataset: 'INDIA_LOCAL_GOVERNMENT_DIRECTORY',
@@ -84,7 +86,7 @@ export function convertLgdRows(rows: Row[], level: LgdLevel, snapshotDate: strin
       sourceLicense: 'Government Open Data License - India (GODL-India)',
       sourceVerifiedAt: snapshotDate,
       verificationStatus: 'UNVERIFIED',
-      aliases: [],
+      aliases: localName && localName !== name ? [localName] : [],
       createdAt: snapshotDate + 'T00:00:00.000Z',
       updatedAt: snapshotDate + 'T00:00:00.000Z',
     });
@@ -118,12 +120,12 @@ export function buildLgdCatalogue(inputDirectory: string, outputFile: string, sn
     counts,
     places: Array.from(places.values()),
   };
-  mkdirSync(resolve(outputFile, '..'), { recursive: true });
+  mkdirSync(dirname(outputFile), { recursive: true });
   writeFileSync(outputFile, gzipSync(Buffer.from(JSON.stringify(payload))));
   return { outputFile, counts, total: places.size, snapshotDate };
 }
 
-if (process.argv[1] && import.meta.url === new URL('file://' + resolve(process.argv[1])).href) {
+if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   const input = resolve(process.argv[2] || 'data/lgd-source');
   const output = resolve(process.argv[3] || 'data/india-lgd-directory.json.gz');
   const snapshot = process.argv[4] || new Date().toISOString().slice(0, 10);
