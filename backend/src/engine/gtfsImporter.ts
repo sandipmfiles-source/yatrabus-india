@@ -121,7 +121,21 @@ function parseGtfsTime(value: string): { time: string; dayOffset: number; absolu
   };
 }
 
-function validDate(value: string): boolean { return /^\\d{8}$/.test(value) && !Number.isNaN(Date.UTC(Number(value.slice(0, 4)), Number(value.slice(4, 6)) - 1, Number(value.slice(6, 8))); }
+function validDate(value: string): boolean {
+  if (!/^\\d{8}$/.test(value)) return false;
+  const year = Number(value.slice(0, 4)), month = Number(value.slice(4, 6)), day = Number(value.slice(6, 8));
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
+}
+function weekdayForGtfsDate(value: string): Route['operatingDays'][number] | undefined {
+  if (!validDate(value)) return undefined;
+  const date = new Date(Date.UTC(Number(value.slice(0, 4)), Number(value.slice(4, 6)) - 1, Number(value.slice(6, 8))));
+  return DAY_CODES[(date.getUTCDay() + 6) % 7];
+}
+function timeFromAbsoluteMinutes(value: number): string {
+  const minutes = ((value % 1440) + 1440) % 1440;
+  return String(Math.floor(minutes / 60)).padStart(2, '0') + ':' + String(minutes % 60).padStart(2, '0');
+}
 function serviceDays(row?: CsvRow): Route['operatingDays'] {
   if (!row) return [];
   return DAY_COLUMNS.flatMap((key, index) => row[key] === '1' ? [DAY_CODES[index]] : []);
@@ -257,6 +271,7 @@ export function importGtfsZip(base64: string, now = new Date()): GtfsImportResul
       const days = serviceDays(calendar);
       days.forEach(day => daySet.add(day));
       const exceptions = exceptionsByService.get(serviceId) || { added: [], removed: [] };
+      exceptions.added.forEach(date => { const day = weekdayForGtfsDate(date); if (day) daySet.add(day); });
       const validTimes = item.times.map(row => ({
         row, arrival: parseGtfsTime(row.arrival_time || ''), departure: parseGtfsTime(row.departure_time || ''),
       }));
@@ -294,10 +309,10 @@ export function importGtfsZip(base64: string, now = new Date()): GtfsImportResul
     const routeCalendar = items.map(item => calendarByService.get(item.trip.service_id)).filter(Boolean) as CsvRow[];
     const startDates = routeCalendar.map(row => row.start_date).filter(validDate).sort();
     const endDates = routeCalendar.map(row => row.end_date).filter(validDate).sort();
-    const first = departures[0];
-    const firstTime = first.departureTime;
-    const lastTime = departures.slice().sort((a, b) => (b.departureDayOffset || 0) * 1440 + Number(b.departureTime.slice(0, 2)) * 60 + Number(b.departureTime.slice(3)) -
-      ((a.departureDayOffset || 0) * 1440 + Number(a.departureTime.slice(0, 2)) * 60 + Number(a.departureTime.slice(3))))[0];
+    const departureMinute = (item: TimetableDeparture) => (item.departureDayOffset || 0) * 1440 +
+      Number(item.departureTime.slice(0, 2)) * 60 + Number(item.departureTime.slice(3));
+    const firstDepartureMinute = Math.min(...departures.map(departureMinute));
+    const lastDepartureMinute = Math.max(...departures.map(departureMinute));
     const stopPatternKeys = new Set(items.map(item => item.times.map(row => row.stop_id).join('|')));
     if (stopPatternKeys.size > 1) warnings.push(`Route ${sourceRouteId} has ${stopPatternKeys.size} stop patterns; imported route shape uses the first trip's stop order while each trip retains its own stop_times.`);
     const shapeId = firstTrip.trip.shape_id;
@@ -314,9 +329,9 @@ export function importGtfsZip(base64: string, now = new Date()): GtfsImportResul
       distanceKm: Number(distanceFromStartKm.toFixed(2)),
       typicalDurationMinutes: Math.max(1, Math.round((minDuration + maxDuration) / 2)),
       operatingDays: DAY_CODES.filter(day => daySet.has(day)),
-      firstDepartureTime: firstTime,
-      lastDepartureTime: lastTime.departureTime,
-      departures: departures.sort((a, b) => (a.departureDayOffset || 0) * 1440 + a.departureTime.localeCompare(b.departureTime)),
+      firstDepartureTime: timeFromAbsoluteMinutes(firstDepartureMinute),
+      lastDepartureTime: timeFromAbsoluteMinutes(lastDepartureMinute),
+      departures: departures.sort((a, b) => departureMinute(a) - departureMinute(b)),
       stops: routeStops,
       geometry: geometry && geometry.length >= 2 ? geometry : undefined,
       verificationStatus: 'UNVERIFIED',
