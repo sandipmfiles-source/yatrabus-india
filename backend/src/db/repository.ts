@@ -432,6 +432,10 @@ export class TransitRepository {
     return Array.from(this.automationRules.values());
   }
 
+  public getAutomationRuleByCode(ruleCode: string): AutomationRule | undefined {
+    return Array.from(this.automationRules.values()).find(rule => rule.ruleCode === ruleCode);
+  }
+
   public updateAutomationRule(id: string, isEnabled: boolean, params: Record<string, any>): boolean {
     const rule = this.automationRules.get(id);
     if (!rule) return false;
