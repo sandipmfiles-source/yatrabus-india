@@ -86,7 +86,7 @@ export function convertLgdRows(rows: Row[], level: LgdLevel, snapshotDate: strin
       sourceRecordId: code,
       sourceUrl: 'https://lgdirectory.gov.in/',
       sourceLicense: 'Government Open Data License - India (GODL-India)',
-      sourceVerifiedAt: snapshotDate,
+      sourceSnapshotDate: snapshotDate,
       verificationStatus: 'UNVERIFIED',
       aliases: localName && localName !== name ? [localName] : [],
       createdAt: snapshotDate + 'T00:00:00.000Z',
