@@ -85,6 +85,7 @@ export const hi = {
   arrival_short: 'पहुंचें',
 
   nav_find_buses: 'बसें खोजें',
+  nav_india_directory: 'भारत निर्देशिका',
   nav_contribute: 'जानकारी दें',
   nav_operator_portal: 'ऑपरेटर पोर्टल',
   nav_admin_title: 'यातायात सत्यापन और एडमिन पोर्टल',
