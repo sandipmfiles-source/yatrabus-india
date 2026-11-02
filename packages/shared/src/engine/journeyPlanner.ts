@@ -38,6 +38,49 @@ function enumeratePaths(
   maxTransfers: number,
   maxPaths: number,
 ): RouteLegPath[][] {
+  type IndexedStop = { route: Route; index: number; stop: RouteStop };
+  const byId = new Map<string, IndexedStop[]>();
+  const byName = new Map<string, IndexedStop[]>();
+  const byCell = new Map<string, IndexedStop[]>();
+  const cellKey = (lat: number, lon: number) => `${Math.floor(lat * 500)}:${Math.floor(lon * 500)}`;
+  const add = (map: Map<string, IndexedStop[]>, key: string, value: IndexedStop) => {
+    if (!key) return;
+    const list = map.get(key) || [];
+    list.push(value); map.set(key, list);
+  };
+  for (const route of routes) {
+    route.stops.forEach((stop, index) => {
+      const item = { route, index, stop };
+      add(byId, stop.stopId, item);
+      add(byName, normalizePlaceName(stop.stopName), item);
+      if (Number.isFinite(stop.latitude) && Number.isFinite(stop.longitude) &&
+          !(stop.latitude === 0 && stop.longitude === 0)) {
+        add(byCell, cellKey(stop.latitude, stop.longitude), item);
+      }
+    });
+  }
+  const interchangeTargets = (stop: RouteStop): IndexedStop[] => {
+    const candidates = [
+      ...(byId.get(stop.stopId) || []),
+      ...(byName.get(normalizePlaceName(stop.stopName)) || []),
+    ];
+    if (Number.isFinite(stop.latitude) && Number.isFinite(stop.longitude) &&
+        !(stop.latitude === 0 && stop.longitude === 0)) {
+      const latCell = Math.floor(stop.latitude * 500), lonCell = Math.floor(stop.longitude * 500);
+      for (let lat = latCell - 1; lat <= latCell + 1; lat++) {
+        for (let lon = lonCell - 1; lon <= lonCell + 1; lon++) {
+          candidates.push(...(byCell.get(`${lat}:${lon}`) || []));
+        }
+      }
+    }
+    const unique = new Map<string, IndexedStop>();
+    for (const item of candidates) {
+      const key = item.route.id + ':' + item.index;
+      if (!unique.has(key) && sameInterchange(stop, item.stop)) unique.set(key, item);
+    }
+    return Array.from(unique.values());
+  };
+
   const found: RouteLegPath[][] = [];
   const visit = (route: Route, boardIndex: number, visited: Set<string>, legs: RouteLegPath[]) => {
     if (found.length >= maxPaths) return;
@@ -51,15 +94,12 @@ function enumeratePaths(
         continue;
       }
       if (legs.length >= maxTransfers) continue;
-      for (const nextRoute of routes) {
-        if (visited.has(nextRoute.id)) continue;
-        for (let nextIndex = 0; nextIndex < nextRoute.stops.length - 1; nextIndex++) {
-          if (!sameInterchange(alightingStop, nextRoute.stops[nextIndex])) continue;
-          const nextVisited = new Set(visited);
-          nextVisited.add(nextRoute.id);
-          visit(nextRoute, nextIndex, nextVisited, [...legs, nextLeg]);
-          if (found.length >= maxPaths) return;
-        }
+      for (const target of interchangeTargets(alightingStop)) {
+        if (visited.has(target.route.id) || target.index >= target.route.stops.length - 1) continue;
+        const nextVisited = new Set(visited);
+        nextVisited.add(target.route.id);
+        visit(target.route, target.index, nextVisited, [...legs, nextLeg]);
+        if (found.length >= maxPaths) return;
       }
     }
   };
