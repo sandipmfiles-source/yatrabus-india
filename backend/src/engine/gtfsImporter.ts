@@ -200,8 +200,9 @@ export function importGtfsZip(base64: string, now = new Date()): GtfsImportResul
     const id = `gtfs-operator-${slug(agencyId)}`;
     operatorById.set(agencyId, {
       id, name, shortCode: safeText(agencyId, 24) || undefined,
-      operatorType: 'PRIVATE_FLEET', serviceArea: 'India',
+      operatorType: 'UNCLASSIFIED', serviceArea: 'India',
       contactWebsite: safeText(agency.agency_url, 300),
+      sourceUrl: safeText(agency.agency_url, 300),
       verificationStatus: 'COMMUNITY_LISTED', isClaimed: false,
       sourceDataset: 'GTFS_STATIC_IMPORT_UNVERIFIED',
       createdAt: now.toISOString(), updatedAt: now.toISOString(),
@@ -315,6 +316,9 @@ export function importGtfsZip(base64: string, now = new Date()): GtfsImportResul
           departureDayOffset: Math.floor(absoluteStart / 1440),
           // GTFS trip_headsign describes a destination sign, not a unique physical bus.
           tripId: safeText(item.trip.trip_id, 100),
+          sourceName: 'GTFS static feed (not yet admin-verified)',
+          sourceUrl: safeText(agencyById.get(agencyId)?.agency_url, 300),
+          dataStatus: 'UNAVAILABLE',
           stopTimes: shiftedStopTimes,
           operatingDays: days,
           serviceId,
@@ -384,6 +388,9 @@ export function importGtfsZip(base64: string, now = new Date()): GtfsImportResul
       frequencyMinutes: routeHeadways.length && new Set(routeHeadways).size === 1 ? Math.max(1, Math.round(routeHeadways[0] / 60)) : undefined,
       stops: routeStops,
       geometry: geometry && geometry.length >= 2 ? geometry : undefined,
+      timetableSource: 'GTFS static feed (not yet admin-verified)',
+      timetableSourceUrl: safeText(operator.contactWebsite, 300),
+      timetableDataStatus: 'UNAVAILABLE',
       verificationStatus: 'UNVERIFIED',
       serviceStatus: 'SCHEDULE_UNVERIFIED',
       createdAt: now.toISOString(), updatedAt: now.toISOString(),
