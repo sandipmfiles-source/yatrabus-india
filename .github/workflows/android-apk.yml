@@ -153,3 +153,37 @@ jobs:
           generate_release_notes: true
           files: release-assets/app-debug.apk
           fail_on_unmatched_files: true
+
+  sync-lockfile:
+    name: Commit validated npm lockfile to Phase 1 branch
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.ref == 'phase1-final-v3' && github.event.pull_request.head.repo.full_name == github.repository && needs.build-android.result == 'success'
+    needs: build-android
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout the Phase 1 branch
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+
+      - name: Download the lockfile validated by the build
+        uses: actions/download-artifact@v4
+        with:
+          name: yatribus-resolved-package-lock
+          path: generated-lock
+
+      - name: Commit the validated lockfile
+        env:
+          HEAD_BRANCH: ${{ github.event.pull_request.head.ref }}
+        run: |
+          cp generated-lock/package-lock.json package-lock.json
+          if git diff --quiet -- package-lock.json; then
+            echo "Committed package-lock.json is already synchronized."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json
+          git commit -m "chore: sync validated npm lockfile"
+          git push origin "HEAD:${HEAD_BRANCH}"
