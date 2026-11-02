@@ -134,7 +134,7 @@ export const api = {
     }
   },
 
-  async sendObservation(obs: { sessionId: string; busId: string; routeId: string; latitude: number; longitude: number; accuracyMeters: number; speedKmh?: number; headingDegrees?: number }) {
+  async sendObservation(obs: { sessionId: string; busId: string; routeId: string; latitude: number; longitude: number; accuracyMeters: number; speedKmh?: number; headingDegrees?: number; locationSource?: 'GPS' | 'NETWORK' }) {
     try {
       const res = await fetch(`${API_BASE}/tracking/observation`, {
         method: 'POST',
