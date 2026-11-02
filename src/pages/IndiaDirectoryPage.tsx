@@ -123,7 +123,9 @@ export const IndiaDirectoryPage: React.FC = () => {
             </div>
             <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 space-y-2">
               <div className="text-xs font-bold text-amber-950">Historical corridor evidence — 2019 only (not a current timetable)</div>
+              <span className="inline-flex rounded-full bg-amber-100 text-amber-950 px-2 py-1 text-[9px] font-bold">HISTORICAL_REFERENCE_ONLY</span>
               <p className="text-[10px] text-amber-900">{catalogue.pilotCorridor.historicalServiceEvidence.operator} · {catalogue.pilotCorridor.historicalServiceEvidence.sourceName} · {catalogue.pilotCorridor.historicalServiceEvidence.sourceDate}</p>
+              <p className="text-[10px] text-amber-900">One-off service dates: {catalogue.pilotCorridor.historicalServiceEvidence.serviceDates.join(', ')}</p>
               <p className="text-[11px] font-semibold text-amber-950">{catalogue.pilotCorridor.historicalServiceEvidence.direction}</p>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {catalogue.pilotCorridor.historicalServiceEvidence.listedTimes.map(item => <div key={item.stop} className="rounded-xl bg-white/70 p-2">
