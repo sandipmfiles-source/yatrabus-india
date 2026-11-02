@@ -28,7 +28,7 @@ Pilot towns currently indexed:
 - Howrah district: Uluberia, Howrah, Santragachi
 - Kolkata: Kolkata
 
-The West Bengal Transport Department identifies WBTC as serving Kolkata/suburban areas, SBSTC for southern and south-western districts, and NBSTC for North Bengal. These references help direct data collection, but do not prove that a particular operator runs a specific Jhargram–Kharagpur–Kolkata departure.
+The West Bengal Transport Department identifies WBTC as serving Kolkata/suburban areas, SBSTC for southern and south-western districts, and NBSTC for North Bengal. Its terminal directory lists Jhargram, Midnapore, Kharagpur, Panskura, Howrah, Santragachi, Shalimar and other bus termini. These references help direct data collection, but do not prove that a particular operator runs a specific Jhargram–Kharagpur–Kolkata departure.
 
 **Pilot timetable state: UNAVAILABLE.** No official current departure timetable was supplied in the repository. Third-party schedule snippets are not used to invent or verify times. The pilot will move to SCHEDULED only after an official operator publication is reviewed and the Super Admin records the source, URL, reason and timestamp.
 
