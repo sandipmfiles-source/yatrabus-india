@@ -35,7 +35,7 @@ export const BusCard: React.FC<BusCardProps> = ({ journey }) => {
               ) : (
                 <span className="text-[11px] font-medium text-purple-800 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-200 flex items-center gap-1">
                   <Split className="w-3 h-3" />
-                  1 Transfer
+                  {transfers.length} {transfers.length === 1 ? 'Transfer' : 'Transfers'}
                 </span>
               )}
             </div>
@@ -53,7 +53,7 @@ export const BusCard: React.FC<BusCardProps> = ({ journey }) => {
         <div className="bg-yatriwarm-50/80 rounded-xl p-3 border border-yatriwarm-200/60 my-3">
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-base font-bold text-yatriwarm-900">{departureTime}</div>
+              <div className="text-base font-bold text-yatriwarm-900">{departureTime}{journey.departureDayOffset ? <span className="ml-1 text-[9px] font-medium text-yatriwarm-500">+{journey.departureDayOffset} day</span> : null}</div>
               <div className="text-[11px] text-yatriwarm-500 font-medium flex items-center gap-1 mt-0.5">
                 <BusFront className="w-4 h-4 text-yatribrand-700 shrink-0" />
                 <span className="line-clamp-1">{boardingStop.stopName}</span>
@@ -75,7 +75,7 @@ export const BusCard: React.FC<BusCardProps> = ({ journey }) => {
             </div>
 
             <div className="text-right">
-              <div className="text-base font-bold text-yatriwarm-900">{arrivalTime}</div>
+              <div className="text-base font-bold text-yatriwarm-900">{arrivalTime}{journey.arrivalDayOffset ? <span className="ml-1 text-[9px] font-medium text-yatriwarm-500">+{journey.arrivalDayOffset} day</span> : null}</div>
               <div className="text-[11px] text-yatriwarm-500 font-medium flex items-center justify-end gap-1 mt-0.5">
                 <span className="line-clamp-1">{alightingStop.stopName}</span>
                 <BusFront className="w-4 h-4 text-emerald-600 shrink-0" />
@@ -89,8 +89,10 @@ export const BusCard: React.FC<BusCardProps> = ({ journey }) => {
           {journey.timetableDepartures && journey.timetableDepartures.length > 0 && (
             <div className="mt-3 pt-3 border-t border-yatriwarm-200">
               <div className="flex items-center justify-between mb-2">
-                <div className="text-[11px] font-bold text-signal-charcoal-800">{t('verified_departures')}</div>
-                <span className="text-[9px] uppercase tracking-wider font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded-full">{t('admin_verified')}</span>
+                <div className="text-[11px] font-bold text-signal-charcoal-800">Scheduled departures</div>
+                <span className={`text-[9px] uppercase tracking-wider font-bold px-2 py-1 rounded-full ${route.verificationStatus === 'ADMIN_VERIFIED' && route.serviceStatus !== 'SCHEDULE_UNVERIFIED' ? 'text-emerald-700 bg-emerald-50' : 'text-amber-800 bg-amber-50'}`}>
+                  {route.verificationStatus === 'ADMIN_VERIFIED' && route.serviceStatus !== 'SCHEDULE_UNVERIFIED' ? t('admin_verified') : t('unverified')}
+                </span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {journey.timetableDepartures.map(item => (
@@ -131,11 +133,23 @@ export const BusCard: React.FC<BusCardProps> = ({ journey }) => {
             </div>
           )}
 
-          {/* Transfer notice if applicable */}
-          {!isDirect && transfers.length > 0 && (
-            <div className="mt-2.5 pt-2 border-t border-yatriwarm-200 text-[11px] text-purple-900 flex items-center justify-between">
-              <span>Change bus at <strong>{transfers[0].transferStop.stopName}</strong></span>
-              <span className="text-yatriwarm-500">Wait ~{transfers[0].expectedWaitMinutes}m</span>
+          {/* Full leg-by-leg itinerary, including each interchange and wait buffer. */}
+          {!isDirect && journey.legs && journey.legs.length > 1 && (
+            <div className="mt-3 pt-3 border-t border-yatriwarm-200 space-y-2">
+              {journey.legs.map((leg, index) => (
+                <div key={leg.route.id + '-' + index} className="rounded-xl border border-purple-100 bg-purple-50/60 p-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[11px] font-bold text-purple-950">Bus {leg.route.routeNumber} · Leg {index + 1}</span>
+                    <span className="text-[10px] font-semibold tabular-nums text-purple-900">{leg.departureTime} → {leg.arrivalTime}</span>
+                  </div>
+                  <div className="mt-1 text-[10px] text-purple-900">{leg.boardingStop.stopName} → {leg.alightingStop.stopName}</div>
+                  {index < journey.legs!.length - 1 && (
+                    <div className="mt-2 text-[10px] font-semibold text-purple-800">
+                      Change bus at {leg.alightingStop.stopName} · {transfers[index]?.expectedWaitMinutes ?? '—'} min transfer buffer
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
           )}
         </div>
