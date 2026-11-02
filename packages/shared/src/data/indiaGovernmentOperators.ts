@@ -6,7 +6,7 @@ import type { Operator } from '../types/bus.js';
  * Website links are official domains where independently identified; absent links are intentionally blank.
  */
 const reviewedAt = '2026-11-03';
-const source = 'ASRTU_STU_PROFILE_2019_20';
+const source = 'ASRTU_AND_OFFICIAL_GOVERNMENT_REFERENCES';
 
 function operator(id: string, name: string, shortCode: string, serviceArea: string, website?: string, type: Operator['operatorType'] = 'GOVERNMENT_STATE'): Operator {
   return {
