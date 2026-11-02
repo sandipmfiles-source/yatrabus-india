@@ -39,6 +39,7 @@ export function runGtfsImporterTests(assert: (description: string, pass: boolean
     'trips.txt': 'route_id,service_id,trip_id,direction_id,shape_id\nr1,weekday,t1,0,\n',
     'stop_times.txt': 'trip_id,arrival_time,departure_time,stop_id,stop_sequence\nt1,23:50:00,23:50:00,a,1\nt1,24:40:00,24:40:00,b,2\n',
     'calendar.txt': 'service_id,monday,tuesday,wednesday,thursday,friday,saturday,sunday,start_date,end_date\nweekday,1,1,1,1,1,0,0,20261102,20261231\n',
+    'frequencies.txt': 'trip_id,start_time,end_time,headway_secs,exact_times\nt1,23:50:00,24:50:00,1800,0\n',
     'calendar_dates.txt': 'service_id,date,exception_type\nweekday,20261103,2\n',
   });
   const imported = importGtfsZip(zip, new Date('2026-11-02T00:00:00.000Z'));
