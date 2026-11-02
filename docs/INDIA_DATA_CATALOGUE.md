@@ -55,7 +55,7 @@ LIVE_GPS is not a timetable status: it is a separate, freshness-bound state deri
 
 ## Full LGD town import
 
-The runtime merges the bundled 2022 split LGD reference indexes with a dated 21 October 2026 supplemental export. Matching LGD codes prefer the newer dated record. Individual village rows are excluded from the compact passenger autocomplete catalogue; the village export is used only to derive parent hierarchy records during the automated refresh.
+The runtime merges the bundled 2022 split LGD reference indexes with a supplemental export from the latest dated release available in the upstream mirror. Each archive is SHA-256 checked before import; the 2 November 2026 snapshot was the latest available when this Phase 3 work was prepared. Matching LGD codes prefer the newer dated record. Individual village rows are excluded from the compact passenger autocomplete catalogue; the village export is used only to derive parent hierarchy records during the automated refresh.
 
 Follow [data/README.md](../data/README.md) to download current LGD CSV exports and create the compact gzip index used by backend autocomplete. The huge village roster is excluded from the normal passenger autocomplete index; the town and administrative layers are indexed instead. Every imported item remains UNVERIFIED until checked.
 
