@@ -565,6 +565,23 @@ adminRouter.post('/duplicates/:id/resolve', requireAdminAuth('SUPER_ADMIN'), (re
   return res.json({ success: true, resolution });
 });
 
+// GET /api/admin/places?q= — protected directory search over the backend catalogue.
+adminRouter.get('/places', requireAdminAuth('SUPER_ADMIN'), (req: Request, res: Response) => {
+  const query = typeof req.query.q === 'string' ? req.query.q.trim() : '';
+  const results = repository.searchPlaces(query, 100);
+  return res.json({ count: results.length, places: results.map(item => item.place) });
+});
+
+// GET /api/admin/tracking — protected bus-level tracking overview; never returns passenger traces.
+adminRouter.get('/tracking', requireAdminAuth('SUPER_ADMIN'), (_req: Request, res: Response) => {
+  const services = repository.getAllRoutes().flatMap(route => {
+    const buses = repository.getBusesForRoute(route.id);
+    if (!buses.length) return [{ route, bus: null, location: null }];
+    return buses.map(bus => ({ route, bus, location: repository.getBusLocation(bus.id) || null }));
+  });
+  return res.json({ count: services.length, services });
+});
+
 // GET /api/admin/automation/rules
 adminRouter.get('/automation/rules', requireAdminAuth('SUPER_ADMIN'), (_req: Request, res: Response) => {
   const rules = repository.getAutomationRules();
