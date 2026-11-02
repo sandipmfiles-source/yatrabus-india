@@ -35,6 +35,8 @@ export interface JourneySession {
   isActive: boolean;
   isConfirmedPassenger: boolean;
   observationsContributedCount: number;
+  destinationArrivalCount?: number;
+  lastDestinationArrivalAt?: string;
   stoppedReason?: 'USER_STOPPED' | 'SESSION_EXPIRED' | 'JOURNEY_COMPLETED' | 'CONSENT_REVOKED';
 }
 
