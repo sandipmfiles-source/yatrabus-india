@@ -74,13 +74,13 @@ runBusCandidateMatcherTests(assert);
 console.log('\n12. Testing Consent-Bound Destination Auto-Completion...');
 runTrackingSessionTests(assert);
 
-console.log('\\n13. Testing GTFS ZIP Import, Calendar Exceptions & Midnight Trips...');
+console.log('\n13. Testing GTFS ZIP Import, Calendar Exceptions & Midnight Trips...');
 runGtfsImporterTests(assert);
 
-console.log('\\n14. Testing Time-Aware Multi-Transfer Journey Planning...');
+console.log('\n14. Testing Time-Aware Multi-Transfer Journey Planning...');
 runJourneyPlannerTests(assert);
 
-console.log('\\n15. Testing Multi-Sample Bus Trajectory Corroboration...');
+console.log('\n15. Testing Multi-Sample Bus Trajectory Corroboration...');
 runTrajectoryMatcherTests(assert);
 
 console.log('\n====================================================');
