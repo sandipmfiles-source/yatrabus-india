@@ -57,7 +57,7 @@ The generated `data/india-lgd-directory.json.gz` is loaded by the backend place 
 The importer:
 - preserves LGD codes as `sourceRecordId`;
 - records GODL-India attribution and the official LGD source URL;
-- includes only administrative units and urban-local-body/town data by default;
+- includes administrative units and the available urban-local-body/town layer by default; this is not a complete Census Town or village gazetteer;
 - leaves every imported place UNVERIFIED until a verifier checks it;
 - does not invent coordinates when the export has none.
 
