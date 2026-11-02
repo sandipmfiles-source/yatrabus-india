@@ -1,5 +1,10 @@
 export const CONFIG = {
   PORT: process.env.PORT ? parseInt(process.env.PORT, 10) : 5000,
+  // Set only to the exact number of trusted reverse-proxy hops in production.
+  // Defaults to 0 so arbitrary client-supplied X-Forwarded-For headers are ignored.
+  TRUST_PROXY_HOPS: Number.isInteger(Number(process.env.TRUST_PROXY_HOPS)) && Number(process.env.TRUST_PROXY_HOPS) >= 0
+    ? Number(process.env.TRUST_PROXY_HOPS)
+    : 0,
   NODE_ENV: process.env.NODE_ENV || 'development',
   ADMIN_EMAIL: (process.env.ADMIN_EMAIL || '').trim().toLowerCase(),
   ADMIN_PASSWORD_HASH: process.env.ADMIN_PASSWORD_HASH || '',
