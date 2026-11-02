@@ -52,7 +52,7 @@ export const SearchResultsPage: React.FC = () => {
     const exactDepartures = departures.length > 0 || exactTimes.length > 0;
     const estimate = estimateDailyTripCount(route.firstDepartureTime, route.lastDepartureTime, route.frequencyMinutes);
     const dayCounts = (route.operatingDays || []).map(day =>
-      departures.filter(item => !item.operatingDays?.length || item.operatingDays.includes(day)).length
+      verifiedExactDepartures.filter(item => !item.operatingDays?.length || item.operatingDays.includes(day)).length
     );
     const exactCount = exactDepartures
       ? departures.length
@@ -67,8 +67,8 @@ export const SearchResultsPage: React.FC = () => {
           ? (exactCount.min === exactCount.max ? String(exactCount.min) : `${exactCount.min}–${exactCount.max}`)
           : t('not_verified');
     const departureSlots = departures.length
-      ? departures.slice(0, 30).map(item => ({ key: item.id, time: item.departureTime, dayOffset: item.departureDayOffset || 0, busIdentifier: item.busIdentifier || '', tripId: item.tripId || '', days: item.operatingDays?.join(', ') || '' }))
-      : exactTimes.slice(0, 30).map((time, index) => ({ key: `exact-time-${index}`, time, dayOffset: 0, busIdentifier: '', tripId: '', days: route.operatingDays?.join(', ') || '' }));
+      ? departures.slice(0, 30).map(item => ({ key: item.id, time: item.departureTime, dayOffset: item.departureDayOffset || 0, approximate: item.isFrequencyBased === true && item.exactTimes !== true, busIdentifier: item.busIdentifier || '', tripId: item.tripId || '', days: item.operatingDays?.join(', ') || '' }))
+      : exactTimes.slice(0, 30).map((time, index) => ({ key: `exact-time-${index}`, time, dayOffset: 0, approximate: false, busIdentifier: '', tripId: '', days: route.operatingDays?.join(', ') || '' }));
     const firstIndex = route.stops.findIndex(stop => stop.id === journey.boardingStop.id);
     const lastIndex = route.stops.findIndex(stop => stop.id === journey.alightingStop.id);
     const segmentStops = firstIndex >= 0 && lastIndex >= firstIndex
