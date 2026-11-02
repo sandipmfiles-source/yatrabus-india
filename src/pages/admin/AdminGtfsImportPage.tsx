@@ -27,6 +27,7 @@ export const AdminGtfsImportPage: React.FC = () => {
 
   const selectFile = (file?: File) => {
     setPreview(null); setConfirmed(false); setNotice(''); setError('');
+    setZipBase64(''); setFileName('');
     if (!file) { setZipBase64(''); setFileName(''); return; }
     if (!file.name.toLowerCase().endsWith('.zip')) { setError('Please select a GTFS ZIP archive.'); return; }
     if (file.size <= 0 || file.size > 10 * 1024 * 1024) { setError('GTFS ZIP must be between 1 byte and 10 MB.'); return; }
