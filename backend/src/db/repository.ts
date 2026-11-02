@@ -99,7 +99,7 @@ export class TransitRepository {
         name: 'Duplicate Transit Stops Candidate Generator',
         description: 'Flags stops within 150m with >65% token similarity',
         isEnabled: true,
-        parameters: { duplicateSimilarityThreshold: 0.65 },
+        parameters: { duplicateSimilarityThreshold: 0.65, duplicateMaxDistanceMeters: 150 },
         updatedAt: new Date().toISOString(),
       },
       {
