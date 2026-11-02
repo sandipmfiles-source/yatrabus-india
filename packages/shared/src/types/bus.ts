@@ -34,6 +34,9 @@ export interface Operator {
   isClaimed: boolean;
   claimedBy?: string;
   sourceDataset: string;
+  /** Official registry or agency page used to identify this transport undertaking. */
+  sourceUrl?: string;
+  sourceVerifiedAt?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -96,6 +99,11 @@ export interface Route {
   firstDepartureTime: string; // HH:MM
   lastDepartureTime: string;  // HH:MM
   frequencyMinutes?: number;
+  /** Provenance of this route's timetable. Empty source means the times are not source-verified. */
+  timetableSource?: string;
+  timetableSourceUrl?: string;
+  timetableVerifiedAt?: string;
+  timetableDataStatus?: 'LIVE_GPS' | 'ESTIMATED' | 'SCHEDULED' | 'UNAVAILABLE';
   /** Exact published departure times for routes where per-bus arrival details are not yet available. */
   departureTimes?: string[];
   /** Individually scheduled and admin-approved departures for this route. */
@@ -124,6 +132,11 @@ export interface TimetableDeparture {
   operatingDays: ('MON' | 'TUE' | 'WED' | 'THU' | 'FRI' | 'SAT' | 'SUN')[];
   /** GTFS service calendar metadata. Dates use YYYYMMDD in the feed's local timezone. */
   serviceId?: string;
+  /** Provenance for this specific published/GTFS departure when available. */
+  sourceName?: string;
+  sourceUrl?: string;
+  sourceVerifiedAt?: string;
+  dataStatus?: 'LIVE_GPS' | 'ESTIMATED' | 'SCHEDULED' | 'UNAVAILABLE';
   /** GTFS trip_id; it is not a public bus registration or vehicle identity. */
   tripId?: string;
   serviceStartDate?: string;
