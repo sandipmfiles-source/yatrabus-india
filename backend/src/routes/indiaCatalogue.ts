@@ -36,7 +36,7 @@ indiaCatalogueRouter.get('/', (_req, res) => {
       officialWebsite: operator.contactWebsite,
       sourceUrl: operator.sourceUrl,
       sourceDataset: operator.sourceDataset,
-      sourceVerifiedAt: operator.sourceVerifiedAt,
+      sourceCheckedAt: operator.sourceCheckedAt,
       directoryStatus: operator.verificationStatus,
       isClaimed: operator.isClaimed,
     })),
