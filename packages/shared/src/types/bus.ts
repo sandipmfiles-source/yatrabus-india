@@ -73,6 +73,9 @@ export interface RouteStop {
   distanceFromStartKm: number;
   scheduledArrivalTime?: string; // HH:MM in IST
   scheduledDepartureTime?: string; // HH:MM in IST
+  scheduleSourceName?: string;
+  scheduleSourceUrl?: string;
+  scheduleVerifiedAt?: string;
   platformOrBay?: string;
   notes?: string;
 }
