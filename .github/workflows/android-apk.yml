@@ -7,6 +7,8 @@ on:
     branches: [main, master, mx-local-preserve]
   workflow_dispatch:
 
+permissions:
+  contents: read
 
 jobs:
   build-android:
@@ -16,16 +18,16 @@ jobs:
 
     steps:
       - name: Checkout Source Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
-      - name: Setup Node.js 20
-        uses: actions/setup-node@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
         with:
-          node-version: 20
+          node-version: 22
           cache: 'npm'
 
       - name: Setup Java JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
           java-version: '17'
@@ -39,10 +41,22 @@ jobs:
       - name: Install NPM Dependencies
         run: npm install --no-audit --no-fund
 
+      - name: Audit NPM Dependencies
+        run: |
+          npm audit --json > npm-audit.json || true
+          node --input-type=commonjs -e "const r=require('./npm-audit.json'); console.log('NPM vulnerability summary:', JSON.stringify(r.metadata?.vulnerabilities || r.error || {}, null, 2)); for (const [name, item] of Object.entries(r.vulnerabilities || {})) console.log(name + ': ' + item.severity + ', direct=' + item.isDirect + ', fixAvailable=' + JSON.stringify(item.fixAvailable));"
+
       - name: Build Web Application
         env:
           VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
-        run: npm run build
+        run: |
+          if [ -z "$VITE_API_BASE_URL" ]; then
+            echo "::warning::VITE_API_BASE_URL is not configured. Native APK API calls will fail closed until an HTTPS backend URL is configured."
+          elif [[ "$VITE_API_BASE_URL" != https://* ]]; then
+            echo "::error::VITE_API_BASE_URL must use HTTPS for Android builds."
+            exit 1
+          fi
+          npm run build
 
       - name: Run Automated Test Suites
         run: npm test
@@ -95,6 +109,15 @@ jobs:
           path: ${{ steps.verify_apk.outputs.apk_path }}
           if-no-files-found: error
           retention-days: 90
+
+      - name: Upload NPM Audit Report
+        if: always() && hashFiles('npm-audit.json') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: yatribus-npm-audit-report
+          path: npm-audit.json
+          if-no-files-found: warn
+          retention-days: 30
 
   publish-release:
     name: Publish APK on GitHub Releases
