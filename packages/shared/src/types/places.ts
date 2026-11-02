@@ -43,6 +43,7 @@ export type IndianState =
 export type PlaceType =
   | 'COUNTRY'
   | 'STATE'
+  | 'UNION_TERRITORY'
   | 'DISTRICT'
   | 'SUBDIVISION'
   | 'TEHSIL'
@@ -81,6 +82,12 @@ export interface Place {
   sourceDataset: string;
   sourceRecordId?: string;
   sourceLicense: string;
+  /** Source record or official catalogue page used to identify this place. */
+  sourceUrl?: string;
+  /** Date this record was last checked against its stated source (YYYY-MM-DD). */
+  sourceVerifiedAt?: string;
+  /** Retrieval date of a source snapshot; distinct from record verification. */
+  sourceSnapshotDate?: string;
   verificationStatus: 'UNVERIFIED' | 'COMMUNITY_VERIFIED' | 'ADMIN_VERIFIED';
   aliases: string[];
   createdAt: string;

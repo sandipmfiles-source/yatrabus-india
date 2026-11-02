@@ -24,7 +24,8 @@
 
 ## 📱 Features
 
-- **Origin to Destination Search**: Fast direct bus routes and 1-transfer connections with realistic interchange wait times.
+- **Origin to Destination Search**: Time-aware direct and multi-transfer connections; source-unverified sample timetable times are hidden.
+- **India Transit Directory**: Searchable catalogue of all 28 States, 8 Union Territories, government transport undertakings and West Bengal pilot towns.
 - **Typo-Tolerant Place Autocomplete**: Levenshtein distance, token similarity, and Indian administrative disambiguation (e.g., distinguishing Kashmere Gate from Kashmiri Gate, or Rampur HP from Rampur UP).
 - **Multilingual Support**: First-class support for English, Hindi (हिन्दी), and Bengali (বাংলা).
 - **Interactive Route Maps**: Route polylines, ordered stop markers, and real-time pulsing bus markers powered by Leaflet and OpenStreetMap.

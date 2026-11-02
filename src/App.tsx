@@ -9,6 +9,7 @@ import { ActiveTrackingWidget } from './components/ActiveTrackingWidget.js';
 import { FirstLaunchLanguagePrompt } from './components/FirstLaunchLanguagePrompt.js';
 
 import { HomePage } from './pages/HomePage.js';
+import { IndiaDirectoryPage } from './pages/IndiaDirectoryPage.js';
 import { SearchResultsPage } from './pages/SearchResultsPage.js';
 import { BusDetailPage } from './pages/BusDetailPage.js';
 import { ContributePage } from './pages/ContributePage.js';
@@ -26,6 +27,7 @@ import { AdminBusesPage } from './pages/admin/AdminBusesPage.js';
 import { AdminAutomationPage } from './pages/admin/AdminAutomationPage.js';
 import { AdminHealthPage } from './pages/admin/AdminHealthPage.js';
 import { AdminGtfsImportPage } from './pages/admin/AdminGtfsImportPage.js';
+import { AdminTimetablePage } from './pages/admin/AdminTimetablePage.js';
 
 export const App: React.FC = () => {
   return (
@@ -38,6 +40,7 @@ export const App: React.FC = () => {
               <Routes>
                 <Route path="/" element={<HomePage />} />
                 <Route path="/search" element={<SearchResultsPage />} />
+                <Route path="/india-directory" element={<IndiaDirectoryPage />} />
                 <Route path="/routes/:id" element={<BusDetailPage />} />
                 <Route path="/contribute" element={<ContributePage />} />
                 <Route path="/operator" element={<OwnerDashboardPage />} />
@@ -53,6 +56,7 @@ export const App: React.FC = () => {
                 <Route path="/admin/automation" element={<AdminAutomationPage />} />
                 <Route path="/admin/health" element={<AdminHealthPage />} />
                 <Route path="/admin/gtfs" element={<AdminGtfsImportPage />} />
+                <Route path="/admin/timetables" element={<AdminTimetablePage />} />
               </Routes>
             </main>
             <Footer />
