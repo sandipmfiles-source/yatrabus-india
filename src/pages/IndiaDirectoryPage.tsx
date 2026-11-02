@@ -4,6 +4,8 @@ import { api } from '../services/api.js';
 import { useLanguage } from '../context/LanguageContext.js';
 import { ArrowLeft, Search, MapPin, Building2, BusFront, ExternalLink, ShieldCheck, AlertTriangle } from 'lucide-react';
 
+type PlaceResult = { id: string; name: string; address?: string; level?: string; sourceDataset?: string; sourceSnapshotDate?: string; sourceUrl?: string; verificationStatus?: string };
+
 type Catalogue = {
   summary: { states: number; unionTerritories: number; administrativeUnits: number; governmentOperatorDirectoryEntries: number; pilotTownIndexEntries: number; pilotBusTerminals: number; lgdIndexRecords: number; lgdUrbanLocalBodies: number; lgdSnapshotDate: string };
   lgdIndex: { snapshotDate: string; districts: number; subdistricts: number; blocks: number; urbanLocalBodies: number; totalRecords: number };
@@ -14,9 +16,9 @@ type Catalogue = {
 };
 
 const labels = {
-  en: { title: 'India Transit Directory', subtitle: 'States, Union Territories, government bus operators and the West Bengal pilot corridor.', states: 'States', uts: 'Union Territories', operators: 'Government operators', search: 'Search state, UT or operator…', statesHeading: '28 States', utsHeading: '8 Union Territories', operatorHeading: 'Government bus operators', pilot: 'Pilot corridor', noMatch: 'No matching directory entries.', notVerified: 'Directory listing · Not an authenticated operator profile', sources: 'Official references', noTimetable: 'Timetable unavailable', noGps: 'Live GPS unavailable', unverifiedTown: 'Town reference · Needs source reconciliation', dataPolicy: 'Data quality policy', loading: 'Loading India directory…', lgd: 'LGD admin & urban-body records (2022 snapshot)', terminals: 'WB bus terminals', capital: 'Capital', governmentSite: 'Government site', officialSite: 'Official site', sourceSnapshot: 'Source snapshot', notRecentlyVerified: 'Not recently verified', terminalHeading: 'Official bus terminal references · Historical source (2017)', historicalHeading: 'Historical corridor evidence — 2019 only (not a current timetable)', serviceDates: 'One-off service dates', arrival: 'Arr', departure: 'Dep', openArchive: 'Open archived SBSTC notice', policyItems: ['Operator directory entries are not authenticated profiles.', 'Town references are not bus stops or proof of a scheduled service.', 'Every published timetable needs a source and verification date.', 'Live GPS requires fresh, consented observations; estimates are never labelled live.'] },
-  hi: { title: 'भारत परिवहन निर्देशिका', subtitle: 'राज्य, केंद्र शासित प्रदेश, सरकारी बस ऑपरेटर और पश्चिम बंगाल पायलट कॉरिडोर।', states: 'राज्य', uts: 'केंद्र शासित प्रदेश', operators: 'सरकारी ऑपरेटर', search: 'राज्य, केंद्र शासित प्रदेश या ऑपरेटर खोजें…', statesHeading: '28 राज्य', utsHeading: '8 केंद्र शासित प्रदेश', operatorHeading: 'सरकारी बस ऑपरेटर', pilot: 'पायलट कॉरिडोर', noMatch: 'कोई मिलती-जुलती प्रविष्टि नहीं मिली।', notVerified: 'डायरेक्टरी सूची · ऑपरेटर प्रोफ़ाइल प्रमाणित नहीं', sources: 'आधिकारिक संदर्भ', noTimetable: 'समय-सारणी उपलब्ध नहीं', noGps: 'लाइव GPS उपलब्ध नहीं', unverifiedTown: 'शहर संदर्भ · स्रोत मिलान बाकी', dataPolicy: 'डेटा गुणवत्ता नियम', loading: 'भारत निर्देशिका लोड हो रही है…', lgd: 'LGD प्रशासनिक और शहरी निकाय रिकॉर्ड (2022 स्नैपशॉट)', terminals: 'पश्चिम बंगाल बस टर्मिनल', capital: 'राजधानी', governmentSite: 'सरकारी वेबसाइट', officialSite: 'आधिकारिक वेबसाइट', sourceSnapshot: 'स्रोत स्नैपशॉट', notRecentlyVerified: 'हाल में सत्यापित नहीं', terminalHeading: 'आधिकारिक बस टर्मिनल संदर्भ · पुराना स्रोत (2017)', historicalHeading: 'ऐतिहासिक कॉरिडोर सेवा — केवल 2019 (वर्तमान समय-सारणी नहीं)', serviceDates: 'एकबारगी सेवा की तारीखें', arrival: 'आगमन', departure: 'प्रस्थान', openArchive: 'पुराना SBSTC नोटिस खोलें', policyItems: ['ऑपरेटर डायरेक्टरी की प्रविष्टियाँ प्रमाणित प्रोफ़ाइल नहीं हैं।', 'शहर के संदर्भ बस स्टॉप या निर्धारित सेवा का प्रमाण नहीं हैं।', 'हर प्रकाशित समय-सारणी के साथ स्रोत और सत्यापन तिथि आवश्यक है।', 'लाइव GPS के लिए ताज़ा और सहमति-आधारित लोकेशन चाहिए; अनुमान को लाइव नहीं कहा जाता।'] },
-  bn: { title: 'ভারত পরিবহন নির্দেশিকা', subtitle: 'রাজ্য, কেন্দ্রশাসিত অঞ্চল, সরকারি বাস অপারেটর এবং পশ্চিমবঙ্গ পাইলট করিডর।', states: 'রাজ্য', uts: 'কেন্দ্রশাসিত অঞ্চল', operators: 'সরকারি অপারেটর', search: 'রাজ্য, কেন্দ্রশাসিত অঞ্চল বা অপারেটর খুঁজুন…', statesHeading: '২৮টি রাজ্য', utsHeading: '৮টি কেন্দ্রশাসিত অঞ্চল', operatorHeading: 'সরকারি বাস অপারেটর', pilot: 'পাইলট করিডর', noMatch: 'কোনও মিল পাওয়া যায়নি।', notVerified: 'ডিরেক্টরি তালিকা · অপারেটর প্রোফাইল যাচাই করা নয়', sources: 'সরকারি সূত্র', noTimetable: 'সময়সূচি উপলব্ধ নয়', noGps: 'লাইভ GPS উপলব্ধ নয়', unverifiedTown: 'শহরের তথ্য · উৎস যাচাই বাকি', dataPolicy: 'তথ্যের মান নীতি', loading: 'ভারত নির্দেশিকা লোড হচ্ছে…', lgd: 'LGD প্রশাসনিক ও নগর সংস্থার রেকর্ড (২০২২ স্ন্যাপশট)', terminals: 'পশ্চিমবঙ্গ বাস টার্মিনাল', capital: 'রাজধানী', governmentSite: 'সরকারি ওয়েবসাইট', officialSite: 'সরকারি সাইট', sourceSnapshot: 'উৎস স্ন্যাপশট', notRecentlyVerified: 'সম্প্রতি যাচাই করা হয়নি', terminalHeading: 'সরকারি বাস টার্মিনাল তথ্য · পুরনো উৎস (২০১৭)', historicalHeading: 'ঐতিহাসিক করিডর পরিষেবা — শুধু ২০১৯ (বর্তমান সময়সূচি নয়)', serviceDates: 'এককালীন পরিষেবার তারিখ', arrival: 'আগমন', departure: 'প্রস্থান', openArchive: 'পুরনো SBSTC বিজ্ঞপ্তি খুলুন', policyItems: ['অপারেটর ডিরেক্টরির তালিকা যাচাইকৃত প্রোফাইল নয়।', 'শহরের তথ্য বাসস্টপ বা নির্ধারিত পরিষেবার প্রমাণ নয়।', 'প্রতিটি প্রকাশিত সময়সূচির সঙ্গে উৎস ও যাচাইয়ের তারিখ থাকতে হবে।', 'লাইভ GPS-এর জন্য নতুন ও সম্মতিপ্রাপ্ত অবস্থান পর্যবেক্ষণ প্রয়োজন; অনুমানকে লাইভ বলা হয় না।'] },
+  en: { title: 'India Transit Directory', subtitle: 'States, Union Territories, government bus operators and the West Bengal pilot corridor.', states: 'States', uts: 'Union Territories', operators: 'Government operators', search: 'Search state, town, district, sub-district or operator…', statesHeading: '28 States', utsHeading: '8 Union Territories', operatorHeading: 'Government bus operators', pilot: 'Pilot corridor', noMatch: 'No matching directory entries.', notVerified: 'Directory listing · Not an authenticated operator profile', sources: 'Official references', noTimetable: 'Timetable unavailable', noGps: 'Live GPS unavailable', unverifiedTown: 'Town reference · Needs source reconciliation', dataPolicy: 'Data quality policy', loading: 'Loading India directory…', lgd: 'LGD admin & urban-body records (2022 snapshot)', terminals: 'WB bus terminals', capital: 'Capital', governmentSite: 'Government site', officialSite: 'Official site', sourceSnapshot: 'Source snapshot', notRecentlyVerified: 'Not recently verified', terminalHeading: 'Official bus terminal references · Historical source (2017)', historicalHeading: 'Historical corridor evidence — 2019 only (not a current timetable)', serviceDates: 'One-off service dates', arrival: 'Arr', departure: 'Dep', openArchive: 'Open archived SBSTC notice', placeSearchHeading: 'All-India LGD place matches', placeSearchLoading: 'Searching the LGD place index…', placeSearchEmpty: 'No matching place found in the bundled index or available mirror.', placeSource: 'Source', policyItems: ['Operator directory entries are not authenticated profiles.', 'Town references are not bus stops or proof of a scheduled service.', 'Every published timetable needs a source and verification date.', 'Live GPS requires fresh, consented observations; estimates are never labelled live.'] },
+  hi: { title: 'भारत परिवहन निर्देशिका', subtitle: 'राज्य, केंद्र शासित प्रदेश, सरकारी बस ऑपरेटर और पश्चिम बंगाल पायलट कॉरिडोर।', states: 'राज्य', uts: 'केंद्र शासित प्रदेश', operators: 'सरकारी ऑपरेटर', search: 'राज्य, शहर, ज़िला, उप-ज़िला या ऑपरेटर खोजें…', statesHeading: '28 राज्य', utsHeading: '8 केंद्र शासित प्रदेश', operatorHeading: 'सरकारी बस ऑपरेटर', pilot: 'पायलट कॉरिडोर', noMatch: 'कोई मिलती-जुलती प्रविष्टि नहीं मिली।', notVerified: 'डायरेक्टरी सूची · ऑपरेटर प्रोफ़ाइल प्रमाणित नहीं', sources: 'आधिकारिक संदर्भ', noTimetable: 'समय-सारणी उपलब्ध नहीं', noGps: 'लाइव GPS उपलब्ध नहीं', unverifiedTown: 'शहर संदर्भ · स्रोत मिलान बाकी', dataPolicy: 'डेटा गुणवत्ता नियम', loading: 'भारत निर्देशिका लोड हो रही है…', lgd: 'LGD प्रशासनिक और शहरी निकाय रिकॉर्ड (2022 स्नैपशॉट)', terminals: 'पश्चिम बंगाल बस टर्मिनल', capital: 'राजधानी', governmentSite: 'सरकारी वेबसाइट', officialSite: 'आधिकारिक वेबसाइट', sourceSnapshot: 'स्रोत स्नैपशॉट', notRecentlyVerified: 'हाल में सत्यापित नहीं', terminalHeading: 'आधिकारिक बस टर्मिनल संदर्भ · पुराना स्रोत (2017)', historicalHeading: 'ऐतिहासिक कॉरिडोर सेवा — केवल 2019 (वर्तमान समय-सारणी नहीं)', serviceDates: 'एकबारगी सेवा की तारीखें', arrival: 'आगमन', departure: 'प्रस्थान', openArchive: 'पुराना SBSTC नोटिस खोलें', placeSearchHeading: 'पूरे भारत के LGD स्थान परिणाम', placeSearchLoading: 'LGD स्थान सूची में खोज रहे हैं…', placeSearchEmpty: 'बंडल सूची या उपलब्ध मिरर में कोई स्थान नहीं मिला।', placeSource: 'स्रोत', policyItems: ['ऑपरेटर डायरेक्टरी की प्रविष्टियाँ प्रमाणित प्रोफ़ाइल नहीं हैं।', 'शहर के संदर्भ बस स्टॉप या निर्धारित सेवा का प्रमाण नहीं हैं।', 'हर प्रकाशित समय-सारणी के साथ स्रोत और सत्यापन तिथि आवश्यक है।', 'लाइव GPS के लिए ताज़ा और सहमति-आधारित लोकेशन चाहिए; अनुमान को लाइव नहीं कहा जाता।'] },
+  bn: { title: 'ভারত পরিবহন নির্দেশিকা', subtitle: 'রাজ্য, কেন্দ্রশাসিত অঞ্চল, সরকারি বাস অপারেটর এবং পশ্চিমবঙ্গ পাইলট করিডর।', states: 'রাজ্য', uts: 'কেন্দ্রশাসিত অঞ্চল', operators: 'সরকারি অপারেটর', search: 'রাজ্য, শহর, জেলা, মহকুমা বা অপারেটর খুঁজুন…', statesHeading: '২৮টি রাজ্য', utsHeading: '৮টি কেন্দ্রশাসিত অঞ্চল', operatorHeading: 'সরকারি বাস অপারেটর', pilot: 'পাইলট করিডর', noMatch: 'কোনও মিল পাওয়া যায়নি।', notVerified: 'ডিরেক্টরি তালিকা · অপারেটর প্রোফাইল যাচাই করা নয়', sources: 'সরকারি সূত্র', noTimetable: 'সময়সূচি উপলব্ধ নয়', noGps: 'লাইভ GPS উপলব্ধ নয়', unverifiedTown: 'শহরের তথ্য · উৎস যাচাই বাকি', dataPolicy: 'তথ্যের মান নীতি', loading: 'ভারত নির্দেশিকা লোড হচ্ছে…', lgd: 'LGD প্রশাসনিক ও নগর সংস্থার রেকর্ড (২০২২ স্ন্যাপশট)', terminals: 'পশ্চিমবঙ্গ বাস টার্মিনাল', capital: 'রাজধানী', governmentSite: 'সরকারি ওয়েবসাইট', officialSite: 'সরকারি সাইট', sourceSnapshot: 'উৎস স্ন্যাপশট', notRecentlyVerified: 'সম্প্রতি যাচাই করা হয়নি', terminalHeading: 'সরকারি বাস টার্মিনাল তথ্য · পুরনো উৎস (২০১৭)', historicalHeading: 'ঐতিহাসিক করিডর পরিষেবা — শুধু ২০১৯ (বর্তমান সময়সূচি নয়)', serviceDates: 'এককালীন পরিষেবার তারিখ', arrival: 'আগমন', departure: 'প্রস্থান', openArchive: 'পুরনো SBSTC বিজ্ঞপ্তি খুলুন', placeSearchHeading: 'সারা ভারতের LGD স্থানের ফলাফল', placeSearchLoading: 'LGD স্থানের সূচিতে খোঁজা হচ্ছে…', placeSearchEmpty: 'বান্ডেল তালিকা বা উপলব্ধ মিররে কোনও স্থান পাওয়া যায়নি।', placeSource: 'উৎস', policyItems: ['অপারেটর ডিরেক্টরির তালিকা যাচাইকৃত প্রোফাইল নয়।', 'শহরের তথ্য বাসস্টপ বা নির্ধারিত পরিষেবার প্রমাণ নয়।', 'প্রতিটি প্রকাশিত সময়সূচির সঙ্গে উৎস ও যাচাইয়ের তারিখ থাকতে হবে।', 'লাইভ GPS-এর জন্য নতুন ও সম্মতিপ্রাপ্ত অবস্থান পর্যবেক্ষণ প্রয়োজন; অনুমানকে লাইভ বলা হয় না।'] },
 };
 
 export const IndiaDirectoryPage: React.FC = () => {
@@ -26,6 +28,9 @@ export const IndiaDirectoryPage: React.FC = () => {
   const [query, setQuery] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
+  const [placeResults, setPlaceResults] = useState<PlaceResult[]>([]);
+  const [placeLoading, setPlaceLoading] = useState(false);
+  const [placeSearchError, setPlaceSearchError] = useState('');
 
   useEffect(() => {
     let active = true;
@@ -35,6 +40,25 @@ export const IndiaDirectoryPage: React.FC = () => {
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, []);
+
+  useEffect(() => {
+    const term = query.trim();
+    if (term.length < 2) {
+      setPlaceResults([]);
+      setPlaceSearchError('');
+      setPlaceLoading(false);
+      return;
+    }
+    let active = true;
+    const timer = window.setTimeout(() => {
+      setPlaceLoading(true);
+      api.searchPlaces(term, 12)
+        .then(results => { if (active) { setPlaceResults(results || []); setPlaceSearchError(''); } })
+        .catch(reason => { if (active) { setPlaceResults([]); setPlaceSearchError(reason instanceof Error ? reason.message : 'Place search is unavailable.'); } })
+        .finally(() => { if (active) setPlaceLoading(false); });
+    }, 250);
+    return () => { active = false; window.clearTimeout(timer); };
+  }, [query]);
 
   const needle = query.trim().toLocaleLowerCase();
   const states = useMemo(() => (catalogue?.states || []).filter(item => !needle || [item.name, item.capital, ...(item.aliases || [])].join(' ').toLocaleLowerCase().includes(needle)), [catalogue, needle]);
@@ -65,6 +89,22 @@ export const IndiaDirectoryPage: React.FC = () => {
         <Search className="absolute left-3.5 top-3 w-4 h-4 text-yatriwarm-400" />
         <input value={query} onChange={event => setQuery(event.target.value)} placeholder={t.search} className="w-full rounded-xl border border-yatriwarm-200 bg-white py-2.5 pl-10 pr-4 text-sm outline-none focus:ring-2 focus:ring-yatribrand-700" />
       </label>
+
+      {query.trim().length >= 2 && (
+        <section className="rounded-2xl border border-yatriwarm-200 bg-white p-4 space-y-3">
+          <h2 className="text-sm font-bold text-yatriwarm-900">{t.placeSearchHeading}</h2>
+          {placeLoading ? <p className="text-xs text-yatriwarm-500">{t.placeSearchLoading}</p> :
+            placeSearchError ? <p role="alert" className="text-xs text-amber-800">{placeSearchError}</p> :
+            placeResults.length ? <div className="divide-y divide-yatriwarm-100">
+              {placeResults.map(place => <div key={place.id} className="py-2.5 flex items-start justify-between gap-3">
+                <div><div className="text-xs font-bold text-yatriwarm-900">{place.name}</div><div className="text-[10px] text-yatriwarm-500 mt-0.5">{place.address || place.level || 'India place reference'}</div>
+                  <div className="text-[9px] text-yatriwarm-400 mt-1">{t.placeSource}: {place.sourceDataset || 'Place directory'}{place.sourceSnapshotDate ? ` · Snapshot ${place.sourceSnapshotDate}` : ''} · {place.verificationStatus || 'UNVERIFIED'}</div>
+                </div>
+                {place.sourceUrl && <a href={place.sourceUrl} target="_blank" rel="noreferrer" className="shrink-0 text-[10px] text-yatribrand-800 underline">Source</a>}
+              </div>)}
+            </div> : <p className="text-xs text-yatriwarm-500">{t.placeSearchEmpty}</p>}
+        </section>
+      )}
 
       {error && <div role="alert" className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900 flex gap-2"><AlertTriangle className="w-4 h-4 shrink-0" />{error}</div>}
       {loading && <p className="text-xs text-yatriwarm-500">{t.loading}</p>}
