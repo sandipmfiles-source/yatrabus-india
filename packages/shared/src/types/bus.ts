@@ -132,6 +132,10 @@ export interface TimetableDeparture {
   removedServiceDates?: string[];
   /** Number of days after the service date when the trip's first stop departs. */
   departureDayOffset?: number;
+  /** GTFS frequencies.txt metadata; generated departures are approximate unless exactTimes is true. */
+  isFrequencyBased?: boolean;
+  exactTimes?: boolean;
+  headwaySeconds?: number;
   confidenceScore: number;
   isCancelled: boolean;
 }
