@@ -43,3 +43,12 @@ Without this key, the backend accepts and temporarily stores the sample but cann
 6. Test with location disabled, no SIM, airplane mode, denied permission, stale cell cache, and a cell outside the route corridor.
 7. Verify that stopping/revoking consent stops further samples.
 8. Do not advertise the feature as reliable live tracking until field tests demonstrate acceptable accuracy across routes and carriers.
+
+
+## Android network/fused location fallback
+
+- The app also requests Android balanced-power location with Capacitor Geolocation (`enableHighAccuracy: false`) while a consented journey is active. Android may derive this from Wi-Fi, cellular networks, GNSS, or a fused provider; the OS chooses the available provider and may return no fix.
+- These observations are explicitly tagged `NETWORK`, validated against the selected route corridor, and always published as `ESTIMATED` with a capped confidence score. They can never become green LIVE GPS and cannot replace a fresh GPS fix.
+- Background GPS remains the preferred source. The network fallback is a best-effort periodic request while the app process is running; it is not a guarantee of background updates.
+- Cell tower records are supporting radio context. Only a mapped serving cell may provide a coarse tower-area estimate; neighboring cells are not triangulated into a false point. Without a tower database API key, cell records are collected but cannot be geocoded.
+- Accuracy order is GPS fix (when valid and route-matched), Android network/fused estimate, serving-cell area estimate, then timetable estimate. Each non-GPS source is visibly labelled approximate.
