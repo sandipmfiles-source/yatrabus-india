@@ -11,7 +11,8 @@ const source = 'ASRTU_STU_PROFILE_2019_20';
 function operator(id: string, name: string, shortCode: string, serviceArea: string, website?: string, type: Operator['operatorType'] = 'GOVERNMENT_STATE'): Operator {
   return {
     id, name, shortCode, serviceArea, operatorType: type,
-    ...(website ? { contactWebsite: website } : {}),
+    ...(website ? { contactWebsite: website, sourceUrl: website } : {}),
+    sourceVerifiedAt: reviewedAt,
     verificationStatus: 'COMMUNITY_LISTED',
     isClaimed: false,
     sourceDataset: source,
