@@ -2,6 +2,8 @@
 
 This plan keeps the initial build at ₹0 by using open-source data and free tiers. Free tiers have quotas and can change; this is a prototype / low-traffic launch plan, not a promise of unlimited production hosting.
 
+Before launch, complete every item in [PRODUCTION_GO_LIVE_CHECKLIST.md](PRODUCTION_GO_LIVE_CHECKLIST.md). This includes persistent storage, owner credentials, HTTPS, field verification and the known limitations of the current JSON-backed pilot.
+
 ## 1. Free-first services
 
 | Layer | Service | What is free | Important limit / status |
