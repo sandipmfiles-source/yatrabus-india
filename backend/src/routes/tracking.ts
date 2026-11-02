@@ -103,6 +103,7 @@ trackingRouter.post('/session/stop', (req: Request, res: Response) => {
 // Ingests passenger GPS observations through the Multi-Signal Confidence Pipeline
 trackingRouter.post('/observation', (req: Request, res: Response) => {
   const { sessionId, busId, routeId, latitude, longitude, accuracyMeters, speedKmh, headingDegrees, timestamp } = req.body;
+  const locationSource = req.body?.locationSource === 'NETWORK' ? 'NETWORK' : 'GPS';
 
   if (!sessionId || !busId || !routeId || latitude === undefined || longitude === undefined || accuracyMeters === undefined) {
     return res.status(400).json({ error: 'Missing mandatory observation attributes' });
@@ -134,6 +135,54 @@ trackingRouter.post('/observation', (req: Request, res: Response) => {
   const route = repository.getRouteById(routeId);
   if (!route) {
     return res.status(404).json({ error: 'Route not found' });
+  }
+
+  // Android balanced-power location is a network/fused estimate, never a GPS LIVE fix.
+  if (locationSource === 'NETWORK') {
+    const networkTime = timestamp ? new Date(timestamp) : new Date();
+    if (!Number.isFinite(networkTime.getTime()) || Math.abs(Date.now() - networkTime.getTime()) > 5 * 60 * 1000) {
+      return res.status(400).json({ error: 'Network location timestamp is invalid or stale.' });
+    }
+    if (Number(accuracyMeters) > 20000) {
+      return res.status(202).json({ accepted: false, reason: 'NETWORK_ACCURACY_TOO_LOW' });
+    }
+    const networkEvaluation = evaluateLocationConfidence(
+      { latitude: Number(latitude), longitude: Number(longitude), accuracyMeters: Number(accuracyMeters),
+        timestamp: networkTime.toISOString(), speedKmh, headingDegrees, sessionId },
+      route, new Date().toISOString(), Math.max(1, repository.getDistinctSessionsForBus(String(busId), new Date(Date.now() - 5 * 60 * 1000).toISOString())),
+      false,
+      { maxAccuracyMeters: 20000, maxFreshnessLiveSeconds: 180, maxRouteDistanceMeters: 3000, maxRealisticSpeedKmh: CONFIG.MAX_SPEED_KMPH }
+    );
+    if (networkEvaluation.signals.routeProximityScore === 0) {
+      return res.status(202).json({ accepted: false, reason: 'NETWORK_FIX_OUTSIDE_ROUTE_CORRIDOR', evaluation: networkEvaluation });
+    }
+    const previous = repository.getBusLocation(String(busId));
+    const previousIsFreshGps = !!previous && previous.displayState === 'LIVE' && previous.locationSource === 'GPS' &&
+      !!previous.lastObservedAt && Date.now() - new Date(previous.lastObservedAt).getTime() <= CONFIG.GPS_FRESHNESS_LIVE_SECONDS * 1000;
+    const newerThanPrevious = !previous?.lastObservedAt || networkTime.getTime() >= new Date(previous.lastObservedAt).getTime();
+    repository.ingestObservation({
+      id: `obs-network-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      sessionId, busId, routeId, latitude: Number(latitude), longitude: Number(longitude),
+      accuracyMeters: Number(accuracyMeters), speedKmh, headingDegrees, locationSource: 'NETWORK',
+      distanceFromRouteMeters: 3000, isRouteMatched: true, isDirectionConsistent: false,
+      isSpeedRealistic: true, confidenceScore: Math.min(69, networkEvaluation.score),
+      confidenceCategory: networkEvaluation.score >= 50 ? 'MODERATE' : 'LOW',
+      processingStatus: 'ACCEPTED', timestamp: networkTime.toISOString(), createdAt: new Date().toISOString(),
+    });
+    if (!previousIsFreshGps && newerThanPrevious) {
+      repository.updateBusLocation(String(busId), {
+        busId, routeId, displayState: 'ESTIMATED', locationSource: 'NETWORK',
+        latitude: Number(latitude), longitude: Number(longitude), accuracyMeters: Number(accuracyMeters),
+        speedKmh, bearing: headingDegrees, confidenceCategory: networkEvaluation.score >= 50 ? 'MODERATE' : 'LOW',
+        confidenceScore: Math.min(69, networkEvaluation.score), observationCount: (previous?.observationCount || 0) + 1,
+        independentContributorsCount: Math.max(1, repository.getDistinctSessionsForBus(String(busId), new Date(Date.now() - 5 * 60 * 1000).toISOString())),
+        lastObservedAt: networkTime.toISOString(), isLive: false,
+        statusExplanation: 'Android network/fused location estimate. Approximate only; not a confirmed GPS fix.',
+        updatedAt: new Date().toISOString(),
+      });
+    }
+    return res.json({ accepted: true, displayState: 'ESTIMATED', locationSource: 'NETWORK',
+      confidenceScore: Math.min(69, networkEvaluation.score), explanation: 'Network estimate is approximate and never shown as live GPS.' });
   }
 
   // 3. Count independent corroborating sessions for this bus within last 5 minutes
