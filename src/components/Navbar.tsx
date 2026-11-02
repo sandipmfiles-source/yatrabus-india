@@ -53,7 +53,7 @@ export const Navbar: React.FC = () => {
             }`}
           >
             <MapPinned className="w-4 h-4" />
-            India Directory
+            {t('nav_india_directory')}
           </Link>
           <Link
             to="/contribute"
