@@ -37,6 +37,7 @@ The Ministry of Panchayati Raj's Local Government Directory (LGD) is the source 
 - Official portal: https://lgdirectory.gov.in/
 - Ministry of Panchayati Raj overview: https://panchayat.gov.in/en/lgd/
 - Open Government Data catalogue: https://data.gov.in/catalog/local-government-directory-lgd
+- Monthly refreshed LGD archive mirror referenced by the dataset maintainer: https://ramseraph.github.io/opendata/lgd/ (verify any downloaded snapshot against the official LGD portal before publishing)
 
 The full all-India LGD download is large and changes over time. Do not put the 676k+ village roster into passenger autocomplete. Instead, download the current official LGD CSV exports and place these files in `data/lgd-source/`:
 
