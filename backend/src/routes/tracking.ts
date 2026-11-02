@@ -7,12 +7,13 @@ import { CONFIG } from '../config.js';
 import { estimateTimetableBusLocation } from '../engine/timetablePosition.js';
 import { rankBusCandidates } from '../engine/busCandidateMatcher.js';
 import { haversineDistanceMeters } from '../../../packages/shared/src/engine/routeMatcher.js';
+import { publicSearchLimiter } from '../middleware/rateLimiter.js';
 
 export const trackingRouter = Router();
 
 // POST /api/tracking/verify-bus-candidate
 // Privacy-first, non-binding route verification. A single device sample never starts tracking.
-trackingRouter.post('/verify-bus-candidate', (req: Request, res: Response) => {
+trackingRouter.post('/verify-bus-candidate', publicSearchLimiter, (req: Request, res: Response) => {
   const { routeId, latitude, longitude, accuracyMeters, speedKmh, headingDegrees, timestamp, disclosuresAccepted } = req.body || {};
   if (disclosuresAccepted !== true) {
     return res.status(403).json({ error: 'Explicit consent is required to use this location sample for bus candidate matching.' });
