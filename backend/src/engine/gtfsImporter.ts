@@ -76,7 +76,7 @@ function parseZip(base64: string): Map<string, string> {
     if (data.length !== uncompressedSize) throw new Error(`Uncompressed size mismatch for ${basename}.`);
     expandedTotal += data.length;
     if (files.has(basename)) throw new Error(`GTFS archive contains duplicate ${basename} files.`);
-    files.set(basename, data.toString('utf8').replace(/^\\uFEFF/, ''));
+    files.set(basename, data.toString('utf8').replace(/^\uFEFF/, ''));
   }
   return files;
 }
@@ -109,7 +109,7 @@ export function parseGtfsCsv(source: string): CsvRow[] {
 }
 
 function parseGtfsTime(value: string): { time: string; dayOffset: number; absoluteMinutes: number } | undefined {
-  const match = /^(\\d{1,3}):(\\d{2}):(\\d{2})$/.exec(value.trim());
+  const match = /^(\d{1,3}):(\d{2}):(\d{2})$/.exec(value.trim());
   if (!match) return undefined;
   const hours = Number(match[1]), minutes = Number(match[2]), seconds = Number(match[3]);
   if (hours > 47 || minutes > 59 || seconds > 59) return undefined;
@@ -122,7 +122,7 @@ function parseGtfsTime(value: string): { time: string; dayOffset: number; absolu
 }
 
 function validDate(value?: string): boolean {
-  if (!value || !/^\\d{8}$/.test(value)) return false;
+  if (!value || !/^\d{8}$/.test(value)) return false;
   const year = Number(value.slice(0, 4)), month = Number(value.slice(4, 6)), day = Number(value.slice(6, 8));
   const date = new Date(Date.UTC(year, month - 1, day));
   return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
@@ -193,7 +193,7 @@ export function importGtfsZip(base64: string, now = new Date()): GtfsImportResul
   for (const agency of agencies) {
     const agencyId = agency.agency_id || 'default';
     const name = safeText(agency.agency_name, 120);
-    if (!name || !safeText(agency.agency_url) || !/^https:\\/\\//i.test(agency.agency_url)) {
+    if (!name || !safeText(agency.agency_url) || !/^https:\/\//i.test(agency.agency_url)) {
       warnings.push(`Skipped agency ${agencyId}: agency_name and HTTPS agency_url are required.`);
       continue;
     }
