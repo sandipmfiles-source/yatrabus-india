@@ -429,6 +429,15 @@ export class TransitRepository {
 
   // ==================== AUTOMATION RULES ====================
   public getAutomationRules(): AutomationRule[] {
+    // This platform policy is fail-safe even if an older persisted snapshot
+    // contains an enabled auto-publish flag.
+    const autoPublishRule = Array.from(this.automationRules.values()).find(
+      rule => rule.ruleCode === 'AUTO_PUBLISH_MINOR_TIMETABLE'
+    );
+    if (autoPublishRule) {
+      autoPublishRule.isEnabled = false;
+      autoPublishRule.parameters = { ...autoPublishRule.parameters, autoPublishLowRiskMinorCorrections: false };
+    }
     return Array.from(this.automationRules.values());
   }
 
@@ -439,8 +448,16 @@ export class TransitRepository {
   public updateAutomationRule(id: string, isEnabled: boolean, params: Record<string, any>): boolean {
     const rule = this.automationRules.get(id);
     if (!rule) return false;
+    if (rule.ruleCode === 'AUTO_PUBLISH_MINOR_TIMETABLE' &&
+        (isEnabled || params.autoPublishLowRiskMinorCorrections === true)) {
+      return false;
+    }
     rule.isEnabled = isEnabled;
     rule.parameters = { ...rule.parameters, ...params };
+    if (rule.ruleCode === 'AUTO_PUBLISH_MINOR_TIMETABLE') {
+      rule.isEnabled = false;
+      rule.parameters.autoPublishLowRiskMinorCorrections = false;
+    }
     rule.updatedAt = new Date().toISOString();
     return true;
   }
