@@ -91,8 +91,8 @@ export const BusCard: React.FC<BusCardProps> = ({ journey }) => {
             <div className="mt-3 pt-3 border-t border-yatriwarm-200">
               <div className="flex items-center justify-between mb-2">
                 <div className="text-[11px] font-bold text-signal-charcoal-800">Scheduled departures</div>
-                <span className={`text-[9px] uppercase tracking-wider font-bold px-2 py-1 rounded-full ${route.verificationStatus === 'ADMIN_VERIFIED' && route.serviceStatus !== 'SCHEDULE_UNVERIFIED' ? 'text-emerald-700 bg-emerald-50' : 'text-amber-800 bg-amber-50'}`}>
-                  {route.verificationStatus === 'ADMIN_VERIFIED' && route.serviceStatus !== 'SCHEDULE_UNVERIFIED' ? t('admin_verified') : t('unverified')}
+                <span className={`text-[9px] uppercase tracking-wider font-bold px-2 py-1 rounded-full ${route.verificationStatus === 'ADMIN_VERIFIED' && route.timetableDataStatus === 'SCHEDULED' && !!route.timetableSource && !!route.timetableVerifiedAt ? 'text-emerald-700 bg-emerald-50' : 'text-amber-800 bg-amber-50'}`}>
+                  {route.verificationStatus === 'ADMIN_VERIFIED' && route.timetableDataStatus === 'SCHEDULED' && !!route.timetableSource && !!route.timetableVerifiedAt ? 'Source verified' : t('unverified')}
                 </span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
