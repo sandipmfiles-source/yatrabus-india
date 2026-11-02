@@ -6,6 +6,7 @@ import { evaluateObservationFreshness } from '../../../packages/shared/src/engin
 import { CONFIG } from '../config.js';
 import { estimateTimetableBusLocation } from '../engine/timetablePosition.js';
 import { rankBusCandidates } from '../engine/busCandidateMatcher.js';
+import { haversineDistanceMeters } from '../../../packages/shared/src/engine/routeMatcher.js';
 
 export const trackingRouter = Router();
 
@@ -276,7 +277,26 @@ trackingRouter.post('/observation', (req: Request, res: Response) => {
     createdAt: new Date().toISOString(),
   });
 
-  // 6. If publishable, update public aggregated bus location
+  // 6. Complete a passenger's trip only after two accurate, time-separated GPS fixes
+  // inside the destination geofence. Network/cell estimates never auto-complete a trip.
+  let journeyCompleted = false;
+  if (session.destinationStopId && Number(accuracyMeters) <= 100) {
+    const destination = route.stops.find(stop =>
+      stop.stopId === session.destinationStopId || stop.id === session.destinationStopId
+    );
+    if (destination) {
+      const distanceToDestination = haversineDistanceMeters(
+        Number(latitude), Number(longitude), destination.latitude, destination.longitude
+      );
+      journeyCompleted = repository.recordDestinationArrival(
+        sessionId,
+        evaluation.isPublishableAsLive && distanceToDestination <= 200,
+        timestamp || new Date().toISOString()
+      );
+    }
+  }
+
+  // 7. If publishable, update public aggregated bus location
   if (evaluation.isPublishableAsLive) {
     repository.updateBusLocation(busId, {
       busId,
@@ -302,6 +322,9 @@ trackingRouter.post('/observation', (req: Request, res: Response) => {
   return res.json({
     accepted: evaluation.isPublishableAsLive,
     evaluation,
+    journeyCompleted,
+    sessionActive: !journeyCompleted,
+    message: journeyCompleted ? 'Destination arrival was corroborated. Location sharing has been stopped automatically.' : undefined,
   });
 });
 
