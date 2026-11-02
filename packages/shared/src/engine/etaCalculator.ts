@@ -103,7 +103,7 @@ export function calculateStopETAs(
       else if (currentLocation.accuracyMeters !== undefined && currentLocation.accuracyMeters <= 100) confidence += 6;
       if (observationAgeSeconds !== undefined && observationAgeSeconds <= 60) confidence += 8;
       if (stop.scheduledArrivalTime) confidence += 3;
-      note = `Fresh GPS estimate: about ${remainingKm.toFixed(1)} km remaining at ${Math.round(effectiveSpeedKmh)} km/h; confidence reflects fix accuracy and age.`;
+      note = `Fresh GPS estimate (Live estimate): about ${remainingKm.toFixed(1)} km remaining at ${Math.round(effectiveSpeedKmh)} km/h; confidence reflects fix accuracy and age.`;
     } else {
       const difference = scheduledMinutes - currentTotalMinutes;
       etaMinutes = difference < -720 ? difference + 1440 : Math.max(0, difference);
