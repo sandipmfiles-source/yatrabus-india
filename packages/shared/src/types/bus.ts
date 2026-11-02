@@ -114,8 +114,22 @@ export interface TimetableDeparture {
   departureTime: string; // HH:MM IST
   arrivalTime: string;   // HH:MM IST
   busIdentifier?: string;
-  stopTimes?: Array<{ stopId: string; arrivalTime?: string; departureTime?: string }>;
+  stopTimes?: Array<{
+    stopId: string;
+    arrivalTime?: string;
+    departureTime?: string;
+    arrivalDayOffset?: number;
+    departureDayOffset?: number;
+  }>;
   operatingDays: ('MON' | 'TUE' | 'WED' | 'THU' | 'FRI' | 'SAT' | 'SUN')[];
+  /** GTFS service calendar metadata. Dates use YYYYMMDD in the feed's local timezone. */
+  serviceId?: string;
+  serviceStartDate?: string;
+  serviceEndDate?: string;
+  addedServiceDates?: string[];
+  removedServiceDates?: string[];
+  /** Number of days after the service date when the trip's first stop departs. */
+  departureDayOffset?: number;
   confidenceScore: number;
   isCancelled: boolean;
 }
@@ -163,4 +177,19 @@ export interface JourneyCandidate {
   /** Stops between the selected boarding and alighting points. */
   intermediateStops?: RouteStop[];
   timetableDepartures?: TimetableDeparture[];
+  /** Ordered route legs for direct, one-transfer and multi-transfer itineraries. */
+  legs?: JourneyLeg[];
+}
+
+export interface JourneyLeg {
+  route: Route;
+  boardingStop: RouteStop;
+  alightingStop: RouteStop;
+  departureTime: string;
+  arrivalTime: string;
+  departureDayOffset?: number;
+  arrivalDayOffset?: number;
+  busIdentifier?: string;
+  serviceId?: string;
+  durationMinutes: number;
 }
