@@ -15,6 +15,9 @@ export function createServer() {
   installRepositoryPersistence();
   repository.ensureSuperAdmin(CONFIG.ADMIN_EMAIL);
   const app = express();
+  // Trust forwarded client IPs only when the deployment explicitly configures
+  // the exact number of trusted reverse-proxy hops. Never trust arbitrary headers.
+  app.set('trust proxy', CONFIG.TRUST_PROXY_HOPS);
 
   // Reduce avoidable information disclosure and browser-side attack surface.
   app.disable('x-powered-by');
