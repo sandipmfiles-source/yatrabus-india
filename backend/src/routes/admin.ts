@@ -574,11 +574,17 @@ adminRouter.get('/places', requireAdminAuth('SUPER_ADMIN'), (req: Request, res: 
 
 // GET /api/admin/tracking — protected bus-level tracking overview; never returns passenger traces.
 adminRouter.get('/tracking', requireAdminAuth('SUPER_ADMIN'), (_req: Request, res: Response) => {
-  const services = repository.getAllRoutes().flatMap(route => {
+  const services: Array<{ route: Route; bus: Bus | null; location: any }> = [];
+  for (const route of repository.getAllRoutes()) {
     const buses = repository.getBusesForRoute(route.id);
-    if (!buses.length) return [{ route, bus: null, location: null }];
-    return buses.map(bus => ({ route, bus, location: repository.getBusLocation(bus.id) || null }));
-  });
+    if (!buses.length) {
+      services.push({ route, bus: null, location: null });
+      continue;
+    }
+    for (const bus of buses) {
+      services.push({ route, bus, location: repository.getBusLocation(bus.id) || null });
+    }
+  }
   return res.json({ count: services.length, services });
 });
 
