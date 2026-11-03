@@ -16,13 +16,20 @@ public class MainActivity extends BridgeActivity {
     @SuppressWarnings("deprecation")
     public void onBackPressed() {
         WebView webView = getBridge() != null ? getBridge().getWebView() : null;
-        if (webView != null && webView.canGoBack()) {
-            webView.goBack();
+        if (webView == null) {
+            finish();
             return;
         }
 
-        // Keep YatraBus running in the background instead of closing the app
-        // when the user presses Back from the home screen.
-        moveTaskToBack(true);
+        // React Router consumes Back on child pages. The home screen consumes
+        // the first press and returns false on the second press to exit.
+        webView.evaluateJavascript(
+            "(function(){try{return window.yatribusHandleBack ? window.yatribusHandleBack() : false;}catch(e){return false;}})()",
+            handled -> {
+                if (!"true".equals(handled)) {
+                    finish();
+                }
+            }
+        );
     }
 }

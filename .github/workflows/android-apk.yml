@@ -2,16 +2,16 @@ name: Build Android Debug APK
 
 on:
   push:
-    branches: [main, master, mx-local-preserve, phase2-transport-engine, phase3-india-data-expansion-rebased, phase4-passenger-experience, phase5-production-readiness, phase6-final-qa, phase8-additional-bus-feeds, phase9-rajkot-feed, phase10-final-release-hardening, phase14-passenger-route-detail-ui]
+    branches: [main, master, mx-local-preserve, phase2-transport-engine, phase3-india-data-expansion-rebased, phase4-passenger-experience, phase5-production-readiness, phase6-final-qa, phase8-additional-bus-feeds, phase9-rajkot-feed, phase10-final-release-hardening, phase14-passenger-route-detail-ui, phase16-bus-connected-place-filter, phase17-android-navigation-nearby-cleanup]
   pull_request:
-    branches: [main, master, mx-local-preserve, phase1-final-v3, phase2-transport-engine, phase3-india-data-expansion-rebased, phase5-production-readiness, phase8-additional-bus-feeds, phase9-rajkot-feed, phase10-final-release-hardening, phase13-date-accurate-route-details]
+    branches: [main, master, mx-local-preserve, phase1-final-v3, phase2-transport-engine, phase3-india-data-expansion-rebased, phase5-production-readiness, phase8-additional-bus-feeds, phase9-rajkot-feed, phase10-final-release-hardening, phase13-date-accurate-route-details, phase16-bus-connected-place-filter]
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: android-apk-${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+  group: android-apk-${{ github.workflow }}-${{ github.event_name }}-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
 
 jobs:

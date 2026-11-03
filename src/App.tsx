@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useRef, useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { LanguageProvider } from './context/LanguageContext.js';
@@ -31,10 +31,6 @@ import { AdminHealthPage } from './pages/admin/AdminHealthPage.js';
 import { AdminGtfsImportPage } from './pages/admin/AdminGtfsImportPage.js';
 import { AdminTimetablePage } from './pages/admin/AdminTimetablePage.js';
 import { AdminAnalyticsPage } from './pages/admin/AdminAnalyticsPage.js';
-import { FavouritesPage } from './pages/FavouritesPage.js';
-import { OfflineTimetablePage } from './pages/OfflineTimetablePage.js';
-import { AccessibilitySettingsPage } from './pages/AccessibilitySettingsPage.js';
-import { QrStopScannerPage } from './pages/QrStopScannerPage.js';
 import { StopLinkResolver } from './pages/StopLinkResolver.js';
 import { StopQrResolverPage } from './pages/StopQrResolverPage.js';
 import { AdminQrLabelsPage } from './pages/admin/AdminQrLabelsPage.js';
@@ -64,6 +60,30 @@ const NotificationNavigationHandler: React.FC = () => {
   return null;
 };
 
+const AndroidBackNavigationHandler: React.FC = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const lastHomeBackAt = useRef(0);
+  const [showExitHint, setShowExitHint] = useState(false);
+  useEffect(() => {
+    window.yatribusHandleBack = () => {
+      if (location.pathname !== '/') {
+        lastHomeBackAt.current = 0;
+        setShowExitHint(false);
+        if (window.history.length > 1) navigate(-1); else navigate('/');
+        return true;
+      }
+      const now = Date.now();
+      if (now - lastHomeBackAt.current <= 2200) return false;
+      lastHomeBackAt.current = now;
+      setShowExitHint(true);
+      return true;
+    };
+    return () => { delete window.yatribusHandleBack; };
+  }, [location.pathname, navigate]);
+  useEffect(() => { lastHomeBackAt.current = 0; setShowExitHint(false); }, [location.pathname]);
+  return showExitHint ? <div role="status" aria-live="polite" className="fixed bottom-6 left-1/2 z-[100] -translate-x-1/2 rounded-full bg-yatriwarm-950 px-5 py-3 text-sm font-semibold text-white shadow-elevated">Press Back again to exit YatraBus</div> : null;
+};
 export const App: React.FC = () => {
   useEffect(() => { phase4.applyAccessibility(); }, []);
   return (
@@ -71,6 +91,7 @@ export const App: React.FC = () => {
       <TrackingProvider>
         <BrowserRouter>
           <div className="yatribus-theme flex flex-col min-h-screen">
+            <AndroidBackNavigationHandler />
             <Navbar />
             <main className="flex-1">
               <Routes>
@@ -82,10 +103,6 @@ export const App: React.FC = () => {
                 <Route path="/operator" element={<OwnerDashboardPage />} />
                 <Route path="/operator-claim" element={<OperatorClaimPage />} />
                 <Route path="/privacy" element={<PrivacyPolicyPage />} />
-                <Route path="/favourites" element={<FavouritesPage />} />
-                <Route path="/offline" element={<OfflineTimetablePage />} />
-                <Route path="/accessibility" element={<AccessibilitySettingsPage />} />
-                <Route path="/scan" element={<QrStopScannerPage />} />
                 <Route path="/stop/:routeId/:stopId" element={<StopLinkResolver />} />
                 <Route path="/stopqr/:token" element={<StopQrResolverPage />} />
                 <Route path="/admin" element={<AdminLoginPage />} />

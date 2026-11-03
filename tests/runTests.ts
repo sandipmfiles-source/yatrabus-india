@@ -25,6 +25,7 @@ import { runIndiaCatalogueTests } from './unit/indiaCatalogue.test.js';
 import { runPublicGtfsCatalogueTests } from './unit/publicGtfsCatalogue.test.js';
 import { runPublicGtfsRuntimeTests } from './unit/publicGtfsRuntime.test.js';
 import { runBusConnectedPlaceTests } from './unit/busConnectedPlaces.test.js';
+import { runOsmNearbyStopTests } from './unit/osmNearbyStops.test.js';
 
 let totalTests = 0;
 let passedTests = 0;
@@ -95,6 +96,7 @@ runIndiaCatalogueTests(assert);
 runPublicGtfsCatalogueTests(assert);
 runPublicGtfsRuntimeTests(assert);
 runBusConnectedPlaceTests(assert);
+runOsmNearbyStopTests(assert);
 
 console.log('\\n17. Testing Source-Aware Timetable Availability...');
 runTimetableEngineTests(assert);

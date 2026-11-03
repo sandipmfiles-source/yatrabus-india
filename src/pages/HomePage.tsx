@@ -6,10 +6,9 @@ import { api } from '../services/api.js';
 import { PlaceSearchResult } from '@shared/types/places.js';
 import { Search, ArrowUpDown, Clock, MapPin, PlusCircle, Sparkles, Navigation } from 'lucide-react';
 import { BusIllustration } from '../assets/BusIllustration.js';
-import { VoiceAssistantButton } from '../components/VoiceAssistantButton.js';
 
 export const HomePage: React.FC = () => {
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
   const navigate = useNavigate();
 
   const [fromQuery, setFromQuery] = useState('');
@@ -21,8 +20,9 @@ export const HomePage: React.FC = () => {
   const [isFromFocused, setIsFromFocused] = useState(false);
   const [isToFocused, setIsToFocused] = useState(false);
   const [recentSearches, setRecentSearches] = useState<RecentSearchItem[]>([]);
-  const [nearbyStops, setNearbyStops] = useState<{ place: any; distanceMeters: number }[]>([]);
+  const [nearbyStops, setNearbyStops] = useState<{ place: any; distanceMeters: number; kind: 'BUS_STAND' | 'BUS_STOP'; feedName: string; routeCount: number }[]>([]);
   const [isLocating, setIsLocating] = useState(false);
+  const [nearbyError, setNearbyError] = useState('');
 
   useEffect(() => {
     setRecentSearches(storage.getRecentSearches());
@@ -87,17 +87,6 @@ export const HomePage: React.FC = () => {
     navigate(`/search?from=${encodeURIComponent(fromQuery.trim())}&to=${encodeURIComponent(toQuery.trim())}`);
   };
 
-  const handleVoiceTranscript = (transcript: string) => {
-    const cleaned = transcript.trim().replace(/^from\s+/i, '');
-    const match = cleaned.match(/^(.+?)\s+(?:to|se|tak|থেকে)\s+(.+)$/i);
-    if (match) {
-      setFromQuery(match[1].trim());
-      setToQuery(match[2].trim());
-    } else {
-      setFromQuery(cleaned);
-    }
-  };
-
   const handleSelectRecent = (item: RecentSearchItem) => {
     setFromQuery(item.from);
     setToQuery(item.to);
@@ -116,19 +105,26 @@ export const HomePage: React.FC = () => {
     }
 
     setIsLocating(true);
+    setNearbyError('');
+    setNearbyStops([]);
     navigator.geolocation.getCurrentPosition(
       async pos => {
-        const stops = await api.getNearbyStops(pos.coords.latitude, pos.coords.longitude, 4000);
-        setNearbyStops(stops);
-        setIsLocating(false);
+        try {
+          const stops = await api.getNearbyStops(pos.coords.latitude, pos.coords.longitude, 8000);
+          setNearbyStops(stops);
+          if (!stops.length) setNearbyError('No active public-feed bus stands or stops were found nearby. Local services may not yet publish an open timetable feed.');
+        } catch (error) {
+          setNearbyError(error instanceof Error ? error.message : 'Nearby bus stops could not be loaded. Please try again.');
+        } finally {
+          setIsLocating(false);
+        }
       },
-      err => {
-        // Respectful error handling without guilt
+      () => {
         setIsLocating(false);
         setNearbyStops([]);
-        alert(t('location_error_nearby'));
+        setNearbyError('Location permission is needed to find nearby bus stands and stops.');
       },
-      { timeout: 8000 }
+      { enableHighAccuracy: true, maximumAge: 60000, timeout: 15000 }
     );
   };
 
@@ -260,11 +256,6 @@ export const HomePage: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <VoiceAssistantButton language={language} onTranscript={handleVoiceTranscript} />
-            <span className="text-xs text-yatriwarm-500">Voice search works on supported devices; typing is always available.</span>
-          </div>
-
           {/* Search Button */}
           <button
             type="submit"
@@ -332,22 +323,25 @@ export const HomePage: React.FC = () => {
           </button>
         </div>
 
+        {nearbyError && <p role="status" className="mt-3 rounded-xl bg-yatriwarm-50 p-3 text-xs text-yatriwarm-700">{nearbyError}</p>}
         {nearbyStops.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-3 pt-3 border-t border-yatriwarm-100">
             {nearbyStops.map(item => (
-              <div
+              <button
+                type="button"
                 key={item.place.id}
                 onClick={() => setFromQuery(item.place.canonicalName)}
-                className="p-2.5 rounded-xl bg-yatriwarm-50 hover:bg-yatribrand-50 cursor-pointer border border-yatriwarm-200/80 transition-colors flex items-center justify-between"
+                className="p-3 text-left rounded-xl bg-yatriwarm-50 hover:bg-yatribrand-50 cursor-pointer border border-yatriwarm-200/80 transition-colors flex items-center justify-between gap-3"
               >
                 <div>
+                  <div className="text-[10px] font-bold uppercase tracking-wide text-yatribrand-800">{item.kind === 'BUS_STAND' ? 'Major bus stand / terminal' : 'Nearby bus stop'}</div>
                   <div className="text-xs font-semibold text-yatriwarm-900">{item.place.canonicalName}</div>
-                  <div className="text-[11px] text-yatriwarm-500">{item.place.district}, {item.place.state}</div>
+                  <div className="text-[11px] text-yatriwarm-500">{item.place.district || item.feedName} · {item.routeCount > 0 ? `${item.routeCount} active routes` : 'Timetable not verified'}</div>
                 </div>
-                <span className="text-[11px] font-bold text-yatribrand-800 bg-yatribrand-100 px-2 py-0.5 rounded-md">
-                  ~{Math.round(item.distanceMeters / 100) / 10} km
+                <span className="shrink-0 text-[11px] font-bold text-yatribrand-800 bg-yatribrand-100 px-2 py-0.5 rounded-md">
+                  {Math.round(item.distanceMeters / 100) / 10} km
                 </span>
-              </div>
+              </button>
             ))}
           </div>
         )}
