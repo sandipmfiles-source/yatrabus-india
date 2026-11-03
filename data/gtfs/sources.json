@@ -92,22 +92,6 @@
       "notes": "Community feed with reported validation errors in the catalog; excluded from automated import pending quality and licence review."
     },
     {
-      "id": "rajkot-rampath",
-      "name": "Rajkot Rampath Limited",
-      "region": "Rajkot, Gujarat",
-      "mode": "bus",
-      "status": "disabled-license-review",
-      "official": false,
-      "format": "GTFS",
-      "url": "https://github.com/croyla/rrl-gtfs/raw/refs/heads/main/gtfs_compat.zip",
-      "sourcePage": "https://mobilitydatabase.org/feeds/gtfs/mdb-3142",
-      "licenseUrl": null,
-      "licenseReview": "pending",
-      "catalogUrl": "https://mobilitydatabase.org/feeds/gtfs/mdb-3142",
-      "realtime": null,
-      "notes": "Community feed; public catalogue listing is not treated as a redistribution licence."
-    },
-    {
       "id": "ahmedabad-janmarg",
       "name": "Ahmedabad Municipal Transit Services / Janmarg",
       "region": "Ahmedabad, Gujarat",
@@ -262,7 +246,7 @@
       "name": "Karnataka State Road Transport Corporation",
       "region": "Karnataka and interstate services",
       "mode": "bus",
-      "status": "enabled",
+      "status": "disabled-stale-feed",
       "official": false,
       "format": "GTFS",
       "url": "https://github.com/croyla/ksrtc-gtfs/raw/refs/heads/main/gtfs_compat.zip",
@@ -271,7 +255,7 @@
       "licenseReview": "MIT-0-dataset-repository-license-reviewed-community-derived",
       "catalogUrl": "https://github.com/croyla/ksrtc-gtfs",
       "realtime": null,
-      "notes": "Community-generated GTFS built by querying publicly accessible KSRTC website schedules; repository documents generation for the next 30 days. GitHub history showed automated dataset generation commits on 9, 14, 19, 24 and 29 Oct 2026, so this source has a demonstrated five-day refresh cadence. Not operator-certified; importer must verify current service dates on each run and reject expired or incomplete snapshots. Route geometry uses OpenStreetMap-derived shapes and requires OSM attribution when distributed.",
+      "notes": "Community-generated GTFS built by querying publicly accessible KSRTC website schedules; repository documents generation for the next 30 days. GitHub history showed automated dataset generation commits on 9, 14, 19, 24 and 29 Oct 2026, so this source has a demonstrated five-day refresh cadence. Not operator-certified; importer must verify current service dates on each run and reject expired or incomplete snapshots. Route geometry uses OpenStreetMap-derived shapes and requires OSM attribution when distributed. Latest Phase 10 import on 3 Nov 2026 found the producer's published service dates expired; do not publish until the producer regenerates a current calendar.",
       "attribution": "Karnataka KSRTC GTFS dataset by Aayush Rai (MIT-0); route shapes © OpenStreetMap contributors (ODbL). Community-generated, not operator-certified."
     }
   ]
