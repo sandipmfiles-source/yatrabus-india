@@ -34,6 +34,8 @@ import { OfflineTimetablePage } from './pages/OfflineTimetablePage.js';
 import { AccessibilitySettingsPage } from './pages/AccessibilitySettingsPage.js';
 import { QrStopScannerPage } from './pages/QrStopScannerPage.js';
 import { StopLinkResolver } from './pages/StopLinkResolver.js';
+import { StopQrResolverPage } from './pages/StopQrResolverPage.js';
+import { AdminQrLabelsPage } from './pages/admin/AdminQrLabelsPage.js';
 import { phase4 } from './services/phase4.js';
 
 export const App: React.FC = () => {
@@ -59,6 +61,7 @@ export const App: React.FC = () => {
                 <Route path="/accessibility" element={<AccessibilitySettingsPage />} />
                 <Route path="/scan" element={<QrStopScannerPage />} />
                 <Route path="/stop/:routeId/:stopId" element={<StopLinkResolver />} />
+                <Route path="/stopqr/:token" element={<StopQrResolverPage />} />
                 <Route path="/admin" element={<AdminLoginPage />} />
                 <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
                 <Route path="/admin/submissions" element={<AdminSubmissionsPage />} />
@@ -71,6 +74,7 @@ export const App: React.FC = () => {
                 <Route path="/admin/gtfs" element={<AdminGtfsImportPage />} />
                 <Route path="/admin/timetables" element={<AdminTimetablePage />} />
                 <Route path="/admin/analytics" element={<AdminAnalyticsPage />} />
+                <Route path="/admin/qr" element={<AdminQrLabelsPage />} />
               </Routes>
             </main>
             <Footer />
