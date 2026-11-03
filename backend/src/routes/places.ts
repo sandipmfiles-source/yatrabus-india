@@ -105,7 +105,7 @@ const lgdCatalogue = (() => {
 
 function villageShardKey(value: string): string {
   const first = String(value || '').normalize('NFKC').trim().toLocaleLowerCase('en-IN').match(/[\p{L}\p{N}]/u)?.[0];
-  return first ? 'u' + first.codePointAt(0).toString(16) : '';
+  return first ? 'u' + first.codePointAt(0)!.toString(16) : '';
 }
 
 const villageShardCache = new Map<string, any[]>();
