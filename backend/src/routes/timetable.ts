@@ -91,6 +91,8 @@ timetableRouter.get('/routes/:routeId', (req, res) => {
   }
   const feed = matches[0];
   if (!feed) return res.status(404).json({ error: 'Route not found in installed GTFS snapshots.' });
+  const requestedDate = req.query.date === undefined ? undefined : serviceDate(req.query.date);
+  if (req.query.date !== undefined && !requestedDate) return res.status(400).json({ error: 'date must be a real calendar date in YYYY-MM-DD format.' });
   const route = feed.routes.find(item => item.route_id === req.params.routeId)!;
   const agency = feed.agency.find(item => !item.agency_id || item.agency_id === route.agency_id);
   const trips = feed.trips.filter(item => item.route_id === route.route_id &&
