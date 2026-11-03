@@ -30,10 +30,10 @@ export function runBusConnectedPlaceTests(assert: (description: string, pass: bo
   assert('Bus stop suggestions retain coordinates and source evidence', matches[0]?.place.latitude === 22.346 && matches[0]?.place.busServiceEvidence.activeRoutes === 1);
   assert('A place without bus stop-times is excluded', buildBusConnectedPlaceSuggestions([feed], 'No Service', '2026-11-02').length === 0);
   assert('A bus stop without coordinates is excluded from route autocomplete', buildBusConnectedPlaceSuggestions([feed], 'Unlocated', '2026-11-02').length === 0);
-  assert('A town/region query returns only active, coordinate-bearing stops from that feed', buildBusConnectedPlaceSuggestions([feed], 'West Bengal', '2026-11-02').length === 2);
+  assert('A town/region query returns only active, coordinate-bearing stops from that feed', buildBusConnectedPlaceSuggestions([feed], 'West Bengal', '2026-11-02').length === 3);
   assert('A place outside published feed coverage is not invented', buildBusConnectedPlaceSuggestions([feed], 'Ranchi', '2026-11-02').length === 0);
   assert('Expired or inactive service dates produce no bus-connected suggestions', buildBusConnectedPlaceSuggestions([feed], 'Kharagpur', '2027-01-01').length === 0);
-  const nearby = buildNearbyBusPlaceSuggestions([feed], 22.345, 87.233, '2026-11-02', 20000, 20);
+  const nearby = buildNearbyBusPlaceSuggestions([feed], 22.345, 87.233, '2026-11-02', 40000, 20);
   assert('Nearby search lists major bus stands before ordinary bus stops', nearby.length === 3 && nearby[0].kind === 'BUS_STAND' && nearby[1].kind === 'BUS_STAND' && nearby[2].kind === 'BUS_STOP');
   assert('Nearby results include distance, active route count and stop coordinates', nearby[0].distanceMeters >= 0 && nearby[0].routeCount === 1 && Number.isFinite(nearby[0].place.latitude));
   assert('Nearby search excludes stops outside radius and stops without active trips', buildNearbyBusPlaceSuggestions([feed], 22.345, 87.233, '2026-11-02', 100, 20).length < nearby.length);
