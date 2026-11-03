@@ -19,8 +19,18 @@ export function runETACalculatorTests(assert: (desc: string, pass: boolean) => v
   const remainingStop = liveETAs[2];
   assert('Calculation type is OBSERVATION_BASED when live GPS is active', remainingStop.calculationType === 'OBSERVATION_BASED');
   assert('Confidence note mentions live estimate and remaining km', remainingStop.confidenceNote.includes('Live estimate'));
+  assert('Fresh GPS ETA includes an explicit confidence score', remainingStop.confidenceScore >= 55 && ['MODERATE', 'HIGH'].includes(remainingStop.confidenceCategory));
 
   // Test 2: Schedule-based ETA fallback (no live GPS)
   const scheduleETAs = calculateStopETAs(stops, 0.0, undefined);
   assert('Calculation type is SCHEDULE_BASED when no GPS available', scheduleETAs[1].calculationType === 'SCHEDULE_BASED');
+
+  const staleETAs = calculateStopETAs(
+    stops, 0.3,
+    { latitude: 28.615, longitude: 77.20, speedKmh: 24, accuracyMeters: 15, observedAtIso: '2026-11-02T01:00:00.000Z', isLive: true },
+    '2026-11-02T02:00:00.000Z'
+  );
+  assert('Stale GPS cannot be used for a live ETA', staleETAs[2].calculationType === 'SCHEDULE_BASED' && staleETAs[2].confidenceScore < 55);
+  const istETAs = calculateStopETAs(stops, 0, undefined, '2026-11-02T02:00:00.000Z');
+  assert('ETA clock uses Indian Standard Time rather than server UTC', istETAs[1].predictedTime === '08:10');
 }

@@ -29,7 +29,8 @@ export function createServer() {
     next();
   });
 
-  // Bound request bodies to reduce memory-exhaustion risk from oversized payloads.
+  // GTFS ZIP uploads have a dedicated bounded 14 MB JSON limit; all other APIs remain 1 MB.
+  app.use('/api/admin/gtfs', express.json({ limit: '14mb' }));
   app.use(express.json({ limit: '1mb' }));
   app.use(express.urlencoded({ extended: true, limit: '1mb', parameterLimit: 100 }));
 
@@ -90,7 +91,7 @@ export function createServer() {
       ? err.status
       : 500;
     if (status === 413) {
-      return res.status(413).json({ error: 'Request body is too large. Maximum allowed size is 1 MB.' });
+      return res.status(413).json({ error: 'Request body exceeds the endpoint upload limit (GTFS import: 14 MB; other APIs: 1 MB).' });
     }
     if (status === 400) {
       return res.status(400).json({ error: 'Invalid request body.' });

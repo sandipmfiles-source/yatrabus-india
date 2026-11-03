@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { repository } from '../db/repository.js';
 import { calculateStopETAs } from '../../../packages/shared/src/engine/etaCalculator.js';
 import { evaluateObservationFreshness } from '../../../packages/shared/src/engine/staleDetector.js';
+import { matchPointToRoute } from '../../../packages/shared/src/engine/routeMatcher.js';
 
 export const busesRouter = Router();
 
@@ -36,17 +37,23 @@ busesRouter.get('/:id', (req: Request, res: Response) => {
   const route = requestedRoute || routes.find(r => r.id === bus.routeId);
   if (!route) return res.status(404).json({ error: 'Route not found for this bus' });
 
-  // Calculate stop ETAs
-  const progressRatio = 0.35; // Default progress along corridor
+  // Derive progress from the actual route geometry; never use a hard-coded 35% position.
+  const hasCoordinates = loc && Number.isFinite(loc.latitude) && Number.isFinite(loc.longitude);
+  const routeMatch = hasCoordinates && loc?.isLive === true
+    ? matchPointToRoute(loc!.latitude!, loc!.longitude!, route, Math.max(250, (loc!.accuracyMeters || 50) * 2))
+    : undefined;
+  const progressRatio = routeMatch?.isMatched ? routeMatch.estimatedProgressRatio : 0;
   const etas = calculateStopETAs(
     route.stops,
     progressRatio,
-    loc && loc.latitude && loc.longitude
+    hasCoordinates
       ? {
-          latitude: loc.latitude,
-          longitude: loc.longitude,
-          speedKmh: loc.speedKmh,
-          isLive: loc.isLive,
+          latitude: loc!.latitude!,
+          longitude: loc!.longitude!,
+          speedKmh: loc!.speedKmh,
+          accuracyMeters: loc!.accuracyMeters,
+          observedAtIso: loc!.lastObservedAt,
+          isLive: loc!.isLive && routeMatch?.isMatched === true,
         }
       : undefined
   );

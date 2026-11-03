@@ -114,8 +114,28 @@ export interface TimetableDeparture {
   departureTime: string; // HH:MM IST
   arrivalTime: string;   // HH:MM IST
   busIdentifier?: string;
-  stopTimes?: Array<{ stopId: string; arrivalTime?: string; departureTime?: string }>;
+  stopTimes?: Array<{
+    stopId: string;
+    arrivalTime?: string;
+    departureTime?: string;
+    arrivalDayOffset?: number;
+    departureDayOffset?: number;
+  }>;
   operatingDays: ('MON' | 'TUE' | 'WED' | 'THU' | 'FRI' | 'SAT' | 'SUN')[];
+  /** GTFS service calendar metadata. Dates use YYYYMMDD in the feed's local timezone. */
+  serviceId?: string;
+  /** GTFS trip_id; it is not a public bus registration or vehicle identity. */
+  tripId?: string;
+  serviceStartDate?: string;
+  serviceEndDate?: string;
+  addedServiceDates?: string[];
+  removedServiceDates?: string[];
+  /** Number of days after the service date when the trip's first stop departs. */
+  departureDayOffset?: number;
+  /** GTFS frequencies.txt metadata; generated departures are approximate unless exactTimes is true. */
+  isFrequencyBased?: boolean;
+  exactTimes?: boolean;
+  headwaySeconds?: number;
   confidenceScore: number;
   isCancelled: boolean;
 }
@@ -141,6 +161,9 @@ export interface JourneyCandidate {
   busIdentifier?: string;
   departureTime: string;
   arrivalTime: string;
+  departureDayOffset?: number;
+  arrivalDayOffset?: number;
+  arrivalNextDay?: boolean;
   durationMinutes: number;
   boardingStop: RouteStop;
   alightingStop: RouteStop;
@@ -163,4 +186,22 @@ export interface JourneyCandidate {
   /** Stops between the selected boarding and alighting points. */
   intermediateStops?: RouteStop[];
   timetableDepartures?: TimetableDeparture[];
+  /** Ordered route legs for direct, one-transfer and multi-transfer itineraries. */
+  legs?: JourneyLeg[];
+}
+
+export interface JourneyLeg {
+  route: Route;
+  boardingStop: RouteStop;
+  alightingStop: RouteStop;
+  departureTime: string;
+  arrivalTime: string;
+  departureDayOffset?: number;
+  arrivalDayOffset?: number;
+  departureTimeIso?: string;
+  arrivalTimeIso?: string;
+  arrivalNextDay?: boolean;
+  busIdentifier?: string;
+  serviceId?: string;
+  durationMinutes: number;
 }

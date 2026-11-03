@@ -2,7 +2,7 @@ name: Build Android Debug APK
 
 on:
   push:
-    branches: [main, master, mx-local-preserve, phase2-transport-engine]
+    branches: [main, master, mx-local-preserve, phase2-transport-engine, phase3-india-data-expansion-rebased]
   pull_request:
     branches: [main, master, mx-local-preserve, phase1-final-v3, phase2-transport-engine]
   workflow_dispatch:

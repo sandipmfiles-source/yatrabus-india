@@ -6,6 +6,7 @@ import { evaluateObservationFreshness } from '../../../packages/shared/src/engin
 import { CONFIG } from '../config.js';
 import { estimateTimetableBusLocation } from '../engine/timetablePosition.js';
 import { rankBusCandidates } from '../engine/busCandidateMatcher.js';
+import { rankTrajectoryCandidates, type TrajectorySample } from '../engine/trajectoryMatcher.js';
 import { haversineDistanceMeters } from '../../../packages/shared/src/engine/routeMatcher.js';
 import { publicSearchLimiter, trackingSessionLimiter } from '../middleware/rateLimiter.js';
 
@@ -47,6 +48,56 @@ trackingRouter.post('/verify-bus-candidate', publicSearchLimiter, (req: Request,
     trackingStarted: false,
     requiresSecondSample: result.status !== 'NO_MATCH',
     privacy: 'This one-time sample is evaluated in memory and is not stored by this endpoint. A separate active journey session and explicit consent are required for ongoing sharing.',
+  });
+});
+
+// POST /api/tracking/verify-bus-candidate-series
+// Multiple consented samples improve route/bus candidate ranking without persisting passenger traces.
+trackingRouter.post('/verify-bus-candidate-series', publicSearchLimiter, (req: Request, res: Response) => {
+  const { routeId, samples, disclosuresAccepted } = req.body || {};
+  if (disclosuresAccepted !== true) {
+    return res.status(403).json({ error: 'Explicit consent is required before evaluating a movement sequence.' });
+  }
+  if (typeof routeId !== 'string' || !routeId.trim() || !Array.isArray(samples) || samples.length < 2 || samples.length > 6) {
+    return res.status(400).json({ error: 'routeId and between two and six samples are required.' });
+  }
+  const route = repository.getRouteById(routeId);
+  if (!route) return res.status(404).json({ error: 'Route not found.' });
+
+  const now = Date.now();
+  const validated: TrajectorySample[] = [];
+  for (const sample of samples) {
+    if (!sample || typeof sample.sessionId !== 'string' || !sample.sessionId.trim()) {
+      return res.status(400).json({ error: 'Every sample must reference an active consented journey session.' });
+    }
+    const session = repository.getJourneySession(sample.sessionId);
+    const consent = repository.getConsent(sample.sessionId);
+    if (!session || !session.isActive || session.routeId !== routeId ||
+        new Date(session.maxExpiryTime).getTime() <= now ||
+        !consent || consent.status !== 'GRANTED' || consent.disclosuresAccepted !== true) {
+      return res.status(403).json({ error: 'Every sample must belong to an active journey with unrevoked explicit location consent for this route.' });
+    }
+    const timestamp = new Date(sample.timestamp);
+    if (!Number.isFinite(timestamp.getTime()) || Math.abs(now - timestamp.getTime()) > 15 * 60 * 1000) {
+      return res.status(400).json({ error: 'A movement sample is stale or has an invalid timestamp.' });
+    }
+    validated.push({
+      sessionId: sample.sessionId,
+      timestamp: timestamp.toISOString(),
+      latitude: Number(sample.latitude),
+      longitude: Number(sample.longitude),
+      accuracyMeters: Number(sample.accuracyMeters),
+      speedKmh: sample.speedKmh === undefined ? undefined : Number(sample.speedKmh),
+      headingDegrees: sample.headingDegrees === undefined ? undefined : Number(sample.headingDegrees),
+    });
+  }
+
+  const result = rankTrajectoryCandidates(repository.getBusesForRoute(routeId), [route], validated, new Date(now));
+  return res.status(200).json({
+    ...result,
+    trackingStarted: false,
+    samplesStored: false,
+    privacy: 'Samples are evaluated in memory only and are not persisted by this endpoint. Existing journey consent is checked for every sample. Candidate corroboration is not proof of physical vehicle identity.',
   });
 });
 
