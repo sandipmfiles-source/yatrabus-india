@@ -1,0 +1,40 @@
+name: Refresh public GTFS data
+
+on:
+  push:
+    branches: [phase7-gtfs-public-data]
+  schedule:
+    - cron: '17 2 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: refresh-public-gtfs
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout GTFS importer
+        uses: actions/checkout@v5
+        with:
+          ref: phase7-gtfs-public-data
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Install ZIP utility
+        run: sudo apt-get update && sudo apt-get install -y unzip
+      - name: Download, validate and normalize enabled feeds
+        run: node scripts/gtfs-import.mjs
+      - name: Upload normalized GTFS dataset snapshot
+        uses: actions/upload-artifact@v6
+        with:
+          name: yatribus-public-gtfs-${{ github.run_number }}
+          path: artifacts/gtfs/
+          if-no-files-found: error
+          retention-days: 30
