@@ -134,7 +134,8 @@ export const phase4 = {
     try { history = JSON.parse(localStorage.getItem(ALERT_HISTORY_KEY) || '{}'); } catch { history = {}; }
     const now = Date.now();
     if (history[key] && now - history[key] < 30 * 60 * 1000) return;
-    const permission = await LocalNotifications.checkPermissions();
+    let permission;
+    try { permission = await LocalNotifications.checkPermissions(); } catch { return; }
     if (permission.display !== 'granted') return;
     const id = Math.max(1, Math.floor(now % 2147483000));
     try {
@@ -146,7 +147,7 @@ export const phase4 = {
     for (const [savedKey, timestamp] of Object.entries(history)) {
       if (now - timestamp > 7 * 24 * 60 * 60 * 1000) delete history[savedKey];
     }
-    localStorage.setItem(ALERT_HISTORY_KEY, JSON.stringify(history));
+    try { localStorage.setItem(ALERT_HISTORY_KEY, JSON.stringify(history)); } catch { /* Notification still delivered if local storage is full. */ }
   },
 
   async cancelNotifications(): Promise<void> {
