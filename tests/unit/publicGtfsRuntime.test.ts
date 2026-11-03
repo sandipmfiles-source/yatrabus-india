@@ -1,4 +1,4 @@
-import { getStopDepartures, isServiceActive, isValidGtfsServiceDate, searchGtfsJourneys, type NormalizedGtfsFeed } from '../../backend/src/engine/publicGtfsRuntime.js';
+import { formatGtfsTime, getStopDepartures, isServiceActive, isValidGtfsServiceDate, searchGtfsJourneys, type NormalizedGtfsFeed } from '../../backend/src/engine/publicGtfsRuntime.js';
 
 const sample: NormalizedGtfsFeed = {
   schemaVersion: 1,
@@ -24,6 +24,7 @@ export function runPublicGtfsRuntimeTests(assert: (description: string, pass: bo
   assert('GTFS API date validation accepts a real leap-day date', isValidGtfsServiceDate('2028-02-29'));
   assert('GTFS API date validation rejects impossible month days', !isValidGtfsServiceDate('2026-02-31'));
   assert('GTFS API date validation rejects malformed dates', !isValidGtfsServiceDate('03-11-2026'));
+  assert('GTFS route detail clock formatter converts after-midnight times with day offset', formatGtfsTime('24:40:00')?.time === '00:40' && formatGtfsTime('24:40:00')?.dayOffset === 1);
   assert('GTFS service calendar activates a weekday within its date range', isServiceActive(sample, 'weekday', '2026-11-02'));
   assert('GTFS calendar_dates removal overrides a normal weekday', !isServiceActive(sample, 'weekday', '2026-11-03'));
   assert('GTFS calendar_dates addition activates an otherwise inactive service date', isServiceActive({
