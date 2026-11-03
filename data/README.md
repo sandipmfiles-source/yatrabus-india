@@ -7,6 +7,7 @@ This folder contains the India administrative reference index, source-aware inge
 - All **28 States and 8 Union Territories** are represented in the shared administrative catalogue.
 - Capital/administrative-seat references, aliases, region tags, official government reference URLs, and review dates are retained.
 - The West Bengal pilot index contains searchable town references for Jhargram, Kharagpur, Midnapore, Salboni, Debra, Panskura, Kolaghat, Uluberia, Howrah, Kolkata, Santragachi, Lodhasuli, Gopiballavpur and Belpahari.
+- Fifteen historical West Bengal bus-terminal candidates are included from a 3 March 2017 public directory snapshot. They remain UNVERIFIED, carry no coordinates, and are not claims of current operation.
 - Government transport undertakings are maintained separately as directory candidates; an entry does not mean that an operator has claimed or authenticated its profile.
 - Timetable and place provenance are explicit. Records without source-backed verification remain UNVERIFIED / UNAVAILABLE.
 

@@ -6,7 +6,7 @@ YatraBus now ships a structured administrative reference catalogue for all 28 St
 
 The catalogue stores administrative type, capital/administrative seat, aliases, region, official government reference URL and review date. Seasonal and shared capital distinctions are noted instead of flattening them into a misleading single-capital claim.
 
-**Important:** State and UT records are reference entries, not bus service records. The town starter index is UNVERIFIED and does not create fake bus stops, coordinates or routes.
+**Important:** State and UT records are reference entries, not bus service records. The town starter index is UNVERIFIED and does not create fake bus stops, coordinates or routes. Fifteen terminal candidates from a 3 March 2017 public directory snapshot are also included as historical, UNVERIFIED references; current operation and service coverage are not asserted.
 
 ## Government bus operators
 

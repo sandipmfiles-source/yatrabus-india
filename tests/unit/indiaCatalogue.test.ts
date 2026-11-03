@@ -26,6 +26,11 @@ export function runIndiaCatalogueTests(assert: (description: string, pass: boole
   assert('Pilot towns remain unverified and do not invent coordinates', pilotTowns.every(item =>
     item.verificationStatus === 'UNVERIFIED' && item.latitude === undefined && item.longitude === undefined
   ));
+  const pilotTerminals = INDIA_ADMIN_AREA_PLACES.filter(item => item.id.startsWith('wb-pilot-terminal-'));
+  assert('West Bengal pilot includes 15 historical bus-terminal references', pilotTerminals.length === 15);
+  assert('Historical terminals remain unverified and retain the 2017 source snapshot', pilotTerminals.every(item =>
+    item.placeType === 'BUS_TERMINAL' && item.verificationStatus === 'UNVERIFIED' && item.sourceSnapshotDate === '2017-03-03' && item.latitude === undefined && item.longitude === undefined
+  ));
   assert('Every administrative state/UT and capital has source provenance', INDIA_ADMIN_AREA_PLACES
     .filter(item => item.id.startsWith('india-admin-'))
     .every(item => !!item.sourceUrl && !!item.sourceSnapshotDate && item.verificationStatus === 'UNVERIFIED'));

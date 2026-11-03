@@ -5,12 +5,12 @@ import { useLanguage } from '../context/LanguageContext.js';
 import { ArrowLeft, Search, MapPin, Building2, BusFront, ExternalLink, ShieldCheck, AlertTriangle } from 'lucide-react';
 
 type Catalogue = {
-  summary: { states: number; unionTerritories: number; administrativeUnits: number; governmentOperatorDirectoryEntries: number; pilotTownIndexEntries: number; lgdIndexRecords: number; lgdUrbanLocalBodies: number; lgdSnapshotDate: string };
+  summary: { states: number; unionTerritories: number; administrativeUnits: number; governmentOperatorDirectoryEntries: number; pilotTownIndexEntries: number; pilotTerminalIndexEntries?: number; lgdIndexRecords: number; lgdUrbanLocalBodies: number; lgdSnapshotDate: string };
   lgdIndex: { snapshotDate: string; districts: number; subdistricts: number; blocks: number; urbanLocalBodies: number; totalRecords: number };
   states: Array<{ name: string; capital: string; aliases: string[]; region: string; capitalNote?: string; officialReference: string }>;
   unionTerritories: Array<{ name: string; capital: string; aliases: string[]; region: string; capitalNote?: string; officialReference: string }>;
   operators: Array<{ id: string; name: string; shortCode: string; serviceArea: string; officialWebsite?: string; sourceUrl?: string; directoryStatus: string }>;
-  pilotCorridor: { name: string; state: string; towns: Array<{ id: string; name: string; district?: string; verificationStatus: string }>; timetableStatus: string; liveGpsStatus: string; note: string; officialOperatorReferences: Array<{ name: string; url: string }> };
+  pilotCorridor: { name: string; state: string; towns: Array<{ id: string; name: string; district?: string; verificationStatus: string }>; terminals?: Array<{ id: string; name: string; district?: string; sourceSnapshotDate?: string; verificationStatus: string }>; timetableStatus: string; liveGpsStatus: string; note: string; officialOperatorReferences: Array<{ name: string; url: string }> };
 };
 
 const labels = {
@@ -40,6 +40,7 @@ export const IndiaDirectoryPage: React.FC = () => {
   const states = useMemo(() => (catalogue?.states || []).filter(item => !needle || [item.name, item.capital, ...(item.aliases || [])].join(' ').toLocaleLowerCase().includes(needle)), [catalogue, needle]);
   const uts = useMemo(() => (catalogue?.unionTerritories || []).filter(item => !needle || [item.name, item.capital, ...(item.aliases || [])].join(' ').toLocaleLowerCase().includes(needle)), [catalogue, needle]);
   const operators = useMemo(() => (catalogue?.operators || []).filter(item => !needle || [item.name, item.shortCode, item.serviceArea].join(' ').toLocaleLowerCase().includes(needle)), [catalogue, needle]);
+  const terminals = useMemo(() => (catalogue?.pilotCorridor?.terminals || []).filter(item => !needle || [item.name, item.district || ''].join(' ').toLocaleLowerCase().includes(needle)), [catalogue, needle]);
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-7 sm:py-10 space-y-6">
@@ -55,6 +56,7 @@ export const IndiaDirectoryPage: React.FC = () => {
             [catalogue.summary.unionTerritories, t.uts],
             [catalogue.summary.governmentOperatorDirectoryEntries, t.operators],
             [catalogue.summary.pilotTownIndexEntries, t.pilot],
+            [catalogue.summary.pilotTerminalIndexEntries || 0, 'Pilot bus terminals'],
             [catalogue.summary.lgdIndexRecords.toLocaleString(), t.lgd],
           ].map(([value, label]) => <div key={String(label)} className="rounded-2xl border border-yatriwarm-200 bg-white p-4"><div className="text-2xl font-extrabold text-yatribrand-900">{value}</div><div className="text-[11px] text-yatriwarm-600">{label}</div></div>)}
         </div>
@@ -110,6 +112,17 @@ export const IndiaDirectoryPage: React.FC = () => {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {catalogue.pilotCorridor.towns.map(town => <div key={town.id} className="rounded-xl bg-yatriwarm-50 p-3"><div className="text-xs font-bold text-yatriwarm-900">{town.name}</div><div className="text-[10px] text-yatriwarm-500">{town.district}</div><div className="mt-1 text-[9px] text-amber-800">{t.unverifiedTown}</div></div>)}
             </div>
+            {terminals.length > 0 && <div className="space-y-2">
+              <h3 className="text-xs font-bold text-yatriwarm-900">Historical bus terminal references · 2017 source snapshot</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                {terminals.map(terminal => <article key={terminal.id} className="rounded-xl border border-yatriwarm-200 bg-yatriwarm-50 p-3">
+                  <div className="text-xs font-bold text-yatriwarm-900">{terminal.name}</div>
+                  <div className="text-[10px] text-yatriwarm-600">{terminal.district}</div>
+                  <div className="mt-1 text-[9px] text-amber-800">Historical reference · UNVERIFIED</div>
+                </article>)}
+              </div>
+              <p className="text-[10px] text-yatriwarm-500">These records are historical directory candidates, not confirmation that a terminal is currently active or served by a particular bus.</p>
+            </div>}
             <div className="flex flex-wrap gap-2">
               <span className="rounded-full bg-amber-50 text-amber-900 px-3 py-1.5 text-[10px] font-semibold">{t.noTimetable}</span>
               <span className="rounded-full bg-slate-100 text-slate-700 px-3 py-1.5 text-[10px] font-semibold">{t.noGps}</span>
@@ -120,7 +133,7 @@ export const IndiaDirectoryPage: React.FC = () => {
         </>
       )}
 
-      {catalogue && states.length + uts.length + operators.length === 0 && <p className="text-center text-xs text-yatriwarm-500 py-8">{t.noMatch}</p>}
+      {catalogue && states.length + uts.length + operators.length + terminals.length === 0 && <p className="text-center text-xs text-yatriwarm-500 py-8">{t.noMatch}</p>}
       <div className="rounded-2xl bg-yatriwarm-50 border border-yatriwarm-100 p-4 text-xs text-yatriwarm-700"><div className="font-bold flex items-center gap-2 mb-2"><ShieldCheck className="w-4 h-4" />{t.dataPolicy}</div><ul className="list-disc pl-5 space-y-1"><li>Operator directory entries are not authenticated profiles.</li><li>Town references are not bus stops or proof of a scheduled service.</li><li>Every published timetable needs a source and verification date.</li><li>Live GPS requires fresh, consented observations; estimates are never labelled live.</li></ul></div>
     </div>
   );
