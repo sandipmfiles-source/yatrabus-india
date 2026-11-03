@@ -169,7 +169,9 @@ export const BusDetailPage: React.FC = () => {
 
   const toggleFavourite = () => {
     if (!route) return;
-    setIsFavourite(phase4.toggleFavourite(route));
+    const saved = phase4.toggleFavourite(route);
+    setIsFavourite(saved);
+    if (!saved) void phase4.cancelRouteReminder(route.id);
   };
 
   const shareJourney = async () => {
