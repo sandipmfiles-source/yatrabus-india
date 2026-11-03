@@ -6,9 +6,10 @@ import { api } from '../services/api.js';
 import { PlaceSearchResult } from '@shared/types/places.js';
 import { Search, ArrowUpDown, Clock, MapPin, PlusCircle, Sparkles, Navigation } from 'lucide-react';
 import { BusIllustration } from '../assets/BusIllustration.js';
+import { VoiceAssistantButton } from '../components/VoiceAssistantButton.js';
 
 export const HomePage: React.FC = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const navigate = useNavigate();
 
   const [fromQuery, setFromQuery] = useState('');
@@ -63,6 +64,17 @@ export const HomePage: React.FC = () => {
 
     storage.addRecentSearch(fromQuery.trim(), toQuery.trim());
     navigate(`/search?from=${encodeURIComponent(fromQuery.trim())}&to=${encodeURIComponent(toQuery.trim())}`);
+  };
+
+  const handleVoiceTranscript = (transcript: string) => {
+    const cleaned = transcript.trim();
+    const match = cleaned.match(/^(.+?)\\s+(?:to|se|tak|from| থেকে | থেকে|থেকে)\\s+(.+)$/i);
+    if (match) {
+      setFromQuery(match[1].trim());
+      setToQuery(match[2].trim());
+    } else {
+      setFromQuery(cleaned);
+    }
   };
 
   const handleSelectRecent = (item: RecentSearchItem) => {
@@ -219,6 +231,11 @@ export const HomePage: React.FC = () => {
                 </div>
               )}
             </div>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <VoiceAssistantButton language={language} onTranscript={handleVoiceTranscript} />
+            <span className="text-xs text-yatriwarm-500">Voice search works on supported devices; typing is always available.</span>
           </div>
 
           {/* Search Button */}
