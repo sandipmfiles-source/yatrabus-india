@@ -7,7 +7,9 @@ export function runStopQrTests(assert: (description: string, pass: boolean) => v
   const token = issueStopQrToken(payload, secret);
   const verified = verifyStopQrToken(token, secret, now + 1);
   assert('Signed stop QR token verifies with its signing secret', verified?.routeId === 'route-1' && verified.stopId === 'stop-2');
-  assert('Tampered stop QR token is rejected', verifyStopQrToken(token.slice(0, -1) + (token.endsWith('a') ? 'b' : 'a'), secret, now + 1) === null);
+  const tokenParts = token.split('.');
+  tokenParts[2] = (tokenParts[2][0] === 'a' ? 'b' : 'a') + tokenParts[2].slice(1);
+  assert('Tampered stop QR token is rejected', verifyStopQrToken(tokenParts.join('.'), secret, now + 1) === null);
   assert('Expired stop QR token is rejected', verifyStopQrToken(token, secret, now + 60_000) === null);
   assert('Stop QR token signed with a different secret is rejected', verifyStopQrToken(token, secret + '-wrong', now + 1) === null);
   assert('Malformed QR token is rejected', verifyStopQrToken('YB1.not-a-token', secret, now + 1) === null);
