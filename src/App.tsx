@@ -1,4 +1,6 @@
 import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { LocalNotifications } from '@capacitor/local-notifications';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { LanguageProvider } from './context/LanguageContext.js';
 import { TrackingProvider } from './context/TrackingContext.js';
@@ -37,6 +39,28 @@ import { StopLinkResolver } from './pages/StopLinkResolver.js';
 import { StopQrResolverPage } from './pages/StopQrResolverPage.js';
 import { AdminQrLabelsPage } from './pages/admin/AdminQrLabelsPage.js';
 import { phase4 } from './services/phase4.js';
+
+const NotificationNavigationHandler: React.FC = () => {
+  const navigate = useNavigate();
+  useEffect(() => {
+    let active = true;
+    let listener: { remove: () => Promise<void> } | undefined;
+    LocalNotifications.addListener('localNotificationActionPerformed', event => {
+      const extra = event.notification.extra as Record<string, unknown> | undefined;
+      const alertKey = typeof extra?.alertKey === 'string' ? extra.alertKey : '';
+      const routeId = typeof extra?.routeId === 'string' ? extra.routeId : alertKey.split(':')[1];
+      if (routeId) navigate(`/routes/${encodeURIComponent(routeId)}`);
+    }).then(handle => {
+      if (active) listener = handle;
+      else void handle.remove();
+    }).catch(() => undefined);
+    return () => {
+      active = false;
+      if (listener) void listener.remove();
+    };
+  }, [navigate]);
+  return null;
+};
 
 export const App: React.FC = () => {
   useEffect(() => { phase4.applyAccessibility(); }, []);
