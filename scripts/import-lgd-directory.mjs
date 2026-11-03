@@ -50,7 +50,7 @@ const places = new Map();
 const villageShards = new Map();
 let villageRecordCount = 0;
 function shardKey(value) {
-  const first = String(value || '').normalize('NFKC').trim().toLocaleLowerCase('en-IN').match(/[\\p{L}\\p{N}]/u)?.[0];
+  const first = String(value || '').normalize('NFKC').trim().toLocaleLowerCase('en-IN').match(/[\p{L}\p{N}]/u)?.[0];
   return first ? 'u' + first.codePointAt(0).toString(16) : '';
 }
 function add(level, code, name, state, district, subdistrict) {
@@ -66,7 +66,8 @@ const vi = {
   stateCode: column(vh, ['State Code']), state: column(vh, ['State Name (In English)', 'State Name']),
   districtCode: column(vh, ['District Code']), district: column(vh, ['District Name (In English)', 'District Name']),
   subCode: column(vh, ['Sub-District Code', 'Subdistrict Code']), sub: column(vh, ['Sub-District Name (In English)', 'Sub-District Name', 'Subdistrict Name']),
-  villageCode: column(vh, ['Village Code']), village: column(vh, ['Village Name (In Englsih)', 'Village Name (In English)', 'Village Name']),\n  localName: column(vh, ['Village Name (In Local Language)', 'Village Name Local', 'Local Language Name', 'Village Name (Local)']),
+  villageCode: column(vh, ['Village Code']), village: column(vh, ['Village Name (In Englsih)', 'Village Name (In English)', 'Village Name']),
+  localName: column(vh, ['Village Name (In Local Language)', 'Village Name Local', 'Local Language Name', 'Village Name (Local)']),
 };
 console.log('LGD hierarchy columns validated:', JSON.stringify(vi));
 for (const [key, idx] of Object.entries(vi)) if (idx < 0) throw new Error('Village CSV missing required column: ' + key + ' headers=' + vh.join('|'));
@@ -155,7 +156,7 @@ const villageManifest = {
   shardCounts,
   searchStrategy: 'lazy first-Unicode-character shards; English and local-language names',
 };
-fs.writeFileSync(path.join(villageOutputDir, 'manifest.json'), JSON.stringify(villageManifest, null, 2) + '\\n');
+fs.writeFileSync(path.join(villageOutputDir, 'manifest.json'), JSON.stringify(villageManifest, null, 2) + '\n');
 console.log(JSON.stringify({
   outputFile,
   bytes: fs.statSync(outputFile).size,
