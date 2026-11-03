@@ -16,6 +16,9 @@ import { ArrowLeft, Clock, MapPin, ShieldCheck, AlertTriangle, Edit3, Flag, BusF
 
 export const BusDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
+  const selectedStopId = searchParams.get('stop');
+  const qrVerified = searchParams.get('qr') === 'verified';
   const navigate = useNavigate();
   const { t } = useLanguage();
 
@@ -405,7 +408,7 @@ export const BusDetailPage: React.FC = () => {
             const isTerminus = idx === 0 || idx === route.stops.length - 1;
 
             return (
-              <div key={stop.id} className="relative flex min-h-[56px] items-start justify-between gap-4">
+              <div id={`yb-stop-${stop.id}`} key={stop.id} className={`relative flex min-h-[56px] items-start justify-between gap-4 rounded-xl px-2 py-2 ${selectedStopId === stop.id ? "bg-emerald-50 ring-2 ring-emerald-500" : ""}`}>
                 {/* Timeline node */}
                 <div
                   className={`absolute -left-6 top-1 w-3.5 h-3.5 rounded-full border-2 border-white shadow-xs ${
