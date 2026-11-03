@@ -5,7 +5,7 @@
     "timezone": "UTC",
     "maxDownloadBytes": 104857600,
     "maxUnpackedBytes": 524288000,
-    "note": "A public URL is not by itself permission to redistribute. Only feeds with reviewed reuse terms are enabled."
+    "note": "Only feeds with explicit reuse permission and attribution requirements reviewed are enabled."
   },
   "feeds": [
     {
@@ -19,26 +19,27 @@
       "url": "https://data.opencity.in/dataset/88e2d145-7ec6-4666-88dd-6cf18b18312e/resource/1b0d18bb-b2fb-4a79-8ed0-1e071da5790c/download/telangana_opendata_gtfs_tgsrtc_08_february_2026.zip",
       "sourcePage": "https://www.tgsrtc.telangana.gov.in/open-data",
       "licenseUrl": "https://www.tgsrtc.telangana.gov.in/open-data",
-      "licenseReview": "official-terms-review-required",
+      "licenseReview": "reviewed-redistribution-permitted",
       "catalogUrl": "https://mobilitydatabase.org/feeds/gtfs/mdb-3361",
       "realtime": null,
-      "notes": "Official TGSRTC open-data page documents GTFS publication and terms of use. The producer URL is a dated snapshot; refresh checks it daily but cannot assume the agency republishes at that URL."
+      "notes": "Official TGSRTC open-data terms grant a limited worldwide right to use, adapt, reproduce, store, display, copy, transmit and redistribute the data, including in commercial applications, subject to attribution and no implied endorsement. The source states it may update feeds but does not guarantee updates. The currently catalogued URL is a dated snapshot.",
+      "attribution": "Contains data provided by TGSRTC"
     },
     {
       "id": "chennai-unified-transit",
       "name": "Chennai Unified Transit (MTC/Metro/suburban feed)",
       "region": "Chennai, Tamil Nadu",
       "mode": "bus-and-rail",
-      "status": "enabled",
+      "status": "disabled-license-review",
       "official": false,
       "format": "GTFS",
       "url": "https://raw.githubusercontent.com/ungalsoththu/ChennaiGTFS/main/data/chennai-unified-gtfs.zip",
       "sourcePage": "https://mobilitydatabase.org/feeds/gtfs/mdb-3360",
       "licenseUrl": "https://opendata.iiitd.edu.in/terms",
-      "licenseReview": "third-party-feed-terms-review-required",
+      "licenseReview": "pending-third-party-rights-review",
       "catalogUrl": "https://mobilitydatabase.org/feeds/gtfs/mdb-3360",
       "realtime": null,
-      "notes": "Community-maintained feed listed by Mobility Database. Treat schedules as third-party data, not an official agency feed; validate attribution and terms before public redistribution."
+      "notes": "Community-maintained feed listed by Mobility Database with a linked terms page, but the producer's rights to redistribute this particular dataset have not yet been confirmed. Disabled pending review; do not publish as an official agency feed."
     },
     {
       "id": "pmpml-pune",
