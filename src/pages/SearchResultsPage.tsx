@@ -292,7 +292,7 @@ export const SearchResultsPage: React.FC = () => {
                   <ol className="space-y-2">
                     {trip.stopTimes?.map((stop: any) => <li key={stop.stopId + ':' + stop.stopSequence} className="flex items-start justify-between gap-3 text-xs">
                       <span className="min-w-0 text-yatriwarm-800">{stop.stopSequence}. {stop.stopName}</span>
-                      <span className="shrink-0 text-right tabular-nums text-yatriwarm-600">{stop.arrivalTime || '—'}{stop.departureTime && stop.departureTime !== stop.arrivalTime ? ` / ${stop.departureTime}` : ''}</span>
+                      <span className="shrink-0 text-right tabular-nums text-yatriwarm-600">{stop.arrivalTime || '—'}{stop.arrivalDayOffset > 0 ? ` (+${stop.arrivalDayOffset}d)` : ''}{stop.departureTime && stop.departureTime !== stop.arrivalTime ? ` / ${stop.departureTime}` : ''}{stop.departureDayOffset > 0 ? ` (+${stop.departureDayOffset}d)` : ''}</span>
                     </li>)}
                   </ol>
                 </div>) : <p className="text-xs text-yatriwarm-600">No scheduled trips for this route on the selected date.</p>}
