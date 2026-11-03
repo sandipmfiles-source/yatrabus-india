@@ -507,6 +507,7 @@ export const BusDetailPage: React.FC = () => {
           <Link to="/scan" className="rounded-xl border px-3 py-2 text-xs font-semibold"><QrCode className="inline h-4 w-4 mr-1"/>Scan stop QR</Link>
         </div>
         {shareMessage && <p role="status" className="text-xs text-yatriwarm-600 break-all">{shareMessage}</p>}
+        <p className="text-[10px] text-yatriwarm-500">Live GPS arrival and delay alerts are evaluated while this route screen is active and fresh GPS is available. Android background restrictions may pause live checks; scheduled journey reminders are separate.</p>
         <div>
           <h3 className="text-xs font-bold text-yatriwarm-900 mb-2">Stop links for QR labels</h3>
           <div className="max-h-44 overflow-y-auto space-y-1">
