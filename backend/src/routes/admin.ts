@@ -559,6 +559,10 @@ adminRouter.get('/routes', requireAdminAuth('SUPER_ADMIN'), (req: Request, res: 
     routes: routes.slice(0, 200).map(route => ({
       ...route,
       timetableDataStatus: route.timetableDataStatus || 'UNAVAILABLE',
+      stops: route.stops.map(stop => ({
+        ...stop,
+        placeVerificationStatus: repository.getPlaceById(stop.stopId)?.verificationStatus || 'UNVERIFIED',
+      })),
     })),
   });
 });
