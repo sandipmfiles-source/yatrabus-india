@@ -10,6 +10,7 @@ const result = spawnSync(
       // Runtime tests use ts-node transpilation; npm run build performs type checking.
       TS_NODE_TRANSPILE_ONLY: 'true',
       TS_NODE_LOG_ERROR: 'true',
+      TS_NODE_EXPERIMENTAL_RESOLVER: 'true',
       TS_NODE_COMPILER_OPTIONS: JSON.stringify({ module: 'NodeNext', moduleResolution: 'NodeNext' }),
     },
   }
