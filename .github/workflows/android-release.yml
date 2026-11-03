@@ -110,7 +110,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: yatribus-release-candidate-${{ github.run_number }}
-          name: YatraBus India signed release candidate #${{ github.run_number }}
+          name: "YatraBus India signed release candidate #${{ github.run_number }}"
           prerelease: true
           generate_release_notes: true
           files: |
