@@ -25,7 +25,11 @@ export const AdminQrLabelsPage: React.FC = () => {
       .finally(() => setLoading(false));
   }, [adminToken, navigate]);
   const selectedRoute = useMemo(() => routes.find(route => route.id === routeId), [routes, routeId]);
-  const selectedStop = useMemo(() => selectedRoute?.stops.find(stop => stop.id === stopId), [selectedRoute, stopId]);
+  const eligibleStops = useMemo(() => (selectedRoute?.stops || []).filter(stop => {
+    const place = stop as any;
+    return place.placeVerificationStatus === 'ADMIN_VERIFIED' && Number.isFinite(place.placeLatitude) && place.placeLatitude >= 6 && place.placeLatitude <= 38 && Number.isFinite(place.placeLongitude) && place.placeLongitude >= 68 && place.placeLongitude <= 98;
+  }), [selectedRoute]);
+  const selectedStop = useMemo(() => eligibleStops.find(stop => stop.id === stopId), [eligibleStops, stopId]);
   const publicAppUrl = (import.meta.env.VITE_PUBLIC_APP_URL || window.location.origin).replace(/\/$/, '');
   const qrUrl = token && /^https:\/\//i.test(publicAppUrl) ? publicAppUrl + '/stopqr/' + encodeURIComponent(token) : '';
   const qrImageUrl = qrUrl ? 'https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=' + encodeURIComponent(qrUrl) : '';
@@ -45,7 +49,7 @@ export const AdminQrLabelsPage: React.FC = () => {
     {error && <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-800">{error}</p>}
     {loading ? <p>Loading verified routes…</p> : !routes.length ? <p className="rounded-xl border bg-white p-4 text-sm text-yatriwarm-600">No Super Admin-verified routes are available. Verify a route and its stop coordinates before issuing QR labels.</p> : <section className="rounded-2xl border bg-white p-5 space-y-4">
       <div><label htmlFor="qr-route" className="block text-xs font-bold mb-1">Verified route</label><select id="qr-route" value={routeId} onChange={e => { setRouteId(e.target.value); setStopId(''); setToken(''); }} className="w-full rounded-xl border p-3">{routes.map(route => <option key={route.id} value={route.id}>{route.routeNumber} · {route.routeName}</option>)}</select></div>
-      <div><label htmlFor="qr-stop" className="block text-xs font-bold mb-1">Surveyed stop</label><select id="qr-stop" value={stopId} onChange={e => { setStopId(e.target.value); setToken(''); }} className="w-full rounded-xl border p-3"><option value="">Select a stop</option>{(selectedRoute?.stops || []).filter(stop => Number.isFinite(stop.latitude) && stop.latitude >= 6 && stop.latitude <= 38 && Number.isFinite(stop.longitude) && stop.longitude >= 68 && stop.longitude <= 98).map(stop => <option key={stop.id} value={stop.id}>{stop.stopSequence}. {stop.stopName}</option>)}</select></div>
+      <div><label htmlFor="qr-stop" className="block text-xs font-bold mb-1">Surveyed stop</label><select id="qr-stop" value={stopId} onChange={e => { setStopId(e.target.value); setToken(''); }} className="w-full rounded-xl border p-3"><option value="">Select a stop</option>{eligibleStops.map(stop => <option key={stop.id} value={stop.id}>{stop.stopSequence}. {stop.stopName}</option>)}</select>{selectedRoute && eligibleStops.length === 0 && <p className="mt-1 text-[10px] text-amber-800">No stop has an ADMIN_VERIFIED place record and valid coordinates yet.</p>}</div>
       <button type="button" onClick={() => void issue()} disabled={!selectedStop || busy} className="rounded-xl bg-yatribrand-900 px-4 py-3 text-sm font-bold text-white disabled:opacity-50">{busy ? 'Issuing…' : 'Issue signed stop QR'}</button>
     </section>}
     {token && <section className="rounded-2xl border border-emerald-200 bg-white p-5 space-y-3">
