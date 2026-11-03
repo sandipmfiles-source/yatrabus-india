@@ -23,6 +23,7 @@ import { runPhase4PolicyTests } from './unit/phase4Policy.test.js';
 import { runStopQrTests } from './unit/stopQr.test.js';
 import { runIndiaCatalogueTests } from './unit/indiaCatalogue.test.js';
 import { runPublicGtfsCatalogueTests } from './unit/publicGtfsCatalogue.test.js';
+import { runPublicGtfsRuntimeTests } from './unit/publicGtfsRuntime.test.js';
 
 let totalTests = 0;
 let passedTests = 0;
@@ -91,6 +92,7 @@ runTrajectoryMatcherTests(assert);
 console.log('\\n16. Testing India States, UTs, Government Operators & Pilot Directory...');
 runIndiaCatalogueTests(assert);
 runPublicGtfsCatalogueTests(assert);
+runPublicGtfsRuntimeTests(assert);
 
 console.log('\\n17. Testing Source-Aware Timetable Availability...');
 runTimetableEngineTests(assert);
