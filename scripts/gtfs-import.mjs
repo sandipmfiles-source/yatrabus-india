@@ -71,10 +71,14 @@ async function main() {
       const unknownTripRefs = stopTimes.filter(s => !tripIds.has(s.trip_id)).length;
       const unknownRouteRefs = trips.filter(t => !routeIds.has(t.route_id)).length;
       if (!agency.length || !stops.length || !routes.length || !trips.length || !stopTimes.length) throw new Error('Required GTFS tables are empty');
+      if (!calendar.length && !calendarDates.length) throw new Error('Feed has no service calendar or calendar exceptions');
+      const today = new Date().toISOString().slice(0, 10).replaceAll('-', '');
+      const serviceEnds = [...calendar.map(c => c.end_date), ...calendarDates.filter(c => c.exception_type === '1').map(c => c.date)].filter(Boolean).sort();
+      if (!serviceEnds.length || serviceEnds.at(-1) < today) throw new Error('All published service dates have expired; refusing to publish stale timetable data');
       if (unknownStopRefs || unknownTripRefs || unknownRouteRefs) throw new Error('Referential integrity failure: stop=' + unknownStopRefs + ', trip=' + unknownTripRefs + ', route=' + unknownRouteRefs);
       const normalized = {
         schemaVersion: 1,
-        feed: { id: feed.id, name: feed.name, region: feed.region, mode: feed.mode, official: feed.official, sourcePage: feed.sourcePage, licenseUrl: feed.licenseUrl, catalogUrl: feed.catalogUrl, importedAt: new Date().toISOString(), sha256: createHash('sha256').update(bytes).digest('hex'), bytes: bytes.length },
+        feed: { id: feed.id, name: feed.name, region: feed.region, mode: feed.mode, official: feed.official, attribution: feed.attribution || null, sourcePage: feed.sourcePage, licenseUrl: feed.licenseUrl, catalogUrl: feed.catalogUrl, importedAt: new Date().toISOString(), sha256: createHash('sha256').update(bytes).digest('hex'), bytes: bytes.length },
         agency: agency.map(a => pick(a, ['agency_id','agency_name','agency_url','agency_timezone','agency_lang','agency_phone'])),
         routes: routes.map(r => pick(r, ['route_id','agency_id','route_short_name','route_long_name','route_desc','route_type','route_url','route_color','route_text_color'])),
         stops: stops.map(s => ({...pick(s, ['stop_id','stop_code','stop_name','stop_desc','stop_url','location_type','parent_station','wheelchair_boarding']), ...Object.fromEntries(['stop_lat','stop_lon'].filter(k => s[k] !== '').map(k => [k, asNumber(s[k])]))})),
@@ -85,6 +89,7 @@ async function main() {
         frequencies: frequencies.map(f => ({...pick(f, ['trip_id','start_time','end_time','exact_times']), headway_secs: asNumber(f.headway_secs)})),
         transfers: transfers.map(t => pick(t, ['from_stop_id','to_stop_id','from_route_id','to_route_id','from_trip_id','to_trip_id','transfer_type','min_transfer_time'])),
         shapes: shapes.length ? { pointCount: shapes.length } : null,
+        serviceDateRange: { start: [...calendar.map(c => c.start_date), ...calendarDates.map(c => c.date)].filter(Boolean).sort()[0] || null, end: serviceEnds.at(-1) || null },
         counts: { agencies: agency.length, routes: routes.length, stops: stops.length, trips: trips.length, stopTimes: stopTimes.length, calendar: calendar.length, calendarDates: calendarDates.length, frequencies: frequencies.length, transfers: transfers.length, shapePoints: shapes.length }
       };
       const outFile = path.join(OUT, feed.id + '.json');
