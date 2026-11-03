@@ -257,23 +257,6 @@
       "realtime": null,
       "notes": "Community-generated GTFS built by querying publicly accessible KSRTC website schedules; repository documents generation for the next 30 days. GitHub history showed automated dataset generation commits on 9, 14, 19, 24 and 29 Oct 2026, so this source has a demonstrated five-day refresh cadence. Not operator-certified; importer must verify current service dates on each run and reject expired or incomplete snapshots. Route geometry uses OpenStreetMap-derived shapes and requires OSM attribution when distributed.",
       "attribution": "Karnataka KSRTC GTFS dataset by Aayush Rai (MIT-0); route shapes © OpenStreetMap contributors (ODbL). Community-generated, not operator-certified."
-    },
-    {
-      "id": "rajkot-rampath",
-      "name": "Rajkot Rampath Limited",
-      "region": "Rajkot, Gujarat",
-      "mode": "bus",
-      "status": "enabled",
-      "official": false,
-      "format": "GTFS",
-      "url": "https://github.com/croyla/rrl-gtfs/raw/refs/heads/main/gtfs_compat.zip",
-      "sourcePage": "https://github.com/croyla/rrl-gtfs",
-      "licenseUrl": "https://github.com/croyla/rrl-gtfs/blob/main/LICENSE",
-      "licenseReview": "MIT-dataset-repository-license-reviewed-community-derived",
-      "catalogUrl": "https://mobilitydatabase.org/feeds/gtfs/mdb-3142",
-      "realtime": null,
-      "notes": "Community-built GTFS derived from the RRL Saarthi application. The dataset repository publishes an MIT license; this is not an operator-certified feed and must be labelled UNVERIFIED. Mobility Database reported 149 bus routes, no validation errors and one warning, with service dates 13 Aug 2026–9 Feb 2027 in its 14 Aug 2026 snapshot. Importer must re-check current service dates and GTFS references on every refresh; disable automatically if the service calendar expires.",
-      "attribution": "Rajkot Rampath GTFS dataset by Aayush Rai (MIT License); community-derived, not operator-certified."
     }
   ]
 }
