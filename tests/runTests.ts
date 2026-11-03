@@ -22,6 +22,7 @@ import { runTimetableEngineTests } from './unit/timetableEngine.test.js';
 import { runPhase4PolicyTests } from './unit/phase4Policy.test.js';
 import { runStopQrTests } from './unit/stopQr.test.js';
 import { runIndiaCatalogueTests } from './unit/indiaCatalogue.test.js';
+import { runPublicGtfsCatalogueTests } from './unit/publicGtfsCatalogue.test.js';
 
 let totalTests = 0;
 let passedTests = 0;
@@ -89,6 +90,7 @@ runTrajectoryMatcherTests(assert);
 
 console.log('\\n16. Testing India States, UTs, Government Operators & Pilot Directory...');
 runIndiaCatalogueTests(assert);
+runPublicGtfsCatalogueTests(assert);
 
 console.log('\\n17. Testing Source-Aware Timetable Availability...');
 runTimetableEngineTests(assert);
