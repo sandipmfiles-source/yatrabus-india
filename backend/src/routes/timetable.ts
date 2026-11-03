@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { buildPublicGtfsCatalogue } from '../engine/gtfsCatalogue.js';
-import { getStopDepartures, isServiceActive, isValidGtfsServiceDate, loadNormalizedGtfsFeeds, searchGtfsJourneys } from '../engine/publicGtfsRuntime.js';
+import { formatGtfsTime, getStopDepartures, isServiceActive, isValidGtfsServiceDate, loadNormalizedGtfsFeeds, searchGtfsJourneys } from '../engine/publicGtfsRuntime.js';
 
 export const timetableRouter = Router();
 
@@ -110,7 +110,11 @@ timetableRouter.get('/routes/:routeId', (req, res) => {
       tripId: trip.trip_id, serviceId: trip.service_id, headsign: trip.trip_headsign,
       stopTimes: stopTimes.filter(row => row.trip_id === trip.trip_id).map(row => ({
         stopId: row.stop_id, stopName: stopsById.get(row.stop_id)?.stop_name || row.stop_id,
-        stopSequence: row.stop_sequence, arrivalTime: row.arrival_time || null, departureTime: row.departure_time || null,
+        stopSequence: row.stop_sequence,
+        arrivalTime: formatGtfsTime(row.arrival_time)?.time || null,
+        arrivalDayOffset: formatGtfsTime(row.arrival_time)?.dayOffset || 0,
+        departureTime: formatGtfsTime(row.departure_time)?.time || null,
+        departureDayOffset: formatGtfsTime(row.departure_time)?.dayOffset || 0,
       })),
     })),
     dataType: 'GTFS_STATIC', liveVehiclePositionsAvailable: false,

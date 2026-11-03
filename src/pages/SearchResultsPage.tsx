@@ -33,6 +33,11 @@ export const SearchResultsPage: React.FC = () => {
   const [gtfsResults, setGtfsResults] = useState<any[]>([]);
   const [gtfsStatus, setGtfsStatus] = useState('');
   const [gtfsError, setGtfsError] = useState('');
+  const [expandedGtfsRoute, setExpandedGtfsRoute] = useState('');
+  const [gtfsRouteDetails, setGtfsRouteDetails] = useState<Record<string, any>>({});
+  const [gtfsRouteLoading, setGtfsRouteLoading] = useState('');
+  const [gtfsRouteErrors, setGtfsRouteErrors] = useState<Record<string, string>>({});
+
 
   useEffect(() => {
     if (!from || !to) {
@@ -94,6 +99,30 @@ export const SearchResultsPage: React.FC = () => {
     });
     return () => { cancelled = true; };
   }, [from, to, serviceDate]);
+
+  const toggleGtfsRouteDetails = async (item: any) => {
+    const key = `${item.feedId}:${item.routeId}:${serviceDate}`;
+    if (expandedGtfsRoute === key) {
+      setExpandedGtfsRoute('');
+      return;
+    }
+    setExpandedGtfsRoute(key);
+    if (gtfsRouteDetails[key]) return;
+    setGtfsRouteLoading(key);
+    setGtfsRouteErrors(previous => ({ ...previous, [key]: '' }));
+    try {
+      const data = await api.getPublicRouteDetails(item.routeId, item.feedId, serviceDate);
+      if (data.httpStatus === 503) {
+        setGtfsRouteErrors(previous => ({ ...previous, [key]: data.error || 'Route timetable snapshot is not installed.' }));
+      } else {
+        setGtfsRouteDetails(previous => ({ ...previous, [key]: data }));
+      }
+    } catch (error) {
+      setGtfsRouteErrors(previous => ({ ...previous, [key]: error instanceof Error ? error.message : 'Could not load route details.' }));
+    } finally {
+      setGtfsRouteLoading('');
+    }
+  };
 
   const allJourneys = [...directRoutes, ...transferRoutes];
 
@@ -247,6 +276,29 @@ export const SearchResultsPage: React.FC = () => {
             </div>
             {item.attribution && <p className="text-[10px] text-yatriwarm-500">{item.attribution}</p>}
             {item.sourceUrl && <a href={item.sourceUrl} target="_blank" rel="noreferrer" className="inline-block text-[10px] font-semibold text-yatribrand-800 underline">View data source</a>}
+            <button type="button" onClick={() => void toggleGtfsRouteDetails(item)} aria-expanded={expandedGtfsRoute === `${item.feedId}:${item.routeId}:${serviceDate}`} className="w-full rounded-lg border border-yatribrand-200 bg-white px-3 py-2 text-xs font-semibold text-yatribrand-900 hover:bg-yatriwarm-100">
+              {expandedGtfsRoute === `${item.feedId}:${item.routeId}:${serviceDate}` ? 'Hide full route timetable' : 'View all stops & timings'}
+            </button>
+            {expandedGtfsRoute === `${item.feedId}:${item.routeId}:${serviceDate}` && <div className="rounded-lg border border-yatriwarm-200 bg-white p-3 space-y-2">
+              {gtfsRouteLoading === `${item.feedId}:${item.routeId}:${serviceDate}` && <p role="status" className="text-xs text-yatriwarm-600">Loading stops for {serviceDate}…</p>}
+              {gtfsRouteErrors[`${item.feedId}:${item.routeId}:${serviceDate}`] && <p role="status" className="text-xs text-amber-800">{gtfsRouteErrors[`${item.feedId}:${item.routeId}:${serviceDate}`]}</p>}
+              {gtfsRouteDetails[`${item.feedId}:${item.routeId}:${serviceDate}`] && <>
+                <div className="flex flex-wrap justify-between gap-2 text-[10px] text-yatriwarm-500">
+                  <span>{gtfsRouteDetails[`${item.feedId}:${item.routeId}:${serviceDate}`].route?.longName || gtfsRouteDetails[`${item.feedId}:${item.routeId}:${serviceDate}`].route?.shortName || item.routeName}</span>
+                  <span>{gtfsRouteDetails[`${item.feedId}:${item.routeId}:${serviceDate}`].serviceDate} · {gtfsRouteDetails[`${item.feedId}:${item.routeId}:${serviceDate}`].timetableStatus || 'UNVERIFIED'}</span>
+                </div>
+                {gtfsRouteDetails[`${item.feedId}:${item.routeId}:${serviceDate}`].trips?.length ? gtfsRouteDetails[`${item.feedId}:${item.routeId}:${serviceDate}`].trips.map((trip: any) => <div key={trip.tripId} className="border-t border-yatriwarm-100 pt-2">
+                  <div className="mb-2 text-xs font-bold text-yatriwarm-800">{trip.headsign || item.routeName} · <span className="font-normal">{trip.tripId}</span></div>
+                  <ol className="space-y-2">
+                    {trip.stopTimes?.map((stop: any) => <li key={stop.stopId + ':' + stop.stopSequence} className="flex items-start justify-between gap-3 text-xs">
+                      <span className="min-w-0 text-yatriwarm-800">{stop.stopSequence}. {stop.stopName}</span>
+                      <span className="shrink-0 text-right tabular-nums text-yatriwarm-600">{stop.arrivalTime || '—'}{stop.arrivalDayOffset > 0 ? ` (+${stop.arrivalDayOffset}d)` : ''}{stop.departureTime && stop.departureTime !== stop.arrivalTime ? ` / ${stop.departureTime}` : ''}{stop.departureDayOffset > 0 ? ` (+${stop.departureDayOffset}d)` : ''}</span>
+                    </li>)}
+                  </ol>
+                </div>) : <p className="text-xs text-yatriwarm-600">No scheduled trips for this route on the selected date.</p>}
+                <p className="text-[10px] text-amber-700">Static published timetable · UNVERIFIED · Not live GPS. Times use {gtfsRouteDetails[`${item.feedId}:${item.routeId}:${serviceDate}`].agencyTimezone || item.timezone || 'the feed timezone'}.</p>
+              </>}
+            </div>}
           </article>)}
         </div>}
       </section>}
