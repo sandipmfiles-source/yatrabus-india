@@ -16,7 +16,7 @@ export const QrStopScannerPage: React.FC = () => {
     if (raw.startsWith('YB1.')) {
       try {
         const verified = await api.verifyStopQrToken(raw);
-        navigate(`/routes/${encodeURIComponent(verified.routeId)}?stop=${encodeURIComponent(verified.stopId)}&qr=verified`);
+        navigate(`/routes/${encodeURIComponent(verified.routeId)}?stop=${encodeURIComponent(verified.stopId)}&qrToken=${encodeURIComponent(raw)}`);
       } catch (e) { setError(e instanceof Error ? e.message : 'Signed stop QR verification failed.'); }
       return;
     }
