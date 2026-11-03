@@ -27,23 +27,23 @@ const migrations = [
   read('backend/migrations/004_admin_automation.sql'),
 ].join('\n');
 
-check('No wildcard CORS response', !/Access-Control-Allow-Origin['"]?\\s*,\\s*['"]\\*['"]/.test(server) && !/setHeader\\(['"]Access-Control-Allow-Origin['"]\\s*,\\s*['"]\\*['"]/.test(server));
-check('CORS allow-list is applied', /CORS_ALLOWED_ORIGINS/.test(server) && /allowedOrigins\\.has\\(origin\\)/.test(server));
+check('No wildcard CORS response', !/Access-Control-Allow-Origin['"]?\s*,\s*['"]\*['"]/.test(server) && !/setHeader\(['"]Access-Control-Allow-Origin['"]\s*,\s*['"]\*['"]/.test(server));
+check('CORS allow-list is applied', /CORS_ALLOWED_ORIGINS/.test(server) && /allowedOrigins\.has\(origin\)/.test(server));
 check('Production health gate checks owner authentication config', /productionConfigReady/.test(server) && /ADMIN_JWT_SECRET/.test(server));
 check('Super Admin password uses constant-time comparison', /timingSafeEqual/.test(auth) && /scryptSync/.test(auth));
-check('Admin token only permits SUPER_ADMIN role', /payload\\.role !== ['"]SUPER_ADMIN['"]/.test(auth) && /admin\\.role !== ['"]SUPER_ADMIN['"]/.test(auth));
-check('Tracking observations require granted consent', /consent\\.status !== ['"]GRANTED['"]/.test(tracking) && /disclosuresAccepted !== true/.test(tracking));
-check('Stop QR issuance requires verified route and place', /route\\.verificationStatus !== ['"]ADMIN_VERIFIED['"]/.test(admin) && /place\\.verificationStatus !== ['"]ADMIN_VERIFIED['"]/.test(admin));
+check('Admin token only permits SUPER_ADMIN role', /payload\.role !== ['"]SUPER_ADMIN['"]/.test(auth) && /admin\.role !== ['"]SUPER_ADMIN['"]/.test(auth));
+check('Tracking observations require granted consent', /consent\.status !== ['"]GRANTED['"]/.test(tracking) && /disclosuresAccepted !== true/.test(tracking));
+check('Stop QR issuance requires verified route and place', /route\.verificationStatus !== ['"]ADMIN_VERIFIED['"]/.test(admin) && /place\.verificationStatus !== ['"]ADMIN_VERIFIED['"]/.test(admin));
 check('Android disallows cleartext traffic and backups', /android:usesCleartextTraffic="false"/.test(manifest) && /android:allowBackup="false"/.test(manifest));
 check('Android declares runtime-sensitive permissions', /ACCESS_FINE_LOCATION/.test(manifest) && /POST_NOTIFICATIONS/.test(manifest) && /CAMERA/.test(manifest) && /RECORD_AUDIO/.test(manifest));
 check('PostgreSQL migrations include PostGIS and spatial indexes', /CREATE EXTENSION IF NOT EXISTS postgis/i.test(migrations) && /USING GIST/i.test(migrations));
-check('Core transit, consent, tracking and audit schema exists', ['places','operators','routes','route_stops','timetables','consent_records','journey_sessions','location_observations','bus_location_aggregates','audit_logs'].every(table => new RegExp('CREATE TABLE IF NOT EXISTS '+table+'\\\\b','i').test(migrations)));
+check('Core transit, consent, tracking and audit schema exists', ['places','operators','routes','route_stops','timetables','consent_records','journey_sessions','location_observations','bus_location_aggregates','audit_logs'].every(table => new RegExp('CREATE TABLE IF NOT EXISTS '+table+'\\b','i').test(migrations)));
 
 // This is intentionally a hard gate. SQL migration files alone do not constitute
 // a runtime PostgreSQL integration. Current API repository calls are synchronous Maps.
-const pgRuntimeConnected = /databaseConnected:\\s*true/.test(repository) &&
-  !/storageMode:\\s*['"]JSON_FILE['"]/.test(server) &&
-  /pg\\.(Pool|Client)|from ['"]pg['"]/.test(persistence);
+const pgRuntimeConnected = /databaseConnected:\s*true/.test(repository) &&
+  !/storageMode:\s*['"]JSON_FILE['"]/.test(server) &&
+  /pg\.(Pool|Client)|from ['"]pg['"]/.test(persistence);
 check('PostgreSQL is the actual runtime repository (not JSON snapshot)', pgRuntimeConnected,
   'BLOCKER: runtime is still synchronous Map + JSON-file persistence; migrations are not wired to live reads/writes.');
 
