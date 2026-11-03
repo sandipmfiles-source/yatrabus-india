@@ -25,6 +25,7 @@ import { AdminPlacesPage } from './pages/admin/AdminPlacesPage.js';
 import { AdminBusesPage } from './pages/admin/AdminBusesPage.js';
 import { AdminAutomationPage } from './pages/admin/AdminAutomationPage.js';
 import { AdminHealthPage } from './pages/admin/AdminHealthPage.js';
+import { AdminGtfsImportPage } from './pages/admin/AdminGtfsImportPage.js';
 
 export const App: React.FC = () => {
   return (
@@ -51,6 +52,7 @@ export const App: React.FC = () => {
                 <Route path="/admin/buses" element={<AdminBusesPage />} />
                 <Route path="/admin/automation" element={<AdminAutomationPage />} />
                 <Route path="/admin/health" element={<AdminHealthPage />} />
+                <Route path="/admin/gtfs" element={<AdminGtfsImportPage />} />
               </Routes>
             </main>
             <Footer />

@@ -35,7 +35,7 @@ export const BusCard: React.FC<BusCardProps> = ({ journey }) => {
               ) : (
                 <span className="text-[11px] font-medium text-purple-800 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-200 flex items-center gap-1">
                   <Split className="w-3 h-3" />
-                  1 Transfer
+                  {transfers.length} {transfers.length === 1 ? 'Transfer' : 'Transfers'}
                 </span>
               )}
             </div>
@@ -75,7 +75,7 @@ export const BusCard: React.FC<BusCardProps> = ({ journey }) => {
             </div>
 
             <div className="text-right">
-              <div className="text-base font-bold text-yatriwarm-900">{arrivalTime}</div>
+              <div className="text-base font-bold text-yatriwarm-900">{arrivalTime}{journey.arrivalNextDay ? <span className="ml-1 text-[9px] font-medium text-yatriwarm-500">Next day</span> : null}</div>
               <div className="text-[11px] text-yatriwarm-500 font-medium flex items-center justify-end gap-1 mt-0.5">
                 <span className="line-clamp-1">{alightingStop.stopName}</span>
                 <BusFront className="w-4 h-4 text-emerald-600 shrink-0" />
@@ -89,18 +89,20 @@ export const BusCard: React.FC<BusCardProps> = ({ journey }) => {
           {journey.timetableDepartures && journey.timetableDepartures.length > 0 && (
             <div className="mt-3 pt-3 border-t border-yatriwarm-200">
               <div className="flex items-center justify-between mb-2">
-                <div className="text-[11px] font-bold text-signal-charcoal-800">{t('verified_departures')}</div>
-                <span className="text-[9px] uppercase tracking-wider font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded-full">{t('admin_verified')}</span>
+                <div className="text-[11px] font-bold text-signal-charcoal-800">Scheduled departures</div>
+                <span className={`text-[9px] uppercase tracking-wider font-bold px-2 py-1 rounded-full ${route.verificationStatus === 'ADMIN_VERIFIED' && route.serviceStatus !== 'SCHEDULE_UNVERIFIED' ? 'text-emerald-700 bg-emerald-50' : 'text-amber-800 bg-amber-50'}`}>
+                  {route.verificationStatus === 'ADMIN_VERIFIED' && route.serviceStatus !== 'SCHEDULE_UNVERIFIED' ? t('admin_verified') : t('unverified')}
+                </span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {journey.timetableDepartures.map(item => (
                   <div key={item.id} className="flex items-center justify-between gap-2 rounded-lg border border-signal-yellow-200 bg-white px-3 py-2">
                     <div className="min-w-0">
-                      <div className="text-[11px] font-semibold text-signal-charcoal-900 truncate">{item.busIdentifier || route.routeNumber}</div>
+                      <div className="text-[11px] font-semibold text-signal-charcoal-900 truncate">{item.busIdentifier || (item.tripId ? `Trip ${item.tripId}` : 'Scheduled service')}</div>
                       <div className="text-[9px] text-yatriwarm-500">{item.operatingDays.join(', ')}</div>
                     </div>
                     <div className="text-right shrink-0">
-                      <div className="text-xs font-bold tabular-nums text-signal-red-700">{item.departureTime}</div>
+                      <div className="text-xs font-bold tabular-nums text-signal-red-700">{item.isFrequencyBased && item.exactTimes !== true ? '~' : ''}{item.departureTime}</div>
                       <div className="text-[9px] text-yatriwarm-500">{t('arrival_short')} {item.arrivalTime}</div>
                     </div>
                   </div>
@@ -131,11 +133,23 @@ export const BusCard: React.FC<BusCardProps> = ({ journey }) => {
             </div>
           )}
 
-          {/* Transfer notice if applicable */}
-          {!isDirect && transfers.length > 0 && (
-            <div className="mt-2.5 pt-2 border-t border-yatriwarm-200 text-[11px] text-purple-900 flex items-center justify-between">
-              <span>Change bus at <strong>{transfers[0].transferStop.stopName}</strong></span>
-              <span className="text-yatriwarm-500">Wait ~{transfers[0].expectedWaitMinutes}m</span>
+          {/* Full leg-by-leg itinerary, including each interchange and wait buffer. */}
+          {!isDirect && journey.legs && journey.legs.length > 1 && (
+            <div className="mt-3 pt-3 border-t border-yatriwarm-200 space-y-2">
+              {journey.legs.map((leg, index) => (
+                <div key={leg.route.id + '-' + index} className="rounded-xl border border-purple-100 bg-purple-50/60 p-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[11px] font-bold text-purple-950">Bus {leg.route.routeNumber} · Leg {index + 1}</span>
+                    <span className="text-[10px] font-semibold tabular-nums text-purple-900">{leg.departureTime} → {leg.arrivalTime}{leg.arrivalNextDay ? ' (next day)' : ''}</span>
+                  </div>
+                  <div className="mt-1 text-[10px] text-purple-900">{leg.boardingStop.stopName} → {leg.alightingStop.stopName}</div>
+                  {index < journey.legs!.length - 1 && (
+                    <div className="mt-2 text-[10px] font-semibold text-purple-800">
+                      Change bus at {leg.alightingStop.stopName} · {transfers[index]?.expectedWaitMinutes ?? '—'} min transfer buffer
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
           )}
         </div>

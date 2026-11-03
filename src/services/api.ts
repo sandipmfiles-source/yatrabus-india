@@ -83,6 +83,19 @@ export const api = {
     return data;
   },
 
+  async verifyBusCandidateSeries(routeId: string, samples: Array<{
+    sessionId: string; timestamp: string; latitude: number; longitude: number;
+    accuracyMeters: number; speedKmh?: number; headingDegrees?: number;
+  }>, disclosuresAccepted: boolean) {
+    const res = await fetch(`${getApiBase()}/tracking/verify-bus-candidate-series`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ routeId, samples, disclosuresAccepted }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.message || data.error || 'Multi-sample bus matching is unavailable.');
+    return data;
+  },
+
   async evaluateJourneyPrompt(routeId: string, isAlreadyTracking: boolean, dismissedCount: number) {
     const res = await fetch(`${getApiBase()}/tracking/evaluate-prompt`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ routeId, isAlreadyTracking, dismissedCount }) });
     const data = await res.json().catch(() => ({}));
@@ -266,6 +279,28 @@ export const api = {
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.message || data.error || 'Unable to update automation rule');
+    return data;
+  },
+
+  async previewGtfsImport(token: string, zipBase64: string) {
+    const res = await fetch(`${getApiBase()}/admin/gtfs/preview`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ zipBase64 }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok && res.status !== 422) throw new Error(data.message || data.error || 'Unable to validate GTFS feed');
+    return data;
+  },
+
+  async applyGtfsImport(token: string, zipBase64: string) {
+    const res = await fetch(`${getApiBase()}/admin/gtfs/import`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ zipBase64, confirmImport: true }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.message || data.error || 'Unable to import GTFS feed');
     return data;
   },
 

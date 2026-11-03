@@ -15,6 +15,10 @@ import { runJourneyConfirmationTests } from './unit/journeyConfirmation.test.js'
 import { runTimetableVersioningTests } from './unit/timetableVersioning.test.js';
 import { runBusCandidateMatcherTests } from './unit/busCandidateMatcher.test.js';
 import { runTrackingSessionTests } from './unit/trackingSession.test.js';
+import { runGtfsImporterTests } from './unit/gtfsImporter.test.js';
+import { runJourneyPlannerTests } from './unit/journeyPlanner.test.js';
+import { runTrajectoryMatcherTests } from './unit/trajectoryMatcher.test.js';
+import { runTimetableEngineTests } from './unit/timetableEngine.test.js';
 
 let totalTests = 0;
 let passedTests = 0;
@@ -70,6 +74,15 @@ runBusCandidateMatcherTests(assert);
 
 console.log('\n12. Testing Consent-Bound Destination Auto-Completion...');
 runTrackingSessionTests(assert);
+
+console.log('\n13. Testing GTFS ZIP Import, Calendar Exceptions & Midnight Trips...');
+runGtfsImporterTests(assert);
+
+console.log('\n14. Testing Time-Aware Multi-Transfer Journey Planning...');
+runJourneyPlannerTests(assert);
+
+console.log('\n15. Testing Multi-Sample Bus Trajectory Corroboration...');
+runTrajectoryMatcherTests(assert);
 
 console.log('\n====================================================');
 console.log(`SUMMARY: ${passedTests}/${totalTests} Tests Passed (${failedTests} Failed)`);

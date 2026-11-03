@@ -388,8 +388,9 @@ export const BusDetailPage: React.FC = () => {
                         {useConsensus ? winner[0] : (eta?.predictedTime || stop.scheduledArrivalTime || '—')}
                       </div>
                       <div className="text-[10px] text-yatriwarm-500">
-                        {useConsensus ? `Community majority · ${winner[1]} votes` : eta?.calculationType === 'OBSERVATION_BASED' ? 'Live ETA' : 'Scheduled'}
+                        {useConsensus ? `Community majority · ${winner[1]} votes` : eta?.calculationType === 'OBSERVATION_BASED' ? `Live ETA · ${eta.confidenceScore}% ${eta.confidenceCategory.toLowerCase()} confidence` : `Timetable estimate · ${eta?.confidenceScore ?? 0}% confidence`}
                       </div>
+                      {!useConsensus && eta?.confidenceNote && <div className="mt-0.5 text-[9px] text-yatriwarm-400">{eta.confidenceNote}</div>}
                     </>;
                   })()}
                   <button type="button" onClick={() => { setEditingStopId(editingStopId === stop.id ? null : stop.id); setEditTime(stop.scheduledArrivalTime || ''); }} className="mt-1 inline-flex items-center gap-1 text-[10px] text-yatribrand-900 font-semibold" aria-label={`Suggest time correction for ${stop.stopName}`}>
