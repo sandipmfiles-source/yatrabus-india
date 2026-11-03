@@ -14,7 +14,7 @@ Currently enabled sources in the registry:
 - Mumbai-region BEST/KDMT/TMT — community-derived, dataset licence reviewed; not operator-certified.
 - Hubballi-Dharwad BRTS — community-derived, dataset licence reviewed; not operator-certified.
 - Rajkot Rampath — community-derived, dataset licence reviewed; not operator-certified.
-- Karnataka KSRTC — community-generated from publicly accessible schedules, MIT-0 dataset licence; not operator-certified and requires current calendar validation.
+- Karnataka KSRTC — community-generated from publicly accessible schedules, MIT-0 dataset licence; latest Phase 10 import found its published service calendar expired on 3 Nov 2026, so it is disabled until the producer refreshes it.
 
 Not enabled:
 - Delhi DTC/DIMTS: available community archive has expired service dates; official OTD snapshot is dated 20 June 2024, warns stop-times are rough estimates, and real-time positions require an authorised key.
