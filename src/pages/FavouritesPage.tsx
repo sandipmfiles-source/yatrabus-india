@@ -12,6 +12,7 @@ export const FavouritesPage: React.FC = () => {
     const item = items.find(row => row.routeId === id);
     if (!item) return;
     phase4.toggleFavourite({ id: item.routeId, routeName: item.routeName, originStopName: item.origin, destinationStopName: item.destination });
+    void phase4.cancelRouteReminder(id);
     setItems(phase4.getFavourites());
   };
   const remind = async (item: FavouriteRoute) => {
