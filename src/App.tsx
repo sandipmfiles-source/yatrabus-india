@@ -48,8 +48,10 @@ const NotificationNavigationHandler: React.FC = () => {
     LocalNotifications.addListener('localNotificationActionPerformed', event => {
       const extra = event.notification.extra as Record<string, unknown> | undefined;
       const alertKey = typeof extra?.alertKey === 'string' ? extra.alertKey : '';
-      const routeId = typeof extra?.routeId === 'string' ? extra.routeId : alertKey.split(':')[1];
-      if (routeId) navigate(`/routes/${encodeURIComponent(routeId)}`);
+      const [alertKind, alertRouteId, alertStopId] = alertKey.split(':');
+      const routeId = typeof extra?.routeId === 'string' ? extra.routeId : alertRouteId;
+      const stopQuery = alertStopId && ['arrival', 'delay'].includes(alertKind) ? `?stop=${encodeURIComponent(alertStopId)}` : '';
+      if (routeId) navigate(`/routes/${encodeURIComponent(routeId)}${stopQuery}`);
     }).then(handle => {
       if (active) listener = handle;
       else void handle.remove();
