@@ -569,12 +569,15 @@ adminRouter.get('/routes', requireAdminAuth('SUPER_ADMIN'), (req: Request, res: 
     routes: routes.slice(0, 200).map(route => ({
       ...route,
       timetableDataStatus: route.timetableDataStatus || 'UNAVAILABLE',
-      stops: route.stops.map(stop => ({
-        ...stop,
-        placeVerificationStatus: repository.getPlaceById(stop.stopId)?.verificationStatus || 'UNVERIFIED',
-        placeLatitude: repository.getPlaceById(stop.stopId)?.latitude,
-        placeLongitude: repository.getPlaceById(stop.stopId)?.longitude,
-      })),
+      stops: route.stops.map(stop => {
+        const place = repository.getPlaceById(stop.stopId);
+        return {
+          ...stop,
+          placeVerificationStatus: place?.verificationStatus || 'UNVERIFIED',
+          placeLatitude: place?.latitude,
+          placeLongitude: place?.longitude,
+        };
+      }),
     })),
   });
 });
