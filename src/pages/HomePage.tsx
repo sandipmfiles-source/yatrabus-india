@@ -67,8 +67,8 @@ export const HomePage: React.FC = () => {
   };
 
   const handleVoiceTranscript = (transcript: string) => {
-    const cleaned = transcript.trim();
-    const match = cleaned.match(/^(.+?)\s+(?:to|se|tak|from| থেকে | থেকে|থেকে)\s+(.+)$/i);
+    const cleaned = transcript.trim().replace(/^from\s+/i, '');
+    const match = cleaned.match(/^(.+?)\s+(?:to|se|tak|থেকে)\s+(.+)$/i);
     if (match) {
       setFromQuery(match[1].trim());
       setToQuery(match[2].trim());
