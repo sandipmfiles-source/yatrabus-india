@@ -95,7 +95,7 @@ const lgdCatalogue = (() => {
     // The compact split index is optional when a deployment uses only the compressed snapshot.
   }
   try {
-    const file = new URL('../../../data/india-lgd-directory.json.gz', import.meta.url);
+    const file = new URL('../../data/india-lgd-directory.json.gz', import.meta.url);
     addRows(JSON.parse(gunzipSync(readFileSync(file)).toString('utf8')));
   } catch {
     // A deployment without the optional gzip snapshot still uses any available split indexes.
