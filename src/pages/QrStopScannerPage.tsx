@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Camera, CameraOff } from 'lucide-react';
+import { Camera, CameraOff, ShieldCheck } from 'lucide-react';
+import { api } from '../services/api.js';
 
 export const QrStopScannerPage: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -10,7 +11,15 @@ export const QrStopScannerPage: React.FC = () => {
   const [scanning, setScanning] = useState(false);
   const navigate = useNavigate();
 
-  const resolveCode = (value: string) => {
+  const resolveCode = async (value: string) => {
+    const raw = value.trim();
+    if (raw.startsWith('YB1.')) {
+      try {
+        const verified = await api.verifyStopQrToken(raw);
+        navigate(`/routes/${encodeURIComponent(verified.routeId)}?stop=${encodeURIComponent(verified.stopId)}&qr=verified`);
+      } catch (e) { setError(e instanceof Error ? e.message : 'Signed stop QR verification failed.'); }
+      return;
+    }
     try {
       const url = new URL(value, window.location.origin);
       if (url.protocol !== 'https:' && url.origin !== window.location.origin) throw new Error('Use a secure YatraBus stop link.');
@@ -40,7 +49,7 @@ export const QrStopScannerPage: React.FC = () => {
         if (!streamRef.current || !videoRef.current) return;
         try {
           const codes = await detector.detect(videoRef.current);
-          if (codes?.[0]?.rawValue) { stop(); resolveCode(String(codes[0].rawValue)); return; }
+          if (codes?.[0]?.rawValue) { stop(); void resolveCode(String(codes[0].rawValue)); return; }
         } catch { /* Continue scanning; camera frames can be temporarily undecodable. */ }
         if (streamRef.current) window.requestAnimationFrame(() => void scanFrame());
       };
@@ -54,8 +63,8 @@ export const QrStopScannerPage: React.FC = () => {
     {error && <p role="alert" className="rounded-xl bg-amber-50 p-3 text-sm text-amber-900">{error}</p>}
     <div className="rounded-2xl border bg-black p-2"><video ref={videoRef} className={scanning ? "w-full rounded-xl" : "hidden"} muted playsInline/><div className={scanning ? "hidden" : "aspect-video flex flex-col items-center justify-center gap-2 text-white"}><CameraOff className="h-8 w-8"/><p className="text-sm">Camera scanner is stopped</p></div></div>
     <div className="flex gap-2"><button onClick={() => void start()} disabled={scanning} className="rounded-xl bg-yatribrand-900 px-4 py-3 text-sm font-bold text-white disabled:opacity-50">Start scanner</button><button onClick={stop} disabled={!scanning} className="rounded-xl border px-4 py-3 text-sm font-semibold disabled:opacity-50">Stop</button></div>
-    <form onSubmit={e => { e.preventDefault(); resolveCode(manual.trim()); }} className="space-y-2"><label htmlFor="yb-qr-manual" className="block text-sm font-bold">Or paste a YatraBus stop link</label><input id="yb-qr-manual" value={manual} onChange={e => setManual(e.target.value)} className="w-full rounded-xl border p-3" placeholder="https://your-yatribus-domain/stop/route-id/stop-id"/><button className="rounded-xl border px-4 py-2 text-sm font-semibold">Open stop</button></form>
-    <p className="text-xs text-yatriwarm-600">A readable QR link is not proof of a physically surveyed stop. The route and stop must still be checked against YatraBus records and their verification status.</p>
+    <form onSubmit={e => { e.preventDefault(); void resolveCode(manual.trim()); }} className="space-y-2"><label htmlFor="yb-qr-manual" className="block text-sm font-bold">Or paste a YatraBus stop link</label><input id="yb-qr-manual" value={manual} onChange={e => setManual(e.target.value)} className="w-full rounded-xl border p-3" placeholder="https://your-yatribus-domain/stop/route-id/stop-id"/><button className="rounded-xl border px-4 py-2 text-sm font-semibold">Open stop</button></form>
+    <p className="text-xs text-yatriwarm-600"><ShieldCheck className="inline h-3.5 w-3.5 mr-1"/>Signed YB1 QR tokens are verified by the YatraBus server and expire after one year. Older plain stop links are only navigation shortcuts and are not proof of a verified physical stop.</p>
     <Link to="/" className="text-sm font-semibold">← Back to search</Link>
   </div>;
 };
