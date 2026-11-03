@@ -13,7 +13,7 @@ export const QrStopScannerPage: React.FC = () => {
   const resolveCode = (value: string) => {
     try {
       const url = new URL(value, window.location.origin);
-      if (url.origin !== window.location.origin) throw new Error('This QR code is not a YatraBus stop link.');
+      if (url.protocol !== 'https:' && url.origin !== window.location.origin) throw new Error('Use a secure YatraBus stop link.');
       const match = url.pathname.match(/^\/stop\/([^/]+)\/([^/]+)$/);
       if (!match) throw new Error('QR code format is not a supported YatraBus stop link.');
       navigate(`/routes/${encodeURIComponent(decodeURIComponent(match[1]))}?stop=${encodeURIComponent(decodeURIComponent(match[2]))}`);
