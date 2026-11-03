@@ -17,7 +17,7 @@ export type NormalizedGtfsFeed = {
 };
 
 export type TimetableResult = {
-  feedId: string; feedName: string; region?: string; sourceType: 'OFFICIAL_PUBLISHER' | 'COMMUNITY_DERIVED';
+  feedId: string; feedName: string; region?: string; sourceUrl?: string; sourceType: 'OFFICIAL_PUBLISHER' | 'COMMUNITY_DERIVED';
   verificationStatus: 'UNVERIFIED'; importedAt?: string; attribution?: string | null;
   routeId: string; routeName: string; tripId: string; headsign?: string;
   fromStop: { id: string; name: string }; toStop: { id: string; name: string };
