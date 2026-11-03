@@ -5,6 +5,8 @@ import { resolve } from 'node:path';
 import { gunzipSync } from 'node:zlib';
 import { repository } from '../db/repository.js';
 import { publicSearchLimiter } from '../middleware/rateLimiter.js';
+import { loadNormalizedGtfsFeeds } from '../engine/publicGtfsRuntime.js';
+import { buildBusConnectedPlaceSuggestions } from '../engine/busConnectedPlaces.js';
 
 export const placesRouter = Router();
 
@@ -291,69 +293,33 @@ placesRouter.get('/reverse-geocode', publicSearchLimiter, async (req: Request, r
 });
 
 // Free local catalogue search. External paid geocoding is deliberately not required.
-placesRouter.get('/search', publicSearchLimiter, async (req: Request, res: Response) => {
+placesRouter.get('/search', publicSearchLimiter, (req: Request, res: Response) => {
   const query = typeof req.query.q === 'string' ? req.query.q.trim() : '';
   const requestedLimit = req.query.limit ? Number.parseInt(String(req.query.limit), 10) : 8;
   const limit = Number.isFinite(requestedLimit) ? Math.max(1, Math.min(12, requestedLimit)) : 8;
-  if (query.length < 2) return res.json({ query, count: 0, results: [], sources: { local: 0, lgd: 0 } });
+  if (query.length < 2) return res.json({ query, count: 0, results: [], sources: { activeGtfsStops: 0 } });
 
-  // The bundled LGD snapshot is the full administrative search catalogue. Include it
-  // in the main autocomplete endpoint, not only in map/geocoding search.
-  const localResults = repository.searchPlaces(query, limit);
-  const directoryResults = await fetchLgdDirectorySuggestions(query);
-  const villageResults = fetchLgdVillageSuggestions(query, limit);
-  const needle = query.toLocaleLowerCase('en-IN');
-  const importedAt = new Date().toISOString();
-  const lgdResults = directoryResults.map((item: any) => {
-    const name = String(item.name || '').trim();
-    const level = String(item.level || 'Administrative area');
-    const exact = name.toLocaleLowerCase('en-IN') === needle;
-    const prefix = name.toLocaleLowerCase('en-IN').startsWith(needle);
-    const levelKey = level.toLocaleLowerCase('en-IN').replace(/[^a-z]/g, '');
-    const typeByLevel: Record<string, string> = {
-      state: 'STATE', stateut: 'STATE', unionterritory: 'UNION_TERRITORY', district: 'DISTRICT',
-      subdistrict: 'TEHSIL', subdistricttehsil: 'TEHSIL', tehsil: 'TEHSIL',
-      block: 'BLOCK', urbanlocalbody: 'CITY', citytown: 'TOWN', town: 'TOWN', village: 'VILLAGE',
-    };
-    const place = {
-      id: String(item.id),
-      canonicalName: name,
-      names: { en: name },
-      placeType: typeByLevel[levelKey] || 'LOCALITY',
-      state: item.state || undefined,
-      district: item.district || undefined,
-      sourceDataset: 'INDIA_LOCAL_GOVERNMENT_DIRECTORY',
-      sourceRecordId: item.code ? String(item.code) : undefined,
-      sourceLicense: 'Government Open Data License - India (GODL-India)',
-      sourceUrl: item.sourceUrl || 'https://lgdirectory.gov.in/',
-      sourceSnapshotDate: item.snapshotDate,
-      verificationStatus: 'UNVERIFIED',
-      aliases: item.localName ? [String(item.localName)] : [],
-      createdAt: importedAt,
-      updatedAt: importedAt,
-    };
-    return {
-      place,
-      matchScore: exact ? 100 : prefix ? 88 : 74,
-      matchType: exact ? 'EXACT' : 'PREFIX',
-      displayLabel: name,
-      subtitle: String(item.address || level + ' · LGD directory'),
-    };
-  });
-  const merged = new Map<string, any>();
-  for (const result of [...localResults, ...lgdResults, ...villageResults]) {
-    const id = result?.place?.id;
-    if (id && !merged.has(id)) merged.set(id, result);
-  }
-  const results = Array.from(merged.values())
-    .sort((a, b) => b.matchScore - a.matchScore || String(a.displayLabel).localeCompare(String(b.displayLabel), 'en-IN'))
-    .slice(0, limit);
+  // Passenger origin/destination suggestions are deliberately restricted to real,
+  // coordinate-bearing bus stops with stop_times on trips active for today's India date.
+  // LGD remains available as a reference directory, but an administrative place name
+  // alone is not evidence of a road or a running bus service.
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).formatToParts(new Date());
+  const dateParts = Object.fromEntries(parts.map(part => [part.type, part.value]));
+  const serviceDate = String(dateParts.year) + '-' + String(dateParts.month) + '-' + String(dateParts.day);
+  const feeds = loadNormalizedGtfsFeeds();
+  const results = buildBusConnectedPlaceSuggestions(feeds, query, serviceDate, limit);
+  res.setHeader('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
   return res.json({
     query,
     count: results.length,
     results,
-    sources: { local: localResults.length, lgd: lgdResults.length, villages: villageResults.length },
-    attribution: 'Ministry of Panchayati Raj · Local Government Directory · Government Open Data License - India',
+    sources: { activeGtfsStops: results.length },
+    serviceDate,
+    placeEligibility: 'ACTIVE_BUS_SERVICE_AND_COORDINATE_REQUIRED',
+    coverageNote: 'Only installed feeds with active scheduled trips are shown. No result does not prove that buses do not operate in the area; the operator may not publish a reusable feed.',
+    attribution: 'GTFS source attribution is included on each result. Place coordinates come from the source stop record.',
   });
 });
 
