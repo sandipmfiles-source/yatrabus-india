@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { buildPublicGtfsCatalogue } from '../engine/gtfsCatalogue.js';
-import { getStopDepartures, loadNormalizedGtfsFeeds, searchGtfsJourneys } from '../engine/publicGtfsRuntime.js';
+import { getStopDepartures, isServiceActive, isValidGtfsServiceDate, loadNormalizedGtfsFeeds, searchGtfsJourneys } from '../engine/publicGtfsRuntime.js';
 
 export const timetableRouter = Router();
 
@@ -12,8 +12,7 @@ function parseLimit(value: unknown) {
   return Number.isInteger(parsed) && parsed >= 1 && parsed <= 50 ? parsed : null;
 }
 function serviceDate(value: unknown) {
-  return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) &&
-    !Number.isNaN(Date.parse(value + 'T12:00:00Z')) ? value : null;
+  return typeof value === 'string' && isValidGtfsServiceDate(value) ? value : null;
 }
 function getFeeds() { return loadNormalizedGtfsFeeds(); }
 
@@ -92,9 +91,12 @@ timetableRouter.get('/routes/:routeId', (req, res) => {
   }
   const feed = matches[0];
   if (!feed) return res.status(404).json({ error: 'Route not found in installed GTFS snapshots.' });
+  const requestedDate = req.query.date === undefined ? undefined : serviceDate(req.query.date);
+  if (req.query.date !== undefined && !requestedDate) return res.status(400).json({ error: 'date must be a real calendar date in YYYY-MM-DD format.' });
   const route = feed.routes.find(item => item.route_id === req.params.routeId)!;
   const agency = feed.agency.find(item => !item.agency_id || item.agency_id === route.agency_id);
-  const trips = feed.trips.filter(item => item.route_id === route.route_id);
+  const trips = feed.trips.filter(item => item.route_id === route.route_id &&
+    (!requestedDate || (requestedDate && isServiceActive(feed, item.service_id, requestedDate))));
   const tripIds = new Set(trips.map(item => item.trip_id));
   const stopsById = new Map(feed.stops.map(stop => [stop.stop_id, stop]));
   const stopTimes = feed.stopTimes.filter(item => tripIds.has(item.trip_id))
@@ -103,6 +105,7 @@ timetableRouter.get('/routes/:routeId', (req, res) => {
     route: { id: route.route_id, shortName: route.route_short_name, longName: route.route_long_name, routeType: route.route_type },
     feed: { id: feed.feed.id, name: feed.feed.name, official: !!feed.feed.official, verificationStatus: 'UNVERIFIED', importedAt: feed.feed.importedAt, attribution: feed.feed.attribution },
     agencyTimezone: agency?.agency_timezone || 'UNKNOWN',
+    ...(requestedDate ? { serviceDate: requestedDate, timetableStatus: trips.length ? 'SCHEDULED_UNVERIFIED' : 'NO_SERVICE_FOUND' } : {}),
     trips: trips.map(trip => ({
       tripId: trip.trip_id, serviceId: trip.service_id, headsign: trip.trip_headsign,
       stopTimes: stopTimes.filter(row => row.trip_id === trip.trip_id).map(row => ({

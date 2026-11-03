@@ -27,13 +27,13 @@ export type TimetableResult = {
 
 const dayFields = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const;
 const compactDate = (date: string) => date.replaceAll('-', '');
-const validDate = (date: string) => {
+export const isValidGtfsServiceDate = (date: string) => {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return false;
   const parsed = new Date(date + 'T12:00:00Z');
   return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === date;
 };
 export function isServiceActive(feed: NormalizedGtfsFeed, serviceId: string, date: string): boolean {
-  if (!validDate(date)) return false;
+  if (!isValidGtfsServiceDate(date)) return false;
   const compact = compactDate(date);
   const exceptions = feed.calendarDates.filter(row => row.service_id === serviceId && row.date === compact);
   if (exceptions.some(row => row.exception_type === '1')) return true;
@@ -60,7 +60,7 @@ function routeLabel(route: NormalizedGtfsFeed['routes'][number]) {
 }
 
 export function searchGtfsJourneys(feeds: NormalizedGtfsFeed[], from: string, to: string, date: string, requestedLimit = 20): TimetableResult[] {
-  if (!validDate(date)) throw new Error('date must be a valid YYYY-MM-DD service date');
+  if (!isValidGtfsServiceDate(date)) throw new Error('date must be a valid YYYY-MM-DD service date');
   if (!from.trim() || !to.trim()) throw new Error('from and to are required');
   if (normalizedStopName(from) === normalizedStopName(to)) return [];
   const limit = Math.max(1, Math.min(50, Math.floor(requestedLimit) || 20));
@@ -116,7 +116,7 @@ export function searchGtfsJourneys(feeds: NormalizedGtfsFeed[], from: string, to
 }
 
 export function getStopDepartures(feeds: NormalizedGtfsFeed[], stopQuery: string, date: string, requestedLimit = 20) {
-  if (!validDate(date)) throw new Error('date must be a valid YYYY-MM-DD service date');
+  if (!isValidGtfsServiceDate(date)) throw new Error('date must be a valid YYYY-MM-DD service date');
   if (!stopQuery.trim()) throw new Error('stop is required');
   const limit = Math.max(1, Math.min(50, Math.floor(requestedLimit) || 20));
   const output: Array<Record<string, unknown>> = [];
