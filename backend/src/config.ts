@@ -6,7 +6,7 @@ export const CONFIG = {
     ? Number(process.env.TRUST_PROXY_HOPS)
     : 0,
   NODE_ENV: process.env.NODE_ENV || 'development',
-  CORS_ALLOWED_ORIGINS: (process.env.CORS_ALLOWED_ORIGINS || (process.env.NODE_ENV === 'production' ? '' : 'http://localhost:5173,http://127.0.0.1:5173,https://localhost')).split(',').map(value => value.trim()).filter(Boolean),
+  CORS_ALLOWED_ORIGINS: (process.env.CORS_ALLOWED_ORIGINS || (process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173,https://localhost')).split(',').map(value => value.trim()).filter(Boolean),
   ADMIN_EMAIL: (process.env.ADMIN_EMAIL || '').trim().toLowerCase(),
   ADMIN_PASSWORD_HASH: process.env.ADMIN_PASSWORD_HASH || '',
   ADMIN_JWT_SECRET: process.env.ADMIN_JWT_SECRET || '',
