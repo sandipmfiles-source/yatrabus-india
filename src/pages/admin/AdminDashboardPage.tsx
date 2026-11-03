@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../../services/api.js';
 import { SystemHealthStats } from '@shared/types/admin.js';
-import { MapPin, BusFront, Route as RouteIcon, Radio, FileText, Sliders, Activity, LogOut, Copy, FileArchive, Clock3, BarChart3 } from 'lucide-react';
+import { MapPin, BusFront, Route as RouteIcon, Radio, FileText, Sliders, Activity, LogOut, Copy, FileArchive, Clock3, BarChart3, QrCode } from 'lucide-react';
 
 export const AdminDashboardPage: React.FC = () => {
   const navigate = useNavigate();
@@ -44,6 +44,7 @@ export const AdminDashboardPage: React.FC = () => {
           <Link to="/admin/gtfs" className="px-3 py-1.5 rounded-xl bg-white border border-yatriwarm-200 text-xs font-medium text-yatriwarm-700 flex items-center gap-1.5"><FileArchive className="w-3.5 h-3.5" />GTFS Import</Link>
           <Link to="/admin/health" className="px-3 py-1.5 rounded-xl bg-white border border-yatriwarm-200 text-xs font-medium text-yatriwarm-700 flex items-center gap-1.5"><Activity className="w-3.5 h-3.5" />Health</Link>
           <Link to="/admin/analytics" className="px-3 py-1.5 rounded-xl bg-white border border-yatriwarm-200 text-xs font-medium text-yatriwarm-700 flex items-center gap-1.5"><BarChart3 className="w-3.5 h-3.5" />Analytics</Link>
+          <Link to="/admin/qr" className="px-3 py-1.5 rounded-xl bg-white border border-yatriwarm-200 text-xs font-medium text-yatriwarm-700 flex items-center gap-1.5"><QrCode className="w-3.5 h-3.5" />Stop QR</Link>
           <button onClick={handleLogout} className="px-3 py-1.5 rounded-xl bg-rose-50 text-rose-700 text-xs font-medium flex items-center gap-1.5 border border-rose-200"><LogOut className="w-3.5 h-3.5" />Sign Out</button>
         </div>
       </div>
