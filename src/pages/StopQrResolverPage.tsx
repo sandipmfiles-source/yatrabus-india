@@ -10,7 +10,7 @@ export const StopQrResolverPage: React.FC = () => {
   useEffect(() => {
     let active = true;
     api.verifyStopQrToken(decodeURIComponent(token)).then(result => {
-      if (active) navigate(`/routes/${encodeURIComponent(result.routeId)}?stop=${encodeURIComponent(result.stopId)}&qr=verified`, { replace: true });
+      if (active) navigate(`/routes/${encodeURIComponent(result.routeId)}?stop=${encodeURIComponent(result.stopId)}&qrToken=${encodeURIComponent(token)}`, { replace: true });
     }).catch(reason => { if (active) setError(reason instanceof Error ? reason.message : 'This stop QR could not be verified.'); });
     return () => { active = false; };
   }, [token, navigate]);
