@@ -32,7 +32,7 @@ async function download(url, target) {
 }
 
 async function main() {
-  const work = await mkdtemp(path.join(tmpdir(), 'yatribus-gtfs-install-'));
+  await mkdir(path.dirname(destination), { recursive: true });\n  const work = await mkdtemp(path.join(path.dirname(destination), '.yatribus-gtfs-install-'));
   const archive = path.join(work, 'snapshot.tar.gz');
   const extracted = path.join(work, 'extracted');
   const backup = destination + '.previous';
