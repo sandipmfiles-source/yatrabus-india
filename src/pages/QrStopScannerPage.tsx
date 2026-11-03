@@ -63,7 +63,10 @@ export const QrStopScannerPage: React.FC = () => {
     } catch { setError('Camera permission was denied or the camera is unavailable. You can paste the stop link manually.'); stop(); }
   };
 
-  useEffect(() => () => stop(), []);
+  useEffect(() => () => {
+    streamRef.current?.getTracks().forEach(track => track.stop());
+    streamRef.current = null;
+  }, []);
   return <div className="max-w-xl mx-auto px-4 py-8 space-y-5">
     <div className="flex items-center gap-3"><Camera className="h-6 w-6"/><div><h1 className="text-2xl font-extrabold">Bus stop QR lookup</h1><p className="text-sm text-yatriwarm-600">Scan a YatraBus stop link and confirm the route/stop record online.</p></div></div>
     {error && <p role="alert" className="rounded-xl bg-amber-50 p-3 text-sm text-amber-900">{error}</p>}
