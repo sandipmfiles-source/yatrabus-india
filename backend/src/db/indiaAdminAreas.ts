@@ -73,4 +73,45 @@ const pilotTownPlaces: Place[] = westBengalPilotTowns.map((town, index) => ({
   updatedAt: catalogueDate + 'T00:00:00.000Z',
 }));
 
-export const INDIA_ADMIN_AREA_PLACES: Place[] = [...administrativePlaces, ...pilotTownPlaces];
+
+/**
+ * Historical West Bengal terminal references from a 2017 public directory snapshot.
+ * These are searchable candidate locations only: they have no coordinates or verified
+ * current service status, and must not be presented as active bus departures.
+ */
+const westBengalPilotTerminals: Array<{ name: string; district: string; town: string; aliases?: string[] }> = [
+  { name: 'Central Bus Terminus, Jhargram', district: 'Jhargram', town: 'Jhargram', aliases: ['Jhargram Central Bus Terminus', 'ঝাড়গ্রাম কেন্দ্রীয় বাস টার্মিনাস'] },
+  { name: 'Kharagpur Bus Terminus', district: 'Paschim Medinipur', town: 'Kharagpur', aliases: ['খড়গপুর বাস টার্মিনাস'] },
+  { name: 'Central Bus Terminus, Midnapore', district: 'Paschim Medinipur', town: 'Midnapore', aliases: ['Medinipur Central Bus Terminus'] },
+  { name: 'Gopiballavpur Bus Terminus', district: 'Jhargram', town: 'Gopiballavpur' },
+  { name: 'Belda Bus Terminus', district: 'Paschim Medinipur', town: 'Belda' },
+  { name: 'Chandrakona Road Bus Terminus', district: 'Paschim Medinipur', town: 'Chandrakona Road' },
+  { name: 'Panskura Bus Terminus', district: 'Purba Medinipur', town: 'Panskura' },
+  { name: 'Howrah Railway Station Central Bus Terminus', district: 'Howrah', town: 'Howrah' },
+  { name: 'Santragachi Bus Terminus', district: 'Howrah', town: 'Santragachi' },
+  { name: 'Shalimar Bus Terminus', district: 'Howrah', town: 'Shalimar' },
+  { name: 'Uluberia Bus Terminal', district: 'Howrah', town: 'Uluberia' },
+  { name: 'Babughat Bus Terminus', district: 'Kolkata', town: 'Kolkata' },
+  { name: 'Esplanade Bus Terminal', district: 'Kolkata', town: 'Kolkata' },
+  { name: 'Salt Lake Karunamoyee Bus Terminus', district: 'North 24 Parganas', town: 'Salt Lake' },
+  { name: 'New Town International Bus Terminus', district: 'North 24 Parganas', town: 'New Town' },
+];
+
+const pilotTerminalPlaces: Place[] = westBengalPilotTerminals.map((terminal, index) => ({
+  id: 'wb-pilot-terminal-' + index,
+  canonicalName: terminal.name,
+  names: { en: terminal.name },
+  placeType: 'BUS_TERMINAL',
+  district: terminal.district,
+  state: 'West Bengal',
+  sourceDataset: 'WEST_BENGAL_TRANSPORT_DEPARTMENT_BUS_TERMINALS',
+  sourceLicense: 'Public government source reference; reuse terms require review',
+  sourceUrl: 'https://transport.wb.gov.in/infrastructure/bus-depots-terminals/',
+  sourceSnapshotDate: '2017-03-03',
+  verificationStatus: 'UNVERIFIED',
+  aliases: terminal.aliases || [],
+  createdAt: catalogueDate + 'T00:00:00.000Z',
+  updatedAt: catalogueDate + 'T00:00:00.000Z',
+}));
+
+export const INDIA_ADMIN_AREA_PLACES: Place[] = [...administrativePlaces, ...pilotTownPlaces, ...pilotTerminalPlaces];
