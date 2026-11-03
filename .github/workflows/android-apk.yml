@@ -62,11 +62,18 @@ jobs:
       - name: Build Web Application
         env:
           VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
+          VITE_PUBLIC_APP_URL: ${{ vars.VITE_PUBLIC_APP_URL }}
         run: |
           if [ -z "$VITE_API_BASE_URL" ]; then
             echo "::warning::VITE_API_BASE_URL is not configured. Native APK API calls will fail closed until an HTTPS backend URL is configured."
           elif [[ "$VITE_API_BASE_URL" != https://* ]]; then
             echo "::error::VITE_API_BASE_URL must use HTTPS for Android builds."
+            exit 1
+          fi
+          if [ -z "$VITE_PUBLIC_APP_URL" ]; then
+            echo "::warning::VITE_PUBLIC_APP_URL is not configured; public printable QR labels will remain unavailable."
+          elif [[ "$VITE_PUBLIC_APP_URL" != https://* ]]; then
+            echo "::error::VITE_PUBLIC_APP_URL must use HTTPS."
             exit 1
           fi
           npm run build
