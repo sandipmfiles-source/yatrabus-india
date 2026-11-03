@@ -562,6 +562,8 @@ adminRouter.get('/routes', requireAdminAuth('SUPER_ADMIN'), (req: Request, res: 
       stops: route.stops.map(stop => ({
         ...stop,
         placeVerificationStatus: repository.getPlaceById(stop.stopId)?.verificationStatus || 'UNVERIFIED',
+        placeLatitude: repository.getPlaceById(stop.stopId)?.latitude,
+        placeLongitude: repository.getPlaceById(stop.stopId)?.longitude,
       })),
     })),
   });
