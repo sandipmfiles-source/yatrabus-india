@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Mic, MicOff, Volume2 } from 'lucide-react';
 
 interface Props {
@@ -17,6 +17,8 @@ export const VoiceAssistantButton: React.FC<Props> = ({ language, onTranscript }
   const [listening, setListening] = useState(false);
   const [message, setMessage] = useState('');
   const recognitionRef = useRef<any>(null);
+
+  useEffect(() => () => { recognitionRef.current?.stop(); }, []);
 
   const toggle = () => {
     if (listening) {
