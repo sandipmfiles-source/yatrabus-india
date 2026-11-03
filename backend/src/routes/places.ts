@@ -7,8 +7,10 @@ import { repository } from '../db/repository.js';
 import { publicSearchLimiter } from '../middleware/rateLimiter.js';
 import { loadNormalizedGtfsFeeds } from '../engine/publicGtfsRuntime.js';
 import { buildBusConnectedPlaceSuggestions, buildNearbyBusPlaceSuggestions } from '../engine/busConnectedPlaces.js';
+import { mapOsmNearbyStops } from '../engine/osmNearbyStops.js';
 
 export const placesRouter = Router();
+const osmNearbyCache = new Map<string, { expiresAt: number; stops: any[] }>();
 
 const geocodeCache = new Map<string, { expiresAt: number; results: any[] }>();
 let lastGeocodeRequestAt = 0;
@@ -324,10 +326,10 @@ placesRouter.get('/search', publicSearchLimiter, (req: Request, res: Response) =
 });
 
 // GET /api/places/nearby?lat=28.6675&lon=77.2285&radius=3000
-placesRouter.get('/nearby', (req: Request, res: Response) => {
+placesRouter.get('/nearby', publicSearchLimiter, async (req: Request, res: Response) => {
   const latStr = req.query.lat as string;
   const lonStr = req.query.lon as string;
-  const radius = req.query.radius ? parseInt(req.query.radius as string, 10) : 3000;
+  const radius = req.query.radius ? parseInt(req.query.radius as string, 10) : 5000;
 
   if (!latStr || !lonStr) {
     return res.status(400).json({ error: 'Missing coordinates: lat and lon required' });
@@ -335,8 +337,9 @@ placesRouter.get('/nearby', (req: Request, res: Response) => {
 
   const lat = parseFloat(latStr);
   const lon = parseFloat(lonStr);
-  if (!Number.isFinite(lat) || !Number.isFinite(lon) || !Number.isFinite(radius) || radius < 1 || radius > 50000) {
-    return res.status(400).json({ error: 'Invalid coordinates or radius' });
+  if (!Number.isFinite(lat) || !Number.isFinite(lon) || lat < 6 || lat > 38 || lon < 68 || lon > 98 ||
+      !Number.isFinite(radius) || radius < 1 || radius > 50000) {
+    return res.status(400).json({ error: 'Invalid India coordinates or radius' });
   }
 
   const parts = new Intl.DateTimeFormat('en-CA', {
@@ -345,14 +348,58 @@ placesRouter.get('/nearby', (req: Request, res: Response) => {
   const dateParts = Object.fromEntries(parts.map(part => [part.type, part.value]));
   const serviceDate = String(dateParts.year) + '-' + String(dateParts.month) + '-' + String(dateParts.day);
   const feeds = loadNormalizedGtfsFeeds();
-  const stops = buildNearbyBusPlaceSuggestions(feeds, lat, lon, serviceDate, radius, 30);
+  const gtfsStops = buildNearbyBusPlaceSuggestions(feeds, lat, lon, serviceDate, radius, 30);
+
+  // Supplement limited GTFS coverage with mapped OSM bus stations/stops.
+  // OSM locations are clearly labelled as mapped, not as timetable-verified service.
+  const cacheKey = lat.toFixed(3) + ':' + lon.toFixed(3) + ':' + radius;
+  let osmStops: any[] = [];
+  const cached = osmNearbyCache.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) {
+    osmStops = cached.stops;
+  } else {
+    try {
+      const query = '[out:json][timeout:12];(' +
+        'node(around:' + radius + ',' + lat + ',' + lon + ')["amenity"="bus_station"];' +
+        'way(around:' + radius + ',' + lat + ',' + lon + ')["amenity"="bus_station"];' +
+        'relation(around:' + radius + ',' + lat + ',' + lon + ')["amenity"="bus_station"];' +
+        'node(around:' + radius + ',' + lat + ',' + lon + ')["highway"="bus_stop"];' +
+        'node(around:' + radius + ',' + lat + ',' + lon + ')["public_transport"="platform"];' +
+        'way(around:' + radius + ',' + lat + ',' + lon + ')["public_transport"="platform"];' +
+        ');out center tags;';
+      const response = await fetch('https://overpass-api.de/api/interpreter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'User-Agent': 'YatraBusIndia/1.0 (+https://github.com/sandipmfiles-source/yatrabus-india)' },
+        body: 'data=' + encodeURIComponent(query),
+        signal: AbortSignal.timeout(15000),
+      });
+      if (response.ok) {
+        const payload = await response.json() as any;
+        osmStops = mapOsmNearbyStops(Array.isArray(payload?.elements) ? payload.elements : [], lat, lon, radius, 30);
+        if (osmNearbyCache.size > 300) osmNearbyCache.delete(osmNearbyCache.keys().next().value as string);
+        osmNearbyCache.set(cacheKey, { expiresAt: Date.now() + 10 * 60 * 1000, stops: osmStops });
+      }
+    } catch {
+      // A temporary public Overpass outage must not suppress any GTFS results.
+    }
+  }
+
+  const gtfsNames = new Set(gtfsStops.map(item => String(item.place.canonicalName || '').toLocaleLowerCase('en-IN')));
+  const uniqueOsm = osmStops.filter(item => !gtfsNames.has(String(item.place.canonicalName || '').toLocaleLowerCase('en-IN')));
+  const stops = [...gtfsStops, ...uniqueOsm]
+    .sort((a, b) =>
+      (a.kind === b.kind ? 0 : a.kind === 'BUS_STAND' ? -1 : 1) ||
+      a.distanceMeters - b.distanceMeters ||
+      a.place.canonicalName.localeCompare(b.place.canonicalName, 'en-IN')
+    ).slice(0, 40);
+
   return res.json({
     count: stops.length,
     stops,
     serviceDate,
-    ordering: 'MAJOR_BUS_STANDS_FIRST_THEN_NEAREST_ACTIVE_BUS_STOPS',
-    coverageNote: 'Only active scheduled bus stops from installed public feeds are listed. Missing results do not prove that no local bus service exists.',
-    attribution: 'GTFS publisher/community feed attribution is retained in each stop result.',
+    ordering: 'MAJOR_BUS_STANDS_FIRST_THEN_NEAREST_BUS_STOPS',
+    coverageNote: 'GTFS entries have active scheduled trip evidence for the service date. OpenStreetMap entries are mapped bus stands/stops only; their current service and timetable are not independently verified. Missing results do not prove that no local bus service exists.',
+    attribution: 'GTFS source attribution is retained where supplied. Mapped stop data © OpenStreetMap contributors.',
   });
 });
 
