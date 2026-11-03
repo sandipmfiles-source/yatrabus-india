@@ -37,6 +37,18 @@ const asNumber = v => v === '' || v == null ? null : Number.isFinite(Number(v)) 
 const pick = (row, keys) => Object.fromEntries(keys.filter(k => row[k] !== undefined).map(k => [k, row[k]]));
 async function main() {
   const registry = JSON.parse(await readFile(REGISTRY, 'utf8'));
+  if (!Array.isArray(registry.feeds)) throw new Error('GTFS registry must contain a feeds array');
+  const ids = new Set();
+  for (const feed of registry.feeds) {
+    if (!feed || typeof feed.id !== 'string' || !feed.id.trim()) throw new Error('Every GTFS feed must have a non-empty id');
+    if (ids.has(feed.id)) throw new Error('Duplicate GTFS feed id in registry: ' + feed.id);
+    ids.add(feed.id);
+    if (feed.status === 'enabled') {
+      if (!/^https:\/\//.test(feed.url || '')) throw new Error('Enabled feed must use an HTTPS download URL: ' + feed.id);
+      if (!feed.licenseReview || !/(reviewed|MIT|CC-BY|ODbL|PDDL)/i.test(feed.licenseReview)) throw new Error('Enabled feed lacks a recorded licence review: ' + feed.id);
+      if (!feed.attribution && !/MIT-0|no attribution/i.test(feed.licenseReview)) throw new Error('Enabled feed is missing attribution metadata: ' + feed.id);
+    }
+  }
   const enabled = registry.feeds.filter(f => f.status === 'enabled');
   await mkdir(OUT, { recursive: true });
   const results = [];
@@ -64,9 +76,16 @@ async function main() {
       const [agency, stops, routes, trips, stopTimes] = await Promise.all(REQUIRED.map(locate));
       const optional = async name => { const found = files.find(f => path.basename(f) === name); return found ? csv(await readFile(path.join(unpacked, found), 'utf8')) : []; };
       const [calendar, calendarDates, frequencies, transfers, shapes] = await Promise.all(['calendar.txt','calendar_dates.txt','frequencies.txt','transfers.txt','shapes.txt'].map(optional));
-      const stopIds = new Set(stops.map(s => s.stop_id).filter(Boolean));
-      const routeIds = new Set(routes.map(r => r.route_id).filter(Boolean));
-      const tripIds = new Set(trips.map(t => t.trip_id).filter(Boolean));
+      const assertUnique = (rows, field, label) => {
+        const values = rows.map(row => row[field]).filter(Boolean);
+        const unique = new Set(values);
+        if (unique.size !== values.length) throw new Error('Duplicate ' + label + ' identifiers in GTFS table');
+        if (unique.size !== rows.length) throw new Error('Missing ' + label + ' identifiers in GTFS table');
+        return unique;
+      };
+      const stopIds = assertUnique(stops, 'stop_id', 'stop');
+      const routeIds = assertUnique(routes, 'route_id', 'route');
+      const tripIds = assertUnique(trips, 'trip_id', 'trip');
       const unknownStopRefs = stopTimes.filter(s => !stopIds.has(s.stop_id)).length;
       const unknownTripRefs = stopTimes.filter(s => !tripIds.has(s.trip_id)).length;
       const unknownRouteRefs = trips.filter(t => !routeIds.has(t.route_id)).length;
