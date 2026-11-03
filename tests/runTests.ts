@@ -20,6 +20,7 @@ import { runJourneyPlannerTests } from './unit/journeyPlanner.test.js';
 import { runTrajectoryMatcherTests } from './unit/trajectoryMatcher.test.js';
 import { runTimetableEngineTests } from './unit/timetableEngine.test.js';
 import { runPhase4PolicyTests } from './unit/phase4Policy.test.js';
+import { runStopQrTests } from './unit/stopQr.test.js';
 import { runIndiaCatalogueTests } from './unit/indiaCatalogue.test.js';
 
 let totalTests = 0;
@@ -94,6 +95,9 @@ runTimetableEngineTests(assert);
 
 console.log('\\n18. Testing Phase 4 Offline Cache & Passenger Alert Policy...');
 runPhase4PolicyTests(assert);
+
+console.log('\\n19. Testing Signed Stop QR Token Security...');
+runStopQrTests(assert);
 
 console.log('\n====================================================');
 console.log(`SUMMARY: ${passedTests}/${totalTests} Tests Passed (${failedTests} Failed)`);
