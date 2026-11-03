@@ -4,6 +4,8 @@ import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { api } from '../services/api.js';
 import { JourneyCandidate } from '@shared/types/bus.js';
 import { estimateDailyTripCount } from '@shared/engine/routeGraph.js';
+import { planJourneys } from '@shared/engine/journeyPlanner.js';
+import { phase4 } from '../services/phase4.js';
 import { BusCard } from '../components/BusCard.js';
 import { ArrowLeft, AlertCircle, PlusCircle, Clock3, MapPin, CalendarDays, BusFront } from 'lucide-react';
 
@@ -20,6 +22,7 @@ export const SearchResultsPage: React.FC = () => {
   const [transferRoutes, setTransferRoutes] = useState<JourneyCandidate[]>([]);
   const [filterType, setFilterType] = useState<'ALL' | 'DIRECT' | 'LIVE'>('ALL');
   const [returnJourneys, setReturnJourneys] = useState<JourneyCandidate[]>([]);
+  const [offlineMode, setOfflineMode] = useState(false);
 
   useEffect(() => {
     if (!from || !to) {
@@ -34,9 +37,25 @@ export const SearchResultsPage: React.FC = () => {
         setDirectRoutes(res.directRoutes || []);
         setTransferRoutes(res.transferRoutes || []);
         setReturnJourneys(reverse ? [...(reverse.directRoutes || []), ...(reverse.transferRoutes || [])] : []);
+        setOfflineMode(false);
+        void phase4.cacheVerifiedRoutes([...(res.directRoutes || []), ...(res.transferRoutes || [])].map((item: JourneyCandidate) => item.route)).catch(() => undefined);
         setIsLoading(false);
       })
-      .catch(() => { if (!cancelled) setIsLoading(false); });
+      .catch(async () => {
+        if (cancelled) return;
+        try {
+          const cached = await phase4.getOfflineRoutes();
+          const planned = planJourneys(from, to, cached, { currentTimeIso: new Date().toISOString(), maximumTransfers: 0, maximumResults: 8 });
+          const reverse = planJourneys(to, from, cached, { currentTimeIso: new Date().toISOString(), maximumTransfers: 0, maximumResults: 8 });
+          if (!cancelled) {
+            setDirectRoutes(planned.directRoutes || []);
+            setTransferRoutes([]);
+            setReturnJourneys(reverse.directRoutes || []);
+            setOfflineMode(true);
+          }
+        } catch { if (!cancelled) { setDirectRoutes([]); setTransferRoutes([]); setReturnJourneys([]); } }
+        if (!cancelled) setIsLoading(false);
+      });
     return () => { cancelled = true; };
   }, [from, to]);
 
@@ -160,6 +179,8 @@ export const SearchResultsPage: React.FC = () => {
           </h2>
         </div>
       </div>
+
+      {offlineMode && <div role="status" className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900">Offline mode: showing only previously saved, source-verified timetable routes. Cached schedules may be out of date; confirm with the operator before travel. Live GPS and fresh delay alerts are unavailable offline.</div>}
 
       {/* Filter Tabs */}
       <div className="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-yatriwarm-200">

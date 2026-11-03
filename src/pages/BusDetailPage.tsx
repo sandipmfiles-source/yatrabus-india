@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../context/LanguageContext.js';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../services/api.js';
 import { Route, RouteStop } from '@shared/types/bus.js';
 import { AggregatedBusLocation } from '@shared/types/tracking.js';
@@ -10,15 +10,25 @@ import { ConfidenceBadge } from '../components/ConfidenceBadge.js';
 import { JourneyConfirmBanner } from '../components/JourneyConfirmBanner.js';
 import { BusIllustration } from '../assets/BusIllustration.js';
 import { MapView } from '../components/MapView.js';
-import { ArrowLeft, Clock, MapPin, ShieldCheck, AlertTriangle, Edit3, Flag, BusFront } from 'lucide-react';
+import { phase4 } from '../services/phase4.js';
+import { getJourneyAlertCandidates } from '@shared/engine/phase4Policy.js';
+import { ArrowLeft, Clock, MapPin, ShieldCheck, AlertTriangle, Edit3, Flag, BusFront, Heart, Share2, QrCode } from 'lucide-react';
 
 export const BusDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
+  const selectedStopId = searchParams.get('stop');
+  const qrToken = searchParams.get('qrToken');
+  const requestedBusId = searchParams.get('bus');
   const navigate = useNavigate();
   const { t } = useLanguage();
 
   const [isLoading, setIsLoading] = useState(true);
   const [route, setRoute] = useState<Route | null>(null);
+  const [isFavourite, setIsFavourite] = useState(false);
+  const [qrVerified, setQrVerified] = useState(false);
+  const [alertsEnabled, setAlertsEnabled] = useState(() => phase4.alertsEnabled());
+  const [shareMessage, setShareMessage] = useState('');
   const [activeBusId, setActiveBusId] = useState<string | null>(null);
   const [location, setLocation] = useState<AggregatedBusLocation | null>(null);
   const [stopETAs, setStopETAs] = useState<ETAResult[]>([]);
@@ -40,6 +50,25 @@ export const BusDetailPage: React.FC = () => {
   });
 
   useEffect(() => {
+    let active = true;
+    setQrVerified(false);
+    if (route && qrToken && selectedStopId) {
+      api.verifyStopQrToken(qrToken).then(result => {
+        if (active && result.routeId === route.id && result.stopId === selectedStopId) setQrVerified(true);
+      }).catch(() => { if (active) setQrVerified(false); });
+    }
+    return () => { active = false; };
+  }, [route?.id, qrToken, selectedStopId]);
+
+  useEffect(() => {
+    if (!route || !selectedStopId) return;
+    document.getElementById('yb-stop-' + selectedStopId)?.scrollIntoView({
+      behavior: phase4.getAccessibility().reducedMotion ? 'auto' : 'smooth',
+      block: 'center',
+    });
+  }, [route?.id, selectedStopId]);
+
+  useEffect(() => {
     if (!id) return;
 
     setIsLoading(true);
@@ -48,8 +77,25 @@ export const BusDetailPage: React.FC = () => {
     api.getRouteById(id).then(res => {
       if (res.route) {
         setRoute(res.route);
-        const routeBus = res.buses?.find((bus: any) => bus.routeId === res.route.id);
+        setIsFavourite(phase4.isFavourite(res.route.id));
+        void phase4.cacheVerifiedRoutes([res.route]).catch(() => undefined);
+        const routeBus = res.buses?.find((bus: any) => bus.id === requestedBusId && bus.routeId === res.route.id) || res.buses?.find((bus: any) => bus.routeId === res.route.id);
         if (routeBus?.id) setActiveBusId(routeBus.id);
+      }
+      setIsLoading(false);
+    }).catch(async () => {
+      try {
+        const cached = await phase4.getOfflineRoutes();
+        const savedRoute = cached.find(item => item.id === id);
+        if (savedRoute) {
+          setRoute(savedRoute);
+          setIsFavourite(phase4.isFavourite(savedRoute.id));
+          setCorrectionMessage('Offline copy: source-verified timetable details are cached and may be stale. Confirm with the operator; live GPS is unavailable.');
+        } else {
+          setCorrectionMessage('This route is not saved for offline use. Connect to the internet and open it once to cache its verified timetable.');
+        }
+      } catch {
+        setCorrectionMessage('Route details are unavailable while offline.');
       }
       setIsLoading(false);
     });
@@ -63,7 +109,12 @@ export const BusDetailPage: React.FC = () => {
         const busRes = await api.getBusById(activeBusId, route.id);
         if (!cancelled) {
           setLocation(busRes.location || null);
-          setStopETAs(busRes.stopETAs || []);
+          const currentEtas: ETAResult[] = busRes.stopETAs || [];
+          setStopETAs(currentEtas);
+          if (alertsEnabled) {
+            const alerts = getJourneyAlertCandidates(route, busRes.location?.isLive === true, currentEtas);
+            for (const alert of alerts) void phase4.notifyOnce(alert.key, alert.title, alert.body);
+          }
         }
       } catch {
         // Keep the last confirmed location visible if a temporary refresh fails.
@@ -75,7 +126,7 @@ export const BusDetailPage: React.FC = () => {
       cancelled = true;
       window.clearInterval(intervalId);
     };
-  }, [activeBusId, route?.id]);
+  }, [activeBusId, route?.id, alertsEnabled, requestedBusId]);
 
   useEffect(() => {
     if (!route?.id) return;
@@ -105,6 +156,46 @@ export const BusDetailPage: React.FC = () => {
     // Do not place a bus on this route when its GPS fix is far off the corridor.
     // Only show the timeline bus when its GPS fix is close to the actual stop corridor (about 220 m).\n    return best !== null && best.error < 0.002 ? best.ratio : null;
   })();
+
+  const enableAlerts = async () => {
+    try {
+      const granted = await phase4.enableLiveAlerts();
+      setAlertsEnabled(granted);
+      setShareMessage(granted ? 'Journey alerts enabled on this device.' : 'Notification permission was not granted.');
+    } catch {
+      setShareMessage('Notifications are not available on this device or browser.');
+    }
+  };
+
+  const toggleFavourite = () => {
+    if (!route) return;
+    const saved = phase4.toggleFavourite(route);
+    setIsFavourite(saved);
+    if (!saved) void phase4.cancelRouteReminder(route.id);
+  };
+
+  const shareJourney = async () => {
+    if (!route) return;
+    const query = new URLSearchParams();
+    if (activeBusId) query.set('bus', activeBusId);
+    const url = window.location.origin + '/routes/' + encodeURIComponent(route.id) + (query.toString() ? '?' + query.toString() : '');
+    try {
+      if (navigator.share) await navigator.share({ title: route.routeName, text: route.originStopName + ' to ' + route.destinationStopName, url });
+      else if (navigator.clipboard?.writeText) { await navigator.clipboard.writeText(url); setShareMessage('Journey link copied.'); }
+      else setShareMessage(url);
+    } catch (error) {
+      if ((error as any)?.name !== 'AbortError') setShareMessage('Share this link: ' + url);
+    }
+  };
+
+  const copyStopLink = async (stopId: string) => {
+    if (!route) return;
+    const url = window.location.origin + '/stop/' + encodeURIComponent(route.id) + '/' + encodeURIComponent(stopId);
+    try {
+      await navigator.clipboard.writeText(url);
+      setShareMessage('Stop link copied. It can be encoded as a QR label.');
+    } catch { setShareMessage(url); }
+  };
 
   const refreshCorrections = async () => {
     if (!route) return;
@@ -342,7 +433,7 @@ export const BusDetailPage: React.FC = () => {
             const isTerminus = idx === 0 || idx === route.stops.length - 1;
 
             return (
-              <div key={stop.id} className="relative flex min-h-[56px] items-start justify-between gap-4">
+              <div id={`yb-stop-${stop.id}`} key={stop.id} className={`relative flex min-h-[56px] items-start justify-between gap-4 rounded-xl px-2 py-2 ${selectedStopId === stop.id ? "bg-emerald-50 ring-2 ring-emerald-500" : ""}`}>
                 {/* Timeline node */}
                 <div
                   className={`absolute -left-6 top-1 w-3.5 h-3.5 rounded-full border-2 border-white shadow-xs ${
@@ -429,6 +520,30 @@ export const BusDetailPage: React.FC = () => {
         )}
         {correctionMessage && <p role="status" className="mt-2 text-xs text-yatriwarm-600">{correctionMessage}</p>}
       </div>
+
+      {/* Phase 4 passenger tools */}
+      <section className="rounded-2xl border border-yatriwarm-200 bg-white p-4 space-y-3">
+        <div className="flex flex-wrap gap-2">
+          <button type="button" onClick={toggleFavourite} aria-pressed={isFavourite} className="rounded-xl border px-3 py-2 text-xs font-semibold">
+            <Heart className="inline h-4 w-4 mr-1" fill={isFavourite ? 'currentColor' : 'none'}/>{isFavourite ? 'Saved favourite' : 'Save favourite'}
+          </button>
+          <button type="button" onClick={() => void shareJourney()} className="rounded-xl border px-3 py-2 text-xs font-semibold"><Share2 className="inline h-4 w-4 mr-1"/>Share journey</button>
+          <button type="button" onClick={() => void enableAlerts()} aria-pressed={alertsEnabled} className="rounded-xl border px-3 py-2 text-xs font-semibold">{alertsEnabled ? 'Journey alerts on' : 'Enable live alerts'}</button>
+          <Link to="/scan" className="rounded-xl border px-3 py-2 text-xs font-semibold"><QrCode className="inline h-4 w-4 mr-1"/>Scan stop QR</Link>
+        </div>
+        {shareMessage && <p role="status" className="text-xs text-yatriwarm-600 break-all">{shareMessage}</p>}
+        <p className="text-[10px] text-yatriwarm-500">Live GPS arrival and delay alerts are evaluated while this route screen is active and fresh GPS is available. Android background restrictions may pause live checks; scheduled journey reminders are separate.</p>
+        <div>
+          <h3 className="text-xs font-bold text-yatriwarm-900 mb-2">Stop links for QR labels</h3>
+          <div className="max-h-44 overflow-y-auto space-y-1">
+            {route.stops.map(stop => <div key={stop.id} className="flex items-center justify-between gap-2 text-xs border-b border-yatriwarm-100 py-1.5">
+              <span>{stop.stopSequence}. {stop.stopName}</span>
+              <button type="button" onClick={() => void copyStopLink(stop.id)} className="shrink-0 rounded-lg border px-2 py-1 font-semibold">Copy stop link</button>
+            </div>)}
+          </div>
+          <p className="mt-2 text-[10px] text-yatriwarm-500">Stop links resolve to route records; an unverified stop remains unverified. Do not use a printed link as proof of a surveyed stop.</p>
+        </div>
+      </section>
 
       {/* Community Actions */}
       <section className="min-w-0 rounded-xl border border-yatriwarm-200 bg-white p-3 shadow-subtle space-y-2">

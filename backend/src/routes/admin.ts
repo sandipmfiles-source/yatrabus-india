@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import { issueStopQrToken } from '../engine/stopQr.js';
 import { CONFIG } from '../config.js';
 import { TimetableDeparture, Route, RouteStop, Operator, Bus } from '../../../packages/shared/src/types/bus.js';
 import { Place, IndianState } from '../../../packages/shared/src/types/places.js';
@@ -53,6 +54,42 @@ adminRouter.post('/login', adminLoginLimiter, (req: Request, res: Response) => {
     expiresIn: CONFIG.ADMIN_SESSION_TTL_SECONDS,
     user: { id: admin.id, email: admin.email, name: admin.name, role: admin.role },
   });
+});
+
+// POST /api/admin/routes/:routeId/stops/:stopId/qr — issue a signed, expiring QR only for verified stops.
+adminRouter.post('/routes/:routeId/stops/:stopId/qr', requireAdminAuth('SUPER_ADMIN'), (req: Request, res: Response) => {
+  if (!CONFIG.ADMIN_JWT_SECRET || CONFIG.ADMIN_JWT_SECRET.length < 32) {
+    return res.status(503).json({ error: 'Stop QR signing is not configured.' });
+  }
+  const routeId = String(req.params.routeId || '');
+  const stopId = String(req.params.stopId || '');
+  const route = repository.getRouteById(routeId);
+  if (!route) return res.status(404).json({ error: 'Route not found.' });
+  if (route.verificationStatus !== 'ADMIN_VERIFIED') {
+    return res.status(409).json({ error: 'Only Super Admin-verified routes can receive official stop QR labels.' });
+  }
+  const stop = route.stops.find(item => item.id === stopId);
+  if (!stop) return res.status(404).json({ error: 'Stop is not part of this route.' });
+  const place = repository.getPlaceById(stop.stopId);
+  if (!place || place.verificationStatus !== 'ADMIN_VERIFIED' ||
+      !Number.isFinite(place.latitude) || !Number.isFinite(place.longitude) ||
+      place.latitude! < 6 || place.latitude! > 38 || place.longitude! < 68 || place.longitude! > 98) {
+    return res.status(409).json({ error: 'The underlying place record must be Super Admin-verified and have valid surveyed India coordinates before QR issuance.' });
+  }
+  const issuedAt = Date.now();
+  const expiresAt = issuedAt + 365 * 24 * 60 * 60 * 1000;
+  const token = issueStopQrToken({ version: 1, routeId, stopId, issuedAt, expiresAt }, CONFIG.ADMIN_JWT_SECRET);
+  repository.createAuditLog({
+    id: `audit-stop-qr-${issuedAt}-${stop.id}`,
+    entityType: 'STOP_QR',
+    entityId: stop.id,
+    action: 'CREATE',
+    actorId: (req as any).admin.id,
+    actorRole: 'SUPER_ADMIN',
+    reason: `Signed QR issued for ${route.routeName} / ${stop.stopName}`,
+    timestamp: new Date(issuedAt).toISOString(),
+  });
+  return res.json({ token, expiresAt, routeName: route.routeName, stopName: stop.stopName, format: 'YB1' });
 });
 
 // GET /api/admin/overview
@@ -532,6 +569,15 @@ adminRouter.get('/routes', requireAdminAuth('SUPER_ADMIN'), (req: Request, res: 
     routes: routes.slice(0, 200).map(route => ({
       ...route,
       timetableDataStatus: route.timetableDataStatus || 'UNAVAILABLE',
+      stops: route.stops.map(stop => {
+        const place = repository.getPlaceById(stop.stopId);
+        return {
+          ...stop,
+          placeVerificationStatus: place?.verificationStatus || 'UNVERIFIED',
+          placeLatitude: place?.latitude,
+          placeLongitude: place?.longitude,
+        };
+      }),
     })),
   });
 });
