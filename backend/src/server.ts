@@ -35,10 +35,16 @@ export function createServer() {
   app.use(express.json({ limit: '1mb' }));
   app.use(express.urlencoded({ extended: true, limit: '1mb', parameterLimit: 100 }));
 
-  // Public read/search APIs are intentionally cross-origin accessible.
-  // Admin endpoints remain protected by the Super Admin bearer-token middleware.
+  // Cross-origin browser access is allow-listed. Native Capacitor HTTP and same-origin
+  // requests do not require a permissive wildcard CORS policy.
+  const allowedOrigins = new Set(CONFIG.CORS_ALLOWED_ORIGINS);
   app.use((req: Request, res: Response, next: NextFunction) => {
-    res.setHeader('Access-Control-Allow-Origin', '*');
+    const origin = req.headers.origin;
+    res.vary('Origin');
+    if (origin && !allowedOrigins.has(origin)) {
+      return res.status(403).json({ error: 'Origin not allowed.' });
+    }
+    if (origin) res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
     if (req.method === 'OPTIONS') return res.sendStatus(204);
