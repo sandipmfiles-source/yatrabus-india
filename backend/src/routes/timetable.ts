@@ -11,7 +11,9 @@ function parseLimit(value: unknown) {
   const parsed = Number(value);
   return Number.isInteger(parsed) && parsed >= 1 && parsed <= 50 ? parsed : null;
 }
-function serviceDate(value: unknown) {\n  return typeof value === 'string' && isValidGtfsServiceDate(value) ? value : null;\n}
+function serviceDate(value: unknown) {
+  return typeof value === 'string' && isValidGtfsServiceDate(value) ? value : null;
+}
 function getFeeds() { return loadNormalizedGtfsFeeds(); }
 
 // GET /api/timetable/feeds — feed provenance plus the actual locally installed snapshot state.
