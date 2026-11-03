@@ -2,7 +2,7 @@ name: Refresh public GTFS data
 
 on:
   push:
-    branches: [phase7-gtfs-public-data, phase7-india-coverage-expansion]
+    branches: [phase7-gtfs-public-data, phase7-india-coverage-expansion, phase8-additional-bus-feeds]
   schedule:
     - cron: '17 2 * * *'
   workflow_dispatch:
