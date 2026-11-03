@@ -44,7 +44,8 @@ export function createServer() {
     let sameHostOrigin = false;
     if (origin) {
       try {
-        sameHostOrigin = new URL(origin).host.toLowerCase() === (req.get('host') || '').toLowerCase();
+        const requestOrigin = `${req.protocol}://${req.get('host')}`;
+        sameHostOrigin = new URL(origin).origin === new URL(requestOrigin).origin;
       } catch {
         return res.status(403).json({ error: 'Origin not allowed.' });
       }
