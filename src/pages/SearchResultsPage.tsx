@@ -180,7 +180,7 @@ export const SearchResultsPage: React.FC = () => {
         </div>
       </div>
 
-      {offlineMode && <div role="status" className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900">Offline mode: showing only previously saved, source-verified timetable routes. Live GPS and fresh delay alerts are unavailable offline.</div>}
+      {offlineMode && <div role="status" className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900">Offline mode: showing only previously saved, source-verified timetable routes. Cached schedules may be out of date; confirm with the operator before travel. Live GPS and fresh delay alerts are unavailable offline.</div>}
 
       {/* Filter Tabs */}
       <div className="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-yatriwarm-200">
