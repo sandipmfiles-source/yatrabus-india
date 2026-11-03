@@ -90,6 +90,14 @@ export const api = {
     return { ...data, httpStatus: res.status };
   },
 
+  async getPublicRouteDetails(routeId: string, feedId: string, date: string) {
+    const params = new URLSearchParams({ feedId, date });
+    const res = await fetch(`${getApiBase()}/timetable/routes/${encodeURIComponent(routeId)}?${params.toString()}`);
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok && res.status !== 503) throw new Error(data.message || data.error || 'Route timetable details are unavailable.');
+    return { ...data, httpStatus: res.status };
+  },
+
   async getPublicStopDepartures(stopId: string, date: string, limit = 20) {
     const params = new URLSearchParams({ date, limit: String(limit) });
     const res = await fetch(`${getApiBase()}/timetable/stops/${encodeURIComponent(stopId)}/departures?${params.toString()}`);
