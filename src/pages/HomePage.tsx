@@ -336,7 +336,7 @@ export const HomePage: React.FC = () => {
                 <div>
                   <div className="text-[10px] font-bold uppercase tracking-wide text-yatribrand-800">{item.kind === 'BUS_STAND' ? 'Major bus stand / terminal' : 'Nearby bus stop'}</div>
                   <div className="text-xs font-semibold text-yatriwarm-900">{item.place.canonicalName}</div>
-                  <div className="text-[11px] text-yatriwarm-500">{item.place.district || item.feedName} · {item.routeCount} active routes</div>
+                  <div className="text-[11px] text-yatriwarm-500">{item.place.district || item.feedName} · {item.routeCount > 0 ? `${item.routeCount} active routes` : 'Timetable not verified'}</div>
                 </div>
                 <span className="shrink-0 text-[11px] font-bold text-yatribrand-800 bg-yatribrand-100 px-2 py-0.5 rounded-md">
                   {Math.round(item.distanceMeters / 100) / 10} km
