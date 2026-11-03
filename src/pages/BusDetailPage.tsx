@@ -21,6 +21,7 @@ export const BusDetailPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [route, setRoute] = useState<Route | null>(null);
   const [isFavourite, setIsFavourite] = useState(false);
+  const [alertsEnabled, setAlertsEnabled] = useState(() => phase4.alertsEnabled());
   const [shareMessage, setShareMessage] = useState('');
   const [activeBusId, setActiveBusId] = useState<string | null>(null);
   const [location, setLocation] = useState<AggregatedBusLocation | null>(null);
@@ -83,7 +84,27 @@ export const BusDetailPage: React.FC = () => {
         const busRes = await api.getBusById(activeBusId, route.id);
         if (!cancelled) {
           setLocation(busRes.location || null);
-          setStopETAs(busRes.stopETAs || []);
+          const currentEtas: ETAResult[] = busRes.stopETAs || [];
+          setStopETAs(currentEtas);
+          if (alertsEnabled && busRes.location?.isLive === true) {
+            for (const eta of currentEtas) {
+              if (eta.calculationType === 'OBSERVATION_BASED' && eta.confidenceScore >= 55 && eta.etaMinutes >= 0 && eta.etaMinutes <= 5) {
+                void phase4.notifyOnce('arrival:' + route.id + ':' + eta.stopId, 'Bus approaching your stop', eta.stopName + ' is about ' + Math.max(1, eta.etaMinutes) + ' minutes away based on fresh GPS.');
+              }
+              const clockMinutes = (value: string) => {
+                const match = /^(\d{1,2}):(\d{2})$/.exec(value || '');
+                return match ? Number(match[1]) * 60 + Number(match[2]) : null;
+              };
+              const scheduled = clockMinutes(eta.scheduledTime);
+              const predicted = clockMinutes(eta.predictedTime);
+              if (eta.calculationType === 'OBSERVATION_BASED' && scheduled !== null && predicted !== null && predicted - scheduled >= 10) {
+                void phase4.notifyOnce('delay:' + route.id + ':' + eta.stopId + ':' + new Date().toISOString().slice(0, 10), 'Possible bus delay', eta.stopName + ' may be at least ' + (predicted - scheduled) + ' minutes late. This is an estimate from live observations.');
+              }
+            }
+          }
+          if (alertsEnabled && ['DISRUPTION_REPORTED', 'ROUTE_CHANGED', 'POSSIBLE_DELAY'].includes(route.serviceStatus)) {
+            void phase4.notifyOnce('service:' + route.id + ':' + route.serviceStatus, 'Bus service update', route.statusReason || 'A service status update is recorded for this route.');
+          }
         }
       } catch {
         // Keep the last confirmed location visible if a temporary refresh fails.
@@ -125,6 +146,16 @@ export const BusDetailPage: React.FC = () => {
     // Do not place a bus on this route when its GPS fix is far off the corridor.
     // Only show the timeline bus when its GPS fix is close to the actual stop corridor (about 220 m).\n    return best !== null && best.error < 0.002 ? best.ratio : null;
   })();
+
+  const enableAlerts = async () => {
+    try {
+      const granted = await phase4.enableLiveAlerts();
+      setAlertsEnabled(granted);
+      setShareMessage(granted ? 'Journey alerts enabled on this device.' : 'Notification permission was not granted.');
+    } catch {
+      setShareMessage('Notifications are not available on this device or browser.');
+    }
+  };
 
   const toggleFavourite = () => {
     if (!route) return;
@@ -483,6 +514,7 @@ export const BusDetailPage: React.FC = () => {
             <Heart className="inline h-4 w-4 mr-1" fill={isFavourite ? 'currentColor' : 'none'}/>{isFavourite ? 'Saved favourite' : 'Save favourite'}
           </button>
           <button type="button" onClick={() => void shareJourney()} className="rounded-xl border px-3 py-2 text-xs font-semibold"><Share2 className="inline h-4 w-4 mr-1"/>Share journey</button>
+          <button type="button" onClick={() => void enableAlerts()} aria-pressed={alertsEnabled} className="rounded-xl border px-3 py-2 text-xs font-semibold">{alertsEnabled ? 'Journey alerts on' : 'Enable live alerts'}</button>
           <Link to="/scan" className="rounded-xl border px-3 py-2 text-xs font-semibold"><QrCode className="inline h-4 w-4 mr-1"/>Scan stop QR</Link>
         </div>
         {shareMessage && <p role="status" className="text-xs text-yatriwarm-600 break-all">{shareMessage}</p>}
