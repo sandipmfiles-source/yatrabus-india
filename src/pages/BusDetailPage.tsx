@@ -10,7 +10,8 @@ import { ConfidenceBadge } from '../components/ConfidenceBadge.js';
 import { JourneyConfirmBanner } from '../components/JourneyConfirmBanner.js';
 import { BusIllustration } from '../assets/BusIllustration.js';
 import { MapView } from '../components/MapView.js';
-import { ArrowLeft, Clock, MapPin, ShieldCheck, AlertTriangle, Edit3, Flag, BusFront } from 'lucide-react';
+import { phase4 } from '../services/phase4.js';
+import { ArrowLeft, Clock, MapPin, ShieldCheck, AlertTriangle, Edit3, Flag, BusFront, Heart, Share2, QrCode } from 'lucide-react';
 
 export const BusDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -19,6 +20,8 @@ export const BusDetailPage: React.FC = () => {
 
   const [isLoading, setIsLoading] = useState(true);
   const [route, setRoute] = useState<Route | null>(null);
+  const [isFavourite, setIsFavourite] = useState(false);
+  const [shareMessage, setShareMessage] = useState('');
   const [activeBusId, setActiveBusId] = useState<string | null>(null);
   const [location, setLocation] = useState<AggregatedBusLocation | null>(null);
   const [stopETAs, setStopETAs] = useState<ETAResult[]>([]);
@@ -48,6 +51,8 @@ export const BusDetailPage: React.FC = () => {
     api.getRouteById(id).then(res => {
       if (res.route) {
         setRoute(res.route);
+        setIsFavourite(phase4.isFavourite(res.route.id));
+        void phase4.cacheVerifiedRoutes([res.route]).catch(() => undefined);
         const routeBus = res.buses?.find((bus: any) => bus.routeId === res.route.id);
         if (routeBus?.id) setActiveBusId(routeBus.id);
       }
@@ -105,6 +110,32 @@ export const BusDetailPage: React.FC = () => {
     // Do not place a bus on this route when its GPS fix is far off the corridor.
     // Only show the timeline bus when its GPS fix is close to the actual stop corridor (about 220 m).\n    return best !== null && best.error < 0.002 ? best.ratio : null;
   })();
+
+  const toggleFavourite = () => {
+    if (!route) return;
+    setIsFavourite(phase4.toggleFavourite(route));
+  };
+
+  const shareJourney = async () => {
+    if (!route) return;
+    const url = window.location.origin + '/routes/' + encodeURIComponent(route.id);
+    try {
+      if (navigator.share) await navigator.share({ title: route.routeName, text: route.originStopName + ' to ' + route.destinationStopName, url });
+      else if (navigator.clipboard?.writeText) { await navigator.clipboard.writeText(url); setShareMessage('Journey link copied.'); }
+      else setShareMessage(url);
+    } catch (error) {
+      if ((error as any)?.name !== 'AbortError') setShareMessage('Share this link: ' + url);
+    }
+  };
+
+  const copyStopLink = async (stopId: string) => {
+    if (!route) return;
+    const url = window.location.origin + '/stop/' + encodeURIComponent(route.id) + '/' + encodeURIComponent(stopId);
+    try {
+      await navigator.clipboard.writeText(url);
+      setShareMessage('Stop link copied. It can be encoded as a QR label.');
+    } catch { setShareMessage(url); }
+  };
 
   const refreshCorrections = async () => {
     if (!route) return;
@@ -429,6 +460,28 @@ export const BusDetailPage: React.FC = () => {
         )}
         {correctionMessage && <p role="status" className="mt-2 text-xs text-yatriwarm-600">{correctionMessage}</p>}
       </div>
+
+      {/* Phase 4 passenger tools */}
+      <section className="rounded-2xl border border-yatriwarm-200 bg-white p-4 space-y-3">
+        <div className="flex flex-wrap gap-2">
+          <button type="button" onClick={toggleFavourite} aria-pressed={isFavourite} className="rounded-xl border px-3 py-2 text-xs font-semibold">
+            <Heart className="inline h-4 w-4 mr-1" fill={isFavourite ? 'currentColor' : 'none'}/>{isFavourite ? 'Saved favourite' : 'Save favourite'}
+          </button>
+          <button type="button" onClick={() => void shareJourney()} className="rounded-xl border px-3 py-2 text-xs font-semibold"><Share2 className="inline h-4 w-4 mr-1"/>Share journey</button>
+          <Link to="/scan" className="rounded-xl border px-3 py-2 text-xs font-semibold"><QrCode className="inline h-4 w-4 mr-1"/>Scan stop QR</Link>
+        </div>
+        {shareMessage && <p role="status" className="text-xs text-yatriwarm-600 break-all">{shareMessage}</p>}
+        <div>
+          <h3 className="text-xs font-bold text-yatriwarm-900 mb-2">Stop links for QR labels</h3>
+          <div className="max-h-44 overflow-y-auto space-y-1">
+            {route.stops.map(stop => <div key={stop.id} className="flex items-center justify-between gap-2 text-xs border-b border-yatriwarm-100 py-1.5">
+              <span>{stop.stopSequence}. {stop.stopName}</span>
+              <button type="button" onClick={() => void copyStopLink(stop.id)} className="shrink-0 rounded-lg border px-2 py-1 font-semibold">Copy stop link</button>
+            </div>)}
+          </div>
+          <p className="mt-2 text-[10px] text-yatriwarm-500">Stop links resolve to route records; an unverified stop remains unverified. Do not use a printed link as proof of a surveyed stop.</p>
+        </div>
+      </section>
 
       {/* Community Actions */}
       <section className="min-w-0 rounded-xl border border-yatriwarm-200 bg-white p-3 shadow-subtle space-y-2">
