@@ -11,6 +11,7 @@ import { JourneyConfirmBanner } from '../components/JourneyConfirmBanner.js';
 import { BusIllustration } from '../assets/BusIllustration.js';
 import { MapView } from '../components/MapView.js';
 import { phase4 } from '../services/phase4.js';
+import { getJourneyAlertCandidates } from '@shared/engine/phase4Policy.js';
 import { ArrowLeft, Clock, MapPin, ShieldCheck, AlertTriangle, Edit3, Flag, BusFront, Heart, Share2, QrCode } from 'lucide-react';
 
 export const BusDetailPage: React.FC = () => {
@@ -86,27 +87,9 @@ export const BusDetailPage: React.FC = () => {
           setLocation(busRes.location || null);
           const currentEtas: ETAResult[] = busRes.stopETAs || [];
           setStopETAs(currentEtas);
-          if (alertsEnabled && busRes.location?.isLive === true) {
-            for (const eta of currentEtas) {
-              if (eta.calculationType === 'OBSERVATION_BASED' && eta.confidenceScore >= 55 && eta.etaMinutes >= 0 && eta.etaMinutes <= 5) {
-                void phase4.notifyOnce('arrival:' + route.id + ':' + eta.stopId, 'Bus approaching your stop', eta.stopName + ' is about ' + Math.max(1, eta.etaMinutes) + ' minutes away based on fresh GPS.');
-              }
-              const clockMinutes = (value: string) => {
-                const match = /^(\d{1,2}):(\d{2})$/.exec(value || '');
-                return match ? Number(match[1]) * 60 + Number(match[2]) : null;
-              };
-              const scheduled = clockMinutes(eta.scheduledTime);
-              const predicted = clockMinutes(eta.predictedTime);
-              if (eta.calculationType === 'OBSERVATION_BASED' && scheduled !== null && predicted !== null && predicted - scheduled >= 10) {
-                void phase4.notifyOnce('delay:' + route.id + ':' + eta.stopId + ':' + new Date().toISOString().slice(0, 10), 'Possible bus delay', eta.stopName + ' may be at least ' + (predicted - scheduled) + ' minutes late. This is an estimate from live observations.');
-              }
-            }
-          }
-          if (alertsEnabled && ['DISRUPTION_REPORTED', 'ROUTE_CHANGED', 'POSSIBLE_DELAY'].includes(route.serviceStatus)) {
-            void phase4.notifyOnce('service:' + route.id + ':' + route.serviceStatus, 'Bus service update', 'Current route status: ' + route.serviceStatus + '. Check the operator for confirmation.');
-          }
-          if (alertsEnabled && (route.departures || []).some(departure => departure.isCancelled && departure.dataStatus === 'SCHEDULED')) {
-            void phase4.notifyOnce('cancelled:' + route.id, 'Scheduled departure cancelled', 'A source-verified departure on this route is marked cancelled. Check the current timetable before travelling.');
+          if (alertsEnabled) {
+            const alerts = getJourneyAlertCandidates(route, busRes.location?.isLive === true, currentEtas);
+            for (const alert of alerts) void phase4.notifyOnce(alert.key, alert.title, alert.body);
           }
         }
       } catch {
