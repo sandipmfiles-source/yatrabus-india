@@ -59,7 +59,7 @@ export const BusDetailPage: React.FC = () => {
         setRoute(res.route);
         setIsFavourite(phase4.isFavourite(res.route.id));
         void phase4.cacheVerifiedRoutes([res.route]).catch(() => undefined);
-        const routeBus = res.buses?.find((bus: any) => bus.id === requestedBusId) || res.buses?.find((bus: any) => bus.routeId === res.route.id);
+        const routeBus = res.buses?.find((bus: any) => bus.id === requestedBusId && bus.routeId === res.route.id) || res.buses?.find((bus: any) => bus.routeId === res.route.id);
         if (routeBus?.id) setActiveBusId(routeBus.id);
       }
       setIsLoading(false);
