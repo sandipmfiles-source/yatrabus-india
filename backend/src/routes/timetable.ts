@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { buildPublicGtfsCatalogue } from '../engine/gtfsCatalogue.js';
-import { getStopDepartures, loadNormalizedGtfsFeeds, searchGtfsJourneys } from '../engine/publicGtfsRuntime.js';
+import { getStopDepartures, isServiceActive, isValidGtfsServiceDate, loadNormalizedGtfsFeeds, searchGtfsJourneys } from '../engine/publicGtfsRuntime.js';
 
 export const timetableRouter = Router();
 
@@ -94,7 +94,7 @@ timetableRouter.get('/routes/:routeId', (req, res) => {
   if (!feed) return res.status(404).json({ error: 'Route not found in installed GTFS snapshots.' });
   const route = feed.routes.find(item => item.route_id === req.params.routeId)!;
   const agency = feed.agency.find(item => !item.agency_id || item.agency_id === route.agency_id);
-  const trips = feed.trips.filter(item => item.route_id === route.route_id);
+  const trips = feed.trips.filter(item => item.route_id === route.route_id &&\n    (!requestedDate || (requestedDate && isServiceActive(feed, item.service_id, requestedDate))));
   const tripIds = new Set(trips.map(item => item.trip_id));
   const stopsById = new Map(feed.stops.map(stop => [stop.stop_id, stop]));
   const stopTimes = feed.stopTimes.filter(item => tripIds.has(item.trip_id))
@@ -102,7 +102,7 @@ timetableRouter.get('/routes/:routeId', (req, res) => {
   return res.json({
     route: { id: route.route_id, shortName: route.route_short_name, longName: route.route_long_name, routeType: route.route_type },
     feed: { id: feed.feed.id, name: feed.feed.name, official: !!feed.feed.official, verificationStatus: 'UNVERIFIED', importedAt: feed.feed.importedAt, attribution: feed.feed.attribution },
-    agencyTimezone: agency?.agency_timezone || 'UNKNOWN',
+    agencyTimezone: agency?.agency_timezone || 'UNKNOWN',\n    ...(requestedDate ? { serviceDate: requestedDate, timetableStatus: trips.length ? 'SCHEDULED_UNVERIFIED' : 'NO_SERVICE_FOUND' } : {}),
     trips: trips.map(trip => ({
       tripId: trip.trip_id, serviceId: trip.service_id, headsign: trip.trip_headsign,
       stopTimes: stopTimes.filter(row => row.trip_id === trip.trip_id).map(row => ({
