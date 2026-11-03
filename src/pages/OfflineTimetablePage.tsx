@@ -19,12 +19,12 @@ export const OfflineTimetablePage: React.FC = () => {
     <div className="flex items-center gap-3"><WifiOff className="h-6 w-6"/><div><h1 className="text-2xl font-extrabold">Offline timetables</h1><p className="text-sm text-yatriwarm-600">Only source-verified schedules saved on this device are shown. Cached data can become stale; confirm with the operator before travel.</p></div></div>
     {error && <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-800">{error}</p>}
     {loading ? <p>Loading saved timetables…</p> : !routes.length ? <div className="rounded-2xl border bg-white p-6 text-sm text-yatriwarm-600">No verified timetable is saved yet. Open a route while online; verified schedules can then be cached for offline use.</div> : routes.map(route => <article key={route.id} className="rounded-2xl border border-yatriwarm-200 bg-white p-4">
-      <div className="flex flex-wrap justify-between gap-2"><h2 className="font-bold">{route.routeName}</h2><span className="text-xs rounded-full bg-emerald-50 px-2 py-1 text-emerald-800">SCHEDULED · VERIFIED SOURCE</span></div>
+      <div className="flex flex-wrap justify-between gap-2"><h2 className="font-bold">{route.routeName}</h2><span className={stale ? "text-xs rounded-full bg-amber-50 px-2 py-1 text-amber-900" : "text-xs rounded-full bg-emerald-50 px-2 py-1 text-emerald-800"}>{stale ? "STALE SOURCE SNAPSHOT" : "SCHEDULED · VERIFIED SOURCE"}</span></div>
       <p className="text-sm">{route.originStopName} → {route.destinationStopName}</p>
       <p className="mt-1 text-xs text-yatriwarm-600">Source: {route.timetableSource} · Verified: {route.timetableVerifiedAt ? new Date(route.timetableVerifiedAt).toLocaleDateString() : 'Unknown'} · Cached: {(route as any).cachedAt ? new Date((route as any).cachedAt).toLocaleString() : 'Unknown'}</p>
       <p className="text-xs text-yatriwarm-600">Departures: {(route.departures || []).filter(x => !x.isCancelled && x.dataStatus === 'SCHEDULED').map(x => x.departureTime).join(', ') || 'No verified departure times in cache'}</p>
       <Link to={`/routes/${encodeURIComponent(route.id)}`} className="inline-block mt-3 text-sm font-semibold text-yatribrand-900">Open saved route →</Link>
-    </article>)}
+    </article>; })}
     <button onClick={() => void load()} className="rounded-xl border px-4 py-2 text-sm font-semibold"><Download className="inline h-4 w-4 mr-2"/>Refresh offline list</button>
   </div>;
 };
