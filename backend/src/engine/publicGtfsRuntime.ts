@@ -50,6 +50,10 @@ function timeParts(value?: string) {
   if (minutes > 59 || seconds > 59) return null;
   return { value: String(hours % 24).padStart(2, '0') + ':' + String(minutes).padStart(2, '0'), dayOffset: Math.floor(hours / 24), minutes: (hours % 24) * 60 + minutes };
 }
+export function formatGtfsTime(value?: string) {
+  const parsed = timeParts(value);
+  return parsed ? { time: parsed.value, dayOffset: parsed.dayOffset } : null;
+}
 function normalizedStopName(value: string) { return value.normalize('NFKC').trim().toLocaleLowerCase('en-IN'); }
 function matchStop(feed: NormalizedGtfsFeed, query: string) {
   const q = normalizedStopName(query);
