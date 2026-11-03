@@ -16,6 +16,8 @@ export const HomePage: React.FC = () => {
   const [toQuery, setToQuery] = useState('');
   const [fromSuggestions, setFromSuggestions] = useState<PlaceSearchResult[]>([]);
   const [toSuggestions, setToSuggestions] = useState<PlaceSearchResult[]>([]);
+  const [fromSearchError, setFromSearchError] = useState(false);
+  const [toSearchError, setToSearchError] = useState(false);
   const [isFromFocused, setIsFromFocused] = useState(false);
   const [isToFocused, setIsToFocused] = useState(false);
   const [recentSearches, setRecentSearches] = useState<RecentSearchItem[]>([]);
@@ -26,30 +28,49 @@ export const HomePage: React.FC = () => {
     setRecentSearches(storage.getRecentSearches());
   }, []);
 
-  // Autocomplete debounced search for origin
+  // Autocomplete is resilient to network/backend errors and stale responses.
   useEffect(() => {
+    let cancelled = false;
     if (fromQuery.trim().length >= 2) {
+      setFromSearchError(false);
       const timer = setTimeout(async () => {
-        const res = await api.searchPlaces(fromQuery, 8);
-        setFromSuggestions(res);
+        try {
+          const res = await api.searchPlaces(fromQuery, 8);
+          if (!cancelled) setFromSuggestions(res);
+        } catch {
+          if (!cancelled) {
+            setFromSuggestions([]);
+            setFromSearchError(true);
+          }
+        }
       }, 200);
-      return () => clearTimeout(timer);
-    } else {
-      setFromSuggestions([]);
+      return () => { cancelled = true; clearTimeout(timer); };
     }
+    setFromSuggestions([]);
+    setFromSearchError(false);
+    return () => { cancelled = true; };
   }, [fromQuery]);
 
-  // Autocomplete debounced search for destination
   useEffect(() => {
+    let cancelled = false;
     if (toQuery.trim().length >= 2) {
+      setToSearchError(false);
       const timer = setTimeout(async () => {
-        const res = await api.searchPlaces(toQuery, 8);
-        setToSuggestions(res);
+        try {
+          const res = await api.searchPlaces(toQuery, 8);
+          if (!cancelled) setToSuggestions(res);
+        } catch {
+          if (!cancelled) {
+            setToSuggestions([]);
+            setToSearchError(true);
+          }
+        }
       }, 200);
-      return () => clearTimeout(timer);
-    } else {
-      setToSuggestions([]);
+      return () => { cancelled = true; clearTimeout(timer); };
     }
+    setToSuggestions([]);
+    setToSearchError(false);
+    return () => { cancelled = true; };
   }, [toQuery]);
 
   const handleSwap = () => {
@@ -149,6 +170,9 @@ export const HomePage: React.FC = () => {
                 autoComplete="off"
               />
 
+              {isFromFocused && fromQuery.trim().length >= 2 && fromSearchError && (
+                <p role="status" className="mt-1.5 text-[11px] text-red-600">Place suggestions are unavailable. Check the YatraBus server connection and try again.</p>
+              )}
               {/* Suggestions dropdown */}
               {isFromFocused && fromSuggestions.length > 0 && (
                 <div className="absolute left-0 right-0 top-full mt-1.5 bg-white rounded-xl shadow-elevated border border-yatriwarm-200 overflow-hidden z-30 divide-y divide-yatriwarm-100">
@@ -206,6 +230,9 @@ export const HomePage: React.FC = () => {
                 autoComplete="off"
               />
 
+              {isToFocused && toQuery.trim().length >= 2 && toSearchError && (
+                <p role="status" className="mt-1.5 text-[11px] text-red-600">Place suggestions are unavailable. Check the YatraBus server connection and try again.</p>
+              )}
               {/* Suggestions dropdown */}
               {isToFocused && toSuggestions.length > 0 && (
                 <div className="absolute left-0 right-0 top-full mt-1.5 bg-white rounded-xl shadow-elevated border border-yatriwarm-200 overflow-hidden z-30 divide-y divide-yatriwarm-100">
