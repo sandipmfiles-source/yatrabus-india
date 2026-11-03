@@ -10,7 +10,7 @@ const result = spawnSync(
       // The production build runs the full TypeScript type-check separately.
       // ts-node's ESM loader cannot reliably type-check this project's bundler
       // moduleResolution setting; transpile-only keeps runtime tests executable.
-      TS_NODE_TRANSPILE_ONLY: 'true',
+      TS_NODE_TRANSPILE_ONLY: 'true',\n      TS_NODE_COMPILER_OPTIONS: JSON.stringify({ module: 'NodeNext', moduleResolution: 'NodeNext' }),
     },
   }
 );
