@@ -75,6 +75,23 @@ export const api = {
     return data;
   },
 
+  async verifyStopQrToken(token: string) {
+    const res = await fetch(`${getApiBase()}/routes/qr/verify?token=${encodeURIComponent(token)}`);
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || data.verified !== true) throw new Error(data.error || 'This QR code could not be verified.');
+    return data;
+  },
+
+  async adminCreateStopQr(adminToken: string, routeId: string, stopId: string) {
+    const res = await fetch(`${getApiBase()}/admin/routes/${encodeURIComponent(routeId)}/stops/${encodeURIComponent(stopId)}/qr`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${adminToken}` },
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.token) throw new Error(data.error || 'Could not issue a signed stop QR.');
+    return data;
+  },
+
   async getRouteById(id: string) {
     const res = await fetch(`${getApiBase()}/routes/${encodeURIComponent(id)}`);
     const data = await res.json().catch(() => ({}));
