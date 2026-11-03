@@ -48,6 +48,7 @@ function readRows(filename) {
 function get(row, index) { return index < 0 ? '' : String(row[index] || '').trim(); }
 const places = new Map();
 const villageShards = new Map();
+const villageSeenCodes = new Set();
 let villageRecordCount = 0;
 function shardKey(value) {
   const first = String(value || '').normalize('NFKC').trim().toLocaleLowerCase('en-IN').match(/[\p{L}\p{N}]/u)?.[0];
@@ -83,7 +84,8 @@ for (const row of villages.rows) {
   const villageCode = get(row, vi.villageCode);
   const villageName = get(row, vi.village);
   const localName = get(row, vi.localName);
-  if (villageCode && villageName) {
+  if (villageCode && villageName && !villageSeenCodes.has(villageCode)) {
+    villageSeenCodes.add(villageCode);
     villageRecordCount++;
     const record = ['lgd-village-' + villageCode, villageCode, villageName, state, district, sub, localName, snapshotDate];
     const keys = [...new Set([shardKey(villageName), shardKey(localName)].filter(Boolean))];
