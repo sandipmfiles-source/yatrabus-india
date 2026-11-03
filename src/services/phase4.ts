@@ -100,7 +100,7 @@ export const phase4 = {
       const request = tx.objectStore(STORE_NAME).getAll();
       request.onsuccess = () => {
         db.close();
-        resolve((request.result || []).filter((route: any) => route.timetableDataStatus === 'SCHEDULED' && route.timetableVerifiedAt));
+        resolve((request.result || []).filter((route: any) => route.timetableDataStatus === 'SCHEDULED' && route.timetableVerifiedAt && /^https:\\/\\//i.test(route.timetableSourceUrl || '') && route.timetableSource?.trim()));
       };
       request.onerror = () => { db.close(); reject(request.error || new Error('Offline cache read failed.')); };
     });
@@ -135,15 +135,18 @@ export const phase4 = {
 
   async notifyOnce(key: string, title: string, body: string): Promise<void> {
     if (!this.alertsEnabled()) return;
-    const history: Record<string, number> = JSON.parse(localStorage.getItem(ALERT_HISTORY_KEY) || '{}');
+    let history: Record<string, number> = {};
+    try { history = JSON.parse(localStorage.getItem(ALERT_HISTORY_KEY) || '{}'); } catch { history = {}; }
     const now = Date.now();
     if (history[key] && now - history[key] < 30 * 60 * 1000) return;
     const permission = await LocalNotifications.checkPermissions();
     if (permission.display !== 'granted') return;
-    const id = Math.floor(now % 2147483000);
-    await LocalNotifications.schedule({ notifications: [{
-      id, title, body, schedule: { at: new Date(now + 1000) }, extra: { alertKey: key },
-    }] });
+    const id = Math.max(1, Math.floor(now % 2147483000));
+    try {
+      await LocalNotifications.schedule({ notifications: [{
+        id, title, body, schedule: { at: new Date(now + 1000) }, extra: { alertKey: key },
+      }] });
+    } catch { return; }
     history[key] = now;
     for (const [savedKey, timestamp] of Object.entries(history)) {
       if (now - timestamp > 7 * 24 * 60 * 60 * 1000) delete history[savedKey];
