@@ -134,7 +134,7 @@ export const phase4 = {
     try { history = JSON.parse(localStorage.getItem(ALERT_HISTORY_KEY) || '{}'); } catch { history = {}; }
     const now = Date.now();
     if (history[key] && now - history[key] < 30 * 60 * 1000) return;
-    let permission;
+    let permission: Awaited<ReturnType<typeof LocalNotifications.checkPermissions>>;
     try { permission = await LocalNotifications.checkPermissions(); } catch { return; }
     if (permission.display !== 'granted') return;
     const id = Math.max(1, Math.floor(now % 2147483000));
