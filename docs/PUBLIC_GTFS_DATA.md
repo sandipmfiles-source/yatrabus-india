@@ -21,7 +21,8 @@ The importer fails the run if an enabled feed cannot be downloaded or fails vali
 - GTFS Static is schedule data, not live vehicle tracking or live GPS.
 - Service calendars determine the dates on which a trip operates; consumers must apply calendar exceptions and service-date rules.
 - Source timestamps, source links, licence metadata, attribution, and SHA-256 hashes are preserved in normalized feed data and the import report.
-- GitHub Releases provide durable public file hosting, but this snapshot is not yet loaded by the backend API or Android timetable screens.
+- The backend exposes enabled feed provenance and the stable snapshot link at `GET /api/timetable/feeds`.
+- This endpoint is a source catalogue only; it does not yet perform passenger route/departure searches or load the archive into Android timetable screens.
 - Backend runtime still requires a deliberate data adapter, bounded query/pagination, service-date evaluation, and provenance display before passengers can use these feeds.
 - Do not label community-derived schedules as official or guaranteed.
 
