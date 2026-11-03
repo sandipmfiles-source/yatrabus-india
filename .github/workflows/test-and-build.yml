@@ -2,9 +2,9 @@ name: Tests & Verification Suite
 
 on:
   push:
-    branches: [main, master, phase5-production-readiness, phase6-final-qa]
+    branches: [main, master, phase5-production-readiness, phase6-final-qa, phase11-permanent-gtfs-publication]
   pull_request:
-    branches: [main, master]
+    branches: [main, master, phase10-final-release-hardening]
 
 jobs:
   test:

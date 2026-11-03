@@ -2,13 +2,13 @@ name: Refresh public GTFS data
 
 on:
   push:
-    branches: [phase7-gtfs-public-data, phase7-india-coverage-expansion, phase8-additional-bus-feeds, phase9-rajkot-feed, phase10-final-release-hardening]
+    branches: [phase7-gtfs-public-data, phase7-india-coverage-expansion, phase8-additional-bus-feeds, phase9-rajkot-feed, phase10-final-release-hardening, phase11-permanent-gtfs-publication]
   schedule:
     - cron: '17 2 * * *'
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: refresh-public-gtfs
@@ -38,3 +38,15 @@ jobs:
           path: artifacts/gtfs/
           if-no-files-found: error
           retention-days: 30
+      - name: Package validated snapshot
+        run: tar -czf yatribus-gtfs-snapshot.tar.gz -C artifacts/gtfs .
+      - name: Publish stable public GTFS release asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if ! gh release view gtfs-latest --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release create gtfs-latest --repo "$GITHUB_REPOSITORY" --title "YatraBus India — Latest validated GTFS snapshot" --notes "Automatically refreshed, validated static GTFS snapshot. See import-report.json inside the asset for source status, timestamps and record counts. Static schedules are not live GPS. Source licences and attribution travel with each feed."
+          else
+            gh release edit gtfs-latest --repo "$GITHUB_REPOSITORY" --title "YatraBus India — Latest validated GTFS snapshot" --notes "Latest successful refresh: workflow run $GITHUB_RUN_ID (attempt $GITHUB_RUN_ATTEMPT). See import-report.json inside the asset for source status, timestamps and record counts. Static schedules are not live GPS. Source licences and attribution travel with each feed."
+          fi
+          gh release upload gtfs-latest yatribus-gtfs-snapshot.tar.gz --repo "$GITHUB_REPOSITORY" --clobber
