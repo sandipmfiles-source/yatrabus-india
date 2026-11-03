@@ -31,7 +31,7 @@ tmp_file="$backup_file.tmp"
 gzip -n -c "$DATA_FILE" > "$tmp_file"
 mv "$tmp_file" "$backup_file"
 chmod 600 "$backup_file"
-sha256sum "$backup_file" > "$backup_file.sha256"
+( cd "$BACKUP_DIR" && sha256sum "$(basename "$backup_file")" > "$(basename "$backup_file").sha256" )
 chmod 600 "$backup_file.sha256"
 
 echo "Backup created: $backup_file"
