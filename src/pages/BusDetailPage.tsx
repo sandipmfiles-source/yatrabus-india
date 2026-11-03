@@ -90,7 +90,7 @@ export const BusDetailPage: React.FC = () => {
         if (savedRoute) {
           setRoute(savedRoute);
           setIsFavourite(phase4.isFavourite(savedRoute.id));
-          setCorrectionMessage('Offline copy: only source-verified timetable details are available. Live GPS is unavailable.');
+          setCorrectionMessage('Offline copy: source-verified timetable details are cached and may be stale. Confirm with the operator; live GPS is unavailable.');
         } else {
           setCorrectionMessage('This route is not saved for offline use. Connect to the internet and open it once to cache its verified timetable.');
         }
