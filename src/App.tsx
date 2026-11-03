@@ -28,6 +28,7 @@ import { AdminAutomationPage } from './pages/admin/AdminAutomationPage.js';
 import { AdminHealthPage } from './pages/admin/AdminHealthPage.js';
 import { AdminGtfsImportPage } from './pages/admin/AdminGtfsImportPage.js';
 import { AdminTimetablePage } from './pages/admin/AdminTimetablePage.js';
+import { AdminAnalyticsPage } from './pages/admin/AdminAnalyticsPage.js';
 import { FavouritesPage } from './pages/FavouritesPage.js';
 import { OfflineTimetablePage } from './pages/OfflineTimetablePage.js';
 import { AccessibilitySettingsPage } from './pages/AccessibilitySettingsPage.js';
@@ -69,6 +70,7 @@ export const App: React.FC = () => {
                 <Route path="/admin/health" element={<AdminHealthPage />} />
                 <Route path="/admin/gtfs" element={<AdminGtfsImportPage />} />
                 <Route path="/admin/timetables" element={<AdminTimetablePage />} />
+                <Route path="/admin/analytics" element={<AdminAnalyticsPage />} />
               </Routes>
             </main>
             <Footer />
