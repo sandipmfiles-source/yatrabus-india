@@ -45,6 +45,19 @@ export const SearchResultsPage: React.FC = () => {
   const timetablePanel = (journey: JourneyCandidate) => {
     if (!journey.isDirect) return null;
     const route = journey.route;
+    if (route.timetableDataStatus === 'UNAVAILABLE') {
+      return (
+        <section key={journey.id + '-timetable'} className="mt-3 rounded-2xl border border-amber-200 bg-amber-50/60 p-4 space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <h3 className="text-sm font-bold text-yatriwarm-900">{t('timetable_panel_title')}</h3>
+            <span className="text-[10px] rounded-full px-2 py-1 font-semibold bg-slate-100 text-slate-700">UNAVAILABLE</span>
+          </div>
+          <p className="text-xs text-yatriwarm-700">No source-verified timetable is loaded for this route. Earlier sample times are hidden to avoid misleading passengers.</p>
+          {route.timetableSourceUrl && <a href={route.timetableSourceUrl} target="_blank" rel="noreferrer" className="text-[11px] underline text-yatribrand-800">{route.timetableSource || 'Timetable source'}</a>}
+          {route.timetableVerifiedAt && <p className="text-[10px] text-yatriwarm-500">Last verified: {route.timetableVerifiedAt}</p>}
+        </section>
+      );
+    }
     const departures = (route.departures || []).filter(item => !item.isCancelled)
       .slice().sort((a, b) => ((a.departureDayOffset || 0) * 1440 + Number(a.departureTime.slice(0, 2)) * 60 + Number(a.departureTime.slice(3))) -
         ((b.departureDayOffset || 0) * 1440 + Number(b.departureTime.slice(0, 2)) * 60 + Number(b.departureTime.slice(3))));

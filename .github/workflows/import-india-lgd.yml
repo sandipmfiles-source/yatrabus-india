@@ -2,7 +2,7 @@ name: Import India LGD Place Directory
 
 on:
   push:
-    branches: [mx-local-preserve]
+    branches: [mx-local-preserve, phase3-india-data-expansion-rebased]
     paths:
       - 'scripts/import-lgd-directory.mjs'
       - '.github/workflows/import-india-lgd.yml'
@@ -17,30 +17,45 @@ jobs:
   import-directory:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
+    env:
+      TARGET_BRANCH: ${{ github.event_name == 'schedule' && 'mx-local-preserve' || github.ref_name }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
-          ref: mx-local-preserve
-      - name: Install 7-Zip
-        run: sudo apt-get update && sudo apt-get install -y p7zip-full
-      - name: Download latest pinned LGD snapshot
+          ref: ${{ env.TARGET_BRANCH }}
+      - name: Install 7-Zip and jq
+        run: sudo apt-get update && sudo apt-get install -y p7zip-full jq
+      - name: Resolve latest dated LGD snapshot and verify asset digests
         run: |
           mkdir -p /tmp/lgd
-          base="https://github.com/ramSeraph/opendata/releases/download/lgd-latest-extra1"
-          for file in villages.21Oct2026.csv.7z blocks.21Oct2026.csv.7z urban_local_bodies.21Oct2026.csv.7z; do
-            curl --fail --location --retry 3 "$base/$file" -o "/tmp/$file"
+          release=$(curl --fail --location --retry 3 https://api.github.com/repos/ramSeraph/opendata/releases/tags/lgd-latest)
+          snapshot=$(printf '%s' "$release" | jq -r '.assets[].name' | sed -nE 's/^villages\.([0-9]{2}[A-Za-z]{3}[0-9]{4})\.csv\.7z$/\1/p' | while read -r value; do
+            iso=$(date -d "${value:0:2} ${value:2:3} ${value:5:4}" +%F)
+            printf '%s %s\n' "$iso" "$value"
+          done | sort -r | head -n1 | awk '{print $2}')
+          if [ -z "$snapshot" ]; then echo "::error::No dated villages LGD export was found in the release."; exit 1; fi
+          for dataset in villages blocks urban_local_bodies; do
+            file="${dataset}.${snapshot}.csv.7z"
+            digest=$(printf '%s' "$release" | jq -r --arg name "$file" '.assets[] | select(.name == $name) | .digest')
+            if [ -z "$digest" ] || [ "$digest" = "null" ]; then echo "::error::Missing LGD release asset or SHA-256 digest: $file"; exit 1; fi
+            curl --fail --location --retry 3 "https://github.com/ramSeraph/opendata/releases/download/lgd-latest/$file" -o "/tmp/$file"
+            expected="${digest#sha256:}"
+            echo "$expected  /tmp/$file" | sha256sum --check -
             7z e -y -o/tmp/lgd "/tmp/$file"
+            extracted="${file%.7z}"
+            test -s "/tmp/lgd/$extracted"
+            mv "/tmp/lgd/$extracted" "/tmp/lgd/$dataset.csv"
           done
-          mv /tmp/lgd/villages.21Oct2026.csv /tmp/lgd/villages.csv
-          mv /tmp/lgd/blocks.21Oct2026.csv /tmp/lgd/blocks.csv
-          mv /tmp/lgd/urban_local_bodies.21Oct2026.csv /tmp/lgd/urban_local_bodies.csv
+          snapshot_iso=$(date -d "${snapshot:0:2} ${snapshot:2:3} ${snapshot:5:4}" +%F)
+          echo "LGD_SNAPSHOT_DATE=$snapshot_iso" >> "$GITHUB_ENV"
           ls -lh /tmp/lgd
-      - name: Build compressed backend catalogue
-        run: node scripts/import-lgd-directory.mjs /tmp/lgd backend/data/india-lgd-directory.json.gz
+      - name: Build compact backend catalogue
+        run: node scripts/import-lgd-directory.mjs /tmp/lgd backend/data/india-lgd-directory.json.gz "$LGD_SNAPSHOT_DATE"
       - name: Validate imported catalogue
         run: |
           test -s backend/data/india-lgd-directory.json.gz
           gzip -t backend/data/india-lgd-directory.json.gz
+          node --input-type=commonjs -e "const fs=require('fs'),z=require('zlib'); const p=JSON.parse(z.gunzipSync(fs.readFileSync('backend/data/india-lgd-directory.json.gz'))); if(!p.snapshotDate || !p.places?.length || p.places.some(x=>x[3]==='village')) process.exit(1); console.log('LGD snapshot:',p.snapshotDate,'counts:',p.counts,'records:',p.places.length);"
       - name: Commit refreshed catalogue
         run: |
           git config user.name "github-actions[bot]"
@@ -50,5 +65,5 @@ jobs:
             echo "LGD catalogue unchanged."
           else
             git commit -m "Import India LGD administrative directory"
-            git push origin HEAD:mx-local-preserve
+            git push origin "HEAD:${TARGET_BRANCH}"
           fi

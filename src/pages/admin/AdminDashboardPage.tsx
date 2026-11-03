@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../../services/api.js';
 import { SystemHealthStats } from '@shared/types/admin.js';
-import { MapPin, BusFront, Route as RouteIcon, Radio, FileText, Sliders, Activity, LogOut, Copy, FileArchive } from 'lucide-react';
+import { MapPin, BusFront, Route as RouteIcon, Radio, FileText, Sliders, Activity, LogOut, Copy, FileArchive, Clock3 } from 'lucide-react';
 
 export const AdminDashboardPage: React.FC = () => {
   const navigate = useNavigate();
@@ -39,6 +39,7 @@ export const AdminDashboardPage: React.FC = () => {
           <Link to="/admin/buses" className="px-3 py-1.5 rounded-xl bg-white border border-yatriwarm-200 text-xs font-medium text-yatriwarm-700 flex items-center gap-1.5"><BusFront className="w-3.5 h-3.5" />Buses & Fleet</Link>
           <Link to="/admin/duplicates" className="px-3 py-1.5 rounded-xl bg-white border border-yatriwarm-200 text-xs font-medium text-yatriwarm-700 flex items-center gap-1.5"><Copy className="w-3.5 h-3.5" />Duplicates</Link>
           <Link to="/admin/tracking" className="px-3 py-1.5 rounded-xl bg-white border border-yatriwarm-200 text-xs font-medium text-yatriwarm-700 flex items-center gap-1.5"><Radio className="w-3.5 h-3.5" />Live Tracking</Link>
+          <Link to="/admin/timetables" className="px-3 py-1.5 rounded-xl bg-white border border-yatriwarm-200 text-xs font-medium text-yatriwarm-700 flex items-center gap-1.5"><Clock3 className="w-3.5 h-3.5" />Timetables</Link>
           <Link to="/admin/automation" className="px-3 py-1.5 rounded-xl bg-white border border-yatriwarm-200 text-xs font-medium text-yatriwarm-700 flex items-center gap-1.5"><Sliders className="w-3.5 h-3.5" />Rules</Link>
           <Link to="/admin/gtfs" className="px-3 py-1.5 rounded-xl bg-white border border-yatriwarm-200 text-xs font-medium text-yatriwarm-700 flex items-center gap-1.5"><FileArchive className="w-3.5 h-3.5" />GTFS Import</Link>
           <Link to="/admin/health" className="px-3 py-1.5 rounded-xl bg-white border border-yatriwarm-200 text-xs font-medium text-yatriwarm-700 flex items-center gap-1.5"><Activity className="w-3.5 h-3.5" />Health</Link>

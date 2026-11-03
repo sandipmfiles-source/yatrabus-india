@@ -1,5 +1,7 @@
 import { Router, Request, Response } from 'express';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { resolve } from 'node:path';
 import { gunzipSync } from 'node:zlib';
 import { repository } from '../db/repository.js';
 import { publicSearchLimiter } from '../middleware/rateLimiter.js';
@@ -62,14 +64,44 @@ async function loadBlockDirectory() {
 }
 
 const lgdCatalogue = (() => {
+  const normaliseRows = (rows: any[], metadata: any = {}) => rows.map((row: any) => Array.isArray(row)
+    ? ({
+        id: row[0], code: row[1], name: row[2], level: row[3], state: row[4],
+        district: row[5], subdistrict: row[6], localName: row[7], snapshotDate: row[8] || metadata.snapshotDate,
+        sourceUrl: metadata.sourceUrl, sourceLicense: metadata.sourceLicense,
+      })
+    : ({
+        id: row.id, code: row.sourceRecordId || row.code, name: row.canonicalName || row.name,
+        level: row.level || row.placeType, state: row.state, district: row.district, subdistrict: row.subdistrict,
+        localName: row.localName, snapshotDate: row.sourceSnapshotDate || metadata.snapshotDate,
+        sourceUrl: row.sourceUrl || metadata.sourceUrl, sourceLicense: row.sourceLicense || metadata.sourceLicense,
+        latitude: row.latitude, longitude: row.longitude,
+      }));
+  const merged = new Map<string, any>();
+  const addRows = (payload: any) => {
+    const rows = Array.isArray(payload?.places) ? normaliseRows(payload.places, payload) : [];
+    for (const row of rows) {
+      if (!row.id) continue;
+      const existing = merged.get(row.id);
+      // Prefer the newest dated source snapshot for the same LGD code.
+      if (!existing || String(row.snapshotDate || '') >= String(existing.snapshotDate || '')) merged.set(row.id, row);
+    }
+  };
+  try {
+    const directory = fileURLToPath(new URL('../../../data/lgd-index/', import.meta.url));
+    const files = readdirSync(directory).filter(name => name.toLowerCase().endsWith('.json'));
+    for (const name of files) addRows(JSON.parse(readFileSync(resolve(directory, name), 'utf8')));
+  } catch {
+    // The compact split index is optional when a deployment uses only the compressed snapshot.
+  }
   try {
     const file = new URL('../../data/india-lgd-directory.json.gz', import.meta.url);
-    const payload = JSON.parse(gunzipSync(readFileSync(file)).toString('utf8'));
-    return Array.isArray(payload?.places) ? payload.places.map((row: any) => Array.isArray(row) ? ({ id: row[0], code: row[1], name: row[2], level: row[3], state: row[4], district: row[5], subdistrict: row[6] }) : row) : [];
+    addRows(JSON.parse(gunzipSync(readFileSync(file)).toString('utf8')));
   } catch {
-    return [];
+    // A deployment without the optional gzip snapshot still uses any available split indexes.
   }
-})();
+  return Array.from(merged.values());
+})();;
 
 async function fetchLgdDirectorySuggestions(query: string) {
   const key = query.toLocaleLowerCase('en-IN');
@@ -77,7 +109,8 @@ async function fetchLgdDirectorySuggestions(query: string) {
   if (cached && cached.expiresAt > Date.now()) return cached.results;
 
   const localMatches = (lgdCatalogue as any[])
-    .filter((item: any) => String(item.name || '').toLocaleLowerCase('en-IN').includes(key))
+    .filter((item: any) => String(item.name || '').toLocaleLowerCase('en-IN').includes(key) ||
+      String(item.localName || '').toLocaleLowerCase('en-IN').includes(key))
     .sort((a: any, b: any) => {
       const aPrefix = String(a.name || '').toLocaleLowerCase('en-IN').startsWith(key) ? 0 : 1;
       const bPrefix = String(b.name || '').toLocaleLowerCase('en-IN').startsWith(key) ? 0 : 1;
@@ -87,10 +120,14 @@ async function fetchLgdDirectorySuggestions(query: string) {
     .map((item: any) => ({
       id: item.id,
       name: item.name,
-      address: [item.level, item.subdistrict, item.district, item.state, 'LGD directory'].filter(Boolean).join(' · '),
+      address: [item.level, item.subdistrict, item.district, item.state, 'LGD snapshot ' + (item.snapshotDate || 'date unknown')].filter(Boolean).join(' · '),
       source: 'LOCAL_GOVERNMENT_DIRECTORY',
       level: item.level,
       code: item.code,
+      localName: item.localName,
+      snapshotDate: item.snapshotDate,
+      sourceUrl: item.sourceUrl || 'https://lgdirectory.gov.in/',
+      sourceLicense: item.sourceLicense || 'Government Open Data License - India (GODL-India)',
     }));
 
   let fallback: any[] = [];
@@ -200,7 +237,7 @@ placesRouter.get('/search', publicSearchLimiter, async (req: Request, res: Respo
     const prefix = name.toLocaleLowerCase('en-IN').startsWith(needle);
     const levelKey = level.toLocaleLowerCase('en-IN').replace(/[^a-z]/g, '');
     const typeByLevel: Record<string, string> = {
-      state: 'STATE', stateut: 'STATE', district: 'DISTRICT',
+      state: 'STATE', stateut: 'STATE', unionterritory: 'UNION_TERRITORY', district: 'DISTRICT',
       subdistrict: 'TEHSIL', subdistricttehsil: 'TEHSIL', tehsil: 'TEHSIL',
       block: 'BLOCK', urbanlocalbody: 'CITY', citytown: 'TOWN', town: 'TOWN', village: 'VILLAGE',
     };
@@ -214,8 +251,10 @@ placesRouter.get('/search', publicSearchLimiter, async (req: Request, res: Respo
       sourceDataset: 'INDIA_LOCAL_GOVERNMENT_DIRECTORY',
       sourceRecordId: item.code ? String(item.code) : undefined,
       sourceLicense: 'Government Open Data License - India (GODL-India)',
+      sourceUrl: item.sourceUrl || 'https://lgdirectory.gov.in/',
+      sourceSnapshotDate: item.snapshotDate,
       verificationStatus: 'UNVERIFIED',
-      aliases: [],
+      aliases: item.localName ? [String(item.localName)] : [],
       createdAt: importedAt,
       updatedAt: importedAt,
     };
