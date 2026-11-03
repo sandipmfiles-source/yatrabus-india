@@ -19,6 +19,7 @@ jobs:
       - name: Validate required release configuration
         env:
           API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
+          PUBLIC_APP_URL: ${{ vars.VITE_PUBLIC_APP_URL }}
           KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
@@ -26,6 +27,7 @@ jobs:
         run: |
           set -euo pipefail
           [[ "$API_BASE_URL" == https://* ]] || { echo "::error::Set repository variable VITE_API_BASE_URL to the deployed HTTPS API URL ending in /api."; exit 1; }
+          [[ "$PUBLIC_APP_URL" == https://* ]] || { echo "::error::Set repository variable VITE_PUBLIC_APP_URL to the deployed HTTPS app URL."; exit 1; }
           [[ -n "$KEYSTORE_B64" && -n "$STORE_PASSWORD" && -n "$KEY_ALIAS" && -n "$KEY_PASSWORD" ]] || {
             echo "::error::Configure ANDROID_KEYSTORE_BASE64, KEYSTORE_PASSWORD, KEY_ALIAS and KEY_PASSWORD in repository Actions secrets."; exit 1;
           }
@@ -52,6 +54,9 @@ jobs:
           accept-android-sdk-licenses: true
 
       - name: Install locked dependencies and run checks
+        env:
+          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
+          VITE_PUBLIC_APP_URL: ${{ vars.VITE_PUBLIC_APP_URL }}
         run: |
           npm ci --no-audit --no-fund
           npm audit --audit-level=high
@@ -110,6 +115,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: yatribus-release-candidate-${{ github.run_number }}
+          target_commitish: ${{ github.sha }}
           name: "YatraBus India signed release candidate #${{ github.run_number }}"
           prerelease: true
           generate_release_notes: true
