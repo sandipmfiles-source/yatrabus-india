@@ -80,7 +80,7 @@ adminRouter.post('/routes/:routeId/stops/:stopId/qr', requireAdminAuth('SUPER_AD
   const expiresAt = issuedAt + 365 * 24 * 60 * 60 * 1000;
   const token = issueStopQrToken({ version: 1, routeId, stopId, issuedAt, expiresAt }, CONFIG.ADMIN_JWT_SECRET);
   repository.createAuditLog({
-    id: `audit-stop-qr-${issuedAt}`,
+    id: `audit-stop-qr-${issuedAt}-${stop.id}`,
     entityType: 'STOP_QR',
     entityId: stop.id,
     action: 'CREATE',
