@@ -39,4 +39,7 @@ export function runPublicGtfsRuntimeTests(assert: (description: string, pass: bo
   let rejected = false;
   try { searchGtfsJourneys([sample], 'Kharagpur', 'Jhargram', 'not-a-date'); } catch { rejected = true; }
   assert('Passenger search rejects malformed service dates', rejected);
+  let impossibleRejected = false;
+  try { searchGtfsJourneys([sample], 'Kharagpur', 'Jhargram', '2026-02-31'); } catch { impossibleRejected = true; }
+  assert('Passenger search rejects impossible calendar dates', impossibleRejected);
 }
