@@ -103,6 +103,79 @@ const lgdCatalogue = (() => {
   return Array.from(merged.values());
 })();;
 
+function villageShardKey(value: string): string {
+  const first = String(value || '').normalize('NFKC').trim().toLocaleLowerCase('en-IN').match(/[\p{L}\p{N}]/u)?.[0];
+  return first ? 'u' + first.codePointAt(0)!.toString(16) : '';
+}
+
+const villageShardCache = new Map<string, any[]>();
+
+function loadVillageShard(key: string): any[] {
+  const cached = villageShardCache.get(key);
+  if (cached) return cached;
+  const file = new URL('../../data/lgd-villages/' + key + '.json.gz', import.meta.url);
+  const payload = JSON.parse(gunzipSync(readFileSync(file)).toString('utf8'));
+  const rows = Array.isArray(payload?.places) ? payload.places : [];
+  if (villageShardCache.size >= 12) {
+    const oldest = villageShardCache.keys().next().value;
+    if (oldest) villageShardCache.delete(oldest);
+  }
+  villageShardCache.set(key, rows);
+  return rows;
+}
+
+/** Search only the matching first-character shard; the 676k+ village roster is never
+ * expanded or scanned as one in-memory array. English and local-language names are indexed. */
+function fetchLgdVillageSuggestions(query: string, limit: number) {
+  const shardKey = villageShardKey(query);
+  if (!shardKey) return [];
+  let rows: any[];
+  try {
+    rows = loadVillageShard(shardKey);
+  } catch {
+    return [];
+  }
+  const needle = query.toLocaleLowerCase('en-IN');
+  const snapshotDate = new Date().toISOString().slice(0, 10);
+  return rows
+    .filter((row: any[]) => String(row?.[2] || '').toLocaleLowerCase('en-IN').includes(needle) ||
+      String(row?.[6] || '').toLocaleLowerCase('en-IN').includes(needle))
+    .map((row: any[]) => {
+      const name = String(row[2] || '');
+      const localName = String(row[6] || '');
+      const recordSnapshotDate = String(row[7] || snapshotDate);
+      const exact = name.toLocaleLowerCase('en-IN') === needle || localName.toLocaleLowerCase('en-IN') === needle;
+      const prefix = name.toLocaleLowerCase('en-IN').startsWith(needle) || localName.toLocaleLowerCase('en-IN').startsWith(needle);
+      const place = {
+        id: String(row[0]),
+        canonicalName: name,
+        names: { en: name, ...(localName ? { local: localName } : {}) },
+        placeType: 'VILLAGE',
+        state: row[3] || undefined,
+        district: row[4] || undefined,
+        subdistrict: row[5] || undefined,
+        sourceDataset: 'INDIA_LOCAL_GOVERNMENT_DIRECTORY',
+        sourceRecordId: String(row[1] || ''),
+        sourceLicense: 'Government Open Data License - India (GODL-India)',
+        sourceUrl: 'https://lgdirectory.gov.in/',
+        sourceSnapshotDate: recordSnapshotDate,
+        verificationStatus: 'UNVERIFIED',
+        aliases: localName ? [localName] : [],
+        createdAt: recordSnapshotDate + 'T00:00:00.000Z',
+        updatedAt: recordSnapshotDate + 'T00:00:00.000Z',
+      };
+      return {
+        place,
+        matchScore: exact ? 100 : prefix ? 88 : 74,
+        matchType: exact ? (localName.toLocaleLowerCase('en-IN') === needle ? 'ALIAS' : 'EXACT') : 'PREFIX',
+        displayLabel: name,
+        subtitle: [row[5], row[4], row[3], 'LGD village'].filter(Boolean).join(' · '),
+      };
+    })
+    .sort((a: any, b: any) => b.matchScore - a.matchScore || String(a.displayLabel).localeCompare(String(b.displayLabel), 'en-IN'))
+    .slice(0, Math.min(6, limit));
+}
+
 async function fetchLgdDirectorySuggestions(query: string) {
   const key = query.toLocaleLowerCase('en-IN');
   const cached = lgdSuggestionCache.get(key);
@@ -228,6 +301,7 @@ placesRouter.get('/search', publicSearchLimiter, async (req: Request, res: Respo
   // in the main autocomplete endpoint, not only in map/geocoding search.
   const localResults = repository.searchPlaces(query, limit);
   const directoryResults = await fetchLgdDirectorySuggestions(query);
+  const villageResults = fetchLgdVillageSuggestions(query, limit);
   const needle = query.toLocaleLowerCase('en-IN');
   const importedAt = new Date().toISOString();
   const lgdResults = directoryResults.map((item: any) => {
@@ -267,7 +341,7 @@ placesRouter.get('/search', publicSearchLimiter, async (req: Request, res: Respo
     };
   });
   const merged = new Map<string, any>();
-  for (const result of [...localResults, ...lgdResults]) {
+  for (const result of [...localResults, ...lgdResults, ...villageResults]) {
     const id = result?.place?.id;
     if (id && !merged.has(id)) merged.set(id, result);
   }
@@ -278,7 +352,7 @@ placesRouter.get('/search', publicSearchLimiter, async (req: Request, res: Respo
     query,
     count: results.length,
     results,
-    sources: { local: localResults.length, lgd: lgdResults.length },
+    sources: { local: localResults.length, lgd: lgdResults.length, villages: villageResults.length },
     attribution: 'Ministry of Panchayati Raj · Local Government Directory · Government Open Data License - India',
   });
 });

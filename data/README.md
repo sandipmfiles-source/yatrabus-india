@@ -18,30 +18,19 @@ The Ministry of Panchayati Raj's Local Government Directory (LGD) is the source 
 - Ministry of Panchayati Raj overview: https://panchayat.gov.in/en/lgd/
 - Open Government Data catalogue: https://data.gov.in/catalog/local-government-directory-lgd
 
-The full all-India LGD download is large and changes over time. Do not put the 676k+ village roster into passenger autocomplete. Instead, download the current official LGD CSV exports and place these files in `data/lgd-source/`:
+The all-India LGD export includes administrative entities, urban local bodies and the large village roster. The backend stores the searchable administrative/town catalogue in `backend/data/india-lgd-directory.json.gz` and the complete village roster separately in `backend/data/lgd-villages/`.
 
-- `states.csv`
-- `districts.csv`
-- `subdistricts.csv`
-- `blocks.csv`
-- `urban-local-bodies.csv` (municipal corporations, municipalities, town councils and other urban bodies)
+The village index is split into gzip shards by the first Unicode character of the English and local-language names. Passenger search loads only the matching shard and keeps a bounded cache; it does not load or scan all 676k+ villages on every keystroke. This makes the full village directory searchable without holding the entire dataset in backend memory.
 
-Then build the compact, searchable administrative/town index:
-
-```bash
-node --loader ts-node/esm data/import-scripts/importLgdDirectory.ts data/lgd-source backend/data/india-lgd-directory.json.gz 2026-11-03
-```
-
-The generated `backend/data/india-lgd-directory.json.gz` is loaded by the backend place autocomplete as a dated supplemental snapshot. The backend merges it with the compact split indexes under `data/lgd-index/` and prefers the newest dated record for a matching LGD code. Keep the original source exports and retrieval date for audit/reproducibility; do not commit sensitive or restricted source files.
-
-The automated GitHub Actions refresh resolves the latest dated LGD export available in the upstream mirror's `lgd-latest` release and verifies each downloaded archive against the release's SHA-256 digest. The 2 November 2026 snapshot was the latest available when this Phase 3 work was prepared. Its village CSV is read only to recover parent state/district/subdistrict codes; individual village records are deliberately excluded from passenger autocomplete. The runtime index contains administrative, block and urban-local-body/town records, not the 676k+ village roster.
+The automated GitHub Actions refresh resolves the latest dated LGD export available in the upstream mirror's `lgd-latest` release and verifies each archive against its SHA-256 digest. It derives state/district/subdistrict hierarchy from the village export, imports blocks and urban local bodies, creates village shards, validates record counts and snapshot consistency, and commits the refreshed backend datasets.
 
 The importer:
-- preserves LGD codes as `sourceRecordId`;
-- records GODL-India attribution and the official LGD source URL;
-- includes only administrative units and urban-local-body/town data by default;
+- preserves LGD codes as source record IDs;
+- records GODL-India attribution, official LGD source URL and snapshot date;
+- indexes state, district, sub-district, block, urban-local-body/town and village names;
+- indexes local-language village names when present;
 - leaves every imported place UNVERIFIED until a verifier checks it;
-- does not invent coordinates when the export has none.
+- does not invent coordinates, bus stops, routes or timetables when the source has none.
 
 ## GTFS static feed import
 

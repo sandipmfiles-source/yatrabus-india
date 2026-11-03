@@ -2,7 +2,7 @@ name: Import India LGD Place Directory
 
 on:
   push:
-    branches: [mx-local-preserve, phase3-india-data-expansion-rebased]
+    branches: [mx-local-preserve, phase3-india-data-expansion-rebased, phase14-passenger-route-detail-ui, phase15-india-place-directory]
     paths:
       - 'scripts/import-lgd-directory.mjs'
       - '.github/workflows/import-india-lgd.yml'
@@ -13,12 +13,16 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: import-india-lgd-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   import-directory:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     env:
-      TARGET_BRANCH: ${{ github.event_name == 'schedule' && 'mx-local-preserve' || github.ref_name }}
+      TARGET_BRANCH: ${{ github.event_name == 'schedule' && 'phase15-india-place-directory' || github.ref_name }}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -55,15 +59,20 @@ jobs:
         run: |
           test -s backend/data/india-lgd-directory.json.gz
           gzip -t backend/data/india-lgd-directory.json.gz
-          node --input-type=commonjs -e "const fs=require('fs'),z=require('zlib'); const p=JSON.parse(z.gunzipSync(fs.readFileSync('backend/data/india-lgd-directory.json.gz'))); if(!p.snapshotDate || !p.places?.length || p.places.some(x=>x[3]==='village')) process.exit(1); console.log('LGD snapshot:',p.snapshotDate,'counts:',p.counts,'records:',p.places.length);"
+          test -s backend/data/lgd-villages/manifest.json
+          gzip -t backend/data/lgd-villages/*.json.gz
+          node --input-type=commonjs -e "const fs=require('fs'),z=require('zlib'); const p=JSON.parse(z.gunzipSync(fs.readFileSync('backend/data/india-lgd-directory.json.gz'))); const c=p.counts||{}; const v=JSON.parse(fs.readFileSync('backend/data/lgd-villages/manifest.json','utf8')); if(!p.snapshotDate || !Array.isArray(p.places) || p.places.length<10000 || !c.state || !c.district || !c.subdistrict || !c.block || !c.town || p.places.some(x=>x[3]==='village') || v.snapshotDate!==p.snapshotDate || v.totalVillages<500000 || v.shardCount<20) { console.error('Incomplete LGD catalogue:',p.snapshotDate,c,p.places?.length,v); process.exit(1); } console.log('LGD snapshot:',p.snapshotDate,'admin/town counts:',c,'records:',p.places.length,'villages:',v.totalVillages,'lazy shards:',v.shardCount);"
+          node --input-type=commonjs -e "const fs=require('fs'),z=require('zlib'); const p=JSON.parse(z.gunzipSync(fs.readFileSync('backend/data/india-lgd-directory.json.gz'))); const c=p.counts||{}; if(!p.snapshotDate || !Array.isArray(p.places) || p.places.length<10000 || !c.state || !c.district || !c.subdistrict || !c.block || !c.town || p.places.some(x=>x[3]==='village')) { console.error('Incomplete LGD catalogue:',p.snapshotDate,c,p.places?.length); process.exit(1); } console.log('LGD snapshot:',p.snapshotDate,'counts:',c,'records:',p.places.length);"
       - name: Commit refreshed catalogue
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add backend/data/india-lgd-directory.json.gz
+          git add backend/data/india-lgd-directory.json.gz backend/data/lgd-villages/
           if git diff --cached --quiet; then
             echo "LGD catalogue unchanged."
           else
             git commit -m "Import India LGD administrative directory"
+            git fetch origin "${TARGET_BRANCH}"
+            git rebase "origin/${TARGET_BRANCH}"
             git push origin "HEAD:${TARGET_BRANCH}"
           fi

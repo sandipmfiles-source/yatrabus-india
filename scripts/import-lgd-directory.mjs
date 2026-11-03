@@ -47,6 +47,13 @@ function readRows(filename) {
 }
 function get(row, index) { return index < 0 ? '' : String(row[index] || '').trim(); }
 const places = new Map();
+const villageShards = new Map();
+const villageSeenCodes = new Set();
+let villageRecordCount = 0;
+function shardKey(value) {
+  const first = String(value || '').normalize('NFKC').trim().toLocaleLowerCase('en-IN').match(/[\p{L}\p{N}]/u)?.[0];
+  return first ? 'u' + first.codePointAt(0).toString(16) : '';
+}
 function add(level, code, name, state, district, subdistrict) {
   name = String(name || '').trim();
   if (!name || !code) return;
@@ -61,9 +68,10 @@ const vi = {
   districtCode: column(vh, ['District Code']), district: column(vh, ['District Name (In English)', 'District Name']),
   subCode: column(vh, ['Sub-District Code', 'Subdistrict Code']), sub: column(vh, ['Sub-District Name (In English)', 'Sub-District Name', 'Subdistrict Name']),
   villageCode: column(vh, ['Village Code']), village: column(vh, ['Village Name (In Englsih)', 'Village Name (In English)', 'Village Name']),
+  localName: column(vh, ['Village Name (In Local Language)', 'Village Name Local', 'Local Language Name', 'Village Name (Local)']),
 };
 console.log('LGD hierarchy columns validated:', JSON.stringify(vi));
-for (const [key, idx] of Object.entries(vi)) if (idx < 0) throw new Error('Village CSV missing required column: ' + key + ' headers=' + vh.join('|'));
+for (const [key, idx] of Object.entries(vi)) if (idx < 0 && key !== 'localName') throw new Error('Village CSV missing required column: ' + key + ' headers=' + vh.join('|'));
 const states = new Map(), districts = new Map(), subs = new Map();
 for (const row of villages.rows) {
   const stateCode = get(row, vi.stateCode), state = get(row, vi.state);
@@ -72,8 +80,20 @@ for (const row of villages.rows) {
   if (stateCode && state) states.set(stateCode, state);
   if (districtCode && district) districts.set(districtCode, { name: district, state, stateCode });
   if (subCode && sub) subs.set(subCode, { name: sub, state, district, districtCode });
-  // Village rows provide parent hierarchy and LGD codes only. Individual villages are
-  // deliberately excluded from the passenger autocomplete index.
+
+  const villageCode = get(row, vi.villageCode);
+  const villageName = get(row, vi.village);
+  const localName = get(row, vi.localName);
+  if (villageCode && villageName && !villageSeenCodes.has(villageCode)) {
+    villageSeenCodes.add(villageCode);
+    villageRecordCount++;
+    const record = ['lgd-village-' + villageCode, villageCode, villageName, state, district, sub, localName, snapshotDate];
+    const keys = [...new Set([shardKey(villageName), shardKey(localName)].filter(Boolean))];
+    for (const key of keys) {
+      if (!villageShards.has(key)) villageShards.set(key, []);
+      villageShards.get(key).push(record);
+    }
+  }
 }
 if (states.size > 100 || districts.size > 1000 || subs.size > 10000) throw new Error('LGD CSV delimiter/header parsing produced impossible hierarchy counts: ' + JSON.stringify({ states: states.size, districts: districts.size, subdistricts: subs.size }));
 for (const [code, name] of states) add('state', code, name, '', '', '');
@@ -107,4 +127,44 @@ const payload = {
 };
 fs.mkdirSync(path.dirname(outputFile), { recursive: true });
 fs.writeFileSync(outputFile, gzipSync(Buffer.from(JSON.stringify(payload)), { level: 9 }));
-console.log(JSON.stringify({ outputFile, bytes: fs.statSync(outputFile).size, total: all.length, counts }, null, 2));
+
+// Keep the complete village roster in first-character shards. The backend loads only
+// the matching shard on demand, avoiding a 676k-row scan or loading the whole roster
+// into memory for every autocomplete request.
+const villageOutputDir = path.join(path.dirname(outputFile), 'lgd-villages');
+fs.rmSync(villageOutputDir, { recursive: true, force: true });
+fs.mkdirSync(villageOutputDir, { recursive: true });
+const shardCounts = {};
+for (const [key, rows] of villageShards) {
+  const shardPayload = {
+    source: payload.source,
+    sourceUrl: payload.sourceUrl,
+    sourceLicense: payload.sourceLicense,
+    snapshotDate,
+    level: 'VILLAGE',
+    places: rows,
+  };
+  const shardPath = path.join(villageOutputDir, key + '.json.gz');
+  fs.writeFileSync(shardPath, gzipSync(Buffer.from(JSON.stringify(shardPayload)), { level: 9 }));
+  shardCounts[key] = rows.length;
+}
+const villageManifest = {
+  source: payload.source,
+  sourceUrl: payload.sourceUrl,
+  sourceLicense: payload.sourceLicense,
+  snapshotDate,
+  totalVillages: villageRecordCount,
+  shardCount: villageShards.size,
+  shardCounts,
+  searchStrategy: 'lazy first-Unicode-character shards; English and local-language names',
+};
+fs.writeFileSync(path.join(villageOutputDir, 'manifest.json'), JSON.stringify(villageManifest, null, 2) + '\n');
+console.log(JSON.stringify({
+  outputFile,
+  bytes: fs.statSync(outputFile).size,
+  total: all.length,
+  counts,
+  villageRecords: villageRecordCount,
+  villageShards: villageShards.size,
+  villageIndexBytes: fs.readdirSync(villageOutputDir).reduce((sum, name) => sum + fs.statSync(path.join(villageOutputDir, name)).size, 0),
+}, null, 2));

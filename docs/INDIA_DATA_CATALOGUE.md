@@ -55,13 +55,15 @@ LIVE_GPS is not a timetable status: it is a separate, freshness-bound state deri
 
 ## Full LGD town import
 
-The runtime merges the bundled 2022 split LGD reference indexes with a supplemental export from the latest dated release available in the upstream mirror. Each archive is SHA-256 checked before import; the 2 November 2026 snapshot was the latest available when this Phase 3 work was prepared. Matching LGD codes prefer the newer dated record. Individual village rows are excluded from the compact passenger autocomplete catalogue; the village export is used only to derive parent hierarchy records during the automated refresh.
+The backend now refreshes from the latest dated LGD export available in the upstream mirror. Every downloaded archive is SHA-256 checked before import. The 3 November 2026 snapshot contains 20,294 administrative, block and urban-local-body/town records: 35 current LGD state/UT rows, 787 districts, 7,095 sub-districts, 7,327 blocks and 5,050 urban-local-body/town records. The compact catalogue is bundled as `backend/data/india-lgd-directory.json.gz`.
 
-Follow [data/README.md](../data/README.md) to download current LGD CSV exports and create the compact gzip index used by backend autocomplete. The huge village roster is excluded from the normal passenger autocomplete index; the town and administrative layers are indexed instead. Every imported item remains UNVERIFIED until checked.
+The complete village roster is stored separately under `backend/data/lgd-villages/` as first-Unicode-character gzip shards. The backend loads only the shard matching the first character of the passenger's query and keeps a small bounded cache; it does not expand or scan the full village roster on each keystroke. Both English and local-language village names are indexed when present. The manifest records the source snapshot date, unique village count and shard counts. The 3 November 2026 source export did not expose a local-language village-name column, so this snapshot's village records are currently searchable by their English names; Hindi/Bengali coverage is retained only where aliases already exist in other catalogue records. A future export with local-language fields will be indexed automatically.
+
+All LGD-derived entries remain UNVERIFIED until a verifier checks them. LGD administrative names are not proof of a bus stop, active route or timetable. Coordinates are not invented when the source export has none.
 
 ## What is not claimed as complete
 
-- All 676k+ villages are not bundled in the APK.
+- The backend index includes 677,664 LGD village records in lazy shards; they are not copied into the APK binary itself and require the deployed backend to be reachable.
 - Every small-town bus stop has not been surveyed or verified.
 - Nationwide operator route/timetable coverage is not complete.
 - No official Jhargram–Kharagpur–Kolkata bus timetable has been asserted.
