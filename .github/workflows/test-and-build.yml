@@ -2,9 +2,9 @@ name: Tests & Verification Suite
 
 on:
   push:
-    branches: [main, master, phase5-production-readiness, phase6-final-qa, phase11-permanent-gtfs-publication]
+    branches: [main, master, phase5-production-readiness, phase6-final-qa, phase11-permanent-gtfs-publication, phase12-gtfs-runtime-integration]
   pull_request:
-    branches: [main, master, phase10-final-release-hardening]
+    branches: [main, master, phase10-final-release-hardening, phase11-permanent-gtfs-publication]
 
 jobs:
   test:
@@ -13,16 +13,24 @@ jobs:
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
-      - name: Setup Node.js 20
-        uses: actions/setup-node@v4
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v5
         with:
-          node-version: 20
+          node-version: 22
           cache: 'npm'
 
       - name: Install Dependencies
         run: npm ci || npm install
+
+      - name: Check GTFS Node scripts
+        run: |
+          node --check scripts/gtfs-import.mjs
+          node --check scripts/install-public-gtfs-snapshot.mjs
+
+      - name: Type-check backend and app
+        run: npx tsc --noEmit --pretty false
 
       - name: Run Test Runner
         run: npm test

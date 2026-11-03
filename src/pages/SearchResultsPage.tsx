@@ -9,6 +9,11 @@ import { phase4 } from '../services/phase4.js';
 import { BusCard } from '../components/BusCard.js';
 import { ArrowLeft, AlertCircle, PlusCircle, Clock3, MapPin, CalendarDays, BusFront } from 'lucide-react';
 
+function localServiceDate() {
+  const now = new Date();
+  return new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+}
+
 export const SearchResultsPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -23,6 +28,11 @@ export const SearchResultsPage: React.FC = () => {
   const [filterType, setFilterType] = useState<'ALL' | 'DIRECT' | 'LIVE'>('ALL');
   const [returnJourneys, setReturnJourneys] = useState<JourneyCandidate[]>([]);
   const [offlineMode, setOfflineMode] = useState(false);
+  const [serviceDate, setServiceDate] = useState(() => searchParams.get('date') || localServiceDate());
+  const [gtfsLoading, setGtfsLoading] = useState(false);
+  const [gtfsResults, setGtfsResults] = useState<any[]>([]);
+  const [gtfsStatus, setGtfsStatus] = useState('');
+  const [gtfsError, setGtfsError] = useState('');
 
   useEffect(() => {
     if (!from || !to) {
@@ -58,6 +68,32 @@ export const SearchResultsPage: React.FC = () => {
       });
     return () => { cancelled = true; };
   }, [from, to]);
+
+  useEffect(() => {
+    if (!from || !to || !serviceDate) {
+      setGtfsResults([]);
+      setGtfsStatus('');
+      return;
+    }
+    let cancelled = false;
+    setGtfsLoading(true);
+    setGtfsError('');
+    setGtfsStatus('LOADING');
+    api.searchPublicTimetable(from, to, serviceDate, 30).then(data => {
+      if (cancelled) return;
+      setGtfsResults(data.results || []);
+      setGtfsStatus(data.timetableStatus || 'UNAVAILABLE');
+      if (data.httpStatus === 503) setGtfsError(data.error || 'Validated public timetable data is not installed on the server.');
+    }).catch(error => {
+      if (cancelled) return;
+      setGtfsResults([]);
+      setGtfsStatus('ERROR');
+      setGtfsError(error instanceof Error ? error.message : 'Public timetable search is unavailable.');
+    }).finally(() => {
+      if (!cancelled) setGtfsLoading(false);
+    });
+    return () => { cancelled = true; };
+  }, [from, to, serviceDate]);
 
   const allJourneys = [...directRoutes, ...transferRoutes];
 
@@ -180,6 +216,40 @@ export const SearchResultsPage: React.FC = () => {
         </div>
       </div>
 
+      {from && to && <section className="rounded-2xl border border-yatriwarm-200 bg-white p-4 sm:p-5 space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 className="text-sm font-bold text-yatriwarm-900">बस समय-सारणी · বাসের সময়সূচি · Public bus timetable</h3>
+            <p className="text-[11px] text-yatriwarm-500">Published static schedules, not live GPS / प्रकाशित समय-सारणी, लाइव लोकेशन नहीं / প্রকাশিত সময়সূচি, লাইভ GPS নয়</p>
+          </div>
+          <label className="flex items-center gap-2 text-xs font-semibold text-yatriwarm-700">
+            <span>Travel date / यात्रा की तारीख / যাত্রার তারিখ</span>
+            <input type="date" value={serviceDate} onChange={event => setServiceDate(event.target.value)} className="rounded-lg border border-yatriwarm-300 bg-white px-2 py-1.5 text-xs" />
+          </label>
+        </div>
+        {gtfsLoading && <p role="status" className="text-xs text-yatriwarm-600">Checking published timetables for {serviceDate}…</p>}
+        {!gtfsLoading && gtfsError && <p role="status" className="rounded-xl bg-amber-50 p-3 text-xs text-amber-900">{gtfsError} / अभी इस सर्वर पर सत्यापित GTFS snapshot उपलब्ध नहीं है।</p>}
+        {!gtfsLoading && !gtfsError && gtfsStatus === 'NO_SERVICE_FOUND' && <p className="text-xs text-yatriwarm-600">No matching published departure was found for this travel date. This does not prove that no bus service exists.</p>}
+        {!gtfsLoading && gtfsResults.length > 0 && <div className="space-y-2">
+          {gtfsResults.map((item, index) => <article key={item.feedId + ':' + item.tripId + ':' + index} className="rounded-xl border border-yatriwarm-200 bg-yatriwarm-50/70 p-3 space-y-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="font-bold text-sm text-yatriwarm-900">{item.routeName}</div>
+              <span className="rounded-full bg-amber-100 px-2 py-1 text-[10px] font-bold text-amber-900">UNVERIFIED · अप्रूव नहीं</span>
+            </div>
+            <div className="grid grid-cols-[1fr,auto,1fr] items-center gap-2">
+              <div><div className="text-lg font-extrabold tabular-nums text-yatribrand-900">{item.departureTime}</div><div className="text-xs text-yatriwarm-700">{item.fromStop?.name}</div>{item.departureDayOffset > 0 && <div className="text-[10px] text-yatriwarm-500">+{item.departureDayOffset} day</div>}</div>
+              <div className="text-yatriwarm-400">→</div>
+              <div className="text-right"><div className="text-lg font-extrabold tabular-nums text-yatribrand-900">{item.arrivalTime}</div><div className="text-xs text-yatriwarm-700">{item.toStop?.name}</div>{item.arrivalDayOffset > 0 && <div className="text-[10px] text-yatriwarm-500">+{item.arrivalDayOffset} day</div>}</div>
+            </div>
+            <div className="flex flex-wrap justify-between gap-2 text-[10px] text-yatriwarm-500">
+              <span>{item.feedName} · {item.region || 'India'} · {item.timezone || 'Timezone unknown'}</span>
+              <span>{item.sourceType === 'OFFICIAL_PUBLISHER' ? 'Publisher feed' : 'Community-derived feed'}</span>
+            </div>
+            {item.attribution && <p className="text-[10px] text-yatriwarm-500">{item.attribution}</p>}
+            {item.sourceUrl && <a href={item.sourceUrl} target="_blank" rel="noreferrer" className="inline-block text-[10px] font-semibold text-yatribrand-800 underline">View data source</a>}
+          </article>)}
+        </div>}
+      </section>}
       {offlineMode && <div role="status" className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900">Offline mode: showing only previously saved, source-verified timetable routes. Cached schedules may be out of date; confirm with the operator before travel. Live GPS and fresh delay alerts are unavailable offline.</div>}
 
       {/* Filter Tabs */}
