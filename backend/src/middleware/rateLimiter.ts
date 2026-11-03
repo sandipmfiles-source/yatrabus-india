@@ -5,15 +5,30 @@ export interface RateLimitOptions {
 }
 
 const clientRequestCounts = new Map<string, { count: number; resetTime: number }>();
+let requestsSinceCleanup = 0;
 
 export function createRateLimiter(options: RateLimitOptions) {
   return (req: any, res: any, next: any) => {
-    const ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown-client';
+    // Express req.ip respects the explicitly configured trust-proxy policy.
+    // Do not read X-Forwarded-For directly: clients can spoof that header.
+    const ip = String(req.ip || req.socket?.remoteAddress || 'unknown-client');
+    // Keep each limiter's counter independent even when two limiters share a window.
+    const key = `${options.message}:${ip}`;
     const now = Date.now();
 
-    const record = clientRequestCounts.get(ip);
+    requestsSinceCleanup++;
+    if (requestsSinceCleanup >= 256 || clientRequestCounts.size > 10000) {
+      requestsSinceCleanup = 0;
+      for (const [key, value] of clientRequestCounts) {
+        if (now > value.resetTime || clientRequestCounts.size > 8000) {
+          clientRequestCounts.delete(key);
+        }
+      }
+    }
+
+    const record = clientRequestCounts.get(key);
     if (!record || now > record.resetTime) {
-      clientRequestCounts.set(ip, { count: 1, resetTime: now + options.windowMs });
+      clientRequestCounts.set(key, { count: 1, resetTime: now + options.windowMs });
       return next();
     }
 
@@ -48,7 +63,6 @@ export const adminLoginLimiter = createRateLimiter({
   maxRequests: 5,
   message: 'Too many administrator login attempts. Please wait 15 minutes before trying again.',
 });
-
 
 // Limit creation of anonymous tracking sessions to reduce session-flood abuse.
 export const trackingSessionLimiter = createRateLimiter({

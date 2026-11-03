@@ -16,8 +16,15 @@ export interface DuplicateDetectionResult {
  */
 export function checkDuplicateStop(
   stopA: { name: string; latitude: number; longitude: number; state?: string },
-  stopB: { name: string; latitude: number; longitude: number; state?: string }
+  stopB: { name: string; latitude: number; longitude: number; state?: string },
+  options: { maxDistanceMeters?: number; minimumSimilarityScore?: number } = {}
 ): DuplicateDetectionResult {
+  const maxDistanceMeters = Number.isFinite(options.maxDistanceMeters)
+    ? Math.max(25, Math.min(1000, Number(options.maxDistanceMeters)))
+    : 400;
+  const minimumSimilarityScore = Number.isFinite(options.minimumSimilarityScore)
+    ? Math.max(1, Math.min(100, Number(options.minimumSimilarityScore)))
+    : 65;
   const distMeters = haversineDistanceMeters(
     stopA.latitude,
     stopA.longitude,
@@ -34,9 +41,9 @@ export function checkDuplicateStop(
   const matchingFactors: string[] = [];
 
   // Stops in different cities should not be duplicates just because
-  // their names match. More than 400 m is outside this detector's
-  // duplicate-stop proximity threshold.
-  if (!Number.isFinite(distMeters) || distMeters > 400) {
+  // their names match. The caller may tighten the distance for the
+  // configured submission-time duplicate scanner.
+  if (!Number.isFinite(distMeters) || distMeters > maxDistanceMeters) {
     return {
       isLikelyDuplicate: false,
       similarityScore: 0,
@@ -90,7 +97,7 @@ export function checkDuplicateStop(
   }
 
   return {
-    isLikelyDuplicate: finalScore >= 65,
+    isLikelyDuplicate: finalScore >= minimumSimilarityScore,
     similarityScore: finalScore,
     matchingFactors,
     recommendation,

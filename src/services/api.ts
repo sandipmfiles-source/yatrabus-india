@@ -6,8 +6,21 @@ const API_BASE = CONFIGURED_API_BASE || '/api';
 // A native APK runs from its own WebView origin. Relative /api requests do not reach
 // the hosted backend, so refuse to silently fall back to bundled sample data.
 function getApiBase() {
-  if (Capacitor.isNativePlatform() && !CONFIGURED_API_BASE) {
-    throw new Error('YatraBus server URL is not configured in this APK. Set VITE_API_BASE_URL to your HTTPS backend URL and rebuild the APK.');
+  if (Capacitor.isNativePlatform()) {
+    if (!CONFIGURED_API_BASE) {
+      throw new Error('YatraBus server URL is not configured in this APK. Set VITE_API_BASE_URL to your HTTPS backend URL and rebuild the APK.');
+    }
+
+    let parsedUrl: URL;
+    try {
+      parsedUrl = new URL(CONFIGURED_API_BASE);
+    } catch {
+      throw new Error('YatraBus backend URL is invalid. Configure VITE_API_BASE_URL with a valid HTTPS URL and rebuild the APK.');
+    }
+
+    if (parsedUrl.protocol !== 'https:' || !parsedUrl.hostname) {
+      throw new Error('YatraBus Android builds require an HTTPS backend URL. HTTP and cleartext API connections are blocked.');
+    }
   }
   return API_BASE;
 }

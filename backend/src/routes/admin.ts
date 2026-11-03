@@ -602,16 +602,59 @@ adminRouter.get('/automation/rules', requireAdminAuth('SUPER_ADMIN'), (_req: Req
 // PUT /api/admin/automation/rules/:id
 adminRouter.put('/automation/rules/:id', requireAdminAuth('SUPER_ADMIN'), (req: Request, res: Response) => {
   const { isEnabled, parameters } = req.body;
-  if (typeof isEnabled !== 'boolean') {
-    return res.status(400).json({ error: 'isEnabled must be a boolean' });
+  if (typeof isEnabled !== 'boolean' || !parameters || typeof parameters !== 'object' || Array.isArray(parameters)) {
+    return res.status(400).json({ error: 'isEnabled and a parameters object are required.' });
   }
-  const success = repository.updateAutomationRule(String(req.params.id), isEnabled, parameters || {});
-  if (!success) return res.status(404).json({ error: 'Automation rule not found' });
+
+  const rule = repository.getAutomationRules().find(item => item.id === String(req.params.id));
+  if (!rule) return res.status(404).json({ error: 'Automation rule not found' });
+
+  const allowedKeys: Record<string, string[]> = {
+    GPS_FRESHNESS_MONITOR: ['gpsFreshnessLiveSeconds', 'gpsFreshnessStaleSeconds'],
+    SESSION_SAFETY_EXPIRY: ['maxJourneySessionHours'],
+    DUPLICATE_STOP_SCANNER: ['duplicateSimilarityThreshold', 'duplicateMaxDistanceMeters'],
+    AUTO_PUBLISH_MINOR_TIMETABLE: ['autoPublishLowRiskMinorCorrections'],
+  };
+  const allowed = allowedKeys[rule.ruleCode];
+  if (!allowed) return res.status(403).json({ error: 'This automation rule is not available for runtime editing.' });
+  if (Object.keys(parameters).some(key => !allowed.includes(key))) {
+    return res.status(400).json({ error: 'Unknown automation parameter supplied.' });
+  }
+
+  if (rule.ruleCode === 'AUTO_PUBLISH_MINOR_TIMETABLE') {
+    if (isEnabled || parameters.autoPublishLowRiskMinorCorrections === true) {
+      return res.status(403).json({ error: 'Automatic timetable publishing is locked off. Every timetable change requires Super Admin review.' });
+    }
+  }
+
+  const merged = { ...rule.parameters, ...parameters };
+  const numeric = (key: string) => Number(merged[key as keyof typeof merged]);
+  if (rule.ruleCode === 'GPS_FRESHNESS_MONITOR') {
+    const live = numeric('gpsFreshnessLiveSeconds');
+    const stale = numeric('gpsFreshnessStaleSeconds');
+    if (!Number.isFinite(live) || live < 30 || live > 300 || !Number.isFinite(stale) || stale < live || stale > 1800) {
+      return res.status(422).json({ error: 'GPS freshness must be 30–300 seconds and stale time must be at least the live threshold and no more than 1800 seconds.' });
+    }
+  } else if (rule.ruleCode === 'SESSION_SAFETY_EXPIRY') {
+    const hours = numeric('maxJourneySessionHours');
+    if (!Number.isFinite(hours) || hours < 1 || hours > 12) {
+      return res.status(422).json({ error: 'Journey session duration must be between 1 and 12 hours.' });
+    }
+  } else if (rule.ruleCode === 'DUPLICATE_STOP_SCANNER') {
+    const distance = numeric('duplicateMaxDistanceMeters');
+    const threshold = numeric('duplicateSimilarityThreshold');
+    if (!Number.isFinite(distance) || distance < 25 || distance > 400 || !Number.isFinite(threshold) || threshold < 0.5 || threshold > 0.99) {
+      return res.status(422).json({ error: 'Duplicate scanning distance must be 25–400 metres and similarity threshold must be 0.50–0.99.' });
+    }
+  }
+
+  const success = repository.updateAutomationRule(rule.id, isEnabled, parameters);
+  if (!success) return res.status(404).json({ error: 'Automation rule could not be updated.' });
   const adminId = (req as any).admin.id;
   repository.createAuditLog({
-    id: `audit-${Date.now()}`, entityType: 'AUTOMATION_RULE', entityId: String(req.params.id),
+    id: `audit-${Date.now()}`, entityType: 'AUTOMATION_RULE', entityId: rule.id,
     action: 'UPDATE', actorId: adminId, actorRole: 'SUPER_ADMIN',
-    reason: `Automation rule ${isEnabled ? 'enabled' : 'disabled'}`, timestamp: new Date().toISOString(),
+    reason: `Automation rule ${isEnabled ? 'enabled' : 'disabled'} with validated runtime parameters`, timestamp: new Date().toISOString(),
   });
   return res.json({ success: true, message: 'Automation rule updated' });
 });

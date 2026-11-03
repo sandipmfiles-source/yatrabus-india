@@ -34,7 +34,7 @@ This is the required release gate before accepting real passenger data. A succes
 - [ ] Submit a test correction, restart the backend, and verify the submission is still present. Restore from a backup in a test environment.
 - [ ] Configure scheduled backups for the persistent JSON state file and test restoration. The Compose volume is persistence, not a backup.
 - [ ] Confirm the hosting platform terminates HTTPS and forwards requests correctly.
-- [ ] If the host is behind a reverse proxy, configure Express proxy trust deliberately at the hosting layer before relying on client-IP rate limiting. Do not blindly trust arbitrary forwarded headers.
+- [ ] If the host is behind a reverse proxy, set `TRUST_PROXY_HOPS` to the exact number of trusted proxy hops. It defaults to `0` (no forwarded-header trust). Do not blindly trust arbitrary `X-Forwarded-For` headers.
 - [ ] Review host request/body limits, logs, uptime monitoring, disk capacity and backup retention.
 
 ## C. Transit data readiness

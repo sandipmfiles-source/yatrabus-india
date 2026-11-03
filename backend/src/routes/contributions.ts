@@ -23,13 +23,24 @@ contributionsRouter.post('/submit', contributionLimiter, (req: Request, res: Res
 
   const duplicateCandidateIds: string[] = [];
 
-  // Check for potential duplicates
-  if (entityType === 'STOP' && proposedData.name && proposedData.latitude && proposedData.longitude) {
-    const nearby = repository.findNearbyStops(proposedData.latitude, proposedData.longitude, 500);
+  // Run the duplicate scanner only when the Super Admin's safety rule is enabled.
+  // It is event-driven on stop submissions; it never auto-merges or auto-publishes data.
+  const duplicateScannerRule = repository.getAutomationRuleByCode('DUPLICATE_STOP_SCANNER');
+  if (duplicateScannerRule?.isEnabled && entityType === 'STOP' && proposedData.name && proposedData.latitude && proposedData.longitude) {
+    const configuredDistance = Number(duplicateScannerRule.parameters?.duplicateMaxDistanceMeters);
+    const maxDistanceMeters = Number.isFinite(configuredDistance)
+      ? Math.max(25, Math.min(400, configuredDistance))
+      : 150;
+    const configuredThreshold = Number(duplicateScannerRule.parameters?.duplicateSimilarityThreshold);
+    const similarityThreshold = Number.isFinite(configuredThreshold)
+      ? Math.max(0.5, Math.min(0.99, configuredThreshold))
+      : 0.65;
+    const nearby = repository.findNearbyStops(proposedData.latitude, proposedData.longitude, maxDistanceMeters);
     for (const item of nearby) {
       const dupCheck = checkDuplicateStop(
         { name: proposedData.name, latitude: proposedData.latitude, longitude: proposedData.longitude },
-        { name: item.place.canonicalName, latitude: item.place.latitude || 0, longitude: item.place.longitude || 0 }
+        { name: item.place.canonicalName, latitude: item.place.latitude || 0, longitude: item.place.longitude || 0 },
+        { maxDistanceMeters, minimumSimilarityScore: similarityThreshold * 100 }
       );
 
       if (dupCheck.isLikelyDuplicate) {

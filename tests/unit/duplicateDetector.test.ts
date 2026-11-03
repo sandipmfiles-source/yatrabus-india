@@ -16,4 +16,19 @@ export function runDuplicateDetectorTests(assert: (desc: string, pass: boolean) 
   );
   assert('Correctly flags stops with same name in different cities as DISTINCT', !distinctStopRes.isLikelyDuplicate);
   assert('Recommendation is DISTINCT for distant stops', distinctStopRes.recommendation === 'DISTINCT');
+
+  // Runtime automation can tighten the duplicate scanner's distance and score thresholds.
+  const strictThresholdRes = checkDuplicateStop(
+    { name: 'Kashmere Gate Metro Gate 1', latitude: 28.6675, longitude: 77.2285 },
+    { name: 'ISBT Kashmere Gate Bus Stand', latitude: 28.6677, longitude: 77.2287 },
+    { maxDistanceMeters: 150, minimumSimilarityScore: 90 }
+  );
+  assert('Honours configured similarity threshold instead of the default 65%', !strictThresholdRes.isLikelyDuplicate);
+
+  const strictDistanceRes = checkDuplicateStop(
+    { name: 'Kashmere Gate Metro Gate 1', latitude: 28.6675, longitude: 77.2285 },
+    { name: 'ISBT Kashmere Gate Bus Stand', latitude: 28.6677, longitude: 72.2287 },
+    { maxDistanceMeters: 50, minimumSimilarityScore: 65 }
+  );
+  assert('Honours configured duplicate distance ceiling', !strictDistanceRes.isLikelyDuplicate);
 }

@@ -14,7 +14,7 @@
 ### Core Non-Negotiables Built In:
 - **No Sign-in for Passengers or Bus Owners**: Search, view routes, and submit passenger corrections or bus-owner route/timetable details without Google, phone OTP, email login, or passwords. Owner submissions go to a separate Super Admin review queue.
 - **Free Across India**: No subscription, listing fee, or payment gateway. The public app and contribution workflow are available across all 28 States and 8 Union Territories.
-- **Explicit Location Consent**: The Android app requires foreground location permission before entry. Permission alone never shares GPS; journey tracking starts only after the passenger separately confirms a bus journey and consents.
+- **Optional Location & Explicit Sharing Consent**: Timetable, search and ordinary browsing do not require location permission at app launch. Location is requested only by a feature that needs it; ongoing journey tracking starts only after the passenger separately confirms a bus journey and consents.
 - **Deterministic Multi-Signal GPS Engine**: Evaluates horizontal accuracy, timestamp freshness, route cross-track distance, and speed realism without requiring paid AI APIs.
 - **Transparent Distinction**: Live GPS observations and schedule timetable predictions are clearly differentiated. Schedule estimates are **never** falsely labeled as "Live GPS".
 - **Custom SVG Bus Artwork**: Missing bus photos display a custom vector SVG bus illustration, never a broken image icon.
@@ -37,7 +37,7 @@
 ## 🚀 Quick Start Guide
 
 ### Prerequisites
-- Node.js 20 or newer
+- Node.js 22 or newer
 - npm 9 or newer
 
 ### 1. Clone & Install Dependencies
