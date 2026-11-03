@@ -49,7 +49,7 @@ export function getJourneyAlertCandidates(
       }
     }
   }
-  if (['DISRUPTION_REPORTED', 'ROUTE_CHANGED', 'POSSIBLE_DELAY'].includes(route.serviceStatus)) {
+  if (['DISRUPTION_REPORTED', 'ROUTE_CHANGED', 'POSSIBLE_DELAY', 'POSSIBLY_DISCONTINUED', 'CONFIRMED_DISCONTINUED'].includes(route.serviceStatus)) {
     alerts.push({
       key: 'service:' + route.id + ':' + route.serviceStatus,
       title: 'Bus service update',
