@@ -1,6 +1,8 @@
 name: Refresh public GTFS data
 
 on:
+  push:
+    branches: [phase7-gtfs-public-data]
   schedule:
     - cron: '17 2 * * *'
   workflow_dispatch:
