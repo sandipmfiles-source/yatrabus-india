@@ -75,7 +75,8 @@ async function main() {
       }
       const digest = createHash('sha256').update(raw).digest('hex');
       // The import report carries the checksum of the original GTFS ZIP, not the normalized JSON.
-      const reportRow = report.results.find(row => row.output === filename);\n      if (!feed.feed.sha256 || !/^[a-f0-9]{64}$/i.test(feed.feed.sha256) || reportRow?.sha256 !== feed.feed.sha256) throw new Error('Source checksum does not match import report for ' + filename);
+      const reportRow = report.results.find(row => row.output === filename);
+      if (!feed.feed.sha256 || !/^[a-f0-9]{64}$/i.test(feed.feed.sha256) || reportRow?.sha256 !== feed.feed.sha256) throw new Error('Source checksum does not match import report for ' + filename);
     }
     await rm(backup, { recursive: true, force: true });
     try { await stat(destination); await rename(destination, backup); movedOld = true; } catch (error) { if (error.code !== 'ENOENT') throw error; }
