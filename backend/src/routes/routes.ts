@@ -2,6 +2,8 @@ import { Router, Request, Response } from 'express';
 import { repository } from '../db/repository.js';
 import { planJourneys } from '../../../packages/shared/src/engine/journeyPlanner.js';
 import { publicSearchLimiter } from '../middleware/rateLimiter.js';
+import { CONFIG } from '../config.js';
+import { verifyStopQrToken } from '../engine/stopQr.js';
 
 export const routesRouter = Router();
 
@@ -51,6 +53,38 @@ routesRouter.get('/search', publicSearchLimiter, (req: Request, res: Response) =
 routesRouter.get('/', (req: Request, res: Response) => {
   const all = repository.getAllRoutes();
   return res.json({ count: all.length, routes: all });
+});
+
+// GET /api/routes/qr/verify?token=YB1... — verify an admin-issued stop QR.
+routesRouter.get('/qr/verify', (req: Request, res: Response) => {
+  const token = typeof req.query.token === 'string' ? req.query.token : '';
+  if (!token || token.length > 2048 || !CONFIG.ADMIN_JWT_SECRET || CONFIG.ADMIN_JWT_SECRET.length < 32) {
+    return res.status(400).json({ verified: false, error: 'A valid YatraBus stop QR token is required.' });
+  }
+  const payload = verifyStopQrToken(token, CONFIG.ADMIN_JWT_SECRET);
+  if (!payload) return res.status(403).json({ verified: false, error: 'This stop QR is invalid or expired.' });
+  const route = repository.getRouteById(payload.routeId);
+  if (!route || route.verificationStatus !== 'ADMIN_VERIFIED') {
+    return res.status(404).json({ verified: false, error: 'The verified route record is no longer available.' });
+  }
+  const stop = route.stops.find(item => item.id === payload.stopId);
+  if (!stop || !Number.isFinite(stop.latitude) || !Number.isFinite(stop.longitude) ||
+      stop.latitude < 6 || stop.latitude > 38 || stop.longitude < 68 || stop.longitude > 98) {
+    return res.status(404).json({ verified: false, error: 'The verified stop record is no longer available.' });
+  }
+  return res.json({
+    verified: true,
+    format: 'YB1',
+    routeId: route.id,
+    routeName: route.routeName,
+    stopId: stop.id,
+    stopName: stop.stopName,
+    latitude: stop.latitude,
+    longitude: stop.longitude,
+    issuedAt: new Date(payload.issuedAt).toISOString(),
+    expiresAt: new Date(payload.expiresAt).toISOString(),
+    verificationStatus: 'ADMIN_VERIFIED',
+  });
 });
 
 // GET /api/routes/:id
