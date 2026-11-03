@@ -57,6 +57,21 @@ export const BusDetailPage: React.FC = () => {
         if (routeBus?.id) setActiveBusId(routeBus.id);
       }
       setIsLoading(false);
+    }).catch(async () => {
+      try {
+        const cached = await phase4.getOfflineRoutes();
+        const savedRoute = cached.find(item => item.id === id);
+        if (savedRoute) {
+          setRoute(savedRoute);
+          setIsFavourite(phase4.isFavourite(savedRoute.id));
+          setCorrectionMessage('Offline copy: only source-verified timetable details are available. Live GPS is unavailable.');
+        } else {
+          setCorrectionMessage('This route is not saved for offline use. Connect to the internet and open it once to cache its verified timetable.');
+        }
+      } catch {
+        setCorrectionMessage('Route details are unavailable while offline.');
+      }
+      setIsLoading(false);
     });
   }, [id]);
 
