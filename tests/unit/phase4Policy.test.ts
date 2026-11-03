@@ -48,4 +48,6 @@ export function runPhase4PolicyTests(assert: (description: string, pass: boolean
   assert('Source-verified cancellation creates a service alert', getJourneyAlertCandidates(cancelledRoute, false, []).some(item => item.key.startsWith('cancelled:')));
   const disruptionRoute = { ...baseRoute, serviceStatus: 'DISRUPTION_REPORTED' } as Route;
   assert('Recorded route disruption creates a service alert', getJourneyAlertCandidates(disruptionRoute, false, []).some(item => item.key.startsWith('service:')));
+  const discontinuedRoute = { ...baseRoute, serviceStatus: 'CONFIRMED_DISCONTINUED' } as Route;
+  assert('Confirmed discontinued route creates a service alert', getJourneyAlertCandidates(discontinuedRoute, false, []).some(item => item.key.startsWith('service:')));
 }
