@@ -1,8 +1,8 @@
-FROM node:20-alpine AS build
+FROM node:22-alpine AS build
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm install --no-audit --no-fund
+RUN npm ci --no-audit --no-fund
 
 COPY . .
 ARG VITE_API_BASE_URL=
@@ -13,7 +13,7 @@ ENV VITE_PUBLIC_APP_URL=${VITE_PUBLIC_APP_URL}
 ENV VITE_GOOGLE_CLIENT_ID=${VITE_GOOGLE_CLIENT_ID}
 RUN npm run build
 
-FROM node:20-alpine AS runtime
+FROM node:22-alpine AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=5000
