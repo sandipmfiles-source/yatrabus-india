@@ -24,6 +24,7 @@ import { runStopQrTests } from './unit/stopQr.test.js';
 import { runIndiaCatalogueTests } from './unit/indiaCatalogue.test.js';
 import { runPublicGtfsCatalogueTests } from './unit/publicGtfsCatalogue.test.js';
 import { runPublicGtfsRuntimeTests } from './unit/publicGtfsRuntime.test.js';
+import { runBusConnectedPlaceTests } from './unit/busConnectedPlaces.test.js';
 
 let totalTests = 0;
 let passedTests = 0;
@@ -93,6 +94,7 @@ console.log('\\n16. Testing India States, UTs, Government Operators & Pilot Dire
 runIndiaCatalogueTests(assert);
 runPublicGtfsCatalogueTests(assert);
 runPublicGtfsRuntimeTests(assert);
+runBusConnectedPlaceTests(assert);
 
 console.log('\\n17. Testing Source-Aware Timetable Availability...');
 runTimetableEngineTests(assert);
