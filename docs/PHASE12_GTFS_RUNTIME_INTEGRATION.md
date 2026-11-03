@@ -119,3 +119,16 @@ Still NOT implemented / not production-ready:
 - Hosted API deployment, signing and physical-device QA.
 
 Do not describe Phase 12 as complete until the remaining items pass CI and deployment validation.
+
+### Install the published snapshot on the API host
+
+After a successful Phase 11 **Refresh public GTFS data** release, run on the backend host:
+
+```bash
+export GTFS_DATA_DIR=/srv/yatribus/data/gtfs
+node scripts/install-public-gtfs-snapshot.mjs
+```
+
+The installer downloads only the public stable release URL, caps compressed and expanded size, rejects unsafe archive paths and link entries, validates the import report and normalized feed schema, then replaces the snapshot directory on the same filesystem. It retains the previous directory if activation fails. Restart/reload the backend after installation if the deployment caches loaded feed data (the current endpoints load the directory per request).
+
+For local development, omit `GTFS_DATA_DIR`; the default directory is `artifacts/gtfs`.
