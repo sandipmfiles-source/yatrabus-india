@@ -6,6 +6,7 @@ const FAVOURITES_KEY = 'yatribus_favourite_routes_v1';
 const ACCESSIBILITY_KEY = 'yatribus_accessibility_v1';
 const ALERTS_ENABLED_KEY = 'yatribus_live_alerts_enabled_v1';
 const ALERT_HISTORY_KEY = 'yatribus_live_alert_history_v1';
+const REMINDER_IDS_KEY = 'yatribus_reminder_ids_v1';
 const DB_NAME = 'yatribus-offline-v1';
 const STORE_NAME = 'verified-routes';
 
@@ -106,7 +107,12 @@ export const phase4 = {
     let permission = await LocalNotifications.checkPermissions();
     if (permission.display !== 'granted') permission = await LocalNotifications.requestPermissions();
     if (permission.display !== 'granted') throw new Error('Notification permission was not granted.');
-    const id = Math.floor(Date.now() % 2147483000);
+    let reminders: Record<string, number> = {};
+    try { reminders = JSON.parse(localStorage.getItem(REMINDER_IDS_KEY) || '{}'); } catch { reminders = {}; }
+    if (reminders[route.routeId]) {
+      try { await LocalNotifications.cancel({ notifications: [{ id: reminders[route.routeId] }] }); } catch { /* Continue with replacement reminder. */ }
+    }
+    const id = Math.max(1, Math.floor(Date.now() % 2147483000));
     await LocalNotifications.schedule({ notifications: [{
       id,
       title: 'YatraBus journey reminder',
@@ -114,6 +120,18 @@ export const phase4 = {
       schedule: { at },
       extra: { routeId: route.routeId },
     }] });
+    reminders[route.routeId] = id;
+    localStorage.setItem(REMINDER_IDS_KEY, JSON.stringify(reminders));
+  },
+
+  async cancelRouteReminder(routeId: string): Promise<void> {
+    let reminders: Record<string, number> = {};
+    try { reminders = JSON.parse(localStorage.getItem(REMINDER_IDS_KEY) || '{}'); } catch { reminders = {}; }
+    const id = reminders[routeId];
+    if (!id) return;
+    try { await LocalNotifications.cancel({ notifications: [{ id }] }); } catch { /* Permission may have changed. */ }
+    delete reminders[routeId];
+    try { localStorage.setItem(REMINDER_IDS_KEY, JSON.stringify(reminders)); } catch { /* Local cache may be full. */ }
   },
 
   alertsEnabled(): boolean {
