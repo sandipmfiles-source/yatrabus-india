@@ -63,7 +63,7 @@ All LGD-derived entries remain UNVERIFIED until a verifier checks them. LGD admi
 
 ## What is not claimed as complete
 
-- All 676k+ villages are not bundled in the APK.
+- The backend index includes 677,664 LGD village records in lazy shards; they are not copied into the APK binary itself and require the deployed backend to be reachable.
 - Every small-town bus stop has not been surveyed or verified.
 - Nationwide operator route/timetable coverage is not complete.
 - No official Jhargram–Kharagpur–Kolkata bus timetable has been asserted.
