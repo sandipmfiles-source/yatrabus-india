@@ -15,6 +15,7 @@ import {
 import { AdminUser, AuditLogEntry, AutomationRule, SystemHealthStats } from '../../../packages/shared/src/types/admin.js';
 import { SEED_PLACES, SEED_OPERATORS, SEED_ROUTES, SEED_BUSES } from './seedData.js';
 import { INDIA_ADMIN_AREA_PLACES } from './indiaAdminAreas.js';
+import { INDIA_GOVERNMENT_OPERATORS } from '../../../packages/shared/src/data/indiaGovernmentOperators.js';
 import { searchPlaces as runSearchPlaces } from '../../../packages/shared/src/search/typoSearch.js';
 import { haversineDistanceMeters } from '../../../packages/shared/src/engine/routeMatcher.js';
 
@@ -50,9 +51,18 @@ export class TransitRepository {
     for (const op of SEED_OPERATORS) {
       this.operators.set(op.id, op);
     }
+    // Add further government transport undertakings without overwriting richer legacy seed entries.
+    for (const op of INDIA_GOVERNMENT_OPERATORS) {
+      if (!this.operators.has(op.id)) this.operators.set(op.id, op);
+    }
     // Seed Routes
     for (const r of SEED_ROUTES) {
-      this.routes.set(r.id, r);
+      // Existing demo/sample route times have no traceable official timetable source.
+      // Keep them searchable for UI development but never classify them as published schedules.
+      this.routes.set(r.id, {
+        ...r,
+        timetableDataStatus: r.timetableSource && r.timetableVerifiedAt ? 'SCHEDULED' : 'UNAVAILABLE',
+      });
     }
     // Seed buses with an explicit unavailable location state. Never fabricate a GPS
     // position or label a demo coordinate as a live/estimated bus location.
@@ -151,7 +161,10 @@ export class TransitRepository {
 
   // ==================== ROUTES & BUSES ====================
   public getAllRoutes(): Route[] {
-    return Array.from(this.routes.values());
+    return Array.from(this.routes.values()).map(route => ({
+      ...route,
+      timetableDataStatus: route.timetableDataStatus ?? 'UNAVAILABLE',
+    }));
   }
 
   public getAllBuses(): Bus[] {
@@ -159,7 +172,8 @@ export class TransitRepository {
   }
 
   public getRouteById(id: string): Route | undefined {
-    return this.routes.get(id);
+    const route = this.routes.get(id);
+    return route ? { ...route, timetableDataStatus: route.timetableDataStatus ?? 'UNAVAILABLE' } : undefined;
   }
 
   public getRouteByNumber(routeNumber: string): Route | undefined {
@@ -178,8 +192,12 @@ export class TransitRepository {
   }
 
   public addRoute(route: Route): Route {
-    this.routes.set(route.id, route);
-    return route;
+    const normalized = {
+      ...route,
+      timetableDataStatus: route.timetableDataStatus ?? 'UNAVAILABLE',
+    };
+    this.routes.set(route.id, normalized);
+    return normalized;
   }
 
   public addTimetableDeparture(routeId: string, departure: NonNullable<Route['departures']>[number], frequencyMinutes?: number): boolean {

@@ -2,9 +2,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { gzipSync } from 'node:zlib';
 
-// Bulk importer for the official LGD semicolon-delimited CSV exports.
+// Build a compact State/district/subdistrict/block/town index from a mirror of official LGD CSV exports.
 const inputDir = process.argv[2] || '/tmp/lgd';
 const outputFile = process.argv[3] || 'backend/data/india-lgd-directory.json.gz';
+const snapshotDate = process.argv[4] || new Date().toISOString().slice(0, 10);
 
 function parseCsv(text) {
   const rows = [];
@@ -71,7 +72,8 @@ for (const row of villages.rows) {
   if (stateCode && state) states.set(stateCode, state);
   if (districtCode && district) districts.set(districtCode, { name: district, state, stateCode });
   if (subCode && sub) subs.set(subCode, { name: sub, state, district, districtCode });
-  add('village', get(row, vi.villageCode), get(row, vi.village), state, district, sub);
+  // Village rows provide parent hierarchy and LGD codes only. Individual villages are
+  // deliberately excluded from the passenger autocomplete index.
 }
 if (states.size > 100 || districts.size > 1000 || subs.size > 10000) throw new Error('LGD CSV delimiter/header parsing produced impossible hierarchy counts: ' + JSON.stringify({ states: states.size, districts: districts.size, subdistricts: subs.size }));
 for (const [code, name] of states) add('state', code, name, '', '', '');
@@ -87,14 +89,22 @@ function importNamedFile(filename, level, nameCandidates, codeCandidates, parent
   for (const row of parsed.rows) add(level, get(row, ci), get(row, ni), get(row, stateI), get(row, districtI), '');
 }
 importNamedFile('blocks.csv', 'block', ['Block Name (In English)', 'Block Name'], ['Block Code']);
-importNamedFile('urban_local_bodies.csv', 'urban_local_body', ['Local Body Name (In English)', 'Urban Local Body Name', 'Local Body Name'], ['Local Body Code', 'Urban Local Body Code']);
+importNamedFile('urban_local_bodies.csv', 'town', ['Local Body Name (In English)', 'Urban Local Body Name', 'Local Body Name'], ['Local Body Code', 'Urban Local Body Code']);
 
 const all = [...places.values()];
 const counts = {};
 for (const item of all) counts[item.level] = (counts[item.level] || 0) + 1;
 const compactPlaces = all.map(item => [item.id, item.code, item.name, item.level, item.state, item.district, item.subdistrict]);
 console.log('Prepared LGD records:', all.length, 'counts:', JSON.stringify(counts));
-const payload = { source: 'Ministry of Panchayati Raj - Local Government Directory', sourceDate: '21Oct2026', importedAt: new Date().toISOString(), counts, places: compactPlaces };
+const payload = {
+  source: 'Ministry of Panchayati Raj - Local Government Directory',
+  sourceUrl: 'https://lgdirectory.gov.in/',
+  sourceLicense: 'Government Open Data License - India (GODL-India)',
+  snapshotDate,
+  importedAt: new Date().toISOString(),
+  counts,
+  places: compactPlaces,
+};
 fs.mkdirSync(path.dirname(outputFile), { recursive: true });
 fs.writeFileSync(outputFile, gzipSync(Buffer.from(JSON.stringify(payload)), { level: 9 }));
 console.log(JSON.stringify({ outputFile, bytes: fs.statSync(outputFile).size, total: all.length, counts }, null, 2));

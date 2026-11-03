@@ -254,8 +254,8 @@ export const BusDetailPage: React.FC = () => {
             destinationText={route.destinationStopName}
           />
           <div className="mt-4 flex items-center justify-between text-xs text-yatriwarm-600 border-t border-yatriwarm-100 pt-3">
-            <span>{t('operating_days')}: <strong>{route.operatingDays.join(', ')}</strong></span>
-            <span>{t('frequency_label')}: <strong>~{route.frequencyMinutes || 20}m</strong></span>
+            <span>{route.timetableDataStatus === 'UNAVAILABLE' ? 'Timetable unavailable' : `${t('operating_days')}: ${route.operatingDays.join(', ')}`}</span>
+            <span>{route.timetableDataStatus === 'UNAVAILABLE' ? 'Frequency not verified' : `${t('frequency_label')}: ~${route.frequencyMinutes || 20}m`}</span>
           </div>
         </div>
 
@@ -293,7 +293,7 @@ export const BusDetailPage: React.FC = () => {
             </div>
             <div className="p-3 bg-yatriwarm-50 rounded-xl border border-yatriwarm-200 text-center">
               <div className="text-[11px] text-yatriwarm-500 font-medium">{t('typical_duration')}</div>
-              <div className="text-base font-bold text-yatriwarm-900 mt-0.5">{route.typicalDurationMinutes} min</div>
+              <div className="text-base font-bold text-yatriwarm-900 mt-0.5">{route.timetableDataStatus === 'UNAVAILABLE' ? '—' : `${route.typicalDurationMinutes} min`}</div>
             </div>
           </div>
         </div>
@@ -385,10 +385,10 @@ export const BusDetailPage: React.FC = () => {
                     const useConsensus = !!winner && winner[1] >= 2;
                     return <>
                       <div className="text-xs font-bold text-yatriwarm-900">
-                        {useConsensus ? winner[0] : (eta?.predictedTime || stop.scheduledArrivalTime || '—')}
+                        {useConsensus ? winner[0] : (route.timetableDataStatus === 'UNAVAILABLE' && eta?.calculationType !== 'OBSERVATION_BASED' ? '—' : (eta?.predictedTime || stop.scheduledArrivalTime || '—'))}
                       </div>
                       <div className="text-[10px] text-yatriwarm-500">
-                        {useConsensus ? `Community majority · ${winner[1]} votes` : eta?.calculationType === 'OBSERVATION_BASED' ? `Live ETA · ${eta.confidenceScore}% ${eta.confidenceCategory.toLowerCase()} confidence` : `Timetable estimate · ${eta?.confidenceScore ?? 0}% confidence`}
+                        {useConsensus ? `Community majority · ${winner[1]} votes` : eta?.calculationType === 'OBSERVATION_BASED' ? `Live ETA · ${eta.confidenceScore}% ${eta.confidenceCategory.toLowerCase()} confidence` : route.timetableDataStatus === 'UNAVAILABLE' ? 'No source-verified timetable' : `Timetable estimate · ${eta?.confidenceScore ?? 0}% confidence`}
                       </div>
                       {!useConsensus && eta?.confidenceNote && <div className="mt-0.5 text-[9px] text-yatriwarm-400">{eta.confidenceNote}</div>}
                     </>;

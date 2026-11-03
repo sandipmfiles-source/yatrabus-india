@@ -3,7 +3,7 @@ import { useLanguage } from '../context/LanguageContext.js';
 import { Link, useLocation } from 'react-router-dom';
 import { BusIllustration } from '../assets/BusIllustration.js';
 import { LanguageSwitcher } from './LanguageSwitcher.js';
-import { ShieldCheck, PlusCircle, Search, BusFront } from 'lucide-react';
+import { ShieldCheck, PlusCircle, Search, BusFront, MapPinned } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
   const location = useLocation();
@@ -45,6 +45,15 @@ export const Navbar: React.FC = () => {
           >
             <Search className="w-4 h-4" />
             {t('nav_find_buses')}
+          </Link>
+          <Link
+            to="/india-directory"
+            className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 ${
+              isActive('/india-directory') ? 'bg-yatribrand-50 text-yatribrand-900 font-semibold' : 'text-yatriwarm-700 hover:bg-yatriwarm-100'
+            }`}
+          >
+            <MapPinned className="w-4 h-4" />
+            India Directory
           </Link>
           <Link
             to="/contribute"
