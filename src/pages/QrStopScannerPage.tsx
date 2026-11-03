@@ -23,6 +23,12 @@ export const QrStopScannerPage: React.FC = () => {
     try {
       const url = new URL(value, window.location.origin);
       if (url.protocol !== 'https:' && url.origin !== window.location.origin) throw new Error('Use a secure YatraBus stop link.');
+      const signedMatch = url.pathname.match(/^\/stopqr\/([^/]+)$/);
+      if (signedMatch) {
+        const verified = await api.verifyStopQrToken(decodeURIComponent(signedMatch[1]));
+        navigate(`/routes/${encodeURIComponent(verified.routeId)}?stop=${encodeURIComponent(verified.stopId)}&qr=verified`);
+        return;
+      }
       const match = url.pathname.match(/^\/stop\/([^/]+)\/([^/]+)$/);
       if (!match) throw new Error('QR code format is not a supported YatraBus stop link.');
       navigate(`/routes/${encodeURIComponent(decodeURIComponent(match[1]))}?stop=${encodeURIComponent(decodeURIComponent(match[2]))}`);
