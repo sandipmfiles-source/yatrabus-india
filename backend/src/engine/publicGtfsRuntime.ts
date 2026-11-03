@@ -27,7 +27,11 @@ export type TimetableResult = {
 
 const dayFields = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const;
 const compactDate = (date: string) => date.replaceAll('-', '');
-const validDate = (date: string) => {\n  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return false;\n  const parsed = new Date(date + 'T12:00:00Z');\n  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === date;\n};
+const validDate = (date: string) => {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return false;
+  const parsed = new Date(date + 'T12:00:00Z');
+  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === date;
+};
 export function isServiceActive(feed: NormalizedGtfsFeed, serviceId: string, date: string): boolean {
   if (!validDate(date)) return false;
   const compact = compactDate(date);
