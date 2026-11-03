@@ -97,7 +97,7 @@ export function searchGtfsJourneys(feeds: NormalizedGtfsFeed[], from: string, to
           if (!route) continue;
           const agency = feed.agency.find(a => !a.agency_id || a.agency_id === route.agency_id);
           results.push({
-            feedId: feed.feed.id, feedName: feed.feed.name, region: feed.feed.region,
+            feedId: feed.feed.id, feedName: feed.feed.name, region: feed.feed.region, sourceUrl: feed.feed.sourcePage,
             sourceType: feed.feed.official ? 'OFFICIAL_PUBLISHER' : 'COMMUNITY_DERIVED',
             verificationStatus: 'UNVERIFIED', importedAt: feed.feed.importedAt, attribution: feed.feed.attribution,
             routeId: route.route_id, routeName: routeLabel(route), tripId, headsign: trip.trip_headsign,
