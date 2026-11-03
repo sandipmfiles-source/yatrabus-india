@@ -57,7 +57,7 @@ Every response must identify feed/source, generated/imported timestamps, service
 
 ### 12.5 App integration
 
-- Connect the passenger timetable screens to the API, not to a bundled demo timetable.
+- Connect remaining passenger route-detail, offline and transfer views to the API; the search results page now queries the public GTFS timetable endpoint for a selected travel date.
 - Display departures, intermediate stop arrival/departure times, service-day validity, source and last-updated time.
 - Clearly label community-derived schedules as unverified; do not imply operator approval.
 - Clearly separate scheduled timetable estimates from consent-based live GPS observations.
@@ -114,7 +114,7 @@ Still NOT implemented / not production-ready:
 - PostgreSQL/PostGIS runtime adapter, schema migrations and transactional snapshot activation.
 - Automated production download/install of the release archive and atomic last-known-good snapshot swap.
 - Multi-transfer journey planning across GTFS feeds, frequencies expansion into board-ready departures, transfer rules and timezone-aware display conversion.
-- Passenger UI wiring to these endpoints.
+- Passenger UI integration beyond the new date-specific search panel (route detail, offline caching and transfer itinerary presentation).
 - API integration/load tests and Android end-to-end tests.
 - Hosted API deployment, signing and physical-device QA.
 
