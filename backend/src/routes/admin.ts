@@ -70,9 +70,11 @@ adminRouter.post('/routes/:routeId/stops/:stopId/qr', requireAdminAuth('SUPER_AD
   }
   const stop = route.stops.find(item => item.id === stopId);
   if (!stop) return res.status(404).json({ error: 'Stop is not part of this route.' });
-  if (!Number.isFinite(stop.latitude) || !Number.isFinite(stop.longitude) ||
-      stop.latitude < 6 || stop.latitude > 38 || stop.longitude < 68 || stop.longitude > 98) {
-    return res.status(409).json({ error: 'Stop needs a valid surveyed India coordinate before QR issuance.' });
+  const place = repository.getPlaceById(stop.stopId);
+  if (!place || place.verificationStatus !== 'ADMIN_VERIFIED' ||
+      !Number.isFinite(place.latitude) || !Number.isFinite(place.longitude) ||
+      place.latitude! < 6 || place.latitude! > 38 || place.longitude! < 68 || place.longitude! > 98) {
+    return res.status(409).json({ error: 'The underlying place record must be Super Admin-verified and have valid surveyed India coordinates before QR issuance.' });
   }
   const issuedAt = Date.now();
   const expiresAt = issuedAt + 365 * 24 * 60 * 60 * 1000;
