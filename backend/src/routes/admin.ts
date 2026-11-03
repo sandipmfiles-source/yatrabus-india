@@ -79,6 +79,16 @@ adminRouter.post('/routes/:routeId/stops/:stopId/qr', requireAdminAuth('SUPER_AD
   const issuedAt = Date.now();
   const expiresAt = issuedAt + 365 * 24 * 60 * 60 * 1000;
   const token = issueStopQrToken({ version: 1, routeId, stopId, issuedAt, expiresAt }, CONFIG.ADMIN_JWT_SECRET);
+  repository.createAuditLog({
+    id: `audit-stop-qr-${issuedAt}`,
+    entityType: 'STOP_QR',
+    entityId: stop.id,
+    action: 'CREATE',
+    actorId: (req as any).admin.id,
+    actorRole: 'SUPER_ADMIN',
+    reason: `Signed QR issued for ${route.routeName} / ${stop.stopName}`,
+    timestamp: new Date(issuedAt).toISOString(),
+  });
   return res.json({ token, expiresAt, routeName: route.routeName, stopName: stop.stopName, format: 'YB1' });
 });
 
