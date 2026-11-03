@@ -20,7 +20,7 @@ export const HomePage: React.FC = () => {
   const [isFromFocused, setIsFromFocused] = useState(false);
   const [isToFocused, setIsToFocused] = useState(false);
   const [recentSearches, setRecentSearches] = useState<RecentSearchItem[]>([]);
-  const [nearbyStops, setNearbyStops] = useState<{ place: any; distanceMeters: number }[]>([]);
+  const [nearbyStops, setNearbyStops] = useState<{ place: any; distanceMeters: number; kind: 'BUS_STAND' | 'BUS_STOP'; feedName: string; routeCount: number }[]>([]);
   const [isLocating, setIsLocating] = useState(false);
   const [nearbyError, setNearbyError] = useState('');
 
