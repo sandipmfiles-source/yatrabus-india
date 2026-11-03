@@ -8,7 +8,8 @@ This phase hardens the existing single-instance pilot, adds repeatable state bac
 - **Safe restore:** `scripts/restore-state.sh` verifies the checksum, gzip integrity and JSON structure; it refuses to overwrite the live state unless `YATRIBUS_CONFIRM_STOPPED=YES` is explicitly supplied.
 - **CORS allow-list:** browser origins are no longer accepted through `Access-Control-Allow-Origin: *`. Configure exact deployed origins using `CORS_ALLOWED_ORIGINS`. Development defaults are limited to local Vite origins and the Capacitor HTTPS origin.
 - **Trusted proxy control:** `TRUST_PROXY_HOPS` remains explicit and defaults to zero. Set it only to the exact number of trusted reverse-proxy hops.
-- **Signed Android release pipeline:** `.github/workflows/android-release.yml` requires an HTTPS `VITE_API_BASE_URL` and protected keystore secrets, builds APK and AAB, verifies their signatures, publishes checksums and uploads a GitHub pre-release candidate.
+- **Signed Android release pipeline:** `.github/workflows/android-release.yml` requires HTTPS `VITE_API_BASE_URL` and `VITE_PUBLIC_APP_URL` plus protected keystore secrets, injects both URLs into the web build, builds APK and AAB, verifies their signatures, publishes checksums and uploads a GitHub pre-release candidate.
+- **Reproducible release tags:** APK release tags now point to the exact workflow commit (`github.sha`) rather than defaulting to the repository's default branch.
 - **Gradle signing config:** release signing values are read only from process environment variables; no keystore or password is stored in Git.
 - **Docker deployment:** Compose passes the CORS allow-list and trusted-proxy setting into the backend container.
 
@@ -23,6 +24,7 @@ In repository Settings → Secrets and variables → Actions, configure:
 | `KEY_ALIAS` | Secret | Exact key alias |
 | `KEY_PASSWORD` | Secret | Private key password |
 | `VITE_API_BASE_URL` | Variable | Deployed HTTPS API URL ending in `/api` |
+| `VITE_PUBLIC_APP_URL` | Variable | Public HTTPS frontend URL used in signed QR links |
 
 Create the keystore on a trusted machine and keep at least two secure offline backups. Never upload the raw keystore to the repository, issue tracker, chat, or APK. If a signing key is lost, future updates cannot be signed with the same identity.
 
