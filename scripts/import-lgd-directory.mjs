@@ -85,7 +85,7 @@ for (const row of villages.rows) {
   const localName = get(row, vi.localName);
   if (villageCode && villageName) {
     villageRecordCount++;
-    const record = ['lgd-village-' + villageCode, villageCode, villageName, state, district, sub, localName];
+    const record = ['lgd-village-' + villageCode, villageCode, villageName, state, district, sub, localName, snapshotDate];
     const keys = [...new Set([shardKey(villageName), shardKey(localName)].filter(Boolean))];
     for (const key of keys) {
       if (!villageShards.has(key)) villageShards.set(key, []);
