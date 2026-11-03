@@ -70,7 +70,7 @@ const vi = {
   localName: column(vh, ['Village Name (In Local Language)', 'Village Name Local', 'Local Language Name', 'Village Name (Local)']),
 };
 console.log('LGD hierarchy columns validated:', JSON.stringify(vi));
-for (const [key, idx] of Object.entries(vi)) if (idx < 0) throw new Error('Village CSV missing required column: ' + key + ' headers=' + vh.join('|'));
+for (const [key, idx] of Object.entries(vi)) if (idx < 0 && key !== 'localName') throw new Error('Village CSV missing required column: ' + key + ' headers=' + vh.join('|'));
 const states = new Map(), districts = new Map(), subs = new Map();
 for (const row of villages.rows) {
   const stateCode = get(row, vi.stateCode), state = get(row, vi.state);
