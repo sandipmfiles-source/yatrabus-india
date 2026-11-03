@@ -6,7 +6,7 @@ import { gunzipSync } from 'node:zlib';
 import { repository } from '../db/repository.js';
 import { publicSearchLimiter } from '../middleware/rateLimiter.js';
 import { loadNormalizedGtfsFeeds } from '../engine/publicGtfsRuntime.js';
-import { buildBusConnectedPlaceSuggestions } from '../engine/busConnectedPlaces.js';
+import { buildBusConnectedPlaceSuggestions, buildNearbyBusPlaceSuggestions } from '../engine/busConnectedPlaces.js';
 
 export const placesRouter = Router();
 
@@ -339,8 +339,21 @@ placesRouter.get('/nearby', (req: Request, res: Response) => {
     return res.status(400).json({ error: 'Invalid coordinates or radius' });
   }
 
-  const stops = repository.findNearbyStops(lat, lon, radius);
-  return res.json({ count: stops.length, stops });
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).formatToParts(new Date());
+  const dateParts = Object.fromEntries(parts.map(part => [part.type, part.value]));
+  const serviceDate = String(dateParts.year) + '-' + String(dateParts.month) + '-' + String(dateParts.day);
+  const feeds = loadNormalizedGtfsFeeds();
+  const stops = buildNearbyBusPlaceSuggestions(feeds, lat, lon, serviceDate, radius, 30);
+  return res.json({
+    count: stops.length,
+    stops,
+    serviceDate,
+    ordering: 'MAJOR_BUS_STANDS_FIRST_THEN_NEAREST_ACTIVE_BUS_STOPS',
+    coverageNote: 'Only active scheduled bus stops from installed public feeds are listed. Missing results do not prove that no local bus service exists.',
+    attribution: 'GTFS publisher/community feed attribution is retained in each stop result.',
+  });
 });
 
 // GET /api/places/:id
