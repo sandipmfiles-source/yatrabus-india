@@ -8,10 +8,12 @@ export interface Phase4AlertCandidate {
 }
 
 export function isVerifiedOfflineRoute(route: Route): boolean {
+  const verifiedAt = Date.parse(route.timetableVerifiedAt || '');
   return route.timetableDataStatus === 'SCHEDULED' &&
     Boolean(route.timetableSource?.trim()) &&
     /^https:\/\//i.test(route.timetableSourceUrl || '') &&
-    Boolean(route.timetableVerifiedAt) &&
+    Number.isFinite(verifiedAt) &&
+    verifiedAt <= Date.now() + 5 * 60 * 1000 &&
     Array.isArray(route.stops) && route.stops.length > 0;
 }
 
