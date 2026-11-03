@@ -103,7 +103,7 @@ export const BusDetailPage: React.FC = () => {
             }
           }
           if (alertsEnabled && ['DISRUPTION_REPORTED', 'ROUTE_CHANGED', 'POSSIBLE_DELAY'].includes(route.serviceStatus)) {
-            void phase4.notifyOnce('service:' + route.id + ':' + route.serviceStatus, 'Bus service update', route.statusReason || 'A service status update is recorded for this route.');
+            void phase4.notifyOnce('service:' + route.id + ':' + route.serviceStatus, 'Bus service update', 'Current route status: ' + route.serviceStatus + '. Check the operator for confirmation.');
           }
           if (alertsEnabled && (route.departures || []).some(departure => departure.isCancelled && departure.dataStatus === 'SCHEDULED')) {
             void phase4.notifyOnce('cancelled:' + route.id, 'Scheduled departure cancelled', 'A source-verified departure on this route is marked cancelled. Check the current timetable before travelling.');
