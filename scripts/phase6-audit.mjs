@@ -1,5 +1,4 @@
 import { readFileSync, existsSync } from 'node:fs';
-import { join } from 'node:path';
 
 const checks = [];
 const blockers = [];
