@@ -19,6 +19,7 @@ export const BusDetailPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const selectedStopId = searchParams.get('stop');
   const qrVerified = searchParams.get('qr') === 'verified';
+  const requestedBusId = searchParams.get('bus');
   const navigate = useNavigate();
   const { t } = useLanguage();
 
@@ -58,7 +59,7 @@ export const BusDetailPage: React.FC = () => {
         setRoute(res.route);
         setIsFavourite(phase4.isFavourite(res.route.id));
         void phase4.cacheVerifiedRoutes([res.route]).catch(() => undefined);
-        const routeBus = res.buses?.find((bus: any) => bus.routeId === res.route.id);
+        const routeBus = res.buses?.find((bus: any) => bus.id === requestedBusId) || res.buses?.find((bus: any) => bus.routeId === res.route.id);
         if (routeBus?.id) setActiveBusId(routeBus.id);
       }
       setIsLoading(false);
@@ -105,7 +106,7 @@ export const BusDetailPage: React.FC = () => {
       cancelled = true;
       window.clearInterval(intervalId);
     };
-  }, [activeBusId, route?.id, alertsEnabled]);
+  }, [activeBusId, route?.id, alertsEnabled, requestedBusId]);
 
   useEffect(() => {
     if (!route?.id) return;
@@ -153,7 +154,9 @@ export const BusDetailPage: React.FC = () => {
 
   const shareJourney = async () => {
     if (!route) return;
-    const url = window.location.origin + '/routes/' + encodeURIComponent(route.id);
+    const query = new URLSearchParams();
+    if (activeBusId) query.set('bus', activeBusId);
+    const url = window.location.origin + '/routes/' + encodeURIComponent(route.id) + (query.toString() ? '?' + query.toString() : '');
     try {
       if (navigator.share) await navigator.share({ title: route.routeName, text: route.originStopName + ' to ' + route.destinationStopName, url });
       else if (navigator.clipboard?.writeText) { await navigator.clipboard.writeText(url); setShareMessage('Journey link copied.'); }
