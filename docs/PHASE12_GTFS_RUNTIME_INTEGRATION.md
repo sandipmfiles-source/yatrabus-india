@@ -86,3 +86,36 @@ Every response must identify feed/source, generated/imported timestamps, service
 - Do not scrape gated services, bypass access controls, invent schedules, or imply community data is operator-certified.
 - No production APK claim until hosted HTTPS API, durable database/storage, release signing and physical-device QA are complete.
 - Google OAuth configuration remains deferred as previously requested.
+
+## Implementation status — 3 Nov 2026
+
+Implemented on this branch:
+- Date-aware static GTFS query engine over normalized snapshot JSON.
+- Service-day evaluation using `calendar.txt` and `calendar_dates.txt`, including exception precedence.
+- Correct service-day offsets for times after 24:00.
+- Direct origin/destination search, stop departure board and route/trip/stop-time detail endpoints.
+- Explicit feed provenance, timezone, imported timestamp, UNVERIFIED status and static-vs-live separation.
+- Bounded result limits (1–50), required service date validation and no-data 503 responses.
+- Unit tests for service calendars, exceptions, after-midnight trips, source provenance and departure boards.
+- CI updated to Node 22 and configured to run on this branch and PRs targeting Phase 11.
+
+Runtime API endpoints:
+- `GET /api/timetable/feeds`
+- `GET /api/timetable/search?from=Kharagpur&to=Jhargram&date=2026-11-02&limit=20`
+- `GET /api/timetable/stops/{stopId}/departures?date=2026-11-02&limit=20`
+- `GET /api/timetable/routes/{routeId}`
+
+Deployment requirement:
+- The backend reads normalized feed JSON from `GTFS_DATA_DIR`; default: `artifacts/gtfs`.
+- The Phase 11 release workflow creates the archive, but it does not automatically install that archive on a separately hosted backend. Deployment must download/extract the validated release asset into the configured directory before these APIs can return schedules.
+- If no normalized snapshot is installed, timetable search deliberately returns `503 UNAVAILABLE`; it does not fall back to demo data.
+
+Still NOT implemented / not production-ready:
+- PostgreSQL/PostGIS runtime adapter, schema migrations and transactional snapshot activation.
+- Automated production download/install of the release archive and atomic last-known-good snapshot swap.
+- Multi-transfer journey planning across GTFS feeds, frequencies expansion into board-ready departures, transfer rules and timezone-aware display conversion.
+- Passenger UI wiring to these endpoints.
+- API integration/load tests and Android end-to-end tests.
+- Hosted API deployment, signing and physical-device QA.
+
+Do not describe Phase 12 as complete until the remaining items pass CI and deployment validation.
