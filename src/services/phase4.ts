@@ -1,5 +1,6 @@
 import { LocalNotifications } from '@capacitor/local-notifications';
 import type { Route } from '@shared/types/bus.js';
+import { isVerifiedOfflineRoute } from '@shared/engine/phase4Policy.js';
 
 const FAVOURITES_KEY = 'yatribus_favourite_routes_v1';
 const ACCESSIBILITY_KEY = 'yatribus_accessibility_v1';
@@ -75,13 +76,7 @@ export const phase4 = {
   applyAccessibility() { this.saveAccessibility(this.getAccessibility()); },
 
   async cacheVerifiedRoutes(routes: Route[]): Promise<number> {
-    const eligible = routes.filter(route =>
-      route.timetableDataStatus === 'SCHEDULED' &&
-      Boolean(route.timetableSource?.trim()) &&
-      /^https:\/\//i.test(route.timetableSourceUrl || '') &&
-      Boolean(route.timetableVerifiedAt) &&
-      Array.isArray(route.stops) && route.stops.length > 0
-    );
+    const eligible = routes.filter(isVerifiedOfflineRoute);
     if (!eligible.length) return 0;
     const db = await openOfflineDb();
     return new Promise((resolve, reject) => {
@@ -100,7 +95,7 @@ export const phase4 = {
       const request = tx.objectStore(STORE_NAME).getAll();
       request.onsuccess = () => {
         db.close();
-        resolve((request.result || []).filter((route: any) => route.timetableDataStatus === 'SCHEDULED' && route.timetableVerifiedAt && /^https:\\/\\//i.test(route.timetableSourceUrl || '') && route.timetableSource?.trim()));
+        resolve((request.result || []).filter((route: Route) => isVerifiedOfflineRoute(route)));
       };
       request.onerror = () => { db.close(); reject(request.error || new Error('Offline cache read failed.')); };
     });
