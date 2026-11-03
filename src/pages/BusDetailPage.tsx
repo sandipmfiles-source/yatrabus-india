@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../context/LanguageContext.js';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../services/api.js';
 import { Route, RouteStop } from '@shared/types/bus.js';
 import { AggregatedBusLocation } from '@shared/types/tracking.js';
