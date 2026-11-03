@@ -41,7 +41,15 @@ export function createServer() {
   app.use((req: Request, res: Response, next: NextFunction) => {
     const origin = req.headers.origin;
     res.vary('Origin');
-    if (origin && !allowedOrigins.has(origin)) {
+    let sameHostOrigin = false;
+    if (origin) {
+      try {
+        sameHostOrigin = new URL(origin).host.toLowerCase() === (req.get('host') || '').toLowerCase();
+      } catch {
+        return res.status(403).json({ error: 'Origin not allowed.' });
+      }
+    }
+    if (origin && !sameHostOrigin && !allowedOrigins.has(origin)) {
       return res.status(403).json({ error: 'Origin not allowed.' });
     }
     if (origin) res.setHeader('Access-Control-Allow-Origin', origin);
