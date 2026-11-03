@@ -11,6 +11,7 @@ import { trackingRouter } from './routes/tracking.js';
 import { contributionsRouter } from './routes/contributions.js';
 import { adminRouter } from './routes/admin.js';
 import { indiaCatalogueRouter } from './routes/indiaCatalogue.js';
+import { timetableRouter } from './routes/timetable.js';
 
 export function createServer() {
   installRepositoryPersistence();
@@ -91,6 +92,7 @@ export function createServer() {
   app.use('/api/contributions', contributionsRouter);
   app.use('/api/admin', adminRouter);
   app.use('/api/india/catalogue', indiaCatalogueRouter);
+  app.use('/api/timetable', timetableRouter);
 
   // Serve the built passenger app and API from one HTTPS host/container.
   const webDist = resolve(process.cwd(), 'dist');
