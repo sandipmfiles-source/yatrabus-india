@@ -57,7 +57,7 @@ Run a backup on the backend host:
 ```bash
 YATRIBUS_DATA_FILE=/var/lib/yatribus/yatribus-state.json \
 YATRIBUS_BACKUP_DIR=/var/backups/yatribus \
-  ./scripts/backup-state.sh
+  bash scripts/backup-state.sh
 ```
 
 Copy both the `.json.gz` file and its matching `.sha256` file to a separate protected backup location. A Docker named volume alone is not a backup.
@@ -67,7 +67,7 @@ To restore, stop the backend first and use:
 ```bash
 YATRIBUS_DATA_FILE=/var/lib/yatribus/yatribus-state.json \
 YATRIBUS_CONFIRM_STOPPED=YES \
-  ./scripts/restore-state.sh /var/backups/yatribus/yatribus-state-YYYYMMDDTHHMMSSZ.json.gz
+  bash scripts/restore-state.sh /var/backups/yatribus/yatribus-state-YYYYMMDDTHHMMSSZ.json.gz
 ```
 
 Start the service and verify `GET /health`, the Super Admin login, recent submissions and audit history. Perform a restore drill in a staging environment before relying on backups.
