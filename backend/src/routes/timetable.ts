@@ -79,30 +79,37 @@ timetableRouter.get('/stops/:stopId/departures', (req, res) => {
   return res.json({ timetableStatus: departures.length ? 'SCHEDULED_UNVERIFIED' : 'NO_SERVICE_FOUND', dataType: 'GTFS_STATIC', serviceDate: date, resultCount: departures.length, departures, liveVehiclePositionsAvailable: false });
 });
 
-// GET /api/timetable/routes/:routeId
+// GET /api/timetable/routes/:routeId?feedId=optional-feed-id
 timetableRouter.get('/routes/:routeId', (req, res) => {
   const feeds = getFeeds();
-  for (const feed of feeds) {
-    const route = feed.routes.find(item => item.route_id === req.params.routeId);
-    if (!route) continue;
-    const agency = feed.agency.find(item => !item.agency_id || item.agency_id === route.agency_id);
-    const trips = feed.trips.filter(item => item.route_id === route.route_id);
-    const tripIds = new Set(trips.map(item => item.trip_id));
-    const stopsById = new Map(feed.stops.map(stop => [stop.stop_id, stop]));
-    const stopTimes = feed.stopTimes.filter(item => tripIds.has(item.trip_id)).sort((a, b) => a.trip_id.localeCompare(b.trip_id) || a.stop_sequence - b.stop_sequence);
-    return res.json({
-      route: { id: route.route_id, shortName: route.route_short_name, longName: route.route_long_name, routeType: route.route_type },
-      feed: { id: feed.feed.id, name: feed.feed.name, official: !!feed.feed.official, verificationStatus: 'UNVERIFIED', importedAt: feed.feed.importedAt, attribution: feed.feed.attribution },
-      agencyTimezone: agency?.agency_timezone || 'UNKNOWN',
-      trips: trips.map(trip => ({
-        tripId: trip.trip_id, serviceId: trip.service_id, headsign: trip.trip_headsign,
-        stopTimes: stopTimes.filter(row => row.trip_id === trip.trip_id).map(row => ({
-          stopId: row.stop_id, stopName: stopsById.get(row.stop_id)?.stop_name || row.stop_id,
-          stopSequence: row.stop_sequence, arrivalTime: row.arrival_time || null, departureTime: row.departure_time || null,
-        })),
-      })),
-      dataType: 'GTFS_STATIC', liveVehiclePositionsAvailable: false,
-    });
+  const requestedFeedId = typeof req.query.feedId === 'string' ? req.query.feedId : undefined;
+  const matches = feeds.filter(feed =>
+    (!requestedFeedId || feed.feed.id === requestedFeedId) &&
+    feed.routes.some(item => item.route_id === req.params.routeId)
+  );
+  if (matches.length > 1) {
+    return res.status(409).json({ error: 'Route ID exists in multiple feeds; provide the feedId query parameter.' });
   }
-  return res.status(404).json({ error: 'Route not found in installed GTFS snapshots.' });
+  const feed = matches[0];
+  if (!feed) return res.status(404).json({ error: 'Route not found in installed GTFS snapshots.' });
+  const route = feed.routes.find(item => item.route_id === req.params.routeId)!;
+  const agency = feed.agency.find(item => !item.agency_id || item.agency_id === route.agency_id);
+  const trips = feed.trips.filter(item => item.route_id === route.route_id);
+  const tripIds = new Set(trips.map(item => item.trip_id));
+  const stopsById = new Map(feed.stops.map(stop => [stop.stop_id, stop]));
+  const stopTimes = feed.stopTimes.filter(item => tripIds.has(item.trip_id))
+    .sort((a, b) => a.trip_id.localeCompare(b.trip_id) || a.stop_sequence - b.stop_sequence);
+  return res.json({
+    route: { id: route.route_id, shortName: route.route_short_name, longName: route.route_long_name, routeType: route.route_type },
+    feed: { id: feed.feed.id, name: feed.feed.name, official: !!feed.feed.official, verificationStatus: 'UNVERIFIED', importedAt: feed.feed.importedAt, attribution: feed.feed.attribution },
+    agencyTimezone: agency?.agency_timezone || 'UNKNOWN',
+    trips: trips.map(trip => ({
+      tripId: trip.trip_id, serviceId: trip.service_id, headsign: trip.trip_headsign,
+      stopTimes: stopTimes.filter(row => row.trip_id === trip.trip_id).map(row => ({
+        stopId: row.stop_id, stopName: stopsById.get(row.stop_id)?.stop_name || row.stop_id,
+        stopSequence: row.stop_sequence, arrivalTime: row.arrival_time || null, departureTime: row.departure_time || null,
+      })),
+    })),
+    dataType: 'GTFS_STATIC', liveVehiclePositionsAvailable: false,
+  });
 });
