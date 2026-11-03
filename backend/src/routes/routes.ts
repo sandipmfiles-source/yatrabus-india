@@ -68,9 +68,11 @@ routesRouter.get('/qr/verify', (req: Request, res: Response) => {
     return res.status(404).json({ verified: false, error: 'The verified route record is no longer available.' });
   }
   const stop = route.stops.find(item => item.id === payload.stopId);
-  if (!stop || !Number.isFinite(stop.latitude) || !Number.isFinite(stop.longitude) ||
-      stop.latitude < 6 || stop.latitude > 38 || stop.longitude < 68 || stop.longitude > 98) {
-    return res.status(404).json({ verified: false, error: 'The verified stop record is no longer available.' });
+  const place = stop ? repository.getPlaceById(stop.stopId) : undefined;
+  if (!stop || !place || place.verificationStatus !== 'ADMIN_VERIFIED' ||
+      !Number.isFinite(place.latitude) || !Number.isFinite(place.longitude) ||
+      place.latitude! < 6 || place.latitude! > 38 || place.longitude! < 68 || place.longitude! > 98) {
+    return res.status(404).json({ verified: false, error: 'The Super Admin-verified place record is no longer available.' });
   }
   return res.json({
     verified: true,
@@ -79,8 +81,8 @@ routesRouter.get('/qr/verify', (req: Request, res: Response) => {
     routeName: route.routeName,
     stopId: stop.id,
     stopName: stop.stopName,
-    latitude: stop.latitude,
-    longitude: stop.longitude,
+    latitude: place.latitude,
+    longitude: place.longitude,
     issuedAt: new Date(payload.issuedAt).toISOString(),
     expiresAt: new Date(payload.expiresAt).toISOString(),
     verificationStatus: 'ADMIN_VERIFIED',
