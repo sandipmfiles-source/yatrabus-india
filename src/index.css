@@ -199,3 +199,26 @@
   transform: translateY(-1px);
 }
 .yatribus-theme main .yb-nearby-stop-button:disabled { opacity: .72; cursor: wait; }
+
+
+/* Phase 4 opt-in accessibility preferences */
+html[data-text-size="large"] { font-size: 112.5%; }
+html[data-text-size="largest"] { font-size: 125%; }
+html[data-high-contrast="true"] {
+  --yb-paper: #ffffff;
+  color: #000000;
+}
+html[data-high-contrast="true"] body,
+html[data-high-contrast="true"] .yatribus-theme { background: #ffffff; color: #000000; }
+html[data-high-contrast="true"] .yatribus-theme main .text-yatriwarm-500,
+html[data-high-contrast="true"] .yatribus-theme main .text-yatriwarm-600,
+html[data-high-contrast="true"] .yatribus-theme main .text-yatriwarm-700 { color: #292524 !important; }
+html[data-high-contrast="true"] :focus-visible { outline: 4px solid #000000; outline-offset: 3px; }
+html[data-reduced-motion="true"] *,
+html[data-reduced-motion="true"] *::before,
+html[data-reduced-motion="true"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
