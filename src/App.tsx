@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { LanguageProvider } from './context/LanguageContext.js';
 import { TrackingProvider } from './context/TrackingContext.js';
@@ -28,8 +28,14 @@ import { AdminAutomationPage } from './pages/admin/AdminAutomationPage.js';
 import { AdminHealthPage } from './pages/admin/AdminHealthPage.js';
 import { AdminGtfsImportPage } from './pages/admin/AdminGtfsImportPage.js';
 import { AdminTimetablePage } from './pages/admin/AdminTimetablePage.js';
+import { FavouritesPage } from './pages/FavouritesPage.js';
+import { OfflineTimetablePage } from './pages/OfflineTimetablePage.js';
+import { AccessibilitySettingsPage } from './pages/AccessibilitySettingsPage.js';
+import { QrStopScannerPage } from './pages/QrStopScannerPage.js';
+import { phase4 } from './services/phase4.js';
 
 export const App: React.FC = () => {
+  useEffect(() => { phase4.applyAccessibility(); }, []);
   return (
     <LanguageProvider>
       <TrackingProvider>
@@ -46,6 +52,10 @@ export const App: React.FC = () => {
                 <Route path="/operator" element={<OwnerDashboardPage />} />
                 <Route path="/operator-claim" element={<OperatorClaimPage />} />
                 <Route path="/privacy" element={<PrivacyPolicyPage />} />
+                <Route path="/favourites" element={<FavouritesPage />} />
+                <Route path="/offline" element={<OfflineTimetablePage />} />
+                <Route path="/accessibility" element={<AccessibilitySettingsPage />} />
+                <Route path="/scan" element={<QrStopScannerPage />} />
                 <Route path="/admin" element={<AdminLoginPage />} />
                 <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
                 <Route path="/admin/submissions" element={<AdminSubmissionsPage />} />
