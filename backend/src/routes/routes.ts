@@ -56,7 +56,7 @@ routesRouter.get('/', (req: Request, res: Response) => {
 });
 
 // GET /api/routes/qr/verify?token=YB1... — verify an admin-issued stop QR.
-routesRouter.get('/qr/verify', (req: Request, res: Response) => {
+routesRouter.get('/qr/verify', publicSearchLimiter, (req: Request, res: Response) => {
   const token = typeof req.query.token === 'string' ? req.query.token : '';
   if (!token || token.length > 2048 || !CONFIG.ADMIN_JWT_SECRET || CONFIG.ADMIN_JWT_SECRET.length < 32) {
     return res.status(400).json({ verified: false, error: 'A valid YatraBus stop QR token is required.' });
