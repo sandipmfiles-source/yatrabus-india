@@ -30,6 +30,7 @@ export function runPhase4PolicyTests(assert: (description: string, pass: boolean
   assert('Only a source-backed SCHEDULED route is eligible for offline cache', isVerifiedOfflineRoute(baseRoute));
   assert('Offline cache rejects a route without an HTTPS source URL', !isVerifiedOfflineRoute({ ...baseRoute, timetableSourceUrl: 'http://example.gov.in' }));
   assert('Offline cache rejects UNAVAILABLE sample timetables', !isVerifiedOfflineRoute({ ...baseRoute, timetableDataStatus: 'UNAVAILABLE' }));
+  assert('Offline cache rejects malformed verification timestamps', !isVerifiedOfflineRoute({ ...baseRoute, timetableVerifiedAt: 'not-a-date' }));
 
   const eta = {
     stopId: 's2', stopName: 'Kharagpur', stopSequence: 2,
