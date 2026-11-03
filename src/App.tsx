@@ -32,6 +32,7 @@ import { FavouritesPage } from './pages/FavouritesPage.js';
 import { OfflineTimetablePage } from './pages/OfflineTimetablePage.js';
 import { AccessibilitySettingsPage } from './pages/AccessibilitySettingsPage.js';
 import { QrStopScannerPage } from './pages/QrStopScannerPage.js';
+import { StopLinkResolver } from './pages/StopLinkResolver.js';
 import { phase4 } from './services/phase4.js';
 
 export const App: React.FC = () => {
@@ -56,6 +57,7 @@ export const App: React.FC = () => {
                 <Route path="/offline" element={<OfflineTimetablePage />} />
                 <Route path="/accessibility" element={<AccessibilitySettingsPage />} />
                 <Route path="/scan" element={<QrStopScannerPage />} />
+                <Route path="/stop/:routeId/:stopId" element={<StopLinkResolver />} />
                 <Route path="/admin" element={<AdminLoginPage />} />
                 <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
                 <Route path="/admin/submissions" element={<AdminSubmissionsPage />} />
