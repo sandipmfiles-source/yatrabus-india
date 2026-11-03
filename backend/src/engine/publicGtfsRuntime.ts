@@ -48,7 +48,7 @@ function timeParts(value?: string) {
   if (!value || !/^\d{1,3}:\d{2}:\d{2}$/.test(value)) return null;
   const [hours, minutes, seconds] = value.split(':').map(Number);
   if (minutes > 59 || seconds > 59) return null;
-  return { value: value.slice(0, value.lastIndexOf(':')), dayOffset: Math.floor(hours / 24), minutes: (hours % 24) * 60 + minutes };
+  return { value: String(hours % 24).padStart(2, '0') + ':' + String(minutes).padStart(2, '0'), dayOffset: Math.floor(hours / 24), minutes: (hours % 24) * 60 + minutes };
 }
 function normalizedStopName(value: string) { return value.normalize('NFKC').trim().toLocaleLowerCase('en-IN'); }
 function matchStop(feed: NormalizedGtfsFeed, query: string) {
