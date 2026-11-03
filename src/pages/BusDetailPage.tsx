@@ -18,7 +18,7 @@ export const BusDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
   const selectedStopId = searchParams.get('stop');
-  const qrVerified = searchParams.get('qr') === 'verified';
+  const qrToken = searchParams.get('qrToken');
   const requestedBusId = searchParams.get('bus');
   const navigate = useNavigate();
   const { t } = useLanguage();
@@ -26,6 +26,7 @@ export const BusDetailPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [route, setRoute] = useState<Route | null>(null);
   const [isFavourite, setIsFavourite] = useState(false);
+  const [qrVerified, setQrVerified] = useState(false);
   const [alertsEnabled, setAlertsEnabled] = useState(() => phase4.alertsEnabled());
   const [shareMessage, setShareMessage] = useState('');
   const [activeBusId, setActiveBusId] = useState<string | null>(null);
@@ -47,6 +48,25 @@ export const BusDetailPage: React.FC = () => {
       return generated;
     } catch { return 'yb-' + Date.now() + '-' + Math.random().toString(36).slice(2); }
   });
+
+  useEffect(() => {
+    let active = true;
+    setQrVerified(false);
+    if (route && qrToken && selectedStopId) {
+      api.verifyStopQrToken(qrToken).then(result => {
+        if (active && result.routeId === route.id && result.stopId === selectedStopId) setQrVerified(true);
+      }).catch(() => { if (active) setQrVerified(false); });
+    }
+    return () => { active = false; };
+  }, [route?.id, qrToken, selectedStopId]);
+
+  useEffect(() => {
+    if (!route || !selectedStopId) return;
+    document.getElementById('yb-stop-' + selectedStopId)?.scrollIntoView({
+      behavior: phase4.getAccessibility().reducedMotion ? 'auto' : 'smooth',
+      block: 'center',
+    });
+  }, [route?.id, selectedStopId]);
 
   useEffect(() => {
     if (!id) return;
