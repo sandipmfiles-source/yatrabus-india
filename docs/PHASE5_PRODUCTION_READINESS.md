@@ -11,6 +11,7 @@ This phase hardens the existing single-instance pilot, adds repeatable state bac
 - **Signed Android release pipeline:** `.github/workflows/android-release.yml` requires HTTPS `VITE_API_BASE_URL` and `VITE_PUBLIC_APP_URL` plus protected keystore secrets, injects both URLs into the web build, builds APK and AAB, verifies their signatures, publishes checksums and uploads a GitHub pre-release candidate.
 - **Reproducible release tags:** APK release tags now point to the exact workflow commit (`github.sha`) rather than defaulting to the repository's default branch.
 - **Gradle signing config:** release signing values are read only from process environment variables; no keystore or password is stored in Git.
+- **Production health gate:** `/health` reports `DEGRADED` (HTTP 503) in production unless persistent JSON storage is writable and the sole Super Admin email, valid scrypt hash and 32+ character JWT secret are configured.
 - **Docker deployment:** Compose passes the CORS allow-list and trusted-proxy setting into the backend container.
 
 ## Required GitHub Actions configuration for a signed release
