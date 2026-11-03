@@ -143,6 +143,7 @@ function fetchLgdVillageSuggestions(query: string, limit: number) {
     .map((row: any[]) => {
       const name = String(row[2] || '');
       const localName = String(row[6] || '');
+      const recordSnapshotDate = String(row[7] || snapshotDate);
       const exact = name.toLocaleLowerCase('en-IN') === needle || localName.toLocaleLowerCase('en-IN') === needle;
       const prefix = name.toLocaleLowerCase('en-IN').startsWith(needle) || localName.toLocaleLowerCase('en-IN').startsWith(needle);
       const place = {
@@ -157,11 +158,11 @@ function fetchLgdVillageSuggestions(query: string, limit: number) {
         sourceRecordId: String(row[1] || ''),
         sourceLicense: 'Government Open Data License - India (GODL-India)',
         sourceUrl: 'https://lgdirectory.gov.in/',
-        sourceSnapshotDate: snapshotDate,
+        sourceSnapshotDate: recordSnapshotDate,
         verificationStatus: 'UNVERIFIED',
         aliases: localName ? [localName] : [],
-        createdAt: snapshotDate + 'T00:00:00.000Z',
-        updatedAt: snapshotDate + 'T00:00:00.000Z',
+        createdAt: recordSnapshotDate + 'T00:00:00.000Z',
+        updatedAt: recordSnapshotDate + 'T00:00:00.000Z',
       };
       return {
         place,
