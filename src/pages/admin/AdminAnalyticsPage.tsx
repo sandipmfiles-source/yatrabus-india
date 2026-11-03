@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../../services/api.js';
 import type { SystemHealthStats, AuditLogEntry } from '@shared/types/admin.js';
-import { Activity, AlertTriangle, BusFront, ClipboardCheck, MapPin, Radio, ShieldCheck } from 'lucide-react';
+import { Activity, AlertTriangle, BusFront, ClipboardCheck, MapPin, Radio, ShieldCheck, Database, Clock3, Gauge, Timer } from 'lucide-react';
 
 export const AdminAnalyticsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -40,6 +40,11 @@ export const AdminAnalyticsPage: React.FC = () => {
         {metric('Duplicate candidates',stats.pendingDuplicatesCount,<AlertTriangle className="h-4 w-4"/>,'Require human review; never auto-merged')}
         {metric('Live buses',stats.liveBusesTrackingCount,<Radio className="h-4 w-4"/>,'Fresh live GPS aggregates only')}
         {metric('Average GPS confidence',Math.round(stats.averageConfidenceScore) + '%',<Activity className="h-4 w-4"/>,'Aggregate confidence score; not a vehicle identity guarantee')}
+        {metric('Active journey sessions',stats.activeJourneySessionsCount,<Timer className="h-4 w-4"/>,'Current active passenger journey sessions')}
+        {metric('Database',stats.databaseConnected ? 'Connected' : 'Unavailable',<Database className="h-4 w-4"/>,'Backend database connectivity check')}
+        {metric('System health',stats.status,<Gauge className="h-4 w-4"/>,'Backend health status')}
+        {metric('Uptime',Math.floor(stats.uptimeSeconds / 3600) + ' h',<Clock3 className="h-4 w-4"/>,'Current backend process uptime')}
+        {metric('Last data import',stats.lastImportTime ? new Date(stats.lastImportTime).toLocaleString() : 'Not recorded',<Clock3 className="h-4 w-4"/>,'Most recent import timestamp reported by backend')}
       </div>
       <div className="rounded-2xl border border-yatriwarm-200 bg-white p-4 space-y-3">
         <div className="flex items-center gap-2"><ShieldCheck className="h-5 w-5"/><h2 className="font-bold">Verification and audit history</h2></div>
