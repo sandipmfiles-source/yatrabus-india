@@ -1,0 +1,55 @@
+name: Phase 6 Final QA Gate
+
+on:
+  pull_request:
+    branches: [phase5-production-readiness]
+  push:
+    branches: [phase6-final-qa]
+
+permissions:
+  contents: read
+
+jobs:
+  final-qa:
+    name: Build, tests, dependency audit and production readiness gate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install exact locked dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Dependency audit
+        run: npm audit --audit-level=high
+
+      - name: Production web build
+        run: npm run build
+
+      - name: Existing unit and integration suites
+        run: npm test
+
+      - name: Phase 6 static release gate
+        shell: bash
+        run: |
+          set +e
+          npm run qa:phase6 > phase6-qa-report.txt 2>&1
+          status=$?
+          cat phase6-qa-report.txt
+          exit "$status"
+
+      - name: Preserve QA report even when release gate fails
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: yatribus-phase6-qa-report
+          path: phase6-qa-report.txt
+          if-no-files-found: warn
+          retention-days: 30

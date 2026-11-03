@@ -2,9 +2,9 @@ name: Build Android Debug APK
 
 on:
   push:
-    branches: [main, master, mx-local-preserve, phase2-transport-engine, phase3-india-data-expansion-rebased, phase4-passenger-experience]
+    branches: [main, master, mx-local-preserve, phase2-transport-engine, phase3-india-data-expansion-rebased, phase4-passenger-experience, phase5-production-readiness, phase6-final-qa]
   pull_request:
-    branches: [main, master, mx-local-preserve, phase1-final-v3, phase2-transport-engine, phase3-india-data-expansion-rebased]
+    branches: [main, master, mx-local-preserve, phase1-final-v3, phase2-transport-engine, phase3-india-data-expansion-rebased, phase5-production-readiness]
   workflow_dispatch:
 
 permissions:
@@ -62,11 +62,18 @@ jobs:
       - name: Build Web Application
         env:
           VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
+          VITE_PUBLIC_APP_URL: ${{ vars.VITE_PUBLIC_APP_URL }}
         run: |
           if [ -z "$VITE_API_BASE_URL" ]; then
             echo "::warning::VITE_API_BASE_URL is not configured. Native APK API calls will fail closed until an HTTPS backend URL is configured."
           elif [[ "$VITE_API_BASE_URL" != https://* ]]; then
             echo "::error::VITE_API_BASE_URL must use HTTPS for Android builds."
+            exit 1
+          fi
+          if [ -z "$VITE_PUBLIC_APP_URL" ]; then
+            echo "::warning::VITE_PUBLIC_APP_URL is not configured; public printable QR labels will remain unavailable."
+          elif [[ "$VITE_PUBLIC_APP_URL" != https://* ]]; then
+            echo "::error::VITE_PUBLIC_APP_URL must use HTTPS."
             exit 1
           fi
           npm run build
@@ -150,6 +157,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: yatribus-build-${{ github.run_number }}
+          target_commitish: ${{ github.sha }}
           name: "YatraBus India APK build #${{ github.run_number }}"
           prerelease: true
           generate_release_notes: true

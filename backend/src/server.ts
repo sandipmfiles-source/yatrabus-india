@@ -35,10 +35,25 @@ export function createServer() {
   app.use(express.json({ limit: '1mb' }));
   app.use(express.urlencoded({ extended: true, limit: '1mb', parameterLimit: 100 }));
 
-  // Public read/search APIs are intentionally cross-origin accessible.
-  // Admin endpoints remain protected by the Super Admin bearer-token middleware.
+  // Cross-origin browser access is allow-listed. Native Capacitor HTTP and same-origin
+  // requests do not require a permissive wildcard CORS policy.
+  const allowedOrigins = new Set(CONFIG.CORS_ALLOWED_ORIGINS);
   app.use((req: Request, res: Response, next: NextFunction) => {
-    res.setHeader('Access-Control-Allow-Origin', '*');
+    const origin = req.headers.origin;
+    res.vary('Origin');
+    let sameHostOrigin = false;
+    if (origin) {
+      try {
+        const requestOrigin = `${req.protocol}://${req.get('host')}`;
+        sameHostOrigin = new URL(origin).origin === new URL(requestOrigin).origin;
+      } catch {
+        return res.status(403).json({ error: 'Origin not allowed.' });
+      }
+    }
+    if (origin && !sameHostOrigin && !allowedOrigins.has(origin)) {
+      return res.status(403).json({ error: 'Origin not allowed.' });
+    }
+    if (origin) res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
     if (req.method === 'OPTIONS') return res.sendStatus(204);
@@ -48,9 +63,18 @@ export function createServer() {
   // Health checks also verify that the persistent state file is writable.
   const healthHandler = (_req: Request, res: Response) => {
     const storageReady = isRepositoryPersistenceReady();
-    res.status(storageReady ? 200 : 503).json({
-      status: storageReady ? 'UP' : 'DEGRADED',
+    const [adminSalt, adminHash, adminHashExtra] = CONFIG.ADMIN_PASSWORD_HASH.split(':');
+    const adminAuthReady = Boolean(
+      CONFIG.ADMIN_EMAIL && adminSalt && adminHashExtra === undefined &&
+      /^[a-f0-9]{128}$/i.test(adminHash || '') && CONFIG.ADMIN_JWT_SECRET.length >= 32
+    );
+    const productionConfigReady = CONFIG.NODE_ENV !== 'production' || adminAuthReady;
+    const serviceReady = storageReady && productionConfigReady;
+    res.status(serviceReady ? 200 : 503).json({
+      status: serviceReady ? 'UP' : 'DEGRADED',
       storageReady,
+      adminAuthReady,
+      productionConfigReady,
       storageMode: 'JSON_FILE',
       service: 'YatriBus Backend API',
       timestamp: new Date().toISOString(),
