@@ -63,9 +63,18 @@ export function createServer() {
   // Health checks also verify that the persistent state file is writable.
   const healthHandler = (_req: Request, res: Response) => {
     const storageReady = isRepositoryPersistenceReady();
-    res.status(storageReady ? 200 : 503).json({
-      status: storageReady ? 'UP' : 'DEGRADED',
+    const [adminSalt, adminHash, adminHashExtra] = CONFIG.ADMIN_PASSWORD_HASH.split(':');
+    const adminAuthReady = Boolean(
+      CONFIG.ADMIN_EMAIL && adminSalt && adminHashExtra === undefined &&
+      /^[a-f0-9]{128}$/i.test(adminHash || '') && CONFIG.ADMIN_JWT_SECRET.length >= 32
+    );
+    const productionConfigReady = CONFIG.NODE_ENV !== 'production' || adminAuthReady;
+    const serviceReady = storageReady && productionConfigReady;
+    res.status(serviceReady ? 200 : 503).json({
+      status: serviceReady ? 'UP' : 'DEGRADED',
       storageReady,
+      adminAuthReady,
+      productionConfigReady,
       storageMode: 'JSON_FILE',
       service: 'YatriBus Backend API',
       timestamp: new Date().toISOString(),
