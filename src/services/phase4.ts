@@ -3,6 +3,8 @@ import type { Route } from '@shared/types/bus.js';
 
 const FAVOURITES_KEY = 'yatribus_favourite_routes_v1';
 const ACCESSIBILITY_KEY = 'yatribus_accessibility_v1';
+const ALERTS_ENABLED_KEY = 'yatribus_live_alerts_enabled_v1';
+const ALERT_HISTORY_KEY = 'yatribus_live_alert_history_v1';
 const DB_NAME = 'yatribus-offline-v1';
 const STORE_NAME = 'verified-routes';
 
@@ -117,6 +119,36 @@ export const phase4 = {
       schedule: { at },
       extra: { routeId: route.routeId },
     }] });
+  },
+
+  alertsEnabled(): boolean {
+    return localStorage.getItem(ALERTS_ENABLED_KEY) === 'true';
+  },
+
+  async enableLiveAlerts(): Promise<boolean> {
+    let permission = await LocalNotifications.checkPermissions();
+    if (permission.display !== 'granted') permission = await LocalNotifications.requestPermissions();
+    const granted = permission.display === 'granted';
+    localStorage.setItem(ALERTS_ENABLED_KEY, String(granted));
+    return granted;
+  },
+
+  async notifyOnce(key: string, title: string, body: string): Promise<void> {
+    if (!this.alertsEnabled()) return;
+    const history: Record<string, number> = JSON.parse(localStorage.getItem(ALERT_HISTORY_KEY) || '{}');
+    const now = Date.now();
+    if (history[key] && now - history[key] < 30 * 60 * 1000) return;
+    const permission = await LocalNotifications.checkPermissions();
+    if (permission.display !== 'granted') return;
+    const id = Math.floor(now % 2147483000);
+    await LocalNotifications.schedule({ notifications: [{
+      id, title, body, schedule: { at: new Date(now + 1000) }, extra: { alertKey: key },
+    }] });
+    history[key] = now;
+    for (const [savedKey, timestamp] of Object.entries(history)) {
+      if (now - timestamp > 7 * 24 * 60 * 60 * 1000) delete history[savedKey];
+    }
+    localStorage.setItem(ALERT_HISTORY_KEY, JSON.stringify(history));
   },
 
   async cancelNotifications(): Promise<void> {
