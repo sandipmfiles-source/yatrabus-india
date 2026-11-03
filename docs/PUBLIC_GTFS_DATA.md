@@ -1,25 +1,30 @@
 # Public GTFS data pipeline
 
-## What this adds
-- A source registry with provenance, publisher/catalog links, feed status and licence-review state.
-- A daily GitHub Actions refresh (02:17 UTC) plus manual dispatch.
-- A dependency-light GTFS ZIP importer that validates required tables and foreign-key references before writing normalized JSON snapshots.
-- SHA-256 checksums and per-feed import reports.
+## Refresh and publication
 
-## Enabled sources
-Only feeds marked `enabled` are downloaded. The initial set is:
-- TGSRTC Hyderabad — official open-data publisher; its page publishes GTFS and terms of use.
-- Chennai unified transit — community-maintained feed listed by Mobility Database; use remains subject to the linked terms and must not be described as an official agency feed.
+- The refresh workflow downloads only feeds whose registry status is `enabled`.
+- It validates required GTFS tables, service-calendar freshness, unique core identifiers and referential integrity before creating normalized JSON.
+- Each successful run retains a 30-day Actions artifact for debugging and publishes a compressed snapshot to the stable GitHub Release tag `gtfs-latest`.
+- The release asset is named `yatribus-gtfs-snapshot.tar.gz`; it contains one normalized JSON file per enabled feed and `import-report.json`.
+- The stable public download URL is:
+  `https://github.com/sandipmfiles-source/yatrabus-india/releases/download/gtfs-latest/yatribus-gtfs-snapshot.tar.gz`
+- Publishing uses the repository's built-in `GITHUB_TOKEN`; no personal access token or user secret is embedded in the workflow. Repository Actions settings must permit the workflow token to create releases (contents: write).
 
-Other discovered feeds (PMPML, KDMT/BEST, APSRTC, Rajkot and Ahmedabad) are recorded but disabled until reuse terms, attribution and quality are reviewed. A catalogue listing or a downloadable URL does not automatically grant redistribution rights.
+## Source quality and attribution
 
-## Data semantics and safety
-- GTFS Static is schedule data, not live vehicle tracking.
-- No GTFS-Realtime endpoints are configured because a verified public, unauthenticated, reusable India bus realtime endpoint has not been established by this registry.
-- Source snapshot timestamps and SHA-256 hashes are preserved.
-- Invalid/incomplete feeds fail the job; no partially parsed feed is published as a successful artifact.
-- Imported JSON is a CI artifact retained for 30 days, not a permanent database or an app runtime data source yet.
-- This pipeline does not yet replace the app's JSON/Map repository. Runtime API integration requires the separate PostgreSQL/repository refactor and a deliberate mapping of GTFS entities into the app's data model.
+The source registry at `data/gtfs/sources.json` is authoritative for enabled feeds, licence review and attribution. Current enabled feeds include TGSRTC Hyderabad and several community-derived regional datasets. Community-derived feeds are not operator-certified. A catalogue listing or downloadable URL alone does not grant redistribution rights; only registry entries with recorded review and attribution are eligible.
+
+The importer fails the run if an enabled feed cannot be downloaded or fails validation. A failed run does not replace the previously published `gtfs-latest` release asset.
+
+## Data semantics and limitations
+
+- GTFS Static is schedule data, not live vehicle tracking or live GPS.
+- Service calendars determine the dates on which a trip operates; consumers must apply calendar exceptions and service-date rules.
+- Source timestamps, source links, licence metadata, attribution, and SHA-256 hashes are preserved in normalized feed data and the import report.
+- GitHub Releases provide durable public file hosting, but this snapshot is not yet loaded by the backend API or Android timetable screens.
+- Backend runtime still requires a deliberate data adapter, bounded query/pagination, service-date evaluation, and provenance display before passengers can use these feeds.
+- Do not label community-derived schedules as official or guaranteed.
 
 ## Run manually
-GitHub → Actions → **Refresh public GTFS data** → Run workflow. The normalized snapshot and import report appear under the run's Artifacts section.
+
+GitHub → Actions → **Refresh public GTFS data** → Run workflow. After a successful run, check the run's Artifacts section and the repository's **Releases** page for the updated `gtfs-latest` asset.
