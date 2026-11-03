@@ -3,7 +3,7 @@ import { useLanguage } from '../context/LanguageContext.js';
 import { Link, useLocation } from 'react-router-dom';
 import { BusIllustration } from '../assets/BusIllustration.js';
 import { LanguageSwitcher } from './LanguageSwitcher.js';
-import { ShieldCheck, PlusCircle, Search, BusFront, MapPinned, Heart, WifiOff, QrCode, Accessibility } from 'lucide-react';
+import { ShieldCheck, PlusCircle, Search, BusFront, MapPinned } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
   const location = useLocation();
@@ -73,10 +73,6 @@ export const Navbar: React.FC = () => {
             <BusFront className="w-4 h-4" />
             {t('nav_owner_portal')}
           </Link>
-          <Link to="/favourites" className="px-3 py-1.5 rounded-lg flex items-center gap-1.5 text-yatriwarm-700 hover:bg-yatriwarm-100"><Heart className="w-4 h-4"/>Saved</Link>
-          <Link to="/offline" className="px-3 py-1.5 rounded-lg flex items-center gap-1.5 text-yatriwarm-700 hover:bg-yatriwarm-100"><WifiOff className="w-4 h-4"/>Offline</Link>
-          <Link to="/scan" className="px-3 py-1.5 rounded-lg flex items-center gap-1.5 text-yatriwarm-700 hover:bg-yatriwarm-100"><QrCode className="w-4 h-4"/>Scan</Link>
-          <Link to="/accessibility" className="px-3 py-1.5 rounded-lg flex items-center gap-1.5 text-yatriwarm-700 hover:bg-yatriwarm-100"><Accessibility className="w-4 h-4"/>Access</Link>
         </nav>
 
         {/* Right side controls: Language Switcher & Admin */}
@@ -93,12 +89,6 @@ export const Navbar: React.FC = () => {
           </Link>
         </div>
       </div>
-      <nav aria-label="Passenger tools" className="md:hidden flex gap-2 overflow-x-auto px-4 pb-2 text-xs">
-        <Link to="/favourites" className="shrink-0 rounded-lg border border-white/20 px-3 py-1.5 text-white"><Heart className="inline h-3.5 w-3.5 mr-1"/>Saved</Link>
-        <Link to="/offline" className="shrink-0 rounded-lg border border-white/20 px-3 py-1.5 text-white"><WifiOff className="inline h-3.5 w-3.5 mr-1"/>Offline</Link>
-        <Link to="/scan" className="shrink-0 rounded-lg border border-white/20 px-3 py-1.5 text-white"><QrCode className="inline h-3.5 w-3.5 mr-1"/>Scan stop</Link>
-        <Link to="/accessibility" className="shrink-0 rounded-lg border border-white/20 px-3 py-1.5 text-white"><Accessibility className="inline h-3.5 w-3.5 mr-1"/>Access</Link>
-      </nav>
     </header>
   );
 };
