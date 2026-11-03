@@ -47,7 +47,7 @@ export const AdminPlacesPage: React.FC = () => {
                 <div className="text-[10px] text-yatriwarm-400 mt-0.5">Source: {p.sourceDataset}{p.sourceSnapshotDate ? ` · Snapshot ${p.sourceSnapshotDate}` : ''}{p.sourceVerifiedAt ? ` · Verified ${p.sourceVerifiedAt}` : ''}</div>
                 {p.sourceUrl && <a href={p.sourceUrl} target="_blank" rel="noreferrer" className="text-[10px] text-yatribrand-800 underline">Open source record</a>}
               </div>
-              <span className={`inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full border ${p.verificationStatus === 'ADMIN_VERIFIED' || p.verificationStatus === 'VERIFIED' ? 'text-emerald-700 bg-emerald-50 border-emerald-200' : p.verificationStatus === 'DISPUTED' ? 'text-red-700 bg-red-50 border-red-200' : 'text-amber-800 bg-amber-50 border-amber-200'}`}><CheckCircle className="w-3 h-3" />{p.verificationStatus.replace('_', ' ')}</span>
+              <span className={`inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full border ${p.verificationStatus === 'ADMIN_VERIFIED' ? 'text-emerald-700 bg-emerald-50 border-emerald-200' : p.verificationStatus === 'COMMUNITY_VERIFIED' ? 'text-sky-700 bg-sky-50 border-sky-200' : 'text-amber-800 bg-amber-50 border-amber-200'}`}><CheckCircle className="w-3 h-3" />{p.verificationStatus.replace('_', ' ')}</span>
             </div>)}
           </div>
         )}
