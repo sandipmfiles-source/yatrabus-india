@@ -75,6 +75,29 @@ export const api = {
     return data;
   },
 
+  async getPublicTimetableFeeds() {
+    const res = await fetch(`${getApiBase()}/timetable/feeds`);
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.message || data.error || 'Public timetable sources are unavailable.');
+    return data;
+  },
+
+  async searchPublicTimetable(from: string, to: string, date: string, limit = 20) {
+    const params = new URLSearchParams({ from, to, date, limit: String(limit) });
+    const res = await fetch(`${getApiBase()}/timetable/search?${params.toString()}`);
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok && res.status !== 503) throw new Error(data.message || data.error || 'Public timetable search is unavailable.');
+    return { ...data, httpStatus: res.status };
+  },
+
+  async getPublicStopDepartures(stopId: string, date: string, limit = 20) {
+    const params = new URLSearchParams({ date, limit: String(limit) });
+    const res = await fetch(`${getApiBase()}/timetable/stops/${encodeURIComponent(stopId)}/departures?${params.toString()}`);
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok && res.status !== 503) throw new Error(data.message || data.error || 'Stop departures are unavailable.');
+    return { ...data, httpStatus: res.status };
+  },
+
   async verifyStopQrToken(token: string) {
     const res = await fetch(`${getApiBase()}/routes/qr/verify?token=${encodeURIComponent(token)}`);
     const data = await res.json().catch(() => ({}));
