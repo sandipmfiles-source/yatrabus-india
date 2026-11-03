@@ -13,6 +13,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: import-india-lgd-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   import-directory:
     runs-on: ubuntu-24.04
@@ -68,5 +72,7 @@ jobs:
             echo "LGD catalogue unchanged."
           else
             git commit -m "Import India LGD administrative directory"
+            git fetch origin "${TARGET_BRANCH}"
+            git rebase "origin/${TARGET_BRANCH}"
             git push origin "HEAD:${TARGET_BRANCH}"
           fi
