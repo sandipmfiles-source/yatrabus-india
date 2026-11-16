@@ -67,6 +67,7 @@ function normaliseRow(row, snapshotDate) {
 function validateSnapshot(snapshot) {
   if (!snapshot || snapshot.source !== SOURCE_NAME) throw new Error('Unexpected source name.');
   if (snapshot.sourceUrl !== SOURCE_URL) throw new Error('Unexpected source URL.');
+  if (snapshot.sourceLicense !== SOURCE_LICENSE) throw new Error('Unexpected source license.');
   if (!/^\d{4}-\d{2}-\d{2}$/.test(snapshot.snapshotDate || '') || Number.isNaN(Date.parse(snapshot.snapshotDate))) {
     throw new Error('Snapshot date is missing or invalid.');
   }
@@ -87,7 +88,11 @@ function validateSnapshot(snapshot) {
       throw new Error('Incomplete ' + level + ' catalogue: found ' + (counts[level] || 0) + ', expected at least ' + minimum);
     }
   }
-  if (rows.some((row) => row.place_type === 'VILLAGE')) throw new Error('Village records must not be loaded into D1 by this administrative index import.');
+  for (const [level, count] of Object.entries(counts)) {
+    if (Number(snapshot.counts?.[level]) !== count) {
+      throw new Error('Snapshot manifest count mismatch for ' + level + ': manifest=' + snapshot.counts?.[level] + ', actual=' + count);
+    }
+  }
   return { rows, counts };
 }
 
@@ -128,6 +133,7 @@ function selfTest() {
     throw new Error('Self-test failed to preserve India LGD metadata and unverified bus status.');
   }
   if (!buildSql(row).includes("'lgd-district-123'")) throw new Error('Self-test SQL generation failed.');
+  if (!sqlString("O'Brien").includes("O''Brien")) throw new Error('Self-test SQL escaping failed.');
   console.log('LGD D1 importer self-test passed.');
 }
 
