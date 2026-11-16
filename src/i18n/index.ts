@@ -87,7 +87,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, Record<string, string>> = {
     btn_yes_travelling: 'Yes, I am travelling',
     btn_not_now: 'Not now',
     btn_no: 'No',
-    tracking_active_banner: 'You are helping other passengers by sharing live journey updates.',
+    tracking_active_banner: 'Your phone is sharing consented GPS updates. A single report is approximate; the map turns green only when independent reports agree.',
     btn_stop_sharing: 'Stop Sharing Location',
     consent_notice: 'Your privacy is protected. No account required. Personal movement histories are never made public.',
 
@@ -214,7 +214,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, Record<string, string>> = {
     btn_yes_travelling: 'हाँ, मैं यात्रा कर रहा हूँ',
     btn_not_now: 'अभी नहीं',
     btn_no: 'नहीं',
-    tracking_active_banner: 'आप लाइव यात्रा अपडेट साझा करके अन्य यात्रियों की मदद कर रहे हैं।',
+    tracking_active_banner: 'आपका फोन सहमति से GPS अपडेट भेज रहा है। एक रिपोर्ट अनुमानित दिखेगी; अलग-अलग रिपोर्ट मिलने पर ही नक्शा हरा होगा।',
     btn_stop_sharing: 'लोकेशन साझा करना बंद करें',
     consent_notice: 'आपकी गोपनीयता सुरक्षित है। कोई खाता आवश्यक नहीं है। व्यक्तिगत यात्रा कभी सार्वजनिक नहीं की जाती।',
 
@@ -338,7 +338,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, Record<string, string>> = {
     btn_yes_travelling: 'হ্যাঁ, আমি যাচ্ছি',
     btn_not_now: 'এখন নয়',
     btn_no: 'না',
-    tracking_active_banner: 'আপনি লাইভ লোকেশন আপডেট দিয়ে অন্যান্য যাত্রীদের সাহায্য করছেন।',
+    tracking_active_banner: 'আপনার ফোন সম্মতি দিয়ে GPS আপডেট পাঠাচ্ছে। একটি রিপোর্ট আনুমানিক দেখাবে; একাধিক স্বাধীন রিপোর্ট মিললেই মানচিত্র সবুজ হবে।',
     btn_stop_sharing: 'লোকেশন শেয়ার বন্ধ করুন',
     consent_notice: 'আপনার গোপনীয়তা সুরক্ষিত। ব্যক্তিগত তথ্য কখনো প্রকাশ করা হয় না।',
 
