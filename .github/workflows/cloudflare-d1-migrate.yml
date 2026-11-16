@@ -50,7 +50,7 @@ jobs:
         run: |
           set -euo pipefail
           npx --yes wrangler@4 d1 migrations list yatrabus-india-db --remote
-          npx --yes wrangler@4 d1 migrations apply yatrabus-india-db --remote --yes
+          npx --yes wrangler@4 d1 migrations apply yatrabus-india-db --remote
 
       - name: Verify all core and owner-security tables
         env:
