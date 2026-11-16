@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [main]
   push:
-    branches: [phase2-cloudflare-pages-d1]
+    branches: [phase2-cloudflare-pages-d1, feat/super-admin-pages-api]
 
 permissions:
   contents: read
