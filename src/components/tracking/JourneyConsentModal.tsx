@@ -87,24 +87,26 @@ export const JourneyConsentModal: React.FC<JourneyConsentModalProps> = ({
             </div>
 
             <h3 className="text-lg font-bold text-slate-900">
-              Consent-Based Location Contribution
+              {t('gps_consent_title')}
             </h3>
 
             <div className="mt-3 space-y-2.5 text-xs text-slate-600 leading-relaxed">
               <div className="p-3 bg-surface-subtle rounded-xl border border-surface-border">
-                <p className="font-semibold text-slate-800">What we collect:</p>
-                <p className="mt-0.5">
-                  GPS coordinates and accuracy while you travel on this bus. Raw coordinates are converted into bus-level observations and never tied to your personal identity.
-                </p>
+                <p className="font-semibold text-slate-800">{t('gps_consent_collect_title')}</p>
+                <p className="mt-0.5">{t('gps_consent_collect')}</p>
               </div>
 
               <div className="p-3 bg-surface-subtle rounded-xl border border-surface-border">
-                <p className="font-semibold text-slate-800">Safety & Expiry:</p>
-                <p className="mt-0.5">
-                  • You can stop sharing anytime using the visible control in the top bar.<br/>
-                  • Automatic hard stop after your journey or maximum 12 hours.<br/>
-                  • No account or phone number required.
-                </p>
+                <p className="font-semibold text-slate-800">{t('gps_consent_public_title')}</p>
+                <p className="mt-0.5">{t('gps_consent_public_position')}</p>
+              </div>
+              <div className="p-3 bg-surface-subtle rounded-xl border border-surface-border">
+                <p className="font-semibold text-slate-800">{t('gps_consent_retention_title')}</p>
+                <p className="mt-0.5">{t('gps_consent_retention')}</p>
+              </div>
+              <div className="p-3 bg-surface-subtle rounded-xl border border-surface-border">
+                <p className="font-semibold text-slate-800">{t('gps_consent_control_title')}</p>
+                <p className="mt-0.5">{t('gps_consent_control')}</p>
               </div>
             </div>
 
@@ -117,7 +119,7 @@ export const JourneyConsentModal: React.FC<JourneyConsentModalProps> = ({
                 className="w-full py-3 px-4 rounded-xl font-semibold text-white bg-emerald-700 hover:bg-emerald-800 shadow-md transition flex items-center justify-center space-x-2"
               >
                 <MapPin className="w-4 h-4" />
-                <span>Enable Location & Start Sharing</span>
+                <span>{t('gps_consent_enable')}</span>
               </button>
 
               <button
@@ -127,7 +129,7 @@ export const JourneyConsentModal: React.FC<JourneyConsentModalProps> = ({
                 }}
                 className="w-full py-2.5 px-4 rounded-xl font-medium text-slate-500 hover:bg-slate-100 transition"
               >
-                Decline & Continue Without Location
+                {t('gps_consent_decline')}
               </button>
             </div>
           </div>
