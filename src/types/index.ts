@@ -268,6 +268,9 @@ export interface ETAResult {
   trackingStatus: TrackingStatus;
   lastUpdated: string;
   basis: 'live_gps' | 'timetable_projection' | 'historical_speed';
+  serviceDate?: string;
+  tripCode?: string | null;
+  sourceDataset?: string | null;
 }
 
 export interface AutomationRule {
