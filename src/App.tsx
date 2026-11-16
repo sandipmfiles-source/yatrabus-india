@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { Capacitor } from '@capacitor/core';
+import { Geolocation } from '@capacitor/geolocation';
 import { Route, Place } from './types';
 import { ApiClient } from './services/apiClient';
 import { HomeScreen } from './components/home/HomeScreen';
@@ -36,6 +38,7 @@ export const App: React.FC = () => {
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [activeBusId, setActiveBusId] = useState<string | null>(null);
   const [activeRouteId, setActiveRouteId] = useState<string | null>(null);
+  const [trackingError, setTrackingError] = useState('');
 
   // Admin Auth State
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
@@ -57,33 +60,59 @@ export const App: React.FC = () => {
     }).catch(() => setIsAdminLoggedIn(false));
   }, []);
 
-  // Live Location Tracker Worker
+  // Foreground-only Capacitor GPS worker. It starts only after the user accepts the consent modal.
   useEffect(() => {
-    let watchId: number | null = null;
+    let cancelled = false;
+    let watchId: string | null = null;
+    let lastSentAt = 0;
 
     if (activeSessionId && activeBusId && activeRouteId) {
-      if ('geolocation' in navigator) {
-        watchId = navigator.geolocation.watchPosition(
-          pos => {
-            ApiClient.sendLocationObservation(
-              activeSessionId,
-              activeBusId,
-              activeRouteId,
-              pos.coords.latitude,
-              pos.coords.longitude,
-              pos.coords.accuracy,
-              pos.coords.speed !== null && pos.coords.speed !== undefined ? (pos.coords.speed * 3.6) : undefined,
-              pos.coords.heading ?? undefined
-            );
-          },
-          err => console.warn('Geolocation warning:', err.message),
-          { enableHighAccuracy: true, maximumAge: 10000, timeout: 15000 }
-        );
-      }
+      Geolocation.watchPosition(
+        { enableHighAccuracy: true, maximumAge: 10000, timeout: 15000 },
+        (position, error) => {
+          if (cancelled) return;
+          if (error) {
+            setTrackingError(error.message || t('gps_sharing_failed'));
+            return;
+          }
+          if (!position) return;
+          const now = Date.now();
+          if (now - lastSentAt < 10000) return;
+          lastSentAt = now;
+          void ApiClient.sendLocationObservation(
+            activeSessionId,
+            activeBusId,
+            activeRouteId,
+            position.coords.latitude,
+            position.coords.longitude,
+            position.coords.accuracy,
+            position.coords.speed !== null && position.coords.speed !== undefined ? position.coords.speed * 3.6 : undefined,
+            position.coords.heading ?? undefined
+          ).then(response => {
+            if (!response.success && /expired|no longer active/i.test(response.error || '')) {
+              setTrackingError(response.error || t('gps_sharing_failed'));
+              setActiveSessionId(null);
+              setActiveBusId(null);
+              setActiveRouteId(null);
+            }
+          }).catch(() => {
+            // A temporary network loss does not expose or retain a new location update.
+          });
+        }
+      ).then(id => {
+        if (cancelled) {
+          void Geolocation.clearWatch({ id });
+        } else {
+          watchId = id;
+        }
+      }).catch(() => {
+        if (!cancelled) setTrackingError(t('gps_sharing_failed'));
+      });
     }
 
     return () => {
-      if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+      cancelled = true;
+      if (watchId) void Geolocation.clearWatch({ id: watchId });
     };
   }, [activeSessionId, activeBusId, activeRouteId]);
 
@@ -93,17 +122,40 @@ export const App: React.FC = () => {
   };
 
   const handleStartTracking = async (busId: string, routeId: string) => {
-    const res = await ApiClient.startJourneySession(busId, routeId, true);
-    if (res.success && res.data) {
-      setActiveSessionId(res.data.sessionId);
-      setActiveBusId(busId);
-      setActiveRouteId(routeId);
+    setTrackingError('');
+    try {
+      if (Capacitor.isNativePlatform()) {
+        let permission = await Geolocation.checkPermissions();
+        const granted = () => permission.location === 'granted' || permission.coarseLocation === 'granted';
+        if (!granted()) permission = await Geolocation.requestPermissions();
+        if (!granted()) {
+          setTrackingError(t('gps_permission_denied'));
+          return;
+        }
+      }
+      const res = await ApiClient.startJourneySession(busId, routeId, true);
+      if (res.success && res.data?.sessionId) {
+        setActiveSessionId(res.data.sessionId);
+        setActiveBusId(busId);
+        setActiveRouteId(routeId);
+      } else {
+        setTrackingError(res.error || t('gps_sharing_failed'));
+      }
+    } catch {
+      setTrackingError(t('gps_sharing_failed'));
     }
   };
 
   const handleStopTracking = async () => {
-    if (activeSessionId) {
-      await ApiClient.stopJourneySession(activeSessionId);
+    const sessionId = activeSessionId;
+    if (!sessionId) return;
+    try {
+      const response = await ApiClient.stopJourneySession(sessionId);
+      if (!response.success) setTrackingError(response.error || t('gps_sharing_failed'));
+      else setTrackingError('');
+    } catch {
+      setTrackingError(t('gps_sharing_failed'));
+    } finally {
       setActiveSessionId(null);
       setActiveBusId(null);
       setActiveRouteId(null);
@@ -195,9 +247,17 @@ export const App: React.FC = () => {
           {/* Right Language Selector & Tracking Pill */}
           <div className="flex items-center space-x-2">
             {activeSessionId && (
-              <div className="hidden sm:flex items-center space-x-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-xs font-semibold text-emerald-800">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span>Tracking Live</span>
+              <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-[11px] font-semibold text-emerald-800">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span>{t('gps_sharing_active')}</span>
+                </div>
+                <button
+                  onClick={() => { void handleStopTracking(); }}
+                  className="px-2.5 py-1.5 rounded-full bg-rose-50 border border-rose-200 text-[11px] font-bold text-rose-800 hover:bg-rose-100"
+                >
+                  {t('stop_sharing')}
+                </button>
               </div>
             )}
 
@@ -354,6 +414,7 @@ export const App: React.FC = () => {
           }}
           activeJourneySessionId={activeSessionId}
           onStartTracking={handleStartTracking}
+          onStopTracking={handleStopTracking}
         />
       )}
 
