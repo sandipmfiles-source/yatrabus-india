@@ -284,7 +284,8 @@ def self_test():
       "stops.txt":"stop_id,stop_name,stop_lat,stop_lon\nS1,Test City,22.3,70.8\nS2,Test Town,22.4,70.9\n",
       "trips.txt":"route_id,service_id,trip_id,direction_id,trip_headsign\nR1,WK,T1,0,Test Town\n",
       "stop_times.txt":"trip_id,arrival_time,departure_time,stop_id,stop_sequence\nT1,06:00:00,06:00:00,S1,1\nT1,07:00:00,07:00:00,S2,2\n",
-      "calendar.txt":"service_id,monday,tuesday,wednesday,thursday,friday,saturday,sunday,start_date,end_date\nWK,1,1,1,1,1,0,0,20260101,20301231\n"
+      "calendar.txt":"service_id,monday,tuesday,wednesday,thursday,friday,saturday,sunday,start_date,end_date\nWK,1,1,1,1,1,0,0,20260101,20301231\n",
+      "calendar_dates.txt":"service_id,date,exception_type\nWK,20261117,2\nWK,20261122,1\n"
     }
     with TemporaryDirectory() as td:
         root=Path(td); zpath=root/"test.zip"
@@ -292,8 +293,12 @@ def self_test():
             for name,data in sample.items(): z.writestr(name,data)
         result=build(zpath,root/"out",test_mode=True)
         assert result["stopCount"]==2 and result["routePatternCount"]==1 and result["tripCount"]==1
+        base_days=service_days("WK",{"WK":{"monday":"1","tuesday":"1","wednesday":"1","thursday":"1","friday":"1","saturday":"0","sunday":"0"}},{"WK":[]})
+        assert base_days==["Mon","Tue","Wed","Thu","Fri"]
         sqls="\n".join(p.read_text() for p in (root/"out").glob("*.sql"))
-        assert "INSERT OR IGNORE INTO route_stops" in sqls and "INSERT OR IGNORE INTO timetables" in sqls and '"fareInRupees":null' in sqls
+        assert "INSERT OR IGNORE INTO route_stops" in sqls and "service_start_date" in sqls and "ON CONFLICT(id) DO UPDATE" in sqls
+        assert "2026-01-01" in sqls and "2030-12-31" in sqls and "2026-11-17" in sqls and "2026-11-22" in sqls
+        assert '"fareInRupees":null' in sqls
     print("RRL Rajkot GTFS importer self-test passed.")
 
 if __name__=="__main__":
