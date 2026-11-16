@@ -7,3 +7,4 @@ compatibility_flags = ["nodejs_compat"]
 binding = "DB"
 database_name = "yatrabus-india-db"
 database_id = "ad817522-9239-4574-8b23-17b8d45d756e"
+migrations_dir = "migrations"
