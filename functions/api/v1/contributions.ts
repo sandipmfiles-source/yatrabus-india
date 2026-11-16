@@ -1,4 +1,6 @@
-import { PagesContext, json, unavailable } from "../../_lib/api";
+import { PagesContext, json, unavailable, onRequestOptions } from "../../_lib/api";
+import { enforcePublicRateLimit } from "../../_lib/rateLimit";
+export { onRequestOptions };
 const allowedTypes = new Set(["add_bus","add_stop","suggest_route","correct_timetable","report_disruption","report_discontinued","claim_operator"]);
 async function hashReference(value: string): Promise<string> {
   const bytes = new TextEncoder().encode(value);
@@ -7,6 +9,8 @@ async function hashReference(value: string): Promise<string> {
 }
 export async function onRequestPost({ request, env }: PagesContext): Promise<Response> {
   if (!env.DB) return unavailable();
+  const rateLimited = await enforcePublicRateLimit(request, env, "community-contribution", 20, 60 * 60 * 1000);
+  if (rateLimited) return rateLimited;
   let payload:any;
   try {
     const raw = await request.text();
