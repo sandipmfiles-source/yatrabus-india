@@ -43,7 +43,7 @@ Expected outcomes:
   but the DB binding is not configured.
 - HTTP 503 with `database: d1` and `schemaReady: false`: one or more of the 12 required core tables are missing.
 - HTTP 503 with `database: d1`, `schemaReady: true`, and `adminSecurityReady: false`: the core schema exists, but the additive owner-security migration `0002_admin_security.sql` is missing.
-- HTTP 200 with `database: d1`, `persistentStorage: true`, `schemaReady: true`, and `adminSecurityReady: true`: all 17 required core and owner-security tables are present, including the indexed `route_stops` table, and all three timetable service-calendar columns are present.
+- HTTP 200 with `database: d1`, `persistentStorage: true`, `schemaReady: true`, and `adminSecurityReady: true`: all 17 required core and owner-security tables are present, including the indexed `route_stops` table, and all three timetable service-calendar columns and four consented-GPS lookup indexes are present.
 
 ## Important limitations
 
