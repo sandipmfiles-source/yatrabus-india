@@ -25,7 +25,7 @@ function normaliseRow(row, snapshotDate) {
   const [idValue, codeValue, nameValue, levelValue, stateValue, districtValue, subdivisionValue] = row;
   const id = String(idValue || '').trim();
   const code = String(codeValue || '').trim();
-  const name = String(nameValue || '').normalize('NFC').replace(/\\s+/g, ' ').trim();
+  const name = String(nameValue || '').normalize('NFC').replace(/\s+/g, ' ').trim();
   const level = String(levelValue || '').trim().toLowerCase();
   if (!id || !code || !name || !LEVELS.has(level)) throw new Error('Invalid LGD row: ' + JSON.stringify(row));
   if (!id.startsWith('lgd-' + level + '-')) throw new Error('Unexpected LGD identifier for ' + level + ': ' + id);
@@ -67,7 +67,7 @@ function normaliseRow(row, snapshotDate) {
 function validateSnapshot(snapshot) {
   if (!snapshot || snapshot.source !== SOURCE_NAME) throw new Error('Unexpected source name.');
   if (snapshot.sourceUrl !== SOURCE_URL) throw new Error('Unexpected source URL.');
-  if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(snapshot.snapshotDate || '') || Number.isNaN(Date.parse(snapshot.snapshotDate))) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(snapshot.snapshotDate || '') || Number.isNaN(Date.parse(snapshot.snapshotDate))) {
     throw new Error('Snapshot date is missing or invalid.');
   }
   if (!Array.isArray(snapshot.places)) throw new Error('Snapshot places must be an array.');
@@ -108,15 +108,15 @@ function writeBatches(rows, outputDir) {
   for (let i = 0; i < rows.length; i += rowsPerStatement) {
     const group = rows.slice(i, i + rowsPerStatement);
     statements.push(
-      'INSERT INTO places (id, canonical_name, place_type, state, district, subdivision, source_dataset, verification_status, last_updated, aliases_json, payload_json) VALUES\\n' +
-      group.map(buildSql).join(',\\n') +
-      '\\nON CONFLICT(id) DO NOTHING;'
+      'INSERT INTO places (id, canonical_name, place_type, state, district, subdivision, source_dataset, verification_status, last_updated, aliases_json, payload_json) VALUES\n' +
+      group.map(buildSql).join(',\n') +
+      '\nON CONFLICT(id) DO NOTHING;'
     );
   }
   const files = [];
   for (let i = 0; i < statements.length; i += statementsPerFile) {
     const name = 'lgd-' + String(files.length + 1).padStart(3, '0') + '.sql';
-    fs.writeFileSync(path.join(outputDir, name), statements.slice(i, i + statementsPerFile).join('\\n\\n') + '\\n');
+    fs.writeFileSync(path.join(outputDir, name), statements.slice(i, i + statementsPerFile).join('\n\n') + '\n');
     files.push(name);
   }
   return files;
@@ -160,7 +160,7 @@ if (process.argv.includes('--self-test')) {
       sqlFiles: files,
       policy: 'LGD administrative names are not proof of bus service, a bus stop, route, or timetable. Existing rows are never overwritten.'
     };
-    fs.writeFileSync(path.join(outputDir, 'manifest.json'), JSON.stringify(manifest, null, 2) + '\\n');
+    fs.writeFileSync(path.join(outputDir, 'manifest.json'), JSON.stringify(manifest, null, 2) + '\n');
     console.log(JSON.stringify(manifest, null, 2));
   } catch (error) {
     fail(error instanceof Error ? error.message : String(error));
