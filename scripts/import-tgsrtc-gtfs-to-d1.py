@@ -64,14 +64,14 @@ def service_is_current(service, exceptions, today):
         try:
             first=date(int(start[:4]),int(start[4:6]),int(start[6:8]))
             last=date(int(end[:4]),int(end[4:6]),int(end[6:8]))
-            if first <= today+timedelta(days=30) and last >= today: return True
+            if first <= today+timedelta(days=365) and last >= today: return True
         except ValueError: pass
     for ex in exceptions:
         if ex.get("exception_type") != "1": continue
         raw=ex.get("date","")
         try:
             d=date(int(raw[:4]),int(raw[4:6]),int(raw[6:8]))
-            if today <= d <= today+timedelta(days=30): return True
+            if today <= d <= today+timedelta(days=365): return True
         except ValueError: pass
     return False
 
@@ -83,15 +83,8 @@ def operating_days(service_id, calendars, exceptions):
             raw=ex.get("date","")
             try:
                 d=date(int(raw[:4]),int(raw[4:6]),int(raw[6:8]))
-                if date.today() <= d <= date.today()+timedelta(days=30):
+                if date.today() <= d <= date.today()+timedelta(days=365):
                     days.add(DAY_FIELDS[d.weekday()][1])
-            except ValueError: pass
-        elif ex.get("exception_type")=="2":
-            raw=ex.get("date","")
-            try:
-                d=date(int(raw[:4]),int(raw[4:6]),int(raw[6:8]))
-                if date.today() <= d <= date.today()+timedelta(days=30):
-                    days.discard(DAY_FIELDS[d.weekday()][1])
             except ValueError: pass
     return [label for _,label in DAY_FIELDS if label in days]
 
