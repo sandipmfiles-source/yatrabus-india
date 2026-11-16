@@ -113,7 +113,7 @@ export interface Route {
   originName: string;
   destinationPlaceId: string;
   destinationName: string;
-  direction: 'up' | 'down' | 'circular';
+  direction: 'up' | 'down' | 'circular' | 'unknown';
   durationMinutes: number;
   distanceKm: number;
   operatingDays: DayOfWeek[];
@@ -123,7 +123,13 @@ export interface Route {
   stops: RouteStop[];
   firstDepartureTime: string; // "05:30"
   lastDepartureTime: string;  // "22:45"
-  frequencyMinutes?: number;  // 15 mins
+  frequencyMinutes?: number;
+  sourceDataset?: string;
+  sourceUrl?: string;
+  sourceDownloadUrl?: string;
+  sourceLicense?: string;
+  sourceAttribution?: string;
+  sourceSnapshotDate?: string;
 }
 
 export interface TimetableDeparture {
@@ -134,8 +140,16 @@ export interface TimetableDeparture {
   departureTime: string; // HH:MM in IST
   arrivalTime: string;   // HH:MM in IST
   operatingDays: DayOfWeek[];
-  vehicleType: VehicleType;
+  vehicleType?: VehicleType;
   fareInRupees?: number;
+  headsign?: string | null;
+  serviceId?: string;
+  verificationStatus?: VerificationStatus;
+  sourceDataset?: string;
+  sourceUrl?: string;
+  sourceLicense?: string;
+  sourceAttribution?: string;
+  sourceSnapshotDate?: string;
   isConfirmed: boolean;
   version: number;
   lastVerifiedDate: string;
