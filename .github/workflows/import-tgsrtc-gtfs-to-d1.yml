@@ -39,9 +39,16 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p /tmp/tgsrtc
-          curl --fail --location --retry 3 --retry-all-errors \
-            'https://storage.googleapis.com/storage/v1/b/mdb-latest/o/in-hyderabad-bus-gtfs-3361.zip?alt=media' \
-            --output /tmp/tgsrtc/tgsrtc.zip
+          if ! curl --fail --location --retry 2 --retry-all-errors \
+            --user-agent 'Mozilla/5.0 (compatible; YatraBusIndiaDataImporter/1.0)' \
+            --referer 'https://data.opencity.in/dataset/hyderabad-bus-stops' \
+            'https://data.opencity.in/dataset/88e2d145-7ec6-4666-88dd-6cf18b18312e/resource/1b0d18bb-b2fb-4a79-8ed0-1e071da5790c/download/telangana_opendata_gtfs_tgsrtc_08_february_2026.zip' \
+            --output /tmp/tgsrtc/tgsrtc.zip; then
+            echo 'Producer URL denied automated access; trying the MobilityData mirror.'
+            curl --fail --location --retry 2 --retry-all-errors \
+              'https://storage.googleapis.com/mdb-latest/in-hyderabad-bus-gtfs-3361.zip' \
+              --output /tmp/tgsrtc/tgsrtc.zip
+          fi
           echo '4c4b332dd8a42c9727233733d839e0c14dc58a3c  /tmp/tgsrtc/tgsrtc.zip' | sha1sum --check -
           python scripts/import-tgsrtc-gtfs-to-d1.py \
             --input /tmp/tgsrtc/tgsrtc.zip \
@@ -84,9 +91,16 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p /tmp/tgsrtc
-          curl --fail --location --retry 3 --retry-all-errors \
-            'https://storage.googleapis.com/storage/v1/b/mdb-latest/o/in-hyderabad-bus-gtfs-3361.zip?alt=media' \
-            --output /tmp/tgsrtc/tgsrtc.zip
+          if ! curl --fail --location --retry 2 --retry-all-errors \
+            --user-agent 'Mozilla/5.0 (compatible; YatraBusIndiaDataImporter/1.0)' \
+            --referer 'https://data.opencity.in/dataset/hyderabad-bus-stops' \
+            'https://data.opencity.in/dataset/88e2d145-7ec6-4666-88dd-6cf18b18312e/resource/1b0d18bb-b2fb-4a79-8ed0-1e071da5790c/download/telangana_opendata_gtfs_tgsrtc_08_february_2026.zip' \
+            --output /tmp/tgsrtc/tgsrtc.zip; then
+            echo 'Producer URL denied automated access; trying the MobilityData mirror.'
+            curl --fail --location --retry 2 --retry-all-errors \
+              'https://storage.googleapis.com/mdb-latest/in-hyderabad-bus-gtfs-3361.zip' \
+              --output /tmp/tgsrtc/tgsrtc.zip
+          fi
           echo '4c4b332dd8a42c9727233733d839e0c14dc58a3c  /tmp/tgsrtc/tgsrtc.zip' | sha1sum --check -
           python scripts/import-tgsrtc-gtfs-to-d1.py --input /tmp/tgsrtc/tgsrtc.zip --output-dir /tmp/tgsrtc/sql
       - name: Import schedule records using append-only SQL
