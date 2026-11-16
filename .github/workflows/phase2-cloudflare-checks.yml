@@ -38,5 +38,6 @@ jobs:
           python3 scripts/validate-d1-migration.py
           python3 tests/d1-route-stop-index.test.py
           python3 tests/d1-timetable-date-filter.test.py
+          npx tsx scripts/test-service-calendar.ts
           node --check scripts/import-india-lgd-to-d1.mjs
           node scripts/import-india-lgd-to-d1.mjs --self-test
