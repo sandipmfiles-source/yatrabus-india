@@ -54,6 +54,12 @@ export async function onRequestGet({ env }: PagesContext): Promise<Response> {
     const timetableColumns = await env.DB.prepare(
       "SELECT COUNT(*) AS count FROM pragma_table_info('timetables') WHERE name IN ('service_start_date','service_end_date','service_exceptions_json')"
     ).first<{ count: number }>();
+    const observationIndexes = await env.DB.prepare(
+      "SELECT COUNT(*) AS count FROM pragma_index_list('location_observations') WHERE name IN ('idx_location_session_observed','idx_location_route_observed')"
+    ).first<{ count: number }>();
+    const journeyIndexes = await env.DB.prepare(
+      "SELECT COUNT(*) AS count FROM pragma_index_list('journey_sessions') WHERE name IN ('idx_journey_route_status','idx_journey_status_started')"
+    ).first<{ count: number }>();
     const adminTables = await env.DB.prepare(
       "SELECT COUNT(DISTINCT name) AS count FROM sqlite_master WHERE type = 'table' AND name IN ('admin_sessions','admin_login_attempts','operator_claims','service_alerts','public_rate_limits')"
     ).first<{ count: number }>();
@@ -61,15 +67,19 @@ export async function onRequestGet({ env }: PagesContext): Promise<Response> {
     const coreTablesPresent = Number(coreTables?.count || 0);
     const adminSecurityTablesPresent = Number(adminTables?.count || 0);
     const timetableCalendarColumnsPresent = Number(timetableColumns?.count || 0);
+    const gpsIndexesPresent = Number(observationIndexes?.count || 0) + Number(journeyIndexes?.count || 0);
     const schemaReady = coreTablesPresent === 12;
     const timetableCalendarReady = timetableCalendarColumnsPresent === 3;
+    const gpsTrackingReady = gpsIndexesPresent === 4;
     const adminSecurityReady = adminSecurityTablesPresent === 5;
-    const ready = schemaReady && timetableCalendarReady && adminSecurityReady;
+    const ready = schemaReady && timetableCalendarReady && gpsTrackingReady && adminSecurityReady;
     const error = !schemaReady
       ? 'Core D1 schema is incomplete. Apply all pending migrations.'
       : (!timetableCalendarReady
         ? 'Date-accurate timetable calendar migration is not applied.'
-        : (!adminSecurityReady ? 'Admin security migration is not applied.' : undefined));
+        : (!gpsTrackingReady
+          ? 'Consented GPS tracking indexes are not applied.'
+          : (!adminSecurityReady ? 'Admin security migration is not applied.' : undefined)));
     return json({
       success: ready,
       data: {
@@ -82,7 +92,9 @@ export async function onRequestGet({ env }: PagesContext): Promise<Response> {
         adminSecurityReady,
         adminSecurityTablesPresent,
         timetableCalendarReady,
-        timetableCalendarColumnsPresent
+        timetableCalendarColumnsPresent,
+        gpsTrackingReady,
+        gpsIndexesPresent
       },
       ...(error ? { error } : {})
     }, ready ? 200 : 503);
