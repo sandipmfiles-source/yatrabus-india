@@ -166,7 +166,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
             <div className="p-4 rounded-2xl bg-white border border-surface-border shadow-sm">
               <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Places</span>
               <div className="text-2xl font-bold text-slate-900 mt-1">{health.totalPlaces}</div>
-              <span className="text-[11px] text-emerald-600 font-semibold">Master Indian Directory</span>
+              <span className="text-[11px] text-emerald-600 font-semibold">Imported location records; coverage varies by source</span>
             </div>
             <div className="p-4 rounded-2xl bg-white border border-surface-border shadow-sm">
               <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Buses / Fleet</span>
@@ -181,7 +181,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
             <div className="p-4 rounded-2xl bg-white border border-surface-border shadow-sm">
               <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Live GPS Sessions</span>
               <div className="text-2xl font-bold text-emerald-600 mt-1">{health.activeLiveSessions}</div>
-              <span className="text-[11px] text-emerald-700 font-semibold">Anonymous passenger pings</span>
+              <span className="text-[11px] text-emerald-700 font-semibold">Consent-based sessions only</span>
             </div>
           </div>
 
@@ -190,15 +190,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
               <div className="p-3 bg-surface-subtle rounded-xl border border-surface-border">
                 <span className="text-slate-500">Database Engine:</span>
-                <p className="font-semibold text-slate-900">PostgreSQL / PostGIS & In-Memory Store</p>
+                <p className="font-semibold text-slate-900">Cloudflare D1 (SQLite)</p>
               </div>
               <div className="p-3 bg-surface-subtle rounded-xl border border-surface-border">
-                <span className="text-slate-500">Uptime:</span>
-                <p className="font-semibold text-slate-900">{Math.floor(health.uptimeSeconds / 60)} minutes</p>
+                <span className="text-slate-500">Runtime:</span>
+                <p className="font-semibold text-slate-900">Cloudflare Pages Functions (serverless)</p>
               </div>
               <div className="p-3 bg-surface-subtle rounded-xl border border-surface-border">
                 <span className="text-slate-500">Last Transport Seed Sync:</span>
-                <p className="font-semibold text-slate-900">{new Date(health.lastImportTimestamp).toLocaleDateString()}</p>
+                <p className="font-semibold text-slate-900">{health.lastImportTimestamp && !Number.isNaN(Date.parse(health.lastImportTimestamp)) ? new Date(health.lastImportTimestamp).toLocaleDateString() : 'Not available'}</p>
               </div>
             </div>
           </div>
