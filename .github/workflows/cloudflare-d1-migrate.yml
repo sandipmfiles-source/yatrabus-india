@@ -1,6 +1,10 @@
 name: Apply Cloudflare D1 migration
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'migrations/0002_admin_security.sql'
   workflow_dispatch:
     inputs:
       confirm_production:
@@ -14,7 +18,7 @@ permissions:
 
 jobs:
   migrate:
-    if: inputs.confirm_production == true
+    if: github.event_name == 'push' || inputs.confirm_production == true
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -48,10 +52,15 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          for migration in migrations/*.sql; do
-            echo "Applying $migration"
-            npx --yes wrangler@4 d1 execute yatrabus-india-db --remote --yes --file="$migration"
-          done
+          if [ "${GITHUB_EVENT_NAME}" = "push" ]; then
+            echo "Applying additive owner-security migration"
+            npx --yes wrangler@4 d1 execute yatrabus-india-db --remote --yes --file=migrations/0002_admin_security.sql
+          else
+            for migration in migrations/*.sql; do
+              echo "Applying $migration"
+              npx --yes wrangler@4 d1 execute yatrabus-india-db --remote --yes --file="$migration"
+            done
+          fi
 
       - name: Verify YatraBus tables
         env:
