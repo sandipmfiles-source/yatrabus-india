@@ -105,3 +105,6 @@ A static GTFS timetable is not live vehicle tracking. Feed records retain source
 | `proposed_data` | JSONB | Submitted JSON payload |
 | `status` | VARCHAR(32) | `pending_review`, `approved`, `rejected`, `merged` |
 | `contributor_ref_hash`| VARCHAR(64) | Anonymized token for non-account lookup |
+
+
+Migration `0005_consented_gps_indexes.sql` adds four lookup indexes for session, route and status queries used by consented GPS sharing. Each session keeps only its latest rounded observation; the API does not build a movement-history trail. Expired or stopped sessions are excluded from public bus-location responses.
