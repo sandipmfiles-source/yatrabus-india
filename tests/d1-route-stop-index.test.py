@@ -23,10 +23,14 @@ def main():
         {"stopId":"B","stopName":"Interchange","stopSequence":1,"arrivalOffsetMinutes":0,"departureOffsetMinutes":0},
         {"stopId":"D","stopName":"Second Destination","stopSequence":2,"arrivalOffsetMinutes":30,"departureOffsetMinutes":30},
     ]
-    for route_id, stops in [("R1", route_a_stops), ("R2", route_b_stops)]:
+    for route_id, stops, indexed_json in [
+        ("R1", route_a_stops, json.dumps(route_a_stops)),
+        ("R2", route_b_stops, json.dumps(route_b_stops)),
+        ("R3", [{"stopId":"E","stopName":"Legacy E","stopSequence":1},{"stopId":"F","stopName":"Legacy F","stopSequence":2}], "[]"),
+    ]:
         payload = json.dumps({"id":route_id,"stops":stops})
         db.execute("INSERT INTO routes(id,status,stops_json,payload_json) VALUES(?,?,?,?)",
-                   (route_id, "active", json.dumps(stops), payload))
+                   (route_id, "active", indexed_json, payload))
     db.execute("INSERT INTO places(id,payload_json) VALUES('B',?)",
                (json.dumps({"id":"B","canonicalName":"Interchange"}),))
 
@@ -34,7 +38,7 @@ def main():
     db.executescript(sql)
 
     count = db.execute("SELECT COUNT(*) FROM route_stops").fetchone()[0]
-    assert count == 5, f"expected 5 backfilled route stops, got {count}"
+    assert count == 7, f"expected 7 backfilled route stops including payload fallback, got {count}"
 
     direct = db.execute("""
         SELECT r.id, board.stop_sequence, alight.stop_sequence
@@ -80,6 +84,8 @@ def main():
     db.executescript(sql)
     count_after = db.execute("SELECT COUNT(*) FROM route_stops").fetchone()[0]
     assert count_after == count, f"migration re-run duplicated rows: {count_after}"
+    legacy_count = db.execute("SELECT COUNT(*) FROM route_stops WHERE route_id = 'R3'").fetchone()[0]
+    assert legacy_count == 2, f"legacy payload fallback failed: {legacy_count}"
 
     print("D1 route-stop index integration tests passed: backfill, direct, intermediate, transfer, indexes, idempotency.")
 
