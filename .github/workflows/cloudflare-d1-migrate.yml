@@ -72,7 +72,7 @@ jobs:
           ready=false
           for attempt in $(seq 1 30); do
             response="$(curl --silent --show-error "$health_url" || true)"
-            if printf '%s' "$response" | jq -e '.success == true and .data.schemaReady == true and .data.coreTablesPresent == 12 and .data.adminSecurityReady == true and .data.adminSecurityTablesPresent == 5 and .data.timetableCalendarReady == true and .data.timetableCalendarColumnsPresent == 3' >/dev/null 2>&1; then
+            if printf '%s' "$response" | jq -e '.success == true and .data.schemaReady == true and .data.coreTablesPresent == 12 and .data.adminSecurityReady == true and .data.adminSecurityTablesPresent == 5 and .data.timetableCalendarReady == true and .data.timetableCalendarColumnsPresent == 3 and .data.gpsTrackingReady == true and .data.gpsIndexesPresent == 4' >/dev/null 2>&1; then
               printf '%s\n' "$response" | jq .
               ready=true
               break
