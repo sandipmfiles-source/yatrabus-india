@@ -92,7 +92,7 @@ export async function onRequestGet({ request, env, params }: PagesContext): Prom
         stopName: stop.stopName,
         scheduledArrival: next.arrivalTime,
         predictedArrival: next.arrivalTime,
-        isEstimated: false,
+        isEstimated: true,
         delayMinutes: 0,
         confidence: "low",
         trackingStatus: "unavailable",
