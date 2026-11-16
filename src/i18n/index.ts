@@ -43,6 +43,8 @@ export const TRANSLATIONS: Record<SupportedLanguage, Record<string, string>> = {
     tracking_not_available: 'No individual bus or live GPS position is available for this published schedule.',
     no_scheduled_departures: 'No scheduled departures are available for this route.',
     location_only_unverified: 'Location only · bus service not verified',
+    home_tagline: 'Search published bus routes',
+    home_coverage_notice: 'Coverage is added city by city. Timetables appear only when published source data is available.',
     badge_disputed: 'Disputed Timetable',
     badge_disrupted: 'Service Disruption',
 
@@ -146,6 +148,8 @@ export const TRANSLATIONS: Record<SupportedLanguage, Record<string, string>> = {
     tracking_not_available: 'इस प्रकाशित समय-सारणी के लिए किसी बस या लाइव GPS की जानकारी उपलब्ध नहीं है।',
     no_scheduled_departures: 'इस रूट के लिए प्रस्थान समय उपलब्ध नहीं है।',
     location_only_unverified: 'केवल स्थान संदर्भ · बस सेवा सत्यापित नहीं',
+    home_tagline: 'प्रकाशित बस मार्ग खोजें',
+    home_coverage_notice: 'शहर-दर-शहर डेटा जोड़ा जा रहा है। समय-सारणी तभी दिखेगी जब प्रकाशित स्रोत उपलब्ध होगा।',
     badge_disputed: 'विवादित समय सारणी',
     badge_disrupted: 'रूट में बाधा',
 
@@ -244,6 +248,8 @@ export const TRANSLATIONS: Record<SupportedLanguage, Record<string, string>> = {
     tracking_not_available: 'এই প্রকাশিত সময়সূচির জন্য কোনো নির্দিষ্ট বাস বা লাইভ GPS অবস্থান নেই।',
     no_scheduled_departures: 'এই রুটের জন্য কোনো প্রকাশিত ছাড়ার সময় নেই।',
     location_only_unverified: 'শুধু অবস্থানের তথ্য · বাস পরিষেবা যাচাই করা হয়নি',
+    home_tagline: 'প্রকাশিত বাস রুট খুঁজুন',
+    home_coverage_notice: 'শহর ধরে ধরে তথ্য যোগ হচ্ছে। প্রকাশিত উৎসের তথ্য থাকলেই সময়সূচি দেখানো হবে।',
     badge_disputed: 'বিরোধপূর্ণ সময়সূচী',
     badge_disrupted: 'রুট ব্যাহত',
 
