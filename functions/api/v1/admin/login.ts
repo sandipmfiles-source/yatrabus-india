@@ -51,7 +51,7 @@ export async function onRequestPost({ request, env }: PagesContext): Promise<Res
   let valid = false;
   try {
     valid = constantTimeEmailMatch(email, env.ADMIN_EMAIL || "") &&
-      verifyAdminPassword(password, env.ADMIN_PASSWORD_HASH || "");
+      verifyAdminPassword(password, env.ADMIN_PASSWORD_HASH || "", secret);
   } catch {
     return json({ success: false, error: "Administrator password verification is unavailable." }, 503);
   }
