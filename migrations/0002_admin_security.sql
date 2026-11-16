@@ -22,3 +22,29 @@ CREATE TABLE IF NOT EXISTS admin_login_attempts (
 
 CREATE INDEX IF NOT EXISTS idx_admin_login_lock
   ON admin_login_attempts(locked_until);
+
+CREATE TABLE IF NOT EXISTS operator_claims (
+  id TEXT PRIMARY KEY,
+  operator_id TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending_review',
+  submitted_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  reviewed_at TEXT,
+  payload_json TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_operator_claims_status_date
+  ON operator_claims(status, submitted_at DESC);
+
+CREATE TABLE IF NOT EXISTS service_alerts (
+  id TEXT PRIMARY KEY,
+  route_id TEXT NOT NULL,
+  alert_type TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'active',
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  valid_until TEXT,
+  payload_json TEXT NOT NULL,
+  FOREIGN KEY (route_id) REFERENCES routes(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_service_alerts_route_status
+  ON service_alerts(route_id, status, valid_until);
