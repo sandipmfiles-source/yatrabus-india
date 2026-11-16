@@ -168,7 +168,9 @@ def build(zip_path,out_dir,test_mode=False):
                 "originPlaceId":stops_out[0]["stopId"],"originName":stops_out[0]["stopName"],
                 "destinationPlaceId":stops_out[-1]["stopId"],"destinationName":stops_out[-1]["stopName"],
                 "direction":"up" if trip.get("direction_id")=="0" else ("down" if trip.get("direction_id")=="1" else "unknown"),
-                "durationMinutes":max(0,round((last-first)/60)),"distanceKm":round(distance,2),
+                "durationMinutes":max(0,round((last-first)/60)),"durationSamples":[max(0,round((last-first)/60))],
+                "durationMethod":"median_of_published_gtfs_trips","distanceKm":round(distance,2),
+                "distanceMethod":"approximate_haversine_between_published_stops",
                 "operatingDays":[],"firstDepartureTime":hhmm(seq[0].get("departure_time") or seq[0].get("arrival_time") or ""),
                 "lastDepartureTime":hhmm(seq[0].get("departure_time") or seq[0].get("arrival_time") or ""),
                 "status":"active","verificationStatus":"published_unverified",
@@ -190,6 +192,11 @@ def build(zip_path,out_dir,test_mode=False):
             "sourceLicense":LICENSE,"sourceAttribution":ATTRIBUTION,"sourceSnapshotDate":SNAPSHOT_DATE
         })
         pattern=patterns[key]
+        duration=max(0,round((last-first)/60))
+        pattern["durationSamples"].append(duration)
+        ordered=sorted(pattern["durationSamples"])
+        middle=len(ordered)//2
+        pattern["durationMinutes"]=ordered[middle] if len(ordered)%2 else round((ordered[middle-1]+ordered[middle])/2)
         if departure<pattern["firstDepartureTime"]: pattern["firstDepartureTime"]=departure
         if departure>pattern["lastDepartureTime"]: pattern["lastDepartureTime"]=departure
         pattern["operatingDays"]=sorted(set(pattern["operatingDays"])|set(days),
@@ -222,6 +229,7 @@ def build(zip_path,out_dir,test_mode=False):
         statements.append("INSERT OR IGNORE INTO places (id,canonical_name,place_type,state,district,latitude,longitude,source_dataset,verification_status,last_updated,aliases_json,payload_json) VALUES "
             f"({sql(place_id)},{sql(stop['stop_name'].strip())},'bus_stop',{sql(STATE)},{sql(DISTRICT)},{sql(stop['_lat'])},{sql(stop['_lon'])},{sql(DATASET)},'published_unverified',{sql(SNAPSHOT_DATE)},'[]',{sql(js(place))});")
     for route in patterns.values():
+        route.pop("durationSamples",None)
         statements.append("INSERT OR IGNORE INTO routes (id,name,origin_place_id,destination_place_id,status,stops_json,payload_json) VALUES "
             f"({sql(route['id'])},{sql(route['name'])},{sql(route['originPlaceId'])},{sql(route['destinationPlaceId'])},'active',{sql(js(route['stops']))},{sql(js(route))});")
     for timetable in timetable_rows:
