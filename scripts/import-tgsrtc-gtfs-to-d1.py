@@ -154,9 +154,9 @@ def build(zip_path,out_dir):
                 "name":(route.get("route_long_name") or route.get("route_short_name") or rid).strip(),
                 "operatorId":"op-tgsrtc","originPlaceId":origin["stopId"],"originName":origin["stopName"],
                 "destinationPlaceId":dest["stopId"],"destinationName":dest["stopName"],
-                "direction":"up" if trip.get("direction_id")=="0" else ("down" if trip.get("direction_id")=="1" else "circular"),
+                "direction":"up" if trip.get("direction_id")=="0" else ("down" if trip.get("direction_id")=="1" else "unknown"),
                 "durationMinutes":max(0,round((last-first)/60)),"distanceKm":round(distance,2),
-                "operatingDays":[],"status":"active","verificationStatus":"published_unverified",
+                "operatingDays":[],"firstDepartureTime":hhmm(seq[0].get("departure_time") or seq[0].get("arrival_time") or ""),"lastDepartureTime":hhmm(seq[0].get("departure_time") or seq[0].get("arrival_time") or ""),"status":"active","verificationStatus":"published_unverified",
                 "sourceDataset":DATASET,"sourceUrl":SOURCE_PAGE,"sourceDownloadUrl":SOURCE_URL,
                 "sourceLicense":SOURCE_LICENSE,"sourceAttribution":ATTRIBUTION,
                 "sourceSnapshotDate":SNAPSHOT_DATE,"polyline":[[x["latitude"],x["longitude"]] for x in seq_stops],
@@ -170,6 +170,10 @@ def build(zip_path,out_dir):
             "isConfirmed":False,"verificationStatus":"published_unverified","version":1,
             "lastVerifiedDate":SNAPSHOT_DATE,"sourceDataset":DATASET,"sourceUrl":SOURCE_PAGE,
             "sourceLicense":SOURCE_LICENSE,"sourceAttribution":ATTRIBUTION,"sourceSnapshotDate":SNAPSHOT_DATE})
+        current_departure=hhmm(seq[0].get("departure_time") or seq[0].get("arrival_time") or "")
+        current_arrival=hhmm(seq[-1].get("arrival_time") or seq[-1].get("departure_time") or "")
+        if current_departure < patterns[key]["firstDepartureTime"]: patterns[key]["firstDepartureTime"]=current_departure
+        if current_departure > patterns[key]["lastDepartureTime"]: patterns[key]["lastDepartureTime"]=current_departure
         patterns[key]["operatingDays"]=sorted(set(patterns[key]["operatingDays"])|set(days),
             key=lambda d:next(i for i,(_,label) in enumerate(DAY_FIELDS) if label==d))
     if len(timetable_rows)<1000 or len(patterns)<10: raise ValueError("Unexpectedly few current trips or route patterns")
