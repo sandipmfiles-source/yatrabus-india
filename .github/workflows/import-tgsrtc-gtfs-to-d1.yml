@@ -1,0 +1,124 @@
+name: Import TGSRTC GTFS into Cloudflare D1
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/import-tgsrtc-gtfs-to-d1.py'
+      - '.github/workflows/import-tgsrtc-gtfs-to-d1.yml'
+      - 'src/components/routes/RouteDetailModal.tsx'
+      - 'src/types/index.ts'
+      - 'src/i18n/index.ts'
+  workflow_dispatch:
+    inputs:
+      confirm_production:
+        description: 'Confirm append-only import of the pinned TGSRTC static schedule into production D1'
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Validate importer and its synthetic GTFS fixture
+        run: |
+          set -euo pipefail
+          python -m py_compile scripts/import-tgsrtc-gtfs-to-d1.py
+          python scripts/import-tgsrtc-gtfs-to-d1.py --self-test
+      - name: Download and dry-run pinned TGSRTC feed
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/tgsrtc
+          curl --fail --location --retry 3 --retry-all-errors \
+            'https://data.opencity.in/dataset/88e2d145-7ec6-4666-88dd-6cf18b18312e/resource/1b0d18bb-b2fb-4a79-8ed0-1e071da5790c/download/telangana_opendata_gtfs_tgsrtc_08_february_2026.zip' \
+            --output /tmp/tgsrtc/tgsrtc.zip
+          echo '4c4b332dd8a42c9727233733d839e0c14dc58a3c  /tmp/tgsrtc/tgsrtc.zip' | sha1sum --check -
+          python scripts/import-tgsrtc-gtfs-to-d1.py \
+            --input /tmp/tgsrtc/tgsrtc.zip \
+            --output-dir /tmp/tgsrtc/sql
+          python - <<'PY'
+          import json
+          m=json.load(open('/tmp/tgsrtc/sql/manifest.json'))
+          assert m['stopCount'] >= 1000, m
+          assert m['routePatternCount'] >= 100, m
+          assert m['tripCount'] >= 10000, m
+          assert m['liveGpsIncluded'] is False and m['fareDataIncluded'] is False
+          print(json.dumps(m, indent=2))
+          PY
+      - name: Run application tests and production build
+        run: |
+          set -euo pipefail
+          npm ci
+          npm test
+          npm run build
+
+  import:
+    if: github.event_name == 'workflow_dispatch' && inputs.confirm_production == true && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Verify Cloudflare credentials
+        env:
+          CLOUDFLARE_API_TOKEN: \${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: \${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          test -n "$CLOUDFLARE_API_TOKEN"
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+      - name: Download and verify pinned TGSRTC feed
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/tgsrtc
+          curl --fail --location --retry 3 --retry-all-errors \
+            'https://data.opencity.in/dataset/88e2d145-7ec6-4666-88dd-6cf18b18312e/resource/1b0d18bb-b2fb-4a79-8ed0-1e071da5790c/download/telangana_opendata_gtfs_tgsrtc_08_february_2026.zip' \
+            --output /tmp/tgsrtc/tgsrtc.zip
+          echo '4c4b332dd8a42c9727233733d839e0c14dc58a3c  /tmp/tgsrtc/tgsrtc.zip' | sha1sum --check -
+          python scripts/import-tgsrtc-gtfs-to-d1.py --input /tmp/tgsrtc/tgsrtc.zip --output-dir /tmp/tgsrtc/sql
+      - name: Import schedule records using append-only SQL
+        env:
+          CLOUDFLARE_API_TOKEN: \${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: \${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          for file in /tmp/tgsrtc/sql/tgsrtc-*.sql; do
+            echo "Applying $(basename "$file")"
+            npx --yes wrangler@4 d1 execute yatrabus-india-db --remote --yes --file="$file"
+          done
+      - name: Verify stop, route and timetable counts and no invented vehicles
+        env:
+          CLOUDFLARE_API_TOKEN: \${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: \${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          payload="$(jq -n --arg sql "SELECT (SELECT COUNT(*) FROM places WHERE source_dataset = 'TGSRTC_GTFS_2026_02_08') AS stops, (SELECT COUNT(*) FROM routes WHERE payload_json LIKE '%TGSRTC_GTFS_2026_02_08%') AS routes, (SELECT COUNT(*) FROM timetables WHERE payload_json LIKE '%TGSRTC_GTFS_2026_02_08%') AS trips, (SELECT COUNT(*) FROM buses WHERE payload_json LIKE '%TGSRTC_GTFS_2026_02_08%') AS invented_vehicles;" '{sql: $sql}')"
+          response="$(curl --fail --silent --show-error \
+            --request POST \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/d1/database/ad817522-9239-4574-8b23-17b8d45d756e/query" \
+            --header "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            --header "Content-Type: application/json" \
+            --data "$payload")"
+          printf '%s' "$response" | jq -e '.success == true' >/dev/null
+          stops="$(printf '%s' "$response" | jq -er '.result[0].results[0].stops')"
+          routes="$(printf '%s' "$response" | jq -er '.result[0].results[0].routes')"
+          trips="$(printf '%s' "$response" | jq -er '.result[0].results[0].trips')"
+          vehicles="$(printf '%s' "$response" | jq -er '.result[0].results[0].invented_vehicles')"
+          if [ "$stops" -lt 1000 ] || [ "$routes" -lt 100 ] || [ "$trips" -lt 10000 ] || [ "$vehicles" -ne 0 ]; then
+            echo "::error::TGSRTC import verification failed: stops=$stops routes=$routes trips=$trips invented_vehicles=$vehicles"
+            exit 1
+          fi
+          echo "Verified TGSRTC records: $stops stops, $routes route patterns, $trips scheduled trips; no vehicle records were invented."
