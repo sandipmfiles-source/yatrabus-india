@@ -116,8 +116,9 @@ export class ApiClient {
     return request('/api/v1/buses', { method: 'GET' });
   }
 
-  public static async getBusById(id: string): Promise<ApiResponse> {
-    return request(`/api/v1/buses/${encodeURIComponent(id)}`, { method: 'GET' });
+  public static async getBusById(id: string, routeId?: string): Promise<ApiResponse> {
+    const routeQuery = routeId ? `?routeId=${encodeURIComponent(routeId)}` : '';
+    return request(`/api/v1/buses/${encodeURIComponent(id)}${routeQuery}`, { method: 'GET' });
   }
 
   public static async getAllOperators(): Promise<ApiResponse> {
