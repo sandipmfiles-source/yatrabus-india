@@ -6,7 +6,7 @@
 - D1-backed public read APIs for places, nearby places, routes, route search, timetables, buses and operators.
 - D1-backed public contribution submission and status lookup APIs.
 - Shared API CORS preflight handling for GET and POST requests.
-- A SQLite-compatible initial D1 schema in `migrations/0001_initial.sql`.
+- Versioned, SQLite-compatible D1 schema migrations in `migrations/` (initial, owner security, and indexed route-stop lookup).
 - An explicit health response when D1 is missing, unreachable, or not migrated.
 - No production secrets, database IDs, or credentials are committed.
 
@@ -29,8 +29,7 @@ npx wrangler login
 npx wrangler d1 migrations apply yatrabus-india-db --remote
 ```
 
-Wrangler uses the repository's `migrations/` directory by default. If prompted
-for a migrations directory, use `migrations`.
+Wrangler uses the repository's configured `migrations/` directory and records applied versions in its D1 migration history. The GitHub Actions workflow applies only pending migrations and captures Cloudflare's automatic pre-migration backup.
 
 ## Verify
 
@@ -42,9 +41,9 @@ Expected outcomes:
 
 - HTTP 503 with `database: not_configured`: the Pages Function is deployed,
   but the DB binding is not configured.
-- HTTP 503 with `database: d1` and `schemaReady: false`: one or more of the 11 core tables from `0001_initial.sql` are missing.
+- HTTP 503 with `database: d1` and `schemaReady: false`: one or more of the 12 required core tables are missing.
 - HTTP 503 with `database: d1`, `schemaReady: true`, and `adminSecurityReady: false`: the core schema exists, but the additive owner-security migration `0002_admin_security.sql` is missing.
-- HTTP 200 with `database: d1`, `persistentStorage: true`, `schemaReady: true`, and `adminSecurityReady: true`: all 16 required core and owner-security tables are present.
+- HTTP 200 with `database: d1`, `persistentStorage: true`, `schemaReady: true`, and `adminSecurityReady: true`: all 17 required core and owner-security tables are present, including the indexed `route_stops` table.
 
 ## Important limitations
 
