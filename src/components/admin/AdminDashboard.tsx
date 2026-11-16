@@ -43,7 +43,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
     setLoading(true);
     try {
       const [healthRes, subsRes, claimsRes, rulesRes, auditRes] = await Promise.all([
-        ApiClient.getHealth(),
+        ApiClient.getAdminOverview(),
         ApiClient.getAdminSubmissions(),
         ApiClient.getAdminClaims(),
         ApiClient.getAutomationRules(),
