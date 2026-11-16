@@ -49,6 +49,10 @@ export const RouteDetailModal: React.FC<RouteDetailModalProps> = ({
   const [serviceAlerts, setServiceAlerts] = useState<ServiceAlert[]>(route.serviceAlerts || []);
 
   useEffect(() => {
+    setSelectedServiceDate(serviceDate);
+  }, [serviceDate]);
+
+  useEffect(() => {
     const fetchData = async () => {
       try {
         const [ttRes, busesRes, routeRes] = await Promise.all([
