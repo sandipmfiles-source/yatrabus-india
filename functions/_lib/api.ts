@@ -9,7 +9,12 @@ export interface D1Database {
     all<T = Record<string, unknown>>(): Promise<{ results?: T[] }>;
   };
 }
-export interface PagesEnv { DB?: D1Database }
+export interface PagesEnv {
+  DB?: D1Database;
+  ADMIN_EMAIL?: string;
+  ADMIN_PASSWORD_HASH?: string;
+  ADMIN_JWT_SECRET?: string;
+}
 export interface PagesContext { request: Request; env: PagesEnv; params?: Record<string, string> }
 export function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), { status, headers: {
