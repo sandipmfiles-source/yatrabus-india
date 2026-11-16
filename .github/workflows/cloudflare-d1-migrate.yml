@@ -64,3 +64,24 @@ jobs:
           set -euo pipefail
           npx --yes wrangler@4 d1 execute yatrabus-india-db --remote --yes --command="SELECT name FROM sqlite_master WHERE type = 'table' AND name IN ('places','operators','buses','routes','route_stops','timetables','journey_sessions','location_observations','community_submissions','audit_logs','automation_rules','schema_migrations','admin_sessions','admin_login_attempts','operator_claims','service_alerts','public_rate_limits') ORDER BY name;"
           npx --yes wrangler@4 d1 execute yatrabus-india-db --remote --yes --command="SELECT COUNT(*) AS indexed_route_stops FROM route_stops;"
+
+      - name: Verify deployed production Pages API health
+        run: |
+          set -euo pipefail
+          health_url="https://yatrabus-india.pages.dev/api/v1/health"
+          ready=false
+          for attempt in $(seq 1 30); do
+            response="$(curl --silent --show-error "$health_url" || true)"
+            if printf '%s' "$response" | jq -e '.success == true and .data.schemaReady == true and .data.coreTablesPresent == 12 and .data.adminSecurityReady == true and .data.adminSecurityTablesPresent == 5' >/dev/null 2>&1; then
+              printf '%s\n' "$response" | jq .
+              ready=true
+              break
+            fi
+            echo "Production Pages health is not ready yet (attempt $attempt/30)."
+            sleep 10
+          done
+          if [ "$ready" != true ]; then
+            echo "::error::Production Pages API did not report all 17 required D1 tables ready."
+            printf '%s\n' "$response"
+            exit 1
+          fi
