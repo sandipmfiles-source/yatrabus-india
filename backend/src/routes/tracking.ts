@@ -146,6 +146,40 @@ trackingRouter.post('/consent', (req: Request, res: Response) => {
   return res.json({ success: true, sessionId, status });
 });
 
+// GET /api/tracking/session/:sessionId/status
+// Resume a persisted client session only after server-side consent is revalidated.
+trackingRouter.get('/session/:sessionId/status', publicSearchLimiter, (req: Request, res: Response) => {
+  const sessionId = String(req.params.sessionId || '');
+  if (!sessionId || sessionId.length > 128) {
+    return res.status(400).json({ active: false, error: 'A valid sessionId is required.' });
+  }
+  const session = repository.getJourneySession(sessionId);
+  if (!session || !session.isActive) {
+    return res.status(404).json({ active: false, error: 'Journey session is not active.' });
+  }
+  if (!Number.isFinite(new Date(session.maxExpiryTime).getTime()) ||
+      Date.now() >= new Date(session.maxExpiryTime).getTime()) {
+    repository.stopJourneySession(sessionId, 'SESSION_EXPIRED');
+    return res.status(410).json({ active: false, error: 'Journey session has expired.' });
+  }
+  const consent = repository.getConsent(sessionId);
+  if (!consent || consent.status !== 'GRANTED' || consent.disclosuresAccepted !== true) {
+    repository.stopJourneySession(sessionId, 'CONSENT_REVOKED');
+    return res.status(403).json({ active: false, error: 'Explicit location-sharing consent is not active.' });
+  }
+  return res.json({
+    active: true,
+    session: {
+      sessionId: session.sessionId,
+      busId: session.busId,
+      routeId: session.routeId,
+      startTime: session.startTime,
+      maxExpiryTime: session.maxExpiryTime,
+      destinationStopId: session.destinationStopId,
+    },
+  });
+});
+
 // POST /api/tracking/session/start
 trackingRouter.post('/session/start', trackingSessionLimiter, (req: Request, res: Response) => {
   const { busId, routeId, originStopId, destinationStopId } = req.body;

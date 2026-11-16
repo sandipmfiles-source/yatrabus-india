@@ -137,6 +137,15 @@ export const api = {
     return await res.json();
   },
 
+  async getJourneySessionStatus(sessionId: string) {
+    const res = await fetch(`${getApiBase()}/tracking/session/${encodeURIComponent(sessionId)}/status`);
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || data.active !== true || !data.session) {
+      throw new Error(data.message || data.error || 'The previous tracking consent is no longer active.');
+    }
+    return data.session;
+  },
+
   async startJourneySession(busId: string, routeId: string, destinationStopId?: string) {
     const res = await fetch(`${getApiBase()}/tracking/session/start`, {
       method: 'POST',

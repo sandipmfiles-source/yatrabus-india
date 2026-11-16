@@ -46,14 +46,32 @@ export const TrackingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const webWatchIdRef = useRef<number | null>(null);
 
   useEffect(() => {
-    const saved = storage.getActiveSession();
-    if (!saved) return;
-    const started = new Date(saved.startedAt).getTime();
-    if (Number.isFinite(started) && Date.now() - started < 12 * 3600 * 1000) {
-      setActiveSession(saved);
-    } else {
-      storage.clearActiveSession();
-    }
+    let cancelled = false;
+    const restoreConsentedSession = async () => {
+      const saved = storage.getActiveSession();
+      if (!saved) return;
+      const started = new Date(saved.startedAt).getTime();
+      if (!Number.isFinite(started) || Date.now() - started >= 12 * 3600 * 1000) {
+        storage.clearActiveSession();
+        return;
+      }
+      // Never restart GPS collection from local storage alone. The server must
+      // confirm that this exact journey is still active and consent is still granted.
+      try {
+        const verified = await api.getJourneySessionStatus(saved.sessionId);
+        if (cancelled) return;
+        if (verified.busId !== saved.busId || verified.routeId !== saved.routeId) {
+          storage.clearActiveSession();
+          return;
+        }
+        setActiveSession(saved);
+      } catch {
+        storage.clearActiveSession();
+        // Fail closed: an offline or revoked session must not silently restart GPS.
+      }
+    };
+    void restoreConsentedSession();
+    return () => { cancelled = true; };
   }, []);
 
   useEffect(() => {
