@@ -9,6 +9,7 @@ from pathlib import Path
 DATASET = "TGSRTC_GTFS_2026_02_08"
 SOURCE_URL = "https://data.opencity.in/dataset/88e2d145-7ec6-4666-88dd-6cf18b18312e/resource/1b0d18bb-b2fb-4a79-8ed0-1e071da5790c/download/telangana_opendata_gtfs_tgsrtc_08_february_2026.zip"
 SOURCE_PAGE = "https://www.tgsrtc.telangana.gov.in/open-data"
+MIRROR_URL = "https://storage.googleapis.com/storage/v1/b/mdb-latest/o/in-hyderabad-bus-gtfs-3361.zip?alt=media"
 SOURCE_LICENSE = "TGSRTC Open Data Terms: free non-exclusive use; attribution required"
 ATTRIBUTION = "Contains data provided by TGSRTC"
 SNAPSHOT_DATE = "2026-02-08"
@@ -150,7 +151,7 @@ def build(zip_path,out_dir,test_mode=False):
                 "direction":"up" if trip.get("direction_id")=="0" else ("down" if trip.get("direction_id")=="1" else "unknown"),
                 "durationMinutes":max(0,round((last-first)/60)),"distanceKm":round(distance,2),
                 "operatingDays":[],"firstDepartureTime":hhmm(seq[0].get("departure_time") or seq[0].get("arrival_time") or ""),"lastDepartureTime":hhmm(seq[0].get("departure_time") or seq[0].get("arrival_time") or ""),"status":"active","verificationStatus":"published_unverified",
-                "sourceDataset":DATASET,"sourceUrl":SOURCE_PAGE,"sourceDownloadUrl":SOURCE_URL,
+                "sourceDataset":DATASET,"sourceUrl":SOURCE_PAGE,"sourceDownloadUrl":SOURCE_URL,"sourceMirrorUrl":MIRROR_URL,"sourceMirrorUrl":MIRROR_URL,
                 "sourceLicense":SOURCE_LICENSE,"sourceAttribution":ATTRIBUTION,
                 "sourceSnapshotDate":SNAPSHOT_DATE,"polyline":[[x["latitude"],x["longitude"]] for x in seq_stops],
                 "stops":seq_stops}
@@ -201,7 +202,7 @@ def build(zip_path,out_dir,test_mode=False):
         batch.append(statement); size+=n
     if batch:
         p=out_dir/f"tgsrtc-{batch_no:04d}.sql"; p.write_text("\n".join(batch)+"\n",encoding="utf-8"); files.append(p.name)
-    manifest={"dataset":DATASET,"source":SOURCE_PAGE,"download":SOURCE_URL,"license":SOURCE_LICENSE,
+    manifest={"dataset":DATASET,"source":SOURCE_PAGE,"download":SOURCE_URL,"mirror":MIRROR_URL,"license":SOURCE_LICENSE,
         "attribution":ATTRIBUTION,"snapshotDate":SNAPSHOT_DATE,"agencyCount":1,"stopCount":len(stop_map),
         "routePatternCount":len(patterns),"tripCount":len(timetable_rows),"skippedTripCount":skipped,
         "sqlFileCount":len(files),"sqlFiles":files,"liveGpsIncluded":False,"fareDataIncluded":False,
