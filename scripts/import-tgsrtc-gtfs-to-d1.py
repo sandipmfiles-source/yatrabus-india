@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Convert a pinned TGSRTC static GTFS snapshot into append-only Cloudflare D1 SQL."""
+"""Convert a pinned TGSRTC static GTFS snapshot into append-only Cloudflare D1 SQL.
+
+The production importer is manual-only; every archive is checksum-verified before parsing.
+"""
 from __future__ import annotations
 import argparse, csv, hashlib, io, json, math, re, zipfile
 from collections import defaultdict
