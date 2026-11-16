@@ -243,7 +243,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                       <div>
                         <div className="font-bold text-slate-900">{p.canonicalName}</div>
                         <span className="text-[11px] text-slate-500">
-                          {p.district}, {p.state} • {p.placeType.replace('_', ' ')}{p.busServiceVerified === false ? ' • Location only; bus service not verified' : ''}
+                          {p.district}, {p.state} • {p.placeType.replace('_', ' ')}{p.busServiceVerified === false ? ' • Location only; bus service not verified' : ''}{p.busServiceVerified === false ? ' • Location only; bus service not verified' : ''}
                         </span>
                       </div>
                       <span className="text-[10px] text-brand-900 font-bold uppercase bg-brand-100 px-2 py-0.5 rounded-full">
