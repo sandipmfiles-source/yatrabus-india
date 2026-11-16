@@ -500,7 +500,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         </div>
       )}
 
-      {/* Popular Verified Routes Section */}
+      {/* Routes with published source data */}
       <div className="space-y-3">
         <h2 className="text-sm font-bold text-slate-900">{t('popular_routes_title')}</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
