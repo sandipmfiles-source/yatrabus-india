@@ -31,6 +31,22 @@ export function runIndiaCatalogueTests(assert: (description: string, pass: boole
   assert('Historical terminals remain unverified and retain the 2017 source snapshot', pilotTerminals.every(item =>
     item.placeType === 'BUS_TERMINAL' && item.verificationStatus === 'UNVERIFIED' && item.sourceSnapshotDate === '2017-03-03' && item.latitude === undefined && item.longitude === undefined
   ));
+
+  const expandedWestBengalTerminals = INDIA_ADMIN_AREA_PLACES.filter(item => item.id.startsWith('wb-directory-terminal-'));
+  assert('Expanded West Bengal source directory is loaded into the shared place repository', expandedWestBengalTerminals.length >= 40);
+  assert('Imported West Bengal terminals retain source provenance and unverified status', expandedWestBengalTerminals.every(item =>
+    item.state === 'West Bengal' && item.placeType === 'BUS_TERMINAL' && item.verificationStatus === 'UNVERIFIED' &&
+    item.sourceDataset === 'WEST_BENGAL_TRANSPORT_DEPARTMENT_BUS_TERMINALS' &&
+    item.sourceSnapshotDate === '2017-03-03' && !!item.sourceUrl &&
+    item.latitude === undefined && item.longitude === undefined
+  ));
+  assert('Imported West Bengal terminals include Bengali aliases where provided', expandedWestBengalTerminals.some(item =>
+    !!item.names.bn || item.aliases.some(alias => /[\\u0980-\\u09FF]/.test(alias))
+  ));
+  assert('Proposed-only West Bengal terminals are not exposed as passenger search results', !expandedWestBengalTerminals.some(item =>
+    item.canonicalName.toLowerCase().includes('proposed')
+  ));
+
   assert('Every administrative state/UT and capital has source provenance', INDIA_ADMIN_AREA_PLACES
     .filter(item => item.id.startsWith('india-admin-'))
     .every(item => !!item.sourceUrl && !!item.sourceSnapshotDate && item.verificationStatus === 'UNVERIFIED'));
