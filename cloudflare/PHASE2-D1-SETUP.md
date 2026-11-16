@@ -10,9 +10,7 @@
 - An explicit health response when D1 is missing, unreachable, or not migrated.
 - No production secrets, database IDs, or credentials are committed.
 
-The existing Node.js/PostgreSQL backend is preserved. This change does **not**
-claim that all existing API routes have been ported to Workers or that the
-frontend is connected to D1 yet.
+The existing Node.js/PostgreSQL backend is preserved. The deployed Pages frontend uses the Pages API for the routes implemented under `functions/api`; this does **not** mean every legacy Node/PostgreSQL route has been ported. GPS ingestion and several legacy write flows remain outside this D1 API.
 
 ## Cloudflare dashboard setup
 
@@ -44,18 +42,10 @@ Expected outcomes:
 
 - HTTP 503 with `database: not_configured`: the Pages Function is deployed,
   but the DB binding is not configured.
-- HTTP 503 with `database: connected` is not emitted; if the DB is reachable
-  but migrations are missing, the response reports `database: d1` and
-  `schemaReady: false`.
-- HTTP 200 with `database: d1`, `persistentStorage: true`, and
-  `schemaReady: true`: D1 is bound and the initial schema is present.
+- HTTP 503 with `database: d1` and `schemaReady: false`: one or more of the 11 core tables from `0001_initial.sql` are missing.
+- HTTP 503 with `database: d1`, `schemaReady: true`, and `adminSecurityReady: false`: the core schema exists, but the additive owner-security migration `0002_admin_security.sql` is missing.
+- HTTP 200 with `database: d1`, `persistentStorage: true`, `schemaReady: true`, and `adminSecurityReady: true`: all 16 required core and owner-security tables are present.
 
 ## Important limitations
 
-This is the safe foundation only. The existing API uses Node.js modules,
-PostgreSQL queries/PostGIS behavior, and in-memory services. The remaining write routes, admin authentication/moderation, timetable edits,
-and GPS session ingestion still need to be ported to Workers-compatible D1
-repositories. Public contribution submission is now persisted in D1, but it
-still needs abuse protection (rate limiting and/or Turnstile) before a broad
-public launch. D1 must also be populated with a curated, verified transport
-dataset; the small demo seed data must not be presented as India-wide coverage.
+This is the Cloudflare Pages/D1 API foundation, not a claim that every legacy backend route is ported. The owner-only Super Admin API and public submission rate limits are implemented by the additive security migration and Functions. The Node/PostgreSQL runtime, GPS ingestion and live journey writes remain separate integration work. D1 currently contains an administrative place directory; this does not prove bus service availability. Public timetable coverage remains limited to feeds with current, licence-reviewed snapshots, and community-derived feeds must remain labelled unverified.
