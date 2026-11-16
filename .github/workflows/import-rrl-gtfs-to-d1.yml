@@ -123,7 +123,7 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           set -euo pipefail
-          payload="$(jq -n --arg sql "SELECT (SELECT COUNT(*) FROM places WHERE source_dataset = 'RRL_RAJKOT_GTFS_2026_11_16') AS stops, (SELECT COUNT(*) FROM routes WHERE payload_json LIKE '%RRL_RAJKOT_GTFS_2026_11_16%') AS routes, (SELECT COUNT(*) FROM timetables WHERE payload_json LIKE '%RRL_RAJKOT_GTFS_2026_11_16%') AS trips, (SELECT COUNT(*) FROM route_stops WHERE route_id IN (SELECT id FROM routes WHERE payload_json LIKE '%RRL_RAJKOT_GTFS_2026_11_16%')) AS route_stops, (SELECT COUNT(*) FROM buses WHERE payload_json LIKE '%RRL_RAJKOT_GTFS_2026_11_16%') AS vehicles, (SELECT COUNT(*) FROM timetables WHERE payload_json LIKE '%RRL_RAJKOT_GTFS_2026_11_16%' AND json_extract(payload_json, '$.fareInRupees') IS NOT NULL) AS invented_fares;" '{sql: $sql}')"
+          payload="$(jq -n --arg sql "SELECT (SELECT COUNT(*) FROM places WHERE source_dataset = 'RRL_RAJKOT_GTFS_2026_11_16') AS stops, (SELECT COUNT(*) FROM routes WHERE payload_json LIKE '%RRL_RAJKOT_GTFS_2026_11_16%') AS routes, (SELECT COUNT(*) FROM timetables WHERE payload_json LIKE '%RRL_RAJKOT_GTFS_2026_11_16%') AS trips, (SELECT COUNT(*) FROM route_stops WHERE route_id IN (SELECT id FROM routes WHERE payload_json LIKE '%RRL_RAJKOT_GTFS_2026_11_16%')) AS route_stops, (SELECT COUNT(*) FROM timetables WHERE payload_json LIKE '%RRL_RAJKOT_GTFS_2026_11_16%' AND service_start_date IS NOT NULL AND service_end_date IS NOT NULL) AS calendar_rows, (SELECT COUNT(*) FROM buses WHERE payload_json LIKE '%RRL_RAJKOT_GTFS_2026_11_16%') AS vehicles, (SELECT COUNT(*) FROM timetables WHERE payload_json LIKE '%RRL_RAJKOT_GTFS_2026_11_16%' AND json_extract(payload_json, '$.fareInRupees') IS NOT NULL) AS invented_fares;" '{sql: $sql}')"
           response="$(curl --fail --silent --show-error \
             --request POST \
             "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/d1/database/ad817522-9239-4574-8b23-17b8d45d756e/query" \
@@ -135,10 +135,11 @@ jobs:
           routes="$(printf '%s' "$response" | jq -er '.result[0].results[0].routes')"
           trips="$(printf '%s' "$response" | jq -er '.result[0].results[0].trips')"
           route_stops="$(printf '%s' "$response" | jq -er '.result[0].results[0].route_stops')"
+          calendar_rows="$(printf '%s' "$response" | jq -er '.result[0].results[0].calendar_rows')"
           vehicles="$(printf '%s' "$response" | jq -er '.result[0].results[0].vehicles')"
           fares="$(printf '%s' "$response" | jq -er '.result[0].results[0].invented_fares')"
-          if [ "$stops" -lt 10 ] || [ "$routes" -lt 1 ] || [ "$trips" -lt 10 ] || [ "$route_stops" -lt 100 ] || [ "$vehicles" -ne 0 ] || [ "$fares" -ne 0 ]; then
-            echo "::error::RRL D1 verification failed: stops=$stops routes=$routes trips=$trips route_stops=$route_stops vehicles=$vehicles fares=$fares"
+          if [ "$stops" -lt 10 ] || [ "$routes" -lt 1 ] || [ "$trips" -lt 10 ] || [ "$route_stops" -lt 100 ] || [ "$calendar_rows" -lt 100 ] || [ "$vehicles" -ne 0 ] || [ "$fares" -ne 0 ]; then
+            echo "::error::RRL D1 verification failed: stops=$stops routes=$routes trips=$trips route_stops=$route_stops calendar_rows=$calendar_rows vehicles=$vehicles fares=$fares"
             exit 1
           fi
-          echo "Verified Rajkot RRL feed: $stops stops, $routes route patterns, $trips scheduled trips and $route_stops indexed stop positions; no individual vehicles or fares invented."
+          echo "Verified Rajkot RRL feed: $stops stops, $routes route patterns, $trips scheduled trips and $route_stops indexed stop positions; $calendar_rows timetables with verified GTFS calendar ranges; no individual vehicles or fares invented."
