@@ -6,6 +6,18 @@ def releaseKeyAlias = System.getenv('KEY_ALIAS')
 def releaseKeyPassword = System.getenv('KEY_PASSWORD')
 def releaseSigningReady = releaseKeystorePath && releaseStorePassword && releaseKeyAlias && releaseKeyPassword
 
+// Fail closed: never produce an unsigned release APK/AAB by accident.
+// Debug builds remain available without release credentials.
+def requestedSignedRelease = gradle.startParameter.taskNames.any { taskName ->
+    def normalized = taskName.toLowerCase()
+    normalized.endsWith('assemblerelease') || normalized.endsWith('bundlerelease')
+}
+if (requestedSignedRelease && !releaseSigningReady) {
+    throw new GradleException(
+        'Release signing is not configured. Set ANDROID_KEYSTORE_PATH, KEYSTORE_PASSWORD, KEY_ALIAS and KEY_PASSWORD in the protected build environment.'
+    )
+}
+
 android {
     namespace = "in.yatribus.app"
     compileSdk = rootProject.ext.compileSdkVersion
