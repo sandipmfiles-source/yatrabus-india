@@ -20,6 +20,11 @@ actual = {row[0] for row in db.execute("SELECT name FROM sqlite_master WHERE typ
 missing = required - actual
 if missing:
     raise SystemExit(f"Missing D1 tables: {', '.join(sorted(missing))}")
+timetable_columns = {row[1] for row in db.execute("PRAGMA table_info(timetables)")}
+required_timetable_columns = {"service_start_date", "service_end_date", "service_exceptions_json"}
+missing_calendar_columns = required_timetable_columns - timetable_columns
+if missing_calendar_columns:
+    raise SystemExit(f"Missing timetable calendar columns: {', '.join(sorted(missing_calendar_columns))}")
 
 db.execute(
     "INSERT INTO places (id, canonical_name, place_type, state, district, payload_json) "
@@ -44,4 +49,4 @@ db.execute(
 if db.execute("PRAGMA foreign_key_check").fetchall():
     raise SystemExit("D1 migration has foreign-key violations")
 
-print(f"D1 migrations OK: {len(migration_files)} files, {len(required)} required tables; place search and security table smoke tests passed.")
+print(f"D1 migrations OK: {len(migration_files)} files, {len(required)} required tables and {len(required_timetable_columns)} timetable calendar columns; place search and security table smoke tests passed.")
