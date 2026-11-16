@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { createHmac } from "node:crypto";
 import { PagesEnv, json } from "./api";
 
 export async function enforcePublicRateLimit(
@@ -13,7 +13,8 @@ export async function enforcePublicRateLimit(
     request.headers.get("X-Forwarded-For")?.split(",")[0]?.trim() ||
     "unknown-client";
   // Store a short-lived one-way identifier, never the raw client IP.
-  const ipHash = createHash("sha256").update("yatrabus-public-rate-limit-v1:" + ip).digest("hex");
+  const privacyKey = env.ADMIN_JWT_SECRET || env.RATE_LIMIT_SECRET || "yatrabus-public-rate-limit-v1";
+  const ipHash = createHmac("sha256", privacyKey).update(ip).digest("hex");
   const now = Date.now();
   const nowIso = new Date(now).toISOString();
   const cutoff = new Date(now - windowMs).toISOString();
