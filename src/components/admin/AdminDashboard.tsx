@@ -39,6 +39,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
   const [reviewRemarks, setReviewRemarks] = useState('');
   const [selectedSubId, setSelectedSubId] = useState<string | null>(null);
   const [claimActionError, setClaimActionError] = useState('');
+  const [submissionActionError, setSubmissionActionError] = useState('');
 
   const loadData = async () => {
     setLoading(true);
@@ -68,13 +69,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
   }, []);
 
   const handleReview = async (id: string, action: 'approved' | 'rejected' | 'merged') => {
+    setSubmissionActionError('');
     try {
-      await ApiClient.reviewSubmission(id, action, reviewRemarks || `Action: ${action}`);
+      const result = await ApiClient.reviewSubmission(id, action, reviewRemarks || `Action: ${action}`);
+      if (!result.success) {
+        setSubmissionActionError(result.error || 'Submission could not be reviewed.');
+        return;
+      }
       setReviewRemarks('');
       setSelectedSubId(null);
       loadData();
     } catch (err) {
-      console.error('Review error:', err);
+      setSubmissionActionError('Submission review is temporarily unavailable.');
     }
   };
 
@@ -226,6 +232,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
             <span className="text-xs text-slate-500">Evidence-based verification</span>
           </div>
 
+          {submissionActionError && <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700">{submissionActionError}</div>}
           {submissions.length === 0 ? (
             <div className="p-8 text-center bg-white rounded-3xl border border-surface-border text-slate-500 text-xs">
               No submissions currently in queue.
