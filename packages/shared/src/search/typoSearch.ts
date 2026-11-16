@@ -89,16 +89,16 @@ export function searchPlaces(query: string, places: Place[], limit: number = 8):
     let score = 0;
     let matchType: PlaceSearchResult['matchType'] = 'TYPO';
 
-    // 1. Exact match on canonical name or variant
-    if (normCanonical === normQuery || resolvedCanonical === canonicalQuery) {
-      score = 100;
-      matchType = 'EXACT';
-    }
     const localizedNames = Object.values(place.names || {}).filter((name): name is string => typeof name === 'string' && name.length > 0);
     const alternateNames = [...(place.aliases || []), ...localizedNames]
       .map(name => normalizePlaceName(name))
       .filter(Boolean);
 
+    // 1. Exact match on canonical name or variant
+    if (normCanonical === normQuery || resolvedCanonical === canonicalQuery) {
+      score = 100;
+      matchType = 'EXACT';
+    }
     // 2. Exact match in aliases or localized names (Hindi/Bengali/etc.)
     else if (alternateNames.some(name => name === normQuery)) {
       score = 95;
