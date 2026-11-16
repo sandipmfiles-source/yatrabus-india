@@ -19,7 +19,7 @@ import {
 import { t } from '../../i18n';
 
 interface HomeScreenProps {
-  onSelectRoute: (route: Route) => void;
+  onSelectRoute: (route: Route, serviceDate?: string) => void;
   onOpenContribution: (prefillRouteId?: string) => void;
   activeJourneySessionId: string | null;
   onStopTracking: () => void;
@@ -43,7 +43,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   const [searchResults, setSearchResults] = useState<any | null>(null);
   const [popularRoutes, setPopularRoutes] = useState<Route[]>([]);
   const [nearbyStops, setNearbyStops] = useState<Place[]>([]);
-  const [recentSearches, setRecentSearches] = useState<{ origin: string; dest: string }[]>([]);
+  const [recentSearches, setRecentSearches] = useState<{ origin: string; dest: string; originId?: string; destId?: string; date?: string }[]>([]);
+  const [travelDate, setTravelDate] = useState(() => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()));
   const [loading, setLoading] = useState(false);
 
   // Load recent searches from localStorage
@@ -122,13 +123,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
     setLoading(true);
     try {
-      const res = await ApiClient.searchRoutes(originPlace.id, destinationPlace.id);
+      const res = await ApiClient.searchRoutes(originPlace.id, destinationPlace.id, travelDate);
       if (res.success) {
         setSearchResults(res.data);
 
         // Save recent search
         const updated = [
-          { origin: originPlace.canonicalName, dest: destinationPlace.canonicalName },
+          { origin: originPlace.canonicalName, dest: destinationPlace.canonicalName, originId: originPlace.id, destId: destinationPlace.id, date: travelDate },
           ...recentSearches.filter(
             s => !(s.origin === originPlace.canonicalName && s.dest === destinationPlace.canonicalName)
           )
@@ -141,6 +142,29 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       console.error('Search error:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const selectRecentSearch = async (item: { origin: string; dest: string; originId?: string; destId?: string; date?: string }) => {
+    setOriginQuery(item.origin);
+    setDestinationQuery(item.dest);
+    setTravelDate(item.date || new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()));
+    setSearchResults(null);
+    try {
+      const [originResult, destinationResult] = item.originId && item.destId
+        ? await Promise.all([ApiClient.getPlaceById(item.originId), ApiClient.getPlaceById(item.destId)])
+        : await Promise.all([ApiClient.searchPlaces(item.origin, 8), ApiClient.searchPlaces(item.dest, 8)]);
+      const resolvePlace = (result: any, name: string) => {
+        if (!result?.success) return null;
+        if (result.data && !Array.isArray(result.data)) return result.data;
+        const rows = Array.isArray(result.data) ? result.data : [];
+        return rows.find((place: Place) => place.canonicalName.toLowerCase() === name.toLowerCase()) || rows[0] || null;
+      };
+      setOriginPlace(resolvePlace(originResult, item.origin));
+      setDestinationPlace(resolvePlace(destinationResult, item.dest));
+    } catch {
+      setOriginPlace(null);
+      setDestinationPlace(null);
     }
   };
 
@@ -243,7 +267,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                       <div>
                         <div className="font-bold text-slate-900">{p.canonicalName}</div>
                         <span className="text-[11px] text-slate-500">
-                          {p.district}, {p.state} • {p.placeType.replace('_', ' ')}{p.busServiceVerified === false ? ' • ' + t('location_only_unverified') : ''}{p.busServiceVerified === false ? ' • Location only; bus service not verified' : ''}
+                          {p.district}, {p.state} • {p.placeType.replace('_', ' ')}{p.busServiceVerified === false ? ' • ' + t('location_only_unverified') : ''}
                         </span>
                       </div>
                       <span className="text-[10px] text-brand-900 font-bold uppercase bg-brand-100 px-2 py-0.5 rounded-full">
@@ -330,6 +354,21 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             </div>
           </div>
 
+          <div className="flex items-center justify-between gap-3 rounded-2xl bg-surface-subtle border border-surface-border px-3 py-2.5">
+            <label htmlFor="yatrabus-travel-date" className="text-xs font-bold text-slate-700">{t('travel_date')}</label>
+            <input
+              id="yatrabus-travel-date"
+              type="date"
+              min={new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())}
+              value={travelDate}
+              onChange={event => {
+                setTravelDate(event.target.value);
+                setSearchResults(null);
+              }}
+              className="rounded-xl border border-surface-border bg-white px-3 py-2 text-xs font-semibold text-slate-800"
+            />
+          </div>
+
           <button
             type="submit"
             disabled={!originPlace || !destinationPlace || loading}
@@ -359,10 +398,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               {recentSearches.map((item, idx) => (
                 <div
                   key={idx}
-                  onClick={() => {
-                    setOriginQuery(item.origin);
-                    setDestinationQuery(item.dest);
-                  }}
+                  onClick={() => { void selectRecentSearch(item); }}
                   className="px-3 py-1.5 rounded-xl bg-surface-subtle border border-surface-border text-xs text-slate-700 hover:bg-brand-50 hover:border-brand-300 cursor-pointer transition flex items-center space-x-1"
                 >
                   <span>{item.origin}</span>
@@ -379,7 +415,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       {searchResults && (
         <div className="space-y-4 animate-fade-in">
           <h2 className="text-base font-bold text-slate-900">
-            Available Bus Routes ({searchResults.directRoutes.length} Direct, {searchResults.transferRoutes.length} Transfer)
+            Available Bus Routes ({searchResults.directRoutes.length} Direct, {searchResults.transferRoutes.length} Transfer) · {travelDate}
           </h2>
 
           {searchResults.directRoutes.length === 0 && searchResults.transferRoutes.length === 0 ? (
@@ -400,7 +436,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               {searchResults.directRoutes.map((item: any) => (
                 <div
                   key={item.route.id}
-                  onClick={() => onSelectRoute(item.route)}
+                  onClick={() => onSelectRoute(item.route, travelDate)}
                   className="p-4 sm:p-5 rounded-3xl bg-white border border-surface-border shadow-sm hover:border-brand-900 cursor-pointer transition flex flex-col sm:flex-row sm:items-center justify-between gap-4"
                 >
                   <div className="flex items-center space-x-3">
@@ -507,7 +543,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           {popularRoutes.map(route => (
             <div
               key={route.id}
-              onClick={() => onSelectRoute(route)}
+              onClick={() => onSelectRoute(route, travelDate)}
               className="p-4 rounded-2xl bg-white border border-surface-border shadow-sm hover:border-brand-900 cursor-pointer transition flex items-center justify-between"
             >
               <div>
