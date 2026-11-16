@@ -24,7 +24,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: yatrabus-d1-production-${{ github.ref }}
+  group: ${{ github.ref == 'refs/heads/main' && 'yatrabus-d1-production' || format('yatrabus-d1-validation-{0}', github.run_id) }}
   cancel-in-progress: false
 
 jobs:
