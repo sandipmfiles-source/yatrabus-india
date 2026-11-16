@@ -5,7 +5,8 @@
 YatraBus can import the TGSRTC GTFS static schedule snapshot dated **8 February 2026**. The snapshot is pinned by SHA-1 in the GitHub Actions workflow so a changed file cannot silently enter production.
 
 - Source authority: Telangana State Road Transport Corporation (TGSRTC), [official open-data terms](https://www.tgsrtc.telangana.gov.in/open-data)
-- Download mirror for the published feed: [OpenCity GTFS ZIP](https://data.opencity.in/dataset/88e2d145-7ec6-4666-88dd-6cf18b18312e/resource/1b0d18bb-b2fb-4a79-8ed0-1e071da5790c/download/telangana_opendata_gtfs_tgsrtc_08_february_2026.zip)
+- Producer download URL: [OpenCity GTFS ZIP](https://data.opencity.in/dataset/88e2d145-7ec6-4666-88dd-6cf18b18312e/resource/1b0d18bb-b2fb-4a79-8ed0-1e071da5790c/download/telangana_opendata_gtfs_tgsrtc_08_february_2026.zip) (currently returns HTTP 403 to automated CI).
+- CI download mirror: [Mobility Database latest archive](https://storage.googleapis.com/storage/v1/b/mdb-latest/o/in-hyderabad-bus-gtfs-3361.zip?alt=media). The exact file is SHA-1 pinned in the workflow; a changed archive fails validation until deliberately reviewed and re-pinned.
 - Attribution required by the provider: **“Contains data provided by TGSRTC”**
 - The app must not suggest that TGSRTC endorses YatraBus.
 - The source terms permit free, non-exclusive use, adaptation, storage, display and redistribution, subject to attribution and the other terms on the official page.
