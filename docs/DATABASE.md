@@ -5,6 +5,22 @@ The YatraBus database is designed for PostgreSQL with the **PostGIS** extension,
 
 ---
 
+## 1A. Current Cloudflare Pages / D1 production runtime
+
+The public website and Android application use Cloudflare Pages Functions with the bound Cloudflare D1 database. The PostgreSQL/PostGIS model below documents the broader domain design; it is not a claim that a PostgreSQL server is currently deployed.
+
+The current D1 schema stores frequently queried columns relationally and retains complete domain records in `payload_json`. Versioned SQL migrations live in `migrations/` and are applied with Wrangler's D1 migration system. Do not apply a migration by deleting or recreating the production database.
+
+The D1 `route_stops` table is the indexed stop-to-route lookup used by passenger journey search:
+- `route_id`, `stop_id`, and `stop_sequence` identify a stop's position on a route.
+- `arrival_offset_minutes` and `departure_offset_minutes` retain the published timetable offsets from the route origin.
+- Indexes on `(stop_id, route_id, stop_sequence)` and `(route_id, stop_sequence)` allow origin/destination and transfer searches without scanning every route payload.
+- Migration `0003_route_stop_index.sql` backfills existing route stop arrays safely with `INSERT OR IGNORE`.
+
+A static GTFS timetable is not live vehicle tracking. Feed records retain source attribution and verification status; individual vehicle locations and fares are never inferred from static schedules.
+
+---
+
 ## 2. Entity Relational Models
 
 ### `places` (Master Geographical Directory)
