@@ -317,7 +317,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                       <div>
                         <div className="font-bold text-slate-900">{p.canonicalName}</div>
                         <span className="text-[11px] text-slate-500">
-                          {p.district}, {p.state} • {p.placeType.replace('_', ' ')}
+                          {p.district}, {p.state} • {p.placeType.replace('_', ' ')}{p.busServiceVerified === false ? ' • ' + t('location_only_unverified') : ''}
                         </span>
                       </div>
                       <span className="text-[10px] text-brand-900 font-bold uppercase bg-brand-100 px-2 py-0.5 rounded-full">
@@ -412,8 +412,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                     <div>
                       <div className="flex items-center space-x-2">
                         <h3 className="font-bold text-sm text-slate-900">{item.route.name}</h3>
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800">
-                          {t('badge_admin_verified')}
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${item.route.verificationStatus === 'admin_verified' ? 'bg-emerald-100 text-emerald-800' : item.route.verificationStatus === 'community_corroborated' ? 'bg-sky-100 text-sky-800' : 'bg-amber-100 text-amber-900'}`}>
+                          {t(item.route.verificationStatus === 'admin_verified' ? 'badge_admin_verified' : item.route.verificationStatus === 'community_corroborated' ? 'badge_community' : item.route.verificationStatus === 'published_unverified' ? 'badge_published_unverified' : 'badge_unverified')}
                         </span>
                       </div>
                       <p className="text-xs text-slate-500 mt-1">
@@ -425,10 +425,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                   <div className="flex items-center justify-between sm:justify-end space-x-4 shrink-0 pt-2 sm:pt-0 border-t sm:border-0 border-surface-border">
                     <div className="text-left sm:text-right">
                       <div className="font-bold text-brand-900 text-sm">
-                        Every {item.route.frequencyMinutes || 15} min
+                        {item.route.frequencyMinutes ? `${t('frequency')} ${item.route.frequencyMinutes} min` : t('frequency_unavailable')}
                       </div>
                       <span className="text-[11px] text-slate-400">
-                        {item.route.firstDepartureTime} - {item.route.lastDepartureTime}
+                        {item.route.firstDepartureTime && item.route.lastDepartureTime ? `${item.route.firstDepartureTime} - ${item.route.lastDepartureTime}` : t('schedule_times_unavailable')}
                       </span>
                     </div>
 
