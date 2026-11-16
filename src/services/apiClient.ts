@@ -14,8 +14,8 @@ const getBaseUrl = (): string => {
   const isCapacitorNative = typeof window !== 'undefined' && (window as any).Capacitor?.isNativePlatform?.();
   if (isCapacitorNative) {
     // In native mobile container, localhost is the phone's loopback where no Node server runs.
-    console.warn('[YatraBus] Native Android environment detected without VITE_API_BASE_URL. Using production API fallback.');
-    return 'https://api.yatrabus.in';
+    console.warn('[YatraBus] Native Android environment detected without VITE_API_BASE_URL. Using the YatraBus Pages API.');
+    return 'https://yatrabus-india.pages.dev';
   }
   // Default to relative if deployed together, or local backend server port 3000 for web dev
   if (typeof window !== 'undefined' && window.location && window.location.hostname === 'localhost') {
