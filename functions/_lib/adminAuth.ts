@@ -1,4 +1,4 @@
-import { createHash, createHmac, randomUUID, scryptSync, timingSafeEqual } from "node:crypto";
+import { createHash, createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 import { D1Database, PagesEnv } from "./api";
 
 export interface AdminSessionPayload {
@@ -11,13 +11,11 @@ export interface AdminSessionPayload {
 }
 
 export function adminIsConfigured(env: PagesEnv): boolean {
-  const [salt, digest, extra] = (env.ADMIN_PASSWORD_HASH || "").split(":");
+  const hash = env.ADMIN_PASSWORD_HASH || "";
   return Boolean(
     env.ADMIN_EMAIL?.trim() &&
-    salt &&
-    digest &&
-    extra === undefined &&
-    /^[a-f0-9]{128}$/i.test(digest) &&
+    hash.startsWith("hmac-sha256:") &&
+    /^[a-f0-9]{64}$/i.test(hash.slice("hmac-sha256:".length)) &&
     (env.ADMIN_JWT_SECRET || "").length >= 32
   );
 }
@@ -32,13 +30,13 @@ function safeEqual(a: string, b: string): boolean {
   return timingSafeEqual(left, right);
 }
 
-export function verifyAdminPassword(password: string, encodedHash: string): boolean {
-  const [salt, expectedHex, extra] = encodedHash.split(":");
-  if (!salt || !expectedHex || extra !== undefined || !/^[a-f0-9]{128}$/i.test(expectedHex)) {
-    return false;
-  }
+export function verifyAdminPassword(password: string, encodedHash: string, secret: string): boolean {
+  const prefix = "hmac-sha256:";
+  if (!encodedHash.startsWith(prefix)) return false;
+  const expectedHex = encodedHash.slice(prefix.length);
+  if (!/^[a-f0-9]{64}$/i.test(expectedHex) || secret.length < 32) return false;
   try {
-    const actual = scryptSync(password, salt, 64);
+    const actual = createHmac("sha256", secret).update(password, "utf8").digest();
     const expected = Buffer.from(expectedHex, "hex");
     return expected.length === actual.length && timingSafeEqual(actual, expected);
   } catch {
