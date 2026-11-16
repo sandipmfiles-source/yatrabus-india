@@ -143,3 +143,36 @@ jobs:
             exit 1
           fi
           echo "Verified Rajkot RRL feed: $stops stops, $routes route patterns, $trips scheduled trips and $route_stops indexed stop positions; $calendar_rows timetables with verified GTFS calendar ranges; no individual vehicles or fares invented."
+
+      - name: Smoke-test date-aware production route search
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          sql="SELECT board.stop_id AS origin, alight.stop_id AS destination, CASE weekly.value WHEN 'Mon' THEN '2026-11-16' WHEN 'Tue' THEN '2026-11-17' WHEN 'Wed' THEN '2026-11-18' WHEN 'Thu' THEN '2026-11-19' WHEN 'Fri' THEN '2026-11-20' WHEN 'Sat' THEN '2026-11-21' WHEN 'Sun' THEN '2026-11-22' END AS service_date FROM route_stops AS board JOIN route_stops AS alight ON alight.route_id=board.route_id AND alight.stop_sequence>board.stop_sequence JOIN routes AS r ON r.id=board.route_id JOIN timetables AS t ON t.route_id=r.id JOIN json_each(t.service_days_json) AS weekly WHERE r.payload_json LIKE '%RRL_RAJKOT_GTFS_2026_11_16%' AND t.payload_json LIKE '%RRL_RAJKOT_GTFS_2026_11_16%' AND t.service_start_date <= CASE weekly.value WHEN 'Mon' THEN '2026-11-16' WHEN 'Tue' THEN '2026-11-17' WHEN 'Wed' THEN '2026-11-18' WHEN 'Thu' THEN '2026-11-19' WHEN 'Fri' THEN '2026-11-20' WHEN 'Sat' THEN '2026-11-21' WHEN 'Sun' THEN '2026-11-22' END AND t.service_end_date >= CASE weekly.value WHEN 'Mon' THEN '2026-11-16' WHEN 'Tue' THEN '2026-11-17' WHEN 'Wed' THEN '2026-11-18' WHEN 'Thu' THEN '2026-11-19' WHEN 'Fri' THEN '2026-11-20' WHEN 'Sat' THEN '2026-11-21' WHEN 'Sun' THEN '2026-11-22' END AND NOT EXISTS (SELECT 1 FROM json_each(t.service_exceptions_json) AS removed WHERE json_extract(removed.value,'$.date')=CASE weekly.value WHEN 'Mon' THEN '2026-11-16' WHEN 'Tue' THEN '2026-11-17' WHEN 'Wed' THEN '2026-11-18' WHEN 'Thu' THEN '2026-11-19' WHEN 'Fri' THEN '2026-11-20' WHEN 'Sat' THEN '2026-11-21' WHEN 'Sun' THEN '2026-11-22' END AND CAST(json_extract(removed.value,'$.exceptionType') AS INTEGER)=2) LIMIT 1;"
+          payload="$(jq -n --arg sql "$sql" '{sql: $sql}')"
+          d1_response="$(curl --fail --silent --show-error --request POST "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/d1/database/ad817522-9239-4574-8b23-17b8d45d756e/query" --header "Authorization: Bearer $CLOUDFLARE_API_TOKEN" --header "Content-Type: application/json" --data "$payload")"
+          printf '%s' "$d1_response" | jq -e '.success == true' >/dev/null
+          origin="$(printf '%s' "$d1_response" | jq -er '.result[0].results[0].origin')"
+          destination="$(printf '%s' "$d1_response" | jq -er '.result[0].results[0].destination')"
+          service_date="$(printf '%s' "$d1_response" | jq -er '.result[0].results[0].service_date')"
+          health_url="https://yatrabus-india.pages.dev/api/v1/health"
+          ready=false
+          for attempt in $(seq 1 30); do
+            health="$(curl --silent --show-error "$health_url" || true)"
+            if printf '%s' "$health" | jq -e '.success == true and .data.timetableCalendarReady == true' >/dev/null 2>&1; then
+              ready=true
+              break
+            fi
+            echo "Waiting for date-aware Pages deployment (attempt $attempt/30)."
+            sleep 10
+          done
+          if [ "$ready" != true ]; then
+            echo "::error::Date-aware production Pages API did not become healthy."
+            printf '%s\n' "$health"
+            exit 1
+          fi
+          search_response="$(curl --fail --silent --show-error --get --data-urlencode "origin=$origin" --data-urlencode "destination=$destination" --data-urlencode "date=$service_date" "https://yatrabus-india.pages.dev/api/v1/routes/search")"
+          printf '%s' "$search_response" | jq -e '.success == true and (.data.directRoutes | length > 0)' >/dev/null
+          echo "Date-aware production route search passed for service date $service_date."
