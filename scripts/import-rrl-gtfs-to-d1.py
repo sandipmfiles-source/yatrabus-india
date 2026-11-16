@@ -139,8 +139,10 @@ def build(zip_path,out_dir,test_mode=False):
             skipped+=1; continue
         digest=hashlib.sha1("|".join(r["stop_id"] for r in seq).encode()).hexdigest()[:12]
         key=(route_id,digest)
-        agency_id=route.get("agency_id") or (agencies[0].get("agency_id") or "")
-        operator_id=sid("op-rrl",agency_id or "default")
+        agency_id=route.get("agency_id") or (agencies[0].get("agency_id") or "default")
+        if agency_id not in agency_by_id:
+            agency_id=agencies[0].get("agency_id") or "default"
+        operator_id=sid("op-rrl",agency_id)
         route_out_id=sid("rt-rrl",route_id,digest)
         if key not in patterns:
             stops_out=[]; distance=0; previous=None
