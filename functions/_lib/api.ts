@@ -16,7 +16,7 @@ export function json(body: unknown, status = 200): Response {
     "Content-Type": "application/json; charset=utf-8",
     "Cache-Control": "no-store",
     "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET, OPTIONS",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, Authorization"
   }});
 }
@@ -34,7 +34,7 @@ export function boundedInt(value: string | null, fallback: number, min: number, 
 export async function onRequestOptions(): Promise<Response> {
   return new Response(null, { status: 204, headers: {
     "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET, OPTIONS",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, Authorization",
     "Access-Control-Max-Age": "86400"
   }});
