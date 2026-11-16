@@ -3,7 +3,7 @@
 The production admin API is disabled unless all three owner settings exist in the Cloudflare Pages **Production** environment:
 
 - `ADMIN_EMAIL` — the one owner's email address (plain environment variable is sufficient).
-- `ADMIN_PASSWORD_HASH` — scrypt hash in `salt:hex_digest` format (store as a secret).
+- `ADMIN_PASSWORD_HASH` — keyed HMAC-SHA256 verifier in `hmac-sha256:hex_digest` format (store as a secret).
 - `ADMIN_JWT_SECRET` — a random signing secret of at least 32 characters (store as a secret).
 
 There is no public registration, default account, demo password, second admin, or owner recovery bypass. Login fails closed with HTTP 503 if configuration is missing.
@@ -21,7 +21,7 @@ Copy the generated password into a password manager. Set `ADMIN_PASSWORD_HASH` a
 ## Security behaviour
 
 - Only the configured `ADMIN_EMAIL` can authenticate.
-- Password verification uses scrypt and constant-time hash comparison.
+- Password verification uses keyed HMAC-SHA256 and constant-time comparison. This is paired with a randomly generated 256-bit password; do not replace it with a human-chosen password.
 - Session tokens are HMAC-SHA256 signed, expire after 8 hours, and are stored in D1 only as SHA-256 token hashes.
 - Logout revokes the D1 session.
 - Five failed attempts from one client IP trigger a 15-minute lockout. Only an HMAC of the IP is stored.
@@ -40,3 +40,7 @@ The additive `migrations/0002_admin_security.sql` creates the session, login-thr
 The Super Admin dashboard reads real D1 counts, community submissions, operator claims, audit history and automation rules. Approving a timetable correction or disruption report publishes the reviewed record; an added location is labelled as an unverified community location, not automatically as a bus stop. A community bus remains unavailable to passengers until it is assigned to a route. Unsupported submission types cannot be published.
 
 The login interface is in the YatraBus India app header. No separate paid hosting or custom domain is required.
+
+## Cloudflare runtime compatibility
+
+The Pages Functions use Node.js-compatible `crypto` and `Buffer` APIs for HMAC signing and token hashing. The Wrangler configuration therefore enables `nodejs_compat`; keep this flag when deploying the Pages Functions.
