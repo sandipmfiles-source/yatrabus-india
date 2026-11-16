@@ -74,8 +74,8 @@ jobs:
           python-version: '3.12'
       - name: Verify Cloudflare credentials
         env:
-          CLOUDFLARE_API_TOKEN: \${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: \${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           set -euo pipefail
           test -n "$CLOUDFLARE_API_TOKEN"
@@ -91,8 +91,8 @@ jobs:
           python scripts/import-tgsrtc-gtfs-to-d1.py --input /tmp/tgsrtc/tgsrtc.zip --output-dir /tmp/tgsrtc/sql
       - name: Import schedule records using append-only SQL
         env:
-          CLOUDFLARE_API_TOKEN: \${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: \${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           set -euo pipefail
           for file in /tmp/tgsrtc/sql/tgsrtc-*.sql; do
@@ -101,8 +101,8 @@ jobs:
           done
       - name: Verify stop, route and timetable counts and no invented vehicles
         env:
-          CLOUDFLARE_API_TOKEN: \${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: \${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           set -euo pipefail
           payload="$(jq -n --arg sql "SELECT (SELECT COUNT(*) FROM places WHERE source_dataset = 'TGSRTC_GTFS_2026_02_08') AS stops, (SELECT COUNT(*) FROM routes WHERE payload_json LIKE '%TGSRTC_GTFS_2026_02_08%') AS routes, (SELECT COUNT(*) FROM timetables WHERE payload_json LIKE '%TGSRTC_GTFS_2026_02_08%') AS trips, (SELECT COUNT(*) FROM buses WHERE payload_json LIKE '%TGSRTC_GTFS_2026_02_08%') AS invented_vehicles;" '{sql: $sql}')"
