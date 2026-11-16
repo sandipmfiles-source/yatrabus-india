@@ -9,7 +9,7 @@ from pathlib import Path
 DATASET = "TGSRTC_GTFS_2026_02_08"
 SOURCE_URL = "https://data.opencity.in/dataset/88e2d145-7ec6-4666-88dd-6cf18b18312e/resource/1b0d18bb-b2fb-4a79-8ed0-1e071da5790c/download/telangana_opendata_gtfs_tgsrtc_08_february_2026.zip"
 SOURCE_PAGE = "https://www.tgsrtc.telangana.gov.in/open-data"
-MIRROR_URL = "https://storage.googleapis.com/storage/v1/b/mdb-latest/o/in-hyderabad-bus-gtfs-3361.zip?alt=media"
+MIRROR_URL = "https://storage.googleapis.com/mdb-latest/in-hyderabad-bus-gtfs-3361.zip"
 SOURCE_LICENSE = "TGSRTC Open Data Terms: free non-exclusive use; attribution required"
 ATTRIBUTION = "Contains data provided by TGSRTC"
 SNAPSHOT_DATE = "2026-02-08"
