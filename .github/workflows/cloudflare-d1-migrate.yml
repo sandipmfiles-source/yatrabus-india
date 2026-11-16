@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'migrations/0002_admin_security.sql'
+      - 'migrations/0003_bus_route_assignments.sql'
   workflow_dispatch:
     inputs:
       confirm_production:
@@ -53,8 +54,12 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           if [ "${GITHUB_EVENT_NAME}" = "push" ]; then
-            echo "Applying additive owner-security migration"
-            npx --yes wrangler@4 d1 execute yatrabus-india-db --remote --yes --file=migrations/0002_admin_security.sql
+            for migration in migrations/0002_admin_security.sql migrations/0003_bus_route_assignments.sql; do
+              if [ -f "$migration" ]; then
+                echo "Applying additive migration $migration"
+                npx --yes wrangler@4 d1 execute yatrabus-india-db --remote --yes --file="$migration"
+              fi
+            done
           else
             for migration in migrations/*.sql; do
               echo "Applying $migration"
@@ -68,4 +73,4 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           set -euo pipefail
-          npx --yes wrangler@4 d1 execute yatrabus-india-db --remote --yes --command="SELECT name FROM sqlite_master WHERE type = 'table' AND name IN ('places','operators','buses','routes','timetables','journey_sessions','location_observations','community_submissions','audit_logs','automation_rules','schema_migrations','admin_sessions','admin_login_attempts','operator_claims','service_alerts','public_rate_limits') ORDER BY name;"
+          npx --yes wrangler@4 d1 execute yatrabus-india-db --remote --yes --command="SELECT name FROM sqlite_master WHERE type = 'table' AND name IN ('places','operators','buses','routes','timetables','journey_sessions','location_observations','community_submissions','audit_logs','automation_rules','schema_migrations','admin_sessions','admin_login_attempts','operator_claims','service_alerts','public_rate_limits','bus_route_assignments') ORDER BY name;"
