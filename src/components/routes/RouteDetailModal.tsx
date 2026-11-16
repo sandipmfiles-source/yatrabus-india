@@ -247,7 +247,7 @@ export const RouteDetailModal: React.FC<RouteDetailModalProps> = ({
                           {tt.departureTime} ➔ {tt.arrivalTime}
                         </div>
                         <span className="text-[11px] text-slate-500 uppercase">
-                          {tt.tripCode}{tt.headsign ? ' • ' + tt.headsign : ''}{tt.vehicleType ? ' • ' + tt.vehicleType : ''}
+                          {tt.tripCode}{tt.headsign ? ' • ' + tt.headsign : ''}{tt.vehicleType ? ' • ' + tt.vehicleType : ''}{tt.operatingDays?.length ? ' • ' + tt.operatingDays.join('/') : ''}
                         </span>
                       </div>
                     </div>
@@ -256,7 +256,7 @@ export const RouteDetailModal: React.FC<RouteDetailModalProps> = ({
                       <div className="font-bold text-emerald-700 text-sm">
                         {tt.fareInRupees !== undefined && tt.fareInRupees !== null ? '₹' + tt.fareInRupees : t('fare_not_provided')}
                       </div>
-                      <span className="text-[10px] text-slate-400">{tt.fareInRupees !== undefined && tt.fareInRupees !== null ? 'Published fare' : 'Fare unavailable'}</span>
+                      <span className="text-[10px] text-slate-400">{tt.fareInRupees !== undefined && tt.fareInRupees !== null ? t('published_fare') : t('fare_unavailable')}</span>
                     </div>
                   </div>
                 ))}
