@@ -254,6 +254,7 @@ export const RouteDetailModal: React.FC<RouteDetailModalProps> = ({
                 <span>{t('operating_days')}: {route.operatingDays?.join(' · ') || t('schedule_days_unavailable')}</span>
                 <input
                   type="date"
+                  required
                   aria-label={t('travel_date')}
                   min={new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())}
                   value={selectedServiceDate}
