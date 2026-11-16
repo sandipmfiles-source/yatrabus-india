@@ -32,6 +32,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, Record<string, string>> = {
     badge_admin_verified: 'Verified Official',
     badge_community: 'Community Corroborated',
     badge_unverified: 'Unverified',
+    location_only_unverified: 'Location only · bus service not verified',
     badge_disputed: 'Disputed Timetable',
     badge_disrupted: 'Service Disruption',
 
@@ -124,6 +125,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, Record<string, string>> = {
     badge_admin_verified: 'सत्यापित आधिकारिक',
     badge_community: 'समुदाय द्वारा पुष्ट',
     badge_unverified: 'असत्यापित',
+    location_only_unverified: 'केवल स्थान संदर्भ · बस सेवा सत्यापित नहीं',
     badge_disputed: 'विवादित समय सारणी',
     badge_disrupted: 'रूट में बाधा',
 
@@ -211,6 +213,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, Record<string, string>> = {
     badge_admin_verified: 'সরকারি যাচাইকৃত',
     badge_community: 'যাত্রীদের দ্বারা নিশ্চিত',
     badge_unverified: 'অযাচাইকৃত',
+    location_only_unverified: 'শুধু অবস্থানের তথ্য · বাস পরিষেবা যাচাই করা হয়নি',
     badge_disputed: 'বিরোধপূর্ণ সময়সূচী',
     badge_disrupted: 'রুট ব্যাহত',
 
