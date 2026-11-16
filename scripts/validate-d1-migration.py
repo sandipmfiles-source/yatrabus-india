@@ -14,7 +14,7 @@ required = {
     "places", "operators", "buses", "routes", "timetables",
     "journey_sessions", "location_observations", "community_submissions",
     "audit_logs", "automation_rules", "schema_migrations",
-    "admin_sessions", "admin_login_attempts", "operator_claims", "service_alerts",
+    "admin_sessions", "admin_login_attempts", "operator_claims", "service_alerts", "public_rate_limits",
 }
 actual = {row[0] for row in db.execute("SELECT name FROM sqlite_master WHERE type='table'")}
 missing = required - actual
