@@ -143,7 +143,7 @@ export const App: React.FC = () => {
                   {t('app_title')}
                 </span>
                 <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
-                  Live
+                  India
                 </span>
               </div>
               <p className="text-[10px] text-slate-500 font-medium hidden sm:block">
