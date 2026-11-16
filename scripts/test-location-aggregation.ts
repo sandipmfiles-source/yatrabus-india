@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { aggregateBusLocation, RawLocationObservation } from "../functions/_lib/locationAggregation";
+import { aggregateBusLocation, type RawLocationObservation } from "../functions/_lib/locationAggregation";
 
 const now = Date.parse("2026-11-16T10:00:00.000Z");
 const observation = (session_id: string, latitude: number, longitude: number, secondsAgo = 5, accuracy = 25): RawLocationObservation => ({
