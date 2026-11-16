@@ -18,6 +18,17 @@ export async function onRequestGet({ request, env, params }: PagesContext): Prom
     const bus = parsePayload(row);
     if (!row || !bus) return json({ success: false, error: "Bus not found." }, 404);
 
+    const nowIso = new Date().toISOString();
+    await env.DB.prepare(`
+      UPDATE journey_sessions
+      SET status = 'expired',
+          stopped_at = COALESCE(stopped_at, ?),
+          payload_json = json_set(payload_json, '$.expiredAt', ?)
+      WHERE bus_id = ?
+        AND status = 'active'
+        AND julianday(json_extract(payload_json, '$.expiresAt')) <= julianday(?)
+    `).bind(nowIso, nowIso, busId, nowIso).run();
+
     let routeId = (url.searchParams.get("routeId") || "").trim();
     if (!routeId) {
       const activeSession = await env.DB.prepare(
