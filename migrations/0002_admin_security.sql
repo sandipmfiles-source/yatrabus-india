@@ -48,3 +48,14 @@ CREATE TABLE IF NOT EXISTS service_alerts (
 
 CREATE INDEX IF NOT EXISTS idx_service_alerts_route_status
   ON service_alerts(route_id, status, valid_until);
+
+CREATE TABLE IF NOT EXISTS public_rate_limits (
+  bucket_key TEXT NOT NULL,
+  ip_hash TEXT NOT NULL,
+  window_started_at TEXT NOT NULL,
+  request_count INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (bucket_key, ip_hash)
+);
+
+CREATE INDEX IF NOT EXISTS idx_public_rate_limits_window
+  ON public_rate_limits(window_started_at);
