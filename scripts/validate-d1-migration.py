@@ -27,7 +27,7 @@ db.execute(
     ("test-place", "Kolkata Esplanade Bus Stand", "bus_terminal", "West Bengal", "Kolkata", "{}"),
 )
 matches = db.execute(
-    "SELECT id FROM places WHERE canonical_name LIKE ? ESCAPE '\\\\' COLLATE NOCASE",
+    "SELECT id FROM places WHERE canonical_name LIKE ? COLLATE NOCASE",
     ("%Kolkata%",),
 ).fetchall()
 if not matches:
