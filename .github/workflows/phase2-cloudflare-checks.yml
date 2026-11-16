@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [main]
   push:
-    branches: [phase2-cloudflare-pages-d1]
+    branches: [phase2-cloudflare-pages-d1, feat/super-admin-pages-api]
 
 permissions:
   contents: read
@@ -27,7 +27,9 @@ jobs:
       - name: Type-check Cloudflare Pages Functions
         run: |
           find functions -name '*.ts' -print0 | xargs -0 npx tsc --noEmit --target ES2022 --module ESNext --moduleResolution bundler --strict --skipLibCheck --lib ES2022,DOM
-      - name: Validate D1 migration, search SQL and India LGD importer
+      - name: Test Super Admin cryptographic authentication
+        run: npx tsx scripts/test-admin-auth.ts
+      - name: Validate D1 migrations, search SQL and India LGD importer
         run: |
           set -euo pipefail
           python3 scripts/validate-d1-migration.py

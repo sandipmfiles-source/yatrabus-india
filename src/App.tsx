@@ -51,6 +51,9 @@ export const App: React.FC = () => {
     ApiClient.getAllRoutes().then(res => {
       if (res.success) setAllRoutes(res.data);
     });
+    ApiClient.verifyAdminSession().then(res => {
+      if (res.success) setIsAdminLoggedIn(true);
+    }).catch(() => setIsAdminLoggedIn(false));
   }, []);
 
   // Live Location Tracker Worker
@@ -327,7 +330,7 @@ export const App: React.FC = () => {
         {view === 'admin' && isAdminLoggedIn && (
           <AdminDashboard
             onLogout={() => {
-              ApiClient.adminLogout();
+              void ApiClient.adminLogout();
               setIsAdminLoggedIn(false);
               setView('home');
             }}
@@ -374,7 +377,7 @@ export const App: React.FC = () => {
 
             <h3 className="text-lg font-bold text-slate-900">{t('admin_login_title')}</h3>
             <p className="text-xs text-slate-500 mt-1 mb-4">
-              Restricted to verified municipal transport administrators & moderators.
+              Single-owner Super Admin access only.
             </p>
 
             {adminAuthError && (
@@ -385,11 +388,11 @@ export const App: React.FC = () => {
 
             <form onSubmit={handleAdminLogin} className="space-y-3 text-xs">
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Username / ID</label>
+                <label className="block font-semibold text-slate-700 mb-1">Super Admin Email</label>
                 <input
                   type="text"
                   required
-                  placeholder="admin"
+                  placeholder="owner@example.com"
                   value={adminUsername}
                   onChange={e => setAdminUsername(e.target.value)}
                   className="w-full px-3 py-2 rounded-xl border border-surface-border focus:ring-2 focus:ring-brand-900 focus:outline-none"
@@ -401,7 +404,7 @@ export const App: React.FC = () => {
                 <input
                   type="password"
                   required
-                  placeholder="admin123"
+                  placeholder="Enter your secure password"
                   value={adminPassword}
                   onChange={e => setAdminPassword(e.target.value)}
                   className="w-full px-3 py-2 rounded-xl border border-surface-border focus:ring-2 focus:ring-brand-900 focus:outline-none"
@@ -412,7 +415,7 @@ export const App: React.FC = () => {
                 type="submit"
                 className="w-full py-2.5 rounded-xl bg-brand-900 hover:bg-brand-950 font-bold text-white shadow transition mt-2"
               >
-                Sign In to Admin Portal
+                Sign In as Super Admin
               </button>
             </form>
           </div>

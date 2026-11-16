@@ -184,7 +184,7 @@ export class ApiClient {
   public static async adminLogin(password: string, username?: string): Promise<ApiResponse> {
     const res = await request('/api/v1/admin/login', {
       method: 'POST',
-      body: JSON.stringify({ password, username: username || undefined })
+      body: JSON.stringify({ password, email: username || undefined })
     });
     if (res.success && res.data?.token && typeof localStorage !== 'undefined') {
       localStorage.setItem('yatrabus_admin_token', res.data.token);
@@ -192,10 +192,26 @@ export class ApiClient {
     return res;
   }
 
-  public static adminLogout(): void {
-    if (typeof localStorage !== 'undefined') {
+  public static async verifyAdminSession(): Promise<ApiResponse> {
+    const result = await request('/api/v1/admin/session', { method: 'GET' });
+    if (!result.success && typeof localStorage !== 'undefined') {
       localStorage.removeItem('yatrabus_admin_token');
     }
+    return result;
+  }
+
+  public static async adminLogout(): Promise<void> {
+    try {
+      await request('/api/v1/admin/logout', { method: 'POST' });
+    } finally {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.removeItem('yatrabus_admin_token');
+      }
+    }
+  }
+
+  public static async getAdminOverview(): Promise<ApiResponse> {
+    return request('/api/v1/admin/overview', { method: 'GET' });
   }
 
   // Admin Operations
@@ -244,5 +260,12 @@ export class ApiClient {
   public static async getAdminClaims(status?: string): Promise<ApiResponse> {
     const q = status ? `?status=${encodeURIComponent(status)}` : '';
     return request(`/api/v1/admin/claims${q}`, { method: 'GET' });
+  }
+
+  public static async reviewOperatorClaim(id: string, action: 'approved' | 'rejected', remarks?: string): Promise<ApiResponse> {
+    return request(`/api/v1/admin/claims/${encodeURIComponent(id)}/review`, {
+      method: 'POST',
+      body: JSON.stringify({ action, remarks })
+    });
   }
 }

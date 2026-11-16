@@ -38,12 +38,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
   const [loading, setLoading] = useState(true);
   const [reviewRemarks, setReviewRemarks] = useState('');
   const [selectedSubId, setSelectedSubId] = useState<string | null>(null);
+  const [claimActionError, setClaimActionError] = useState('');
+  const [submissionActionError, setSubmissionActionError] = useState('');
 
   const loadData = async () => {
     setLoading(true);
     try {
       const [healthRes, subsRes, claimsRes, rulesRes, auditRes] = await Promise.all([
-        ApiClient.getHealth(),
+        ApiClient.getAdminOverview(),
         ApiClient.getAdminSubmissions(),
         ApiClient.getAdminClaims(),
         ApiClient.getAutomationRules(),
@@ -67,14 +69,29 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
   }, []);
 
   const handleReview = async (id: string, action: 'approved' | 'rejected' | 'merged') => {
+    setSubmissionActionError('');
     try {
-      await ApiClient.reviewSubmission(id, action, reviewRemarks || `Action: ${action}`);
+      const result = await ApiClient.reviewSubmission(id, action, reviewRemarks || `Action: ${action}`);
+      if (!result.success) {
+        setSubmissionActionError(result.error || 'Submission could not be reviewed.');
+        return;
+      }
       setReviewRemarks('');
       setSelectedSubId(null);
       loadData();
     } catch (err) {
-      console.error('Review error:', err);
+      setSubmissionActionError('Submission review is temporarily unavailable.');
     }
+  };
+
+  const handleReviewClaim = async (id: string, action: 'approved' | 'rejected') => {
+    setClaimActionError('');
+    const result = await ApiClient.reviewOperatorClaim(id, action);
+    if (!result.success) {
+      setClaimActionError(result.error || 'Operator claim could not be reviewed.');
+      return;
+    }
+    loadData();
   };
 
   const handleUpdateRule = async (ruleId: string, currentVal: any, isEnabled: boolean) => {
@@ -166,7 +183,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
             <div className="p-4 rounded-2xl bg-white border border-surface-border shadow-sm">
               <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Places</span>
               <div className="text-2xl font-bold text-slate-900 mt-1">{health.totalPlaces}</div>
-              <span className="text-[11px] text-emerald-600 font-semibold">Master Indian Directory</span>
+              <span className="text-[11px] text-emerald-600 font-semibold">Imported location records; coverage varies by source</span>
             </div>
             <div className="p-4 rounded-2xl bg-white border border-surface-border shadow-sm">
               <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Buses / Fleet</span>
@@ -181,7 +198,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
             <div className="p-4 rounded-2xl bg-white border border-surface-border shadow-sm">
               <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Live GPS Sessions</span>
               <div className="text-2xl font-bold text-emerald-600 mt-1">{health.activeLiveSessions}</div>
-              <span className="text-[11px] text-emerald-700 font-semibold">Anonymous passenger pings</span>
+              <span className="text-[11px] text-emerald-700 font-semibold">Consent-based sessions only</span>
             </div>
           </div>
 
@@ -190,15 +207,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
               <div className="p-3 bg-surface-subtle rounded-xl border border-surface-border">
                 <span className="text-slate-500">Database Engine:</span>
-                <p className="font-semibold text-slate-900">PostgreSQL / PostGIS & In-Memory Store</p>
+                <p className="font-semibold text-slate-900">Cloudflare D1 (SQLite)</p>
               </div>
               <div className="p-3 bg-surface-subtle rounded-xl border border-surface-border">
-                <span className="text-slate-500">Uptime:</span>
-                <p className="font-semibold text-slate-900">{Math.floor(health.uptimeSeconds / 60)} minutes</p>
+                <span className="text-slate-500">Runtime:</span>
+                <p className="font-semibold text-slate-900">Cloudflare Pages Functions (serverless)</p>
               </div>
               <div className="p-3 bg-surface-subtle rounded-xl border border-surface-border">
                 <span className="text-slate-500">Last Transport Seed Sync:</span>
-                <p className="font-semibold text-slate-900">{new Date(health.lastImportTimestamp).toLocaleDateString()}</p>
+                <p className="font-semibold text-slate-900">{health.lastImportTimestamp && !Number.isNaN(Date.parse(health.lastImportTimestamp)) ? new Date(health.lastImportTimestamp).toLocaleDateString() : 'Not available'}</p>
               </div>
             </div>
           </div>
@@ -215,6 +232,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
             <span className="text-xs text-slate-500">Evidence-based verification</span>
           </div>
 
+          {submissionActionError && <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700">{submissionActionError}</div>}
           {submissions.length === 0 ? (
             <div className="p-8 text-center bg-white rounded-3xl border border-surface-border text-slate-500 text-xs">
               No submissions currently in queue.
@@ -304,6 +322,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
             <span className="text-xs text-slate-500">Official verification queue</span>
           </div>
 
+          {claimActionError && <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700">{claimActionError}</div>}
           {claims.length === 0 ? (
             <div className="p-8 text-center bg-white rounded-3xl border border-surface-border text-slate-500 text-xs">
               No operator claims currently submitted.
@@ -337,6 +356,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
 
                   {claim.supportingDocumentsNote && (
                     <p className="text-slate-600 italic">Notes: "{claim.supportingDocumentsNote}"</p>
+                  )}
+                  {claim.status === 'pending_review' && (
+                    <div className="flex gap-2 pt-2">
+                      <button onClick={() => handleReviewClaim(claim.id, 'approved')} className="px-3 py-2 rounded-xl bg-emerald-700 text-white text-xs font-semibold">Approve ownership</button>
+                      <button onClick={() => handleReviewClaim(claim.id, 'rejected')} className="px-3 py-2 rounded-xl bg-red-600 text-white text-xs font-semibold">Reject claim</button>
+                    </div>
                   )}
                 </div>
               ))}

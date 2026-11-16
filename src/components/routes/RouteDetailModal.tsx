@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Route, Bus, TimetableDeparture, LocationObservation, ETAResult } from '../../types';
+import { Route, Bus, TimetableDeparture, LocationObservation, ETAResult, ServiceAlert } from '../../types';
 import { ApiClient } from '../../services/apiClient';
 import { CustomBusIllustration } from '../common/CustomBusIllustration';
 import { BusRouteMap } from '../map/BusRouteMap';
@@ -43,16 +43,19 @@ export const RouteDetailModal: React.FC<RouteDetailModalProps> = ({
   const [selectedStopId, setSelectedStopId] = useState<string | undefined>(route.stops[0]?.stopId);
   const [eta, setEta] = useState<ETAResult | null>(null);
   const [showConsentModal, setShowConsentModal] = useState(false);
+  const [serviceAlerts, setServiceAlerts] = useState<ServiceAlert[]>(route.serviceAlerts || []);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [ttRes, busesRes] = await Promise.all([
+        const [ttRes, busesRes, routeRes] = await Promise.all([
           ApiClient.getTimetables(route.id),
-          ApiClient.getAllBuses()
+          ApiClient.getAllBuses(),
+          ApiClient.getRouteById(route.id)
         ]);
 
         if (ttRes.success) setTimetables(ttRes.data);
+        if (routeRes.success) setServiceAlerts(routeRes.data.serviceAlerts || []);
         if (busesRes.success) {
           const matchingBuses = busesRes.data.filter((b: Bus) => b.operatorId === route.operatorId);
           setBuses(matchingBuses);
@@ -119,6 +122,18 @@ export const RouteDetailModal: React.FC<RouteDetailModalProps> = ({
 
         {/* Scrollable Content Body */}
         <div className="overflow-y-auto p-4 sm:p-6 space-y-5 flex-1">
+          {serviceAlerts.length > 0 && (
+            <div className="rounded-2xl border border-amber-300 bg-amber-50 p-3 space-y-2">
+              <div className="text-xs font-bold text-amber-900">{t('service_alert')}</div>
+              {serviceAlerts.map(alert => (
+                <div key={alert.id} className="text-xs text-amber-900">
+                  <span className="font-semibold">{alert.alertType.replace(/_/g, ' ')}:</span> {alert.details}
+                  {alert.validUntil && <span className="block text-[10px] text-amber-700 mt-1">{t('valid_until')} {new Date(alert.validUntil).toLocaleString()}</span>}
+                </div>
+              ))}
+            </div>
+          )}
+
           {/* Custom SVG Bus Artwork Display */}
           <div className="relative">
             <CustomBusIllustration
