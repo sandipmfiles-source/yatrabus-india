@@ -99,7 +99,7 @@ export const RouteDetailModal: React.FC<RouteDetailModalProps> = ({
                 Route {route.routeNumber}
               </span>
               <span className={`text-xs px-2 py-0.5 rounded-full font-semibold flex items-center space-x-1 ${route.verificationStatus === 'admin_verified' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-900'}`}>
-                <ShieldCheck className="w-3 h-3" />
+                {route.verificationStatus === 'admin_verified' ? <ShieldCheck className="w-3 h-3" /> : <Info className="w-3 h-3" />}
                 <span>{t(route.verificationStatus === 'admin_verified' ? 'badge_admin_verified' : route.verificationStatus === 'community_corroborated' ? 'badge_community' : route.verificationStatus === 'published_unverified' ? 'badge_published_unverified' : 'badge_unverified')}</span>
               </span>
             </div>
