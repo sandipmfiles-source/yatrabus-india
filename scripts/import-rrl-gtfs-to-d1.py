@@ -38,7 +38,7 @@ def hhmm(value):
 
 def iso_gtfs_date(value):
     raw=str(value or "").strip()
-    if not re.fullmatch(r"\\d{8}",raw): return None
+    if not re.fullmatch(r"\d{8}",raw): return None
     try:
         date(int(raw[:4]),int(raw[4:6]),int(raw[6:8]))
         return f"{raw[:4]}-{raw[4:6]}-{raw[6:8]}"
