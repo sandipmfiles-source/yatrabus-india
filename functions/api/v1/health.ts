@@ -31,14 +31,7 @@ function json(body: unknown, status = 200): Response {
   });
 }
 
-/**
- * Cloudflare Pages health endpoint.
- *
- * The DB binding is intentionally optional at deploy time so the site can
- * still be published before the D1 database is created and bound. The endpoint
- * reports an explicit unavailable status instead of pretending that an
- * in-memory or missing database is persistent.
- */
+/** Reports readiness only when the production schema required by APIs exists. */
 export async function onRequestGet({ env }: PagesContext): Promise<Response> {
   if (!env.DB) {
     return json({
@@ -56,7 +49,7 @@ export async function onRequestGet({ env }: PagesContext): Promise<Response> {
   try {
     await env.DB.prepare('SELECT 1 AS ok').first<{ ok: number }>();
     const coreTables = await env.DB.prepare(
-      "SELECT COUNT(DISTINCT name) AS count FROM sqlite_master WHERE type = 'table' AND name IN ('places','operators','buses','routes','timetables','journey_sessions','location_observations','community_submissions','audit_logs','automation_rules','schema_migrations')"
+      "SELECT COUNT(DISTINCT name) AS count FROM sqlite_master WHERE type = 'table' AND name IN ('places','operators','buses','routes','route_stops','timetables','journey_sessions','location_observations','community_submissions','audit_logs','automation_rules','schema_migrations')"
     ).first<{ count: number }>();
     const adminTables = await env.DB.prepare(
       "SELECT COUNT(DISTINCT name) AS count FROM sqlite_master WHERE type = 'table' AND name IN ('admin_sessions','admin_login_attempts','operator_claims','service_alerts','public_rate_limits')"
@@ -64,11 +57,11 @@ export async function onRequestGet({ env }: PagesContext): Promise<Response> {
 
     const coreTablesPresent = Number(coreTables?.count || 0);
     const adminSecurityTablesPresent = Number(adminTables?.count || 0);
-    const schemaReady = coreTablesPresent === 11;
+    const schemaReady = coreTablesPresent === 12;
     const adminSecurityReady = adminSecurityTablesPresent === 5;
     const ready = schemaReady && adminSecurityReady;
     const error = !schemaReady
-      ? 'Core D1 schema is incomplete. Apply the initial migration.'
+      ? 'Core D1 schema is incomplete. Apply all pending migrations.'
       : (!adminSecurityReady ? 'Admin security migration is not applied.' : undefined);
     return json({
       success: ready,
