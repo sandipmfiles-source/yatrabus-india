@@ -6,6 +6,7 @@ export type PlaceType =
   | 'country'
   | 'state'
   | 'district'
+  | 'subdistrict'
   | 'subdivision'
   | 'tehsil'
   | 'block'
@@ -45,6 +46,10 @@ export interface Place {
   longitude: number;
   sourceDataset: string;
   sourceRecordId?: string;
+  sourceUrl?: string;
+  sourceLicense?: string;
+  sourceSnapshotDate?: string;
+  busServiceVerified?: boolean;
   verificationStatus: VerificationStatus;
   aliases: PlaceAlias[];
   lastUpdated: string;

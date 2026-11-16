@@ -27,5 +27,9 @@ jobs:
       - name: Type-check Cloudflare Pages Functions
         run: |
           find functions -name '*.ts' -print0 | xargs -0 npx tsc --noEmit --target ES2022 --module ESNext --moduleResolution bundler --strict --skipLibCheck --lib ES2022,DOM
-      - name: Validate D1 migration and search SQL
-        run: python3 scripts/validate-d1-migration.py
+      - name: Validate D1 migration, search SQL and India LGD importer
+        run: |
+          set -euo pipefail
+          python3 scripts/validate-d1-migration.py
+          node --check scripts/import-india-lgd-to-d1.mjs
+          node scripts/import-india-lgd-to-d1.mjs --self-test

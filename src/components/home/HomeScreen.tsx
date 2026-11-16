@@ -178,13 +178,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         <div className="relative z-10 max-w-xl">
           <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-xs font-semibold mb-3">
             <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-            <span>Community-Powered Transport Directory</span>
+            <span>India Bus Travel Directory</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-            Discover Buses & Live Tracking Across India
+            Find Bus Routes Across India
           </h1>
           <p className="text-xs sm:text-sm text-brand-100 mt-2">
-            No mandatory login. Verified timetables, intelligent fuzzy search, and consent-based live tracking.
+            No mandatory login. Search Indian locations; verified schedules and live bus locations appear only when trusted data is available.
           </p>
         </div>
       </div>
@@ -243,7 +243,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                       <div>
                         <div className="font-bold text-slate-900">{p.canonicalName}</div>
                         <span className="text-[11px] text-slate-500">
-                          {p.district}, {p.state} • {p.placeType.replace('_', ' ')}
+                          {p.district}, {p.state} • {p.placeType.replace('_', ' ')}{p.busServiceVerified === false ? ' • ' + t('location_only_unverified') : ''}{p.busServiceVerified === false ? ' • Location only; bus service not verified' : ''}
                         </span>
                       </div>
                       <span className="text-[10px] text-brand-900 font-bold uppercase bg-brand-100 px-2 py-0.5 rounded-full">
