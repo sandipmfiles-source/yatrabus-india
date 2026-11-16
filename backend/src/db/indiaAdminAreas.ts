@@ -1,4 +1,5 @@
 import type { Place } from '../../../packages/shared/src/types/places.js';
+import { WEST_BENGAL_DIRECTORY_PLACES } from '../../../packages/shared/src/data/westBengalDirectory.js';
 import { INDIA_ADMINISTRATIVE_UNITS } from '../../../packages/shared/src/data/indiaCatalogue.js';
 
 const catalogueDate = '2026-11-03';
@@ -114,4 +115,6 @@ const pilotTerminalPlaces: Place[] = westBengalPilotTerminals.map((terminal, ind
   updatedAt: catalogueDate + 'T00:00:00.000Z',
 }));
 
-export const INDIA_ADMIN_AREA_PLACES: Place[] = [...administrativePlaces, ...pilotTownPlaces, ...pilotTerminalPlaces];
+
+
+export const INDIA_ADMIN_AREA_PLACES: Place[] = [...administrativePlaces, ...pilotTownPlaces, ...pilotTerminalPlaces, ...WEST_BENGAL_DIRECTORY_PLACES];

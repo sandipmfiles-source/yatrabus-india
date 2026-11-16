@@ -89,23 +89,30 @@ export function searchPlaces(query: string, places: Place[], limit: number = 8):
     let score = 0;
     let matchType: PlaceSearchResult['matchType'] = 'TYPO';
 
+    const localizedNames = Object.values(place.names || {}).filter((name): name is string => typeof name === 'string' && name.length > 0);
+    const alternateNames = [...(place.aliases || []), ...localizedNames]
+      .map(name => normalizePlaceName(name))
+      .filter(Boolean);
+
     // 1. Exact match on canonical name or variant
     if (normCanonical === normQuery || resolvedCanonical === canonicalQuery) {
       score = 100;
       matchType = 'EXACT';
     }
-    // 2. Exact match in aliases
-    else if (place.aliases && place.aliases.some(a => normalizePlaceName(a) === normQuery)) {
+    // 2. Exact match in aliases or localized names (Hindi/Bengali/etc.)
+    else if (alternateNames.some(name => name === normQuery)) {
       score = 95;
       matchType = 'ALIAS';
     }
-    // 3. Prefix match
-    else if (normCanonical.startsWith(normQuery) || resolvedCanonical.startsWith(canonicalQuery)) {
+    // 3. Prefix match across canonical, alias and localized names
+    else if (normCanonical.startsWith(normQuery) || resolvedCanonical.startsWith(canonicalQuery) ||
+      alternateNames.some(name => name.startsWith(normQuery))) {
       score = 85;
       matchType = 'PREFIX';
     }
-    // 4. Token substring match (e.g. query "Kashmere" matching "ISBT Kashmere Gate")
-    else if (normCanonical.includes(normQuery) || normQuery.split(' ').every(tok => normCanonical.includes(tok))) {
+    // 4. Token substring match across canonical and alternate names
+    else if (normCanonical.includes(normQuery) || normQuery.split(' ').every(tok => normCanonical.includes(tok)) ||
+      alternateNames.some(name => name.includes(normQuery) || normQuery.split(' ').every(tok => name.includes(tok)))) {
       score = 75;
       matchType = 'PREFIX';
     }

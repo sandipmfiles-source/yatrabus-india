@@ -1,4 +1,6 @@
 import { Capacitor } from '@capacitor/core';
+import { searchPlaces as runSearchPlaces } from '@shared/search/typoSearch.js';
+import { WEST_BENGAL_DIRECTORY_PLACES } from '@shared/data/westBengalDirectory.js';
 
 const CONFIGURED_API_BASE = (import.meta.env.VITE_API_BASE_URL || '').trim().replace(/\/$/, '');
 const API_BASE = CONFIGURED_API_BASE || '/api';
@@ -34,10 +36,24 @@ export const api = {
   },
 
   async searchPlaces(query: string, limit = 8) {
-    const res = await fetch(`${getApiBase()}/places/search?q=${encodeURIComponent(query)}&limit=${limit}`);
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.message || data.error || 'Place search is unavailable. Check your connection to the YatraBus server.');
-    return data.results || [];
+    // The WB directory is bundled in the APK so passenger autocomplete still
+    // works when the free backend is not deployed or the device is offline.
+    const localResults = runSearchPlaces(query, WEST_BENGAL_DIRECTORY_PLACES, limit);
+    try {
+      const res = await fetch(`${getApiBase()}/places/search?q=${encodeURIComponent(query)}&limit=${limit}`);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.message || data.error || 'Place search is unavailable.');
+      const merged = new Map<string, any>();
+      for (const item of [...(Array.isArray(data.results) ? data.results : []), ...localResults]) {
+        const id = item?.place?.id;
+        if (id && !merged.has(id)) merged.set(id, item);
+      }
+      return Array.from(merged.values())
+        .sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0))
+        .slice(0, limit);
+    } catch {
+      return localResults;
+    }
   },
 
   async reverseGeocodePlace(latitude: number, longitude: number) {

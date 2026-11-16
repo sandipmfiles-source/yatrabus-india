@@ -1,6 +1,8 @@
 import { INDIA_ADMINISTRATIVE_UNITS, INDIA_STATE_COUNT, INDIA_UT_COUNT } from '../../packages/shared/src/data/indiaCatalogue.js';
 import { INDIA_GOVERNMENT_OPERATORS } from '../../packages/shared/src/data/indiaGovernmentOperators.js';
 import { INDIA_ADMIN_AREA_PLACES } from '../../backend/src/db/indiaAdminAreas.js';
+import { WEST_BENGAL_DIRECTORY_PLACES } from '../../packages/shared/src/data/westBengalDirectory.js';
+import { searchPlaces } from '../../packages/shared/src/search/typoSearch.js';
 
 export function runIndiaCatalogueTests(assert: (description: string, pass: boolean) => void) {
   const states = INDIA_ADMINISTRATIVE_UNITS.filter(item => item.kind === 'STATE');
@@ -31,6 +33,29 @@ export function runIndiaCatalogueTests(assert: (description: string, pass: boole
   assert('Historical terminals remain unverified and retain the 2017 source snapshot', pilotTerminals.every(item =>
     item.placeType === 'BUS_TERMINAL' && item.verificationStatus === 'UNVERIFIED' && item.sourceSnapshotDate === '2017-03-03' && item.latitude === undefined && item.longitude === undefined
   ));
+
+
+  assert('West Bengal shared catalogue contains at least 60 non-proposed terminal search records', WEST_BENGAL_DIRECTORY_PLACES.length >= 60);
+  assert('West Bengal terminal autocomplete matches English place names', searchPlaces('Kharagpur', WEST_BENGAL_DIRECTORY_PLACES, 8).some(result =>
+    result.place.state === 'West Bengal' && result.place.canonicalName.toLowerCase().includes('kharagpur')
+  ));
+  assert('West Bengal terminal autocomplete matches Bengali aliases', searchPlaces('খড়গপুর বাস টার্মিনাস', WEST_BENGAL_DIRECTORY_PLACES, 8).length > 0);
+
+  const expandedWestBengalTerminals = INDIA_ADMIN_AREA_PLACES.filter(item => item.id.startsWith('wb-directory-terminal-'));
+  assert('Expanded West Bengal source directory is loaded into the shared place repository', expandedWestBengalTerminals.length >= 40);
+  assert('Imported West Bengal terminals retain source provenance and unverified status', expandedWestBengalTerminals.every(item =>
+    item.state === 'West Bengal' && item.placeType === 'BUS_TERMINAL' && item.verificationStatus === 'UNVERIFIED' &&
+    item.sourceDataset === 'WEST_BENGAL_TRANSPORT_DEPARTMENT_BUS_TERMINALS' &&
+    item.sourceSnapshotDate === '2017-03-03' && !!item.sourceUrl &&
+    item.latitude === undefined && item.longitude === undefined
+  ));
+  assert('Imported West Bengal terminals include Bengali aliases where provided', expandedWestBengalTerminals.some(item =>
+    !!item.names.bn || item.aliases.some(alias => /[\\u0980-\\u09FF]/.test(alias))
+  ));
+  assert('Proposed-only West Bengal terminals are not exposed as passenger search results', !expandedWestBengalTerminals.some(item =>
+    item.canonicalName.toLowerCase().includes('proposed')
+  ));
+
   assert('Every administrative state/UT and capital has source provenance', INDIA_ADMIN_AREA_PLACES
     .filter(item => item.id.startsWith('india-admin-'))
     .every(item => !!item.sourceUrl && !!item.sourceSnapshotDate && item.verificationStatus === 'UNVERIFIED'));
