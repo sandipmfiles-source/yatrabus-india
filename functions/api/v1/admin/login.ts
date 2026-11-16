@@ -70,6 +70,10 @@ export async function onRequestPost({ request, env }: PagesContext): Promise<Res
   }
 
   await env.DB.prepare("DELETE FROM admin_login_attempts WHERE ip_hash = ?").bind(ipHash).run();
+  await env.DB.prepare("DELETE FROM admin_login_attempts WHERE window_started_at < ?")
+    .bind(new Date(now - 24 * 60 * 60 * 1000).toISOString()).run();
+  await env.DB.prepare("DELETE FROM admin_sessions WHERE expires_at <= ? OR (revoked_at IS NOT NULL AND revoked_at < ?)")
+    .bind(nowIso, new Date(now - 7 * 24 * 60 * 60 * 1000).toISOString()).run();
   const ownerEmail = (env.ADMIN_EMAIL || "").trim().toLowerCase();
   const { token, payload } = createAdminToken(ownerEmail, secret);
   const expiresAt = new Date(payload.exp * 1000).toISOString();
