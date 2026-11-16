@@ -187,6 +187,9 @@ export interface LocationObservation {
   confidence: LocationConfidence;
   trackingStatus: TrackingStatus;
   distanceFromRouteMeters: number;
+  contributorCount?: number;
+  isCorroborated?: boolean;
+  source?: 'consented_passenger_reports';
   matchedStopId?: string;
   matchingRemarks?: string;
 }
