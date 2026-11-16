@@ -44,6 +44,9 @@ jobs:
       - name: Sync Capacitor
         run: npx cap sync android
 
+      - name: Generate Android launcher icons
+        run: python3 scripts/generate_android_icons.py
+
       - name: Verify Capacitor plugin settings
         shell: bash
         run: |
