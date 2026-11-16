@@ -98,9 +98,9 @@ export const RouteDetailModal: React.FC<RouteDetailModalProps> = ({
               <span className="px-2.5 py-0.5 rounded-full bg-brand-900 text-white font-mono font-bold text-xs">
                 Route {route.routeNumber}
               </span>
-              <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-semibold flex items-center space-x-1">
+              <span className={`text-xs px-2 py-0.5 rounded-full font-semibold flex items-center space-x-1 ${route.verificationStatus === 'admin_verified' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-900'}`}>
                 <ShieldCheck className="w-3 h-3" />
-                <span>{t('badge_admin_verified')}</span>
+                <span>{t(route.verificationStatus === 'admin_verified' ? 'badge_admin_verified' : route.verificationStatus === 'community_corroborated' ? 'badge_community' : route.verificationStatus === 'published_unverified' ? 'badge_published_unverified' : 'badge_unverified')}</span>
               </span>
             </div>
             <h2 className="text-base sm:text-lg font-bold text-slate-900 mt-1">
@@ -138,11 +138,11 @@ export const RouteDetailModal: React.FC<RouteDetailModalProps> = ({
               <div>
                 <div className="flex items-center space-x-2">
                   <span className="font-bold text-xs text-slate-900">
-                    {activeObservation?.trackingStatus === 'live_gps' ? t('status_live_gps') : t('status_estimated')}
+                    {activeObservation?.trackingStatus === 'live_gps' ? t('status_live_gps') : eta ? t('status_estimated') : t('status_unavailable')}
                   </span>
                   <span className="text-[10px] text-slate-400">•</span>
                   <span className="text-[11px] text-slate-500 font-medium">
-                    {eta?.basis === 'live_gps' ? 'GPS Corroborated' : 'Timetable Projection'}
+                    {eta ? (eta.basis === 'live_gps' ? 'GPS Corroborated' : 'Timetable Projection') : t('tracking_not_available')}
                   </span>
                 </div>
                 {eta && (
@@ -154,7 +154,7 @@ export const RouteDetailModal: React.FC<RouteDetailModalProps> = ({
             </div>
 
             {/* Travel Confirmation CTA */}
-            {!activeJourneySessionId && (
+            {!activeJourneySessionId && selectedBus && (
               <button
                 onClick={() => setShowConsentModal(true)}
                 className="px-3.5 py-2 rounded-xl bg-brand-900 hover:bg-brand-950 font-semibold text-white text-xs transition shadow-sm flex items-center justify-center space-x-1.5 shrink-0"
@@ -163,6 +163,7 @@ export const RouteDetailModal: React.FC<RouteDetailModalProps> = ({
                 <span>Travelling on this bus?</span>
               </button>
             )}
+            {!selectedBus && <p className="text-[11px] text-slate-500">{t('tracking_not_available')}</p>}
           </div>
 
           {/* Navigation Sub-Tabs */}
@@ -228,8 +229,7 @@ export const RouteDetailModal: React.FC<RouteDetailModalProps> = ({
           {activeTab === 'timetable' && (
             <div className="space-y-3">
               <div className="flex items-center justify-between text-xs text-slate-500 px-1">
-                <span>Operating Days: Every day (Mon - Sun)</span>
-                <span>Frequency: Every 15 mins</span>
+                <span>{t('operating_days')}: {route.operatingDays?.join(' · ') || t('schedule_days_unavailable')}</span>
               </div>
 
               <div className="space-y-2">
@@ -247,20 +247,23 @@ export const RouteDetailModal: React.FC<RouteDetailModalProps> = ({
                           {tt.departureTime} ➔ {tt.arrivalTime}
                         </div>
                         <span className="text-[11px] text-slate-500 uppercase">
-                          {tt.tripCode} • {tt.vehicleType}
+                          {tt.tripCode}{tt.headsign ? ' • ' + tt.headsign : ''}{tt.vehicleType ? ' • ' + tt.vehicleType : ''}{tt.operatingDays?.length ? ' • ' + tt.operatingDays.join('/') : ''}
                         </span>
                       </div>
                     </div>
 
                     <div className="text-right">
                       <div className="font-bold text-emerald-700 text-sm">
-                        ₹{tt.fareInRupees || 25}
+                        {tt.fareInRupees !== undefined && tt.fareInRupees !== null ? '₹' + tt.fareInRupees : t('fare_not_provided')}
                       </div>
-                      <span className="text-[10px] text-slate-400">Fixed Fare</span>
+                      <span className="text-[10px] text-slate-400">{tt.fareInRupees !== undefined && tt.fareInRupees !== null ? t('published_fare') : t('fare_unavailable')}</span>
                     </div>
                   </div>
                 ))}
+                {timetables.length === 0 && <p className="text-xs text-slate-500 p-3">{t('no_scheduled_departures')}</p>}
               </div>
+              {route.sourceAttribution && <p className="text-[10px] text-slate-500">{t('source_attribution')} · {route.sourceSnapshotDate}</p>}
+              {route.sourceAttribution && <p className="text-[10px] text-slate-500">{t('independent_service_notice')}</p>}
             </div>
           )}
 
