@@ -18,6 +18,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: yatrabus-d1-production-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   migrate:
     if: github.event_name == 'push' || inputs.confirm_production == true
