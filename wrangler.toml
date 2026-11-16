@@ -1,0 +1,8 @@
+name = "yatrabus-india"
+pages_build_output_dir = "./dist"
+compatibility_date = "2026-11-16"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "yatrabus-india-db"
+database_id = "ad817522-9239-4574-8b23-17b8d45d756e"
