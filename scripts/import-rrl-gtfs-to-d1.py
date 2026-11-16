@@ -168,7 +168,7 @@ def build(zip_path,out_dir,test_mode=False):
                 "originPlaceId":stops_out[0]["stopId"],"originName":stops_out[0]["stopName"],
                 "destinationPlaceId":stops_out[-1]["stopId"],"destinationName":stops_out[-1]["stopName"],
                 "direction":"up" if trip.get("direction_id")=="0" else ("down" if trip.get("direction_id")=="1" else "unknown"),
-                "durationMinutes":max(0,round((last-first)/60)),"durationSamples":[max(0,round((last-first)/60))],
+                "durationMinutes":0,"durationSamples":[],
                 "durationMethod":"median_of_published_gtfs_trips","distanceKm":round(distance,2),
                 "distanceMethod":"approximate_haversine_between_published_stops",
                 "operatingDays":[],"firstDepartureTime":hhmm(seq[0].get("departure_time") or seq[0].get("arrival_time") or ""),
