@@ -115,7 +115,7 @@ def build(zip_path,out_dir,test_mode=False):
     if not test_mode and len(stop_map)<100: raise ValueError(f"Too few valid stops: {len(stop_map)}")
     stop_times_by_trip=defaultdict(list)
     for st in stop_times:
-        if st.get("trip_id") and st.get("stop_id") in stop_map:
+        if st.get("trip_id"):
             stop_times_by_trip[st["trip_id"]].append(st)
     today=date.today(); patterns={}; timetable_rows=[]; skipped=0
     for trip in trips:
@@ -123,7 +123,7 @@ def build(zip_path,out_dir,test_mode=False):
         if rid not in route_map or not trip_id or not service_is_current(calendars.get(service_id,{}),exceptions.get(service_id,[]),today):
             skipped+=1; continue
         seq=sorted(stop_times_by_trip.get(trip_id,[]),key=lambda x:int(x.get("stop_sequence") or 0))
-        if len(seq)<2 or len({x["stop_id"] for x in seq})<2: skipped+=1; continue
+        if len(seq)<2 or any(x.get("stop_id") not in stop_map for x in seq) or len({x["stop_id"] for x in seq})<2: skipped+=1; continue
         try:
             first=parse_time(seq[0].get("departure_time") or seq[0].get("arrival_time") or "")
             last=parse_time(seq[-1].get("arrival_time") or seq[-1].get("departure_time") or "")
