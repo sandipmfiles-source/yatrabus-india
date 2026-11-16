@@ -41,11 +41,6 @@ jobs:
           set -euo pipefail
           python -m py_compile scripts/import-rrl-gtfs-to-d1.py
           python scripts/import-rrl-gtfs-to-d1.py --self-test
-      - name: Apply pending versioned D1 migrations before import
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
-        run: npx --yes wrangler@4 d1 migrations apply yatrabus-india-db --remote
       - name: Download and checksum-pin RRL community GTFS archive
         run: |
           set -euo pipefail
@@ -93,6 +88,11 @@ jobs:
           set -euo pipefail
           test -n "$CLOUDFLARE_API_TOKEN"
           test -n "$CLOUDFLARE_ACCOUNT_ID"
+      - name: Apply pending versioned D1 migrations before import
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx --yes wrangler@4 d1 migrations apply yatrabus-india-db --remote
       - name: Download and checksum-pin RRL community GTFS archive
         run: |
           set -euo pipefail
