@@ -1,9 +1,12 @@
 import { PagesContext, json, unavailable, onRequestOptions } from "../../../_lib/api";
+import { enforcePublicRateLimit } from "../../../_lib/rateLimit";
 
 export { onRequestOptions };
 
 export async function onRequestPost({ request, env }: PagesContext): Promise<Response> {
   if (!env.DB) return unavailable();
+  const rateLimited = await enforcePublicRateLimit(request, env, "operator-claim", 5, 24 * 60 * 60 * 1000);
+  if (rateLimited) return rateLimited;
   let body: any;
   try {
     const raw = await request.text();
