@@ -1,5 +1,6 @@
 import { PagesContext, json, unavailable, parsePayload } from "../../../_lib/api";
 import { aggregateBusLocation, RawLocationObservation } from "../../../_lib/locationAggregation";
+import { enforcePublicRateLimit } from "../../../_lib/rateLimit";
 
 type BusRow = { id: string; operator_id: string | null; status: string; payload_json: string };
 type RouteRow = { id: string; status: string; payload_json: string };
@@ -7,6 +8,8 @@ type ObservationRow = RawLocationObservation;
 
 export async function onRequestGet({ request, env, params }: PagesContext): Promise<Response> {
   if (!env.DB) return unavailable();
+  const limited = await enforcePublicRateLimit(request, env, "bus-location-read", 120, 60_000);
+  if (limited) return limited;
   const busId = params?.id || "";
   if (!busId) return json({ success: false, error: "Bus ID is required." }, 400);
   const url = new URL(request.url);
