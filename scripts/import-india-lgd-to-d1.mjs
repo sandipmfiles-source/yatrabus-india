@@ -36,7 +36,7 @@ function normaliseRow(row, snapshotDate) {
   const payload = {
     id,
     canonicalName: name,
-    placeType: level.toUpperCase(),
+    placeType: level,
     state,
     district,
     subdivision,
@@ -45,7 +45,7 @@ function normaliseRow(row, snapshotDate) {
     sourceUrl: SOURCE_URL,
     sourceLicense: SOURCE_LICENSE,
     sourceSnapshotDate: snapshotDate,
-    verificationStatus: 'UNVERIFIED',
+    verificationStatus: 'published_unverified',
     busServiceVerified: false,
     aliases: []
   };
@@ -57,7 +57,7 @@ function normaliseRow(row, snapshotDate) {
     district,
     subdivision,
     source_dataset: 'INDIA_LGD',
-    verification_status: 'unverified',
+    verification_status: 'published_unverified',
     last_updated: snapshotDate,
     aliases_json: '[]',
     payload_json: JSON.stringify(payload)
