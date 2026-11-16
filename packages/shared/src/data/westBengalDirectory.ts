@@ -1,5 +1,5 @@
 import type { Place } from '../types/places.js';
-import directory from '../../../../data/west-bengal-bus-directory.json';
+import directory from '../../../../data/west-bengal-bus-directory.json' with { type: 'json' };
 
 /**
  * Searchable West Bengal terminal candidates from the public 2017 directory.
