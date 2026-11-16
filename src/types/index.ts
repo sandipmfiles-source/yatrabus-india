@@ -104,6 +104,17 @@ export interface RouteStop {
 
 export type DayOfWeek = 'Mon' | 'Tue' | 'Wed' | 'Thu' | 'Fri' | 'Sat' | 'Sun';
 
+export interface ServiceAlert {
+  id: string;
+  routeId: string;
+  alertType: string;
+  details: string;
+  status: 'active' | 'resolved' | 'expired';
+  createdAt: string;
+  validUntil?: string;
+  verificationStatus: VerificationStatus;
+}
+
 export interface Route {
   id: string;
   routeNumber: string; // e.g. "502", "C-8", "500-D", "AS-1"
@@ -130,6 +141,7 @@ export interface Route {
   sourceLicense?: string;
   sourceAttribution?: string;
   sourceSnapshotDate?: string;
+  serviceAlerts?: ServiceAlert[];
 }
 
 export interface TimetableDeparture {
