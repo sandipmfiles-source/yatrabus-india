@@ -158,7 +158,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         if (!result?.success) return null;
         if (result.data && !Array.isArray(result.data)) return result.data;
         const rows = Array.isArray(result.data) ? result.data : [];
-        return rows.find((place: Place) => place.canonicalName.toLowerCase() === name.toLowerCase()) || rows[0] || null;
+        return rows.find((place: Place) => place.canonicalName.toLowerCase() === name.toLowerCase()) || null;
       };
       setOriginPlace(resolvePlace(originResult, item.origin));
       setDestinationPlace(resolvePlace(destinationResult, item.dest));
