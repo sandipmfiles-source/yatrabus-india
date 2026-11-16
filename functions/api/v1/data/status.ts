@@ -1,4 +1,4 @@
-import { PagesContext, json, unavailable, onRequestOptions } from "../../_lib/api";
+import { PagesContext, json, unavailable, onRequestOptions } from "../../../_lib/api";
 
 export { onRequestOptions };
 
