@@ -120,12 +120,13 @@ jobs:
             --command="SELECT place_type, COUNT(*) AS records FROM places WHERE source_dataset = 'INDIA_LGD' GROUP BY place_type ORDER BY place_type;"
           npx --yes wrangler@4 d1 execute yatrabus-india-db --remote --yes \
             --command="SELECT COUNT(*) AS total_india_lgd_places FROM places WHERE source_dataset = 'INDIA_LGD';"
+          payload="$(jq -n --arg sql "SELECT COUNT(*) AS total, SUM(CASE WHEN json_extract(payload_json, '$.busServiceVerified') = 1 THEN 1 ELSE 0 END) AS falsely_bus_verified FROM places WHERE source_dataset = 'INDIA_LGD';" '{sql: $sql}')"
           response="$(curl --fail --silent --show-error \
             --request POST \
             "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/d1/database/ad817522-9239-4574-8b23-17b8d45d756e/query" \
             --header "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
             --header "Content-Type: application/json" \
-            --data '{"sql":"SELECT COUNT(*) AS total, SUM(CASE WHEN json_extract(payload_json, '$.busServiceVerified') = 1 THEN 1 ELSE 0 END) AS falsely_bus_verified FROM places WHERE source_dataset = 'INDIA_LGD';"}')"
+            --data "$payload")"
           total="$(printf '%s' "$response" | jq -er '.result[0].results[0].total')"
           falsely_verified="$(printf '%s' "$response" | jq -er '.result[0].results[0].falsely_bus_verified')"
           if [ "$total" -lt 15000 ] || [ "$falsely_verified" -ne 0 ]; then
