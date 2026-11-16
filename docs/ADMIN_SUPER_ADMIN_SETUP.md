@@ -8,23 +8,15 @@ The production admin API is disabled unless all three owner settings exist in th
 
 There is no public registration, default account, demo password, second admin, or owner recovery bypass. Login fails closed with HTTP 503 if configuration is missing.
 
-## Generate a password hash
+## Generate a high-entropy owner password and matching verifier
 
-Run this locally on a trusted computer with Node.js. Use a unique password of at least 14 characters. Do not paste the password or hash into chat and do not commit it to Git.
-
-```bash
-node --input-type=module -e "import {scryptSync,randomBytes} from 'node:crypto'; import {createInterface} from 'node:readline/promises'; const rl=createInterface({input:process.stdin,output:process.stdout}); const p=await rl.question('New strong admin password: '); rl.close(); if(p.length<14) throw new Error('Use at least 14 characters'); const salt=randomBytes(16).toString('hex'); console.log(salt+':'+scryptSync(p,salt,64).toString('hex'));"
-```
-
-Copy the printed `salt:hex_digest` into the Cloudflare Pages Production secret named `ADMIN_PASSWORD_HASH`.
-
-Generate a separate signing secret:
+The Cloudflare Free plan has a 10 ms CPU budget per Worker request. To keep login reliable on the free plan, this implementation uses a fast keyed HMAC-SHA256 verifier rather than an expensive password KDF. Generate a random password (not a human-chosen phrase) and a separate signing secret together on a trusted computer. Save the password in a password manager; do not paste it into chat or commit it.
 
 ```bash
-node -e "console.log(require('node:crypto').randomBytes(48).toString('base64url'))"
+node --input-type=module -e "import {randomBytes,createHmac} from 'node:crypto'; const password=randomBytes(32).toString('base64url'); const secret=randomBytes(48).toString('base64url'); const hash='hmac-sha256:'+createHmac('sha256',secret).update(password).digest('hex'); console.log('ADMIN_PASSWORD='+password); console.log('ADMIN_PASSWORD_HASH='+hash); console.log('ADMIN_JWT_SECRET='+secret);"
 ```
 
-Save the output as the Cloudflare Pages Production secret `ADMIN_JWT_SECRET`. Do not reuse the password.
+Copy the generated password into a password manager. Set `ADMIN_PASSWORD_HASH` and `ADMIN_JWT_SECRET` as separate Cloudflare Pages Production secrets. The hash is keyed by the signing secret, so neither value alone is sufficient to test password guesses offline. Use a new pair if either value is exposed.
 
 ## Security behaviour
 
