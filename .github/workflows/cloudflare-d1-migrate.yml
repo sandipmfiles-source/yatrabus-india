@@ -41,13 +41,17 @@ jobs:
             exit 1
           fi
           test -s migrations/0001_initial.sql
+          test -s migrations/0002_admin_security.sql
 
       - name: Apply schema to remote D1
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          npx --yes wrangler@4 d1 execute yatrabus-india-db --remote --yes --file=migrations/0001_initial.sql
+          for migration in migrations/*.sql; do
+            echo "Applying $migration"
+            npx --yes wrangler@4 d1 execute yatrabus-india-db --remote --yes --file="$migration"
+          done
 
       - name: Verify YatraBus tables
         env:
@@ -55,4 +59,4 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           set -euo pipefail
-          npx --yes wrangler@4 d1 execute yatrabus-india-db --remote --yes --command="SELECT name FROM sqlite_master WHERE type = 'table' AND name IN ('places','operators','buses','routes','timetables','journey_sessions','location_observations','community_submissions','audit_logs','automation_rules','schema_migrations') ORDER BY name;"
+          npx --yes wrangler@4 d1 execute yatrabus-india-db --remote --yes --command="SELECT name FROM sqlite_master WHERE type = 'table' AND name IN ('places','operators','buses','routes','timetables','journey_sessions','location_observations','community_submissions','audit_logs','automation_rules','schema_migrations','admin_sessions','admin_login_attempts','operator_claims','service_alerts') ORDER BY name;"
