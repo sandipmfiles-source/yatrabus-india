@@ -30,6 +30,8 @@ SELECT
   COALESCE(CAST(json_extract(s.value, '$.arrivalOffsetMinutes') AS INTEGER), 0),
   COALESCE(CAST(json_extract(s.value, '$.departureOffsetMinutes') AS INTEGER), 0)
 FROM routes AS r,
-     json_each(CASE WHEN json_valid(r.stops_json) THEN r.stops_json ELSE '[]' END) AS s
+     json_each(CASE WHEN json_valid(COALESCE(NULLIF(r.stops_json, '[]'), json_extract(r.payload_json, '$.stops')))
+                    THEN COALESCE(NULLIF(r.stops_json, '[]'), json_extract(r.payload_json, '$.stops'))
+                    ELSE '[]' END) AS s
 WHERE json_extract(s.value, '$.stopId') IS NOT NULL
   AND COALESCE(CAST(json_extract(s.value, '$.stopSequence') AS INTEGER), CAST(s.key AS INTEGER) + 1) > 0;
