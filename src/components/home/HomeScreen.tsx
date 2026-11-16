@@ -148,7 +148,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   const selectRecentSearch = async (item: { origin: string; dest: string; originId?: string; destId?: string; date?: string }) => {
     setOriginQuery(item.origin);
     setDestinationQuery(item.dest);
-    setTravelDate(item.date || new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()));
+    const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+    setTravelDate(item.date && item.date >= today ? item.date : today);
     setSearchResults(null);
     try {
       const [originResult, destinationResult] = item.originId && item.destId
@@ -359,6 +360,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             <input
               id="yatrabus-travel-date"
               type="date"
+              required
               min={new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())}
               value={travelDate}
               onChange={event => {
