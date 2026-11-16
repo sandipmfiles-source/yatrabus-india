@@ -511,7 +511,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                       Transfer at <b>{tr.transferPlace.canonicalName}</b>
                     </span>
                     <span className="text-[11px] font-semibold text-amber-800">
-                      ~12 min wait buffer
+                      ~{tr.transferBufferMinutes || 15} min {t('transfer_buffer')}
                     </span>
                   </div>
 
