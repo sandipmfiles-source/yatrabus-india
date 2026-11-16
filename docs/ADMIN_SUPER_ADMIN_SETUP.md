@@ -33,6 +33,8 @@ Save the output as the Cloudflare Pages Production secret `ADMIN_JWT_SECRET`. Do
 - Session tokens are HMAC-SHA256 signed, expire after 8 hours, and are stored in D1 only as SHA-256 token hashes.
 - Logout revokes the D1 session.
 - Five failed attempts from one client IP trigger a 15-minute lockout. Only an HMAC of the IP is stored.
+- Public community submissions are limited to 20 per IP per hour; operator claims are limited to five per IP per day. Rate-limit storage keeps a short-lived one-way IP hash, not the raw address.
+- Operator ownership claims can only reference an operator already in the directory.
 - Admin endpoints require a valid bearer token and fail closed.
 - Owner actions are written to the D1 audit log.
 - No secret values belong in the repository, APK, or frontend bundle.
