@@ -22,4 +22,4 @@ This dataset adds a source-attributed West Bengal bus directory to YatraBus Indi
 - [WBTC official booking and route portal](https://wbtconline.in/home)
 
 ## Integration note
-`data/west-bengal-bus-directory.json` is the source dataset. It must be connected to the existing place/transit loader and covered by schema and duplicate tests before it appears in passenger autocomplete. This data-only change does not claim frontend/backend integration.
+`data/west-bengal-bus-directory.json` is imported by `backend/src/db/indiaAdminAreas.ts` and converted into shared `Place` records used by `repository.searchPlaces()`. The public `/api/places/search` endpoint therefore includes the imported terminal candidates, and `/api/india/catalogue` reports the expanded West Bengal terminal index. Proposed-only records are excluded from passenger autocomplete. The automated India catalogue test suite checks the import, source provenance, Bengali aliases, unverified state, and absence of invented coordinates. These are historical terminal references; the 2017 source date remains visible and they are not proof of active bus service.
