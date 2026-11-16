@@ -19,6 +19,7 @@ This document separates administrative location data from real public-transport 
 - Attribution: "GTFS feed for Rajkot Rampath Limited services; repository by croylA (MIT-0)".
 - Snapshot date: 2026-11-16.
 - The import workflow validates the archive checksum, GTFS files, Indian stop coordinates, current service calendars and complete trip stop sequences before import.
+- CI dry-run of this pinned snapshot found 760 stops, 267 route patterns and 3,140 current scheduled trips, with zero trips skipped. These are source-archive counts, not production D1 counts until the post-import verification completes.
 - Imported routes and timetables are labelled `published_unverified`: they are from a community-published feed and have not been independently confirmed by YatraBus India or the operator.
 - The importer does not invent fares, individual buses or live GPS positions. Fare and vehicle data remain unavailable unless a trusted source supplies them.
 - D1 import is append-only and verifies stop, route and trip counts after import.
