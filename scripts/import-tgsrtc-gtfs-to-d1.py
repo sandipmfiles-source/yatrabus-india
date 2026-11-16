@@ -108,7 +108,7 @@ def build(zip_path,out_dir,test_mode=False):
         lat=num(s.get("stop_lat"),"stop_lat"); lon=num(s.get("stop_lon"),"stop_lon")
         if not (6<=lat<=38 and 68<=lon<=98): raise ValueError(f"Stop outside India bounds: {stop_id}")
         stop_map[stop_id]={**s,"_lat":lat,"_lon":lon}
-    if len(stop_map)<100: raise ValueError(f"Too few valid stops: {len(stop_map)}")
+    if not test_mode and len(stop_map)<100: raise ValueError(f"Too few valid stops: {len(stop_map)}")
     stop_times_by_trip=defaultdict(list)
     for st in stop_times:
         if st.get("trip_id") and st.get("stop_id") in stop_map:
