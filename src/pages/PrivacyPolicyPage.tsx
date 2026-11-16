@@ -17,7 +17,7 @@ export const PrivacyPolicyPage: React.FC = () => {
         <section className="space-y-2"><h2 className="text-base font-bold text-yatriwarm-900 flex items-center gap-2"><ShieldCheck className="w-4 h-4 text-yatribrand-700" />{t('privacy_aggregation_title')}</h2><p>{t('privacy_aggregation_body')}</p></section>
         <section className="space-y-2"><h2 className="text-base font-bold text-yatriwarm-900 flex items-center gap-2"><Clock className="w-4 h-4 text-yatribrand-700" />{t('privacy_session_title')}</h2><p>{t('privacy_session_body')}</p></section>
         <section className="space-y-2"><h2 className="text-base font-bold text-yatriwarm-900">{t('privacy_device_features_title')}</h2><p>{t('privacy_device_features_body')}</p></section>
-        <section className="space-y-2"><h2 className="text-base font-bold text-yatriwarm-900">{t('privacy_contact_title')}</h2><p className="text-xs">{t('privacy_contact_body')} <code className="bg-yatriwarm-100 px-1 py-0.5 rounded text-yatribrand-900">privacy@yatribus.in</code>.</p></section>
+        <section className="space-y-2"><h2 className="text-base font-bold text-yatriwarm-900">{t('privacy_contact_title')}</h2><p className="text-xs">{t('privacy_contact_body')}.</p></section>
       </div>
     </div>
   );
