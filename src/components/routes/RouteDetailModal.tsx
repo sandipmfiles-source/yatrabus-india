@@ -124,11 +124,11 @@ export const RouteDetailModal: React.FC<RouteDetailModalProps> = ({
         <div className="overflow-y-auto p-4 sm:p-6 space-y-5 flex-1">
           {serviceAlerts.length > 0 && (
             <div className="rounded-2xl border border-amber-300 bg-amber-50 p-3 space-y-2">
-              <div className="text-xs font-bold text-amber-900">Service alert</div>
+              <div className="text-xs font-bold text-amber-900">{t('service_alert')}</div>
               {serviceAlerts.map(alert => (
                 <div key={alert.id} className="text-xs text-amber-900">
                   <span className="font-semibold">{alert.alertType.replace(/_/g, ' ')}:</span> {alert.details}
-                  {alert.validUntil && <span className="block text-[10px] text-amber-700 mt-1">Valid until {new Date(alert.validUntil).toLocaleString()}</span>}
+                  {alert.validUntil && <span className="block text-[10px] text-amber-700 mt-1">{t('valid_until')} {new Date(alert.validUntil).toLocaleString()}</span>}
                 </div>
               ))}
             </div>
