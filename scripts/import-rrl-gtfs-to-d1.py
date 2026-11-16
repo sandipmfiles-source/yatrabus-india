@@ -232,6 +232,10 @@ def build(zip_path,out_dir,test_mode=False):
         route.pop("durationSamples",None)
         statements.append("INSERT OR IGNORE INTO routes (id,name,origin_place_id,destination_place_id,status,stops_json,payload_json) VALUES "
             f"({sql(route['id'])},{sql(route['name'])},{sql(route['originPlaceId'])},{sql(route['destinationPlaceId'])},'active',{sql(js(route['stops']))},{sql(js(route))});")
+    for route in patterns.values():
+        for stop in route["stops"]:
+            statements.append("INSERT OR IGNORE INTO route_stops (route_id,stop_id,stop_sequence,stop_name,arrival_offset_minutes,departure_offset_minutes) VALUES "
+                f"({sql(route['id'])},{sql(stop['stopId'])},{sql(stop['stopSequence'])},{sql(stop['stopName'])},{sql(stop['arrivalOffsetMinutes'])},{sql(stop['departureOffsetMinutes'])});")
     for timetable in timetable_rows:
         statements.append("INSERT OR IGNORE INTO timetables (id,route_id,departure_time,service_days_json,payload_json) VALUES "
             f"({sql(timetable['id'])},{sql(timetable['routeId'])},{sql(timetable['departureTime'])},{sql(js(timetable['operatingDays']))},{sql(js(timetable))});")
@@ -248,7 +252,7 @@ def build(zip_path,out_dir,test_mode=False):
     manifest={
         "dataset":DATASET,"repository":REPO_URL,"archive":ARCHIVE_URL,"license":LICENSE,
         "attribution":ATTRIBUTION,"snapshotDate":SNAPSHOT_DATE,"agencyCount":len(agencies),
-        "stopCount":len(stop_map),"routePatternCount":len(patterns),"tripCount":len(timetable_rows),
+        "stopCount":len(stop_map),"routePatternCount":len(patterns),"routeStopCount":sum(len(route["stops"]) for route in patterns.values()),"tripCount":len(timetable_rows),
         "skippedTripCount":skipped,"sqlFileCount":len(files),"sqlFiles":files,
         "liveGpsIncluded":False,"fareDataIncluded":False,"vehicleRecordsCreated":0,
         "note":"Community-published static GTFS for Rajkot Rampath Limited; not independently verified by YatraBus or the operator. No live positions, fares or individual vehicles are inferred."
@@ -273,7 +277,7 @@ def self_test():
         result=build(zpath,root/"out",test_mode=True)
         assert result["stopCount"]==2 and result["routePatternCount"]==1 and result["tripCount"]==1
         sqls="\n".join(p.read_text() for p in (root/"out").glob("*.sql"))
-        assert "INSERT OR IGNORE INTO timetables" in sqls and '"fareInRupees":null' in sqls
+        assert "INSERT OR IGNORE INTO route_stops" in sqls and "INSERT OR IGNORE INTO timetables" in sqls and '"fareInRupees":null' in sqls
     print("RRL Rajkot GTFS importer self-test passed.")
 
 if __name__=="__main__":

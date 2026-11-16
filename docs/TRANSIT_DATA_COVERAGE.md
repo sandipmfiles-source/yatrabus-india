@@ -19,16 +19,16 @@ This document separates administrative location data from real public-transport 
 - Attribution: "GTFS feed for Rajkot Rampath Limited services; repository by croylA (MIT-0)".
 - Snapshot date: 2026-11-16.
 - The import workflow validates the archive checksum, GTFS files, Indian stop coordinates, current service calendars and complete trip stop sequences before import.
-- CI dry-run of this pinned snapshot found 760 stops, 267 route patterns and 3,140 current scheduled trips, with zero trips skipped. These are source-archive counts, not production D1 counts until the post-import verification completes.
+- CI dry-run of this pinned snapshot found 760 stops, 267 route patterns and 3,140 current scheduled trips, with zero trips skipped. The normalized route-stop index records each stop's position on each route. Source-archive counts are not production D1 counts until the post-import verification completes.
 - Imported routes and timetables are labelled `published_unverified`: they are from a community-published feed and have not been independently confirmed by YatraBus India or the operator.
 - The importer does not invent fares, individual buses or live GPS positions. Fare and vehicle data remain unavailable unless a trusted source supplies them.
-- D1 import is append-only and verifies stop, route and trip counts after import.
+- D1 import is append-only and verifies stop, route, timetable and normalized route-stop counts after import.
 
-The CI workflow prints the actual counts from the pinned archive. Production D1 counts are reported only after the import workflow completes successfully.
+The CI workflow prints the actual counts from the pinned archive. Production counts above are from the successful post-import D1 verification, not estimates.
 
 ### Telangana TGSRTC
 
-A TGSRTC GTFS archive was identified, but the publisher download currently denies automated access (HTTP 403) and its MobilityData mirror returns 404. No TGSRTC schedules have been imported. The WIP importer remains unmerged until a checksum-verified archive is accessible.
+The official TGSRTC open-data page publishes static GTFS and grants a free, non-exclusive licence with required TGSRTC attribution and a no-endorsement condition. Automated direct download has returned HTTP 403. Transitland currently lists an imported 2026-09-30 snapshot (1,031 routes and 5,028 stops), but its raw archive download requires a Transitland account/API access and is not yet available to this project. No TGSRTC schedules have been imported. The WIP importer remains unmerged until a checksum-verified archive is lawfully downloaded and validated.
 
 ## India-wide coverage status
 

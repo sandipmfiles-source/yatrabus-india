@@ -15,6 +15,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Validate GitHub Actions workflow YAML syntax
+        run: |
+          ruby -e 'require "yaml"; Dir.glob(".github/workflows/*.yml").each { |file| YAML.load_file(file, aliases: true); puts "YAML OK: #{file}" }'
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -33,5 +36,6 @@ jobs:
         run: |
           set -euo pipefail
           python3 scripts/validate-d1-migration.py
+          python3 tests/d1-route-stop-index.test.py
           node --check scripts/import-india-lgd-to-d1.mjs
           node scripts/import-india-lgd-to-d1.mjs --self-test
