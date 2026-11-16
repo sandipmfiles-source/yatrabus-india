@@ -152,6 +152,9 @@ export interface TimetableDeparture {
   departureTime: string; // HH:MM in IST
   arrivalTime: string;   // HH:MM in IST
   operatingDays: DayOfWeek[];
+  serviceStartDate?: string | null;
+  serviceEndDate?: string | null;
+  serviceExceptions?: Array<{ date: string; exceptionType: 1 | 2 }>;
   vehicleType?: VehicleType;
   fareInRupees?: number;
   headsign?: string | null;
