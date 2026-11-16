@@ -175,8 +175,9 @@ export const BusRouteMap: React.FC<BusRouteMapProps> = ({
         L.marker([activeObservation.latitude, activeObservation.longitude], { icon: busIcon, zIndexOffset: 1000 })
           .bindPopup(`
             <div style="font-family: sans-serif; font-size: 13px;">
-              <b style="color: ${busColor};">${isLive ? '🟢 Live Bus GPS' : '🟠 Last Known Location'}</b><br/>
+              <b style="color: ${busColor};">${isLive ? '🟢 Corroborated Live GPS' : '🟡 Estimated Bus Location'}</b><br/>
               <span>Speed: ${Math.round(activeObservation.speedKmh || 0)} km/h</span><br/>
+              <span>Independent reports: ${activeObservation.contributorCount || 1}</span><br/>
               <span style="font-size: 11px; color: #64748b;">Confidence: ${activeObservation.confidence.toUpperCase()}</span>
             </div>
           `)
@@ -209,11 +210,11 @@ export const BusRouteMap: React.FC<BusRouteMapProps> = ({
         <div className="absolute top-3 left-3 z-[400] flex items-center space-x-2 px-3 py-1.5 rounded-full bg-white/95 backdrop-blur-sm border border-surface-border shadow-md text-xs font-semibold">
           <span className={`w-2.5 h-2.5 rounded-full ${activeObservation.trackingStatus === 'live_gps' ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
           <span className="text-slate-800">
-            {activeObservation.trackingStatus === 'live_gps' ? t('status_live_gps') : t('status_last_known')}
+            {activeObservation.trackingStatus === 'live_gps' ? t('status_live_gps') : t('status_estimated')}
           </span>
           <span className="text-slate-400">•</span>
           <span className="text-slate-500 font-normal">
-            {activeObservation.confidence === 'high' ? t('confidence_high') : t('confidence_moderate')}
+            {activeObservation.confidence === 'high' ? t('confidence_high') : activeObservation.confidence === 'moderate' ? t('confidence_moderate') : t('confidence_low')}
           </span>
         </div>
       )}
