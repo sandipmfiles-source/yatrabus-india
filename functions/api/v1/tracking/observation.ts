@@ -89,11 +89,13 @@ export async function onRequestPost({ request, env }: PagesContext): Promise<Res
       }
     }
 
-    const observationId = crypto.randomUUID();
+    // Keep only one rounded point per consented session; do not create a movement history.
+    const storedLatitude = Math.round(latitude * 10000) / 10000;
+    const storedLongitude = Math.round(longitude * 10000) / 10000;
     const payload = {
-      observationId,
       sessionId,
       locationSource: "device_gps",
+      coordinatePrecisionDecimals: 4,
       accuracyMeters,
       speedKmh,
       heading,
@@ -104,12 +106,20 @@ export async function onRequestPost({ request, env }: PagesContext): Promise<Res
       INSERT INTO location_observations
         (id, session_id, bus_id, route_id, latitude, longitude, accuracy, speed, heading, observed_at, payload_json)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(id) DO UPDATE SET
+        latitude = excluded.latitude,
+        longitude = excluded.longitude,
+        accuracy = excluded.accuracy,
+        speed = excluded.speed,
+        heading = excluded.heading,
+        observed_at = excluded.observed_at,
+        payload_json = excluded.payload_json
     `).bind(
-      observationId, sessionId, busId, routeId, latitude, longitude,
+      sessionId, sessionId, busId, routeId, storedLatitude, storedLongitude,
       accuracyMeters, speedKmh, heading, observedAt, JSON.stringify(payload)
     ).run();
 
-    return json({ success: true, data: { accepted: true, observationId, observedAt, nextUpdateAfterSeconds: 10 } }, 201);
+    return json({ success: true, data: { accepted: true, observedAt, nextUpdateAfterSeconds: 10, historyStored: false } }, 201);
   } catch {
     return json({ success: false, error: "Location observation could not be stored." }, 503);
   }
