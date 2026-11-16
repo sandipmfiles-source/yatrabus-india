@@ -14,6 +14,7 @@ export interface PagesEnv {
   ADMIN_EMAIL?: string;
   ADMIN_PASSWORD_HASH?: string;
   ADMIN_JWT_SECRET?: string;
+  RATE_LIMIT_SECRET?: string;
 }
 export interface PagesContext { request: Request; env: PagesEnv; params?: Record<string, string> }
 export function json(body: unknown, status = 200): Response {
