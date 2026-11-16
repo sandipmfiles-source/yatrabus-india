@@ -27,6 +27,7 @@ interface RouteDetailModalProps {
   onOpenContribution: (routeId: string) => void;
   activeJourneySessionId: string | null;
   onStartTracking: (busId: string, routeId: string) => void;
+  onStopTracking: () => void;
 }
 
 export const RouteDetailModal: React.FC<RouteDetailModalProps> = ({
@@ -35,7 +36,8 @@ export const RouteDetailModal: React.FC<RouteDetailModalProps> = ({
   onClose,
   onOpenContribution,
   activeJourneySessionId,
-  onStartTracking
+  onStartTracking,
+  onStopTracking
 }) => {
   const [activeTab, setActiveTab] = useState<'stops' | 'timetable' | 'map'>('stops');
   const [selectedServiceDate, setSelectedServiceDate] = useState(serviceDate);
@@ -69,12 +71,7 @@ export const RouteDetailModal: React.FC<RouteDetailModalProps> = ({
           const firstBus = matchingBuses[0] || null;
           setSelectedBus(firstBus);
 
-          if (firstBus) {
-            const locRes = await ApiClient.getBusById(firstBus.id);
-            if (locRes.success && locRes.data.currentLocation) {
-              setActiveObservation(locRes.data.currentLocation);
-            }
-          }
+          if (!firstBus) setActiveObservation(null);
         }
       } catch (err) {
         console.error('Error loading route details:', err);
@@ -83,6 +80,30 @@ export const RouteDetailModal: React.FC<RouteDetailModalProps> = ({
 
     fetchData();
   }, [route.id, selectedServiceDate]);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!selectedBus) {
+      setActiveObservation(null);
+      return;
+    }
+    const refreshLocation = async () => {
+      try {
+        const response = await ApiClient.getBusById(selectedBus.id, route.id);
+        if (!cancelled) {
+          setActiveObservation(response.success ? (response.data?.currentLocation || null) : null);
+        }
+      } catch {
+        if (!cancelled) setActiveObservation(null);
+      }
+    };
+    void refreshLocation();
+    const intervalId = window.setInterval(() => { void refreshLocation(); }, 15_000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+    };
+  }, [selectedBus?.id, route.id]);
 
   useEffect(() => {
     if (selectedStopId) {
@@ -160,11 +181,11 @@ export const RouteDetailModal: React.FC<RouteDetailModalProps> = ({
               <div>
                 <div className="flex items-center space-x-2">
                   <span className="font-bold text-xs text-slate-900">
-                    {activeObservation?.trackingStatus === 'live_gps' ? t('status_live_gps') : eta ? t('status_estimated') : t('status_unavailable')}
+                    {activeObservation?.trackingStatus === 'live_gps' ? t('status_live_gps') : (activeObservation || eta) ? t('status_estimated') : t('status_unavailable')}
                   </span>
                   <span className="text-[10px] text-slate-400">•</span>
                   <span className="text-[11px] text-slate-500 font-medium">
-                    {eta ? (eta.basis === 'live_gps' ? 'GPS Corroborated' : 'Timetable Projection') : t('tracking_not_available')}
+                    {activeObservation?.trackingStatus === 'live_gps' ? t('gps_corroborated') : activeObservation ? t('approximate_gps_report') : eta ? 'Timetable Projection' : t('tracking_not_available')}
                   </span>
                 </div>
                 {eta && (
@@ -174,6 +195,18 @@ export const RouteDetailModal: React.FC<RouteDetailModalProps> = ({
                 )}
               </div>
             </div>
+
+            {/* Select the actual bus before consenting to location sharing */}
+            {buses.length > 1 && (
+              <select
+                aria-label={t('select_bus')}
+                value={selectedBus?.id || ''}
+                onChange={event => setSelectedBus(buses.find(bus => bus.id === event.target.value) || null)}
+                className="w-full sm:w-auto rounded-xl border border-surface-border bg-white px-3 py-2 text-xs font-semibold text-slate-800"
+              >
+                {buses.map(bus => <option key={bus.id} value={bus.id}>{bus.name}</option>)}
+              </select>
+            )}
 
             {/* Travel Confirmation CTA */}
             {!activeJourneySessionId && selectedBus && (
@@ -185,7 +218,15 @@ export const RouteDetailModal: React.FC<RouteDetailModalProps> = ({
                 <span>Travelling on this bus?</span>
               </button>
             )}
-            {!selectedBus && <p className="text-[11px] text-slate-500">{t('tracking_not_available')}</p>}
+            {activeJourneySessionId && (
+              <button
+                onClick={onStopTracking}
+                className="px-3.5 py-2 rounded-xl border border-rose-200 bg-rose-50 text-rose-800 font-semibold text-xs hover:bg-rose-100 transition shrink-0"
+              >
+                {t('stop_sharing')}
+              </button>
+            )}
+            {!selectedBus && !activeJourneySessionId && <p className="text-[11px] text-slate-500">{t('tracking_not_available')}</p>}
           </div>
 
           {/* Navigation Sub-Tabs */}
