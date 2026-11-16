@@ -22,6 +22,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: yatrabus-d1-production-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   validate:
     if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/feat/rajkot-rrl-gtfs-import')
@@ -37,6 +41,11 @@ jobs:
           set -euo pipefail
           python -m py_compile scripts/import-rrl-gtfs-to-d1.py
           python scripts/import-rrl-gtfs-to-d1.py --self-test
+      - name: Apply pending versioned D1 migrations before import
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx --yes wrangler@4 d1 migrations apply yatrabus-india-db --remote
       - name: Download and checksum-pin RRL community GTFS archive
         run: |
           set -euo pipefail
@@ -114,7 +123,7 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           set -euo pipefail
-          payload="$(jq -n --arg sql "SELECT (SELECT COUNT(*) FROM places WHERE source_dataset = 'RRL_RAJKOT_GTFS_2026_11_16') AS stops, (SELECT COUNT(*) FROM routes WHERE payload_json LIKE '%RRL_RAJKOT_GTFS_2026_11_16%') AS routes, (SELECT COUNT(*) FROM timetables WHERE payload_json LIKE '%RRL_RAJKOT_GTFS_2026_11_16%') AS trips, (SELECT COUNT(*) FROM buses WHERE payload_json LIKE '%RRL_RAJKOT_GTFS_2026_11_16%') AS vehicles, (SELECT COUNT(*) FROM timetables WHERE payload_json LIKE '%RRL_RAJKOT_GTFS_2026_11_16%' AND json_extract(payload_json, '$.fareInRupees') IS NOT NULL) AS invented_fares;" '{sql: $sql}')"
+          payload="$(jq -n --arg sql "SELECT (SELECT COUNT(*) FROM places WHERE source_dataset = 'RRL_RAJKOT_GTFS_2026_11_16') AS stops, (SELECT COUNT(*) FROM routes WHERE payload_json LIKE '%RRL_RAJKOT_GTFS_2026_11_16%') AS routes, (SELECT COUNT(*) FROM timetables WHERE payload_json LIKE '%RRL_RAJKOT_GTFS_2026_11_16%') AS trips, (SELECT COUNT(*) FROM route_stops WHERE route_id IN (SELECT id FROM routes WHERE payload_json LIKE '%RRL_RAJKOT_GTFS_2026_11_16%')) AS route_stops, (SELECT COUNT(*) FROM buses WHERE payload_json LIKE '%RRL_RAJKOT_GTFS_2026_11_16%') AS vehicles, (SELECT COUNT(*) FROM timetables WHERE payload_json LIKE '%RRL_RAJKOT_GTFS_2026_11_16%' AND json_extract(payload_json, '$.fareInRupees') IS NOT NULL) AS invented_fares;" '{sql: $sql}')"
           response="$(curl --fail --silent --show-error \
             --request POST \
             "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/d1/database/ad817522-9239-4574-8b23-17b8d45d756e/query" \
@@ -125,10 +134,11 @@ jobs:
           stops="$(printf '%s' "$response" | jq -er '.result[0].results[0].stops')"
           routes="$(printf '%s' "$response" | jq -er '.result[0].results[0].routes')"
           trips="$(printf '%s' "$response" | jq -er '.result[0].results[0].trips')"
+          route_stops="$(printf '%s' "$response" | jq -er '.result[0].results[0].route_stops')"
           vehicles="$(printf '%s' "$response" | jq -er '.result[0].results[0].vehicles')"
           fares="$(printf '%s' "$response" | jq -er '.result[0].results[0].invented_fares')"
-          if [ "$stops" -lt 10 ] || [ "$routes" -lt 1 ] || [ "$trips" -lt 10 ] || [ "$vehicles" -ne 0 ] || [ "$fares" -ne 0 ]; then
-            echo "::error::RRL D1 verification failed: stops=$stops routes=$routes trips=$trips vehicles=$vehicles fares=$fares"
+          if [ "$stops" -lt 10 ] || [ "$routes" -lt 1 ] || [ "$trips" -lt 10 ] || [ "$route_stops" -lt 100 ] || [ "$vehicles" -ne 0 ] || [ "$fares" -ne 0 ]; then
+            echo "::error::RRL D1 verification failed: stops=$stops routes=$routes trips=$trips route_stops=$route_stops vehicles=$vehicles fares=$fares"
             exit 1
           fi
-          echo "Verified Rajkot RRL feed: $stops stops, $routes route patterns, $trips scheduled trips; no individual vehicles or fares invented."
+          echo "Verified Rajkot RRL feed: $stops stops, $routes route patterns, $trips scheduled trips and $route_stops indexed stop positions; no individual vehicles or fares invented."
