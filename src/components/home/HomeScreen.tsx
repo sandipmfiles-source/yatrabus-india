@@ -181,10 +181,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             <span>India Bus Travel Directory</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-            Find Bus Routes Across India
+            {t('home_tagline')}
           </h1>
           <p className="text-xs sm:text-sm text-brand-100 mt-2">
-            No mandatory login. Search Indian locations; verified schedules and live bus locations appear only when trusted data is available.
+            {t('home_coverage_notice')}
           </p>
         </div>
       </div>

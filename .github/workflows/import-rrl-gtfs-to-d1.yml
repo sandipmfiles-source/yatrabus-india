@@ -1,0 +1,134 @@
+name: Import Rajkot RRL GTFS into Cloudflare D1
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/import-rrl-gtfs-to-d1.py'
+      - '.github/workflows/import-rrl-gtfs-to-d1.yml'
+      - 'docs/TRANSIT_DATA_COVERAGE.md'
+  push:
+    branches: [main, feat/rajkot-rrl-gtfs-import]
+    paths:
+      - 'scripts/import-rrl-gtfs-to-d1.py'
+      - '.github/workflows/import-rrl-gtfs-to-d1.yml'
+  workflow_dispatch:
+    inputs:
+      confirm_production:
+        description: 'Confirm append-only import of the pinned Rajkot community GTFS snapshot into production D1'
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/feat/rajkot-rrl-gtfs-import')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Validate importer and synthetic GTFS fixture
+        run: |
+          set -euo pipefail
+          python -m py_compile scripts/import-rrl-gtfs-to-d1.py
+          python scripts/import-rrl-gtfs-to-d1.py --self-test
+      - name: Download and checksum-pin RRL community GTFS archive
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/rrl
+          curl --fail --location --retry 3 --retry-all-errors \
+            'https://raw.githubusercontent.com/croyla/rrl-gtfs/3937952038f7fa052a019418d064991cfa14a2fe/gtfs_compat.zip' \
+            --output /tmp/rrl/gtfs.zip
+          actual="$(git hash-object /tmp/rrl/gtfs.zip)"
+          expected='46120d883177efd6be81e8e95a69d5d7136084c9'
+          if [ "$actual" != "$expected" ]; then
+            echo "::error::Pinned RRL GTFS archive hash mismatch."
+            exit 1
+          fi
+          python scripts/import-rrl-gtfs-to-d1.py --input /tmp/rrl/gtfs.zip --output-dir /tmp/rrl/sql
+          python - <<'PY'
+          import json
+          m=json.load(open('/tmp/rrl/sql/manifest.json'))
+          assert m['stopCount'] >= 10, m
+          assert m['routePatternCount'] >= 1, m
+          assert m['tripCount'] >= 10, m
+          assert m['liveGpsIncluded'] is False and m['fareDataIncluded'] is False and m['vehicleRecordsCreated'] == 0
+          print(json.dumps(m, indent=2))
+          PY
+      - name: Run app tests and production build
+        run: |
+          set -euo pipefail
+          npm ci
+          npm test
+          npm run build
+
+  import:
+    if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'workflow_dispatch' && inputs.confirm_production == true && github.ref == 'refs/heads/main')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Verify Cloudflare credentials
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          test -n "$CLOUDFLARE_API_TOKEN"
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+      - name: Download and checksum-pin RRL community GTFS archive
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/rrl
+          curl --fail --location --retry 3 --retry-all-errors \
+            'https://raw.githubusercontent.com/croyla/rrl-gtfs/3937952038f7fa052a019418d064991cfa14a2fe/gtfs_compat.zip' \
+            --output /tmp/rrl/gtfs.zip
+          actual="$(git hash-object /tmp/rrl/gtfs.zip)"
+          expected='46120d883177efd6be81e8e95a69d5d7136084c9'
+          if [ "$actual" != "$expected" ]; then
+            echo "::error::Pinned RRL GTFS archive hash mismatch."
+            exit 1
+          fi
+          python scripts/import-rrl-gtfs-to-d1.py --input /tmp/rrl/gtfs.zip --output-dir /tmp/rrl/sql
+      - name: Import RRL stops, routes and timetable rows (append-only)
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          for file in /tmp/rrl/sql/rrl-*.sql; do
+            echo "Applying $(basename "$file")"
+            npx --yes wrangler@4 d1 execute yatrabus-india-db --remote --yes --file="$file"
+          done
+      - name: Verify Rajkot records and ensure no invented vehicles or fares
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          payload="$(jq -n --arg sql "SELECT (SELECT COUNT(*) FROM places WHERE source_dataset = 'RRL_RAJKOT_GTFS_2026_11_16') AS stops, (SELECT COUNT(*) FROM routes WHERE payload_json LIKE '%RRL_RAJKOT_GTFS_2026_11_16%') AS routes, (SELECT COUNT(*) FROM timetables WHERE payload_json LIKE '%RRL_RAJKOT_GTFS_2026_11_16%') AS trips, (SELECT COUNT(*) FROM buses WHERE payload_json LIKE '%RRL_RAJKOT_GTFS_2026_11_16%') AS vehicles, (SELECT COUNT(*) FROM timetables WHERE payload_json LIKE '%RRL_RAJKOT_GTFS_2026_11_16%' AND json_extract(payload_json, '$.fareInRupees') IS NOT NULL) AS invented_fares;" '{sql: $sql}')"
+          response="$(curl --fail --silent --show-error \
+            --request POST \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/d1/database/ad817522-9239-4574-8b23-17b8d45d756e/query" \
+            --header "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            --header "Content-Type: application/json" \
+            --data "$payload")"
+          printf '%s' "$response" | jq -e '.success == true' >/dev/null
+          stops="$(printf '%s' "$response" | jq -er '.result[0].results[0].stops')"
+          routes="$(printf '%s' "$response" | jq -er '.result[0].results[0].routes')"
+          trips="$(printf '%s' "$response" | jq -er '.result[0].results[0].trips')"
+          vehicles="$(printf '%s' "$response" | jq -er '.result[0].results[0].vehicles')"
+          fares="$(printf '%s' "$response" | jq -er '.result[0].results[0].invented_fares')"
+          if [ "$stops" -lt 10 ] || [ "$routes" -lt 1 ] || [ "$trips" -lt 10 ] || [ "$vehicles" -ne 0 ] || [ "$fares" -ne 0 ]; then
+            echo "::error::RRL D1 verification failed: stops=$stops routes=$routes trips=$trips vehicles=$vehicles fares=$fares"
+            exit 1
+          fi
+          echo "Verified Rajkot RRL feed: $stops stops, $routes route patterns, $trips scheduled trips; no individual vehicles or fares invented."
