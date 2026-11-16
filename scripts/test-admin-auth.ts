@@ -1,21 +1,20 @@
 import assert from "node:assert/strict";
-import { randomBytes, scryptSync } from "node:crypto";
+import { createHmac, randomBytes } from "node:crypto";
 import {
   adminIsConfigured, constantTimeEmailMatch, createAdminToken,
   readAdminSession, tokenHash, verifyAdminPassword
 } from "../functions/_lib/adminAuth";
 
 // Test-only fixture; never reused for a production administrator account.
-const password = "test-only-admin-password";
-const salt = randomBytes(16).toString("hex");
-const encodedHash = salt + ":" + scryptSync(password, salt, 64).toString("hex");
+const password = randomBytes(32).toString("base64url");
 const secret = randomBytes(48).toString("base64url");
+const encodedHash = "hmac-sha256:" + createHmac("sha256", secret).update(password).digest("hex");
 const env = { ADMIN_EMAIL: "owner@example.com", ADMIN_PASSWORD_HASH: encodedHash, ADMIN_JWT_SECRET: secret };
 
 assert.equal(adminIsConfigured(env), true);
 assert.equal(adminIsConfigured({ ADMIN_EMAIL: "owner@example.com" }), false);
-assert.equal(verifyAdminPassword(password, encodedHash), true);
-assert.equal(verifyAdminPassword("wrong-password", encodedHash), false);
+assert.equal(verifyAdminPassword(password, encodedHash, secret), true);
+assert.equal(verifyAdminPassword("wrong-password", encodedHash, secret), false);
 assert.equal(constantTimeEmailMatch("OWNER@example.com", "owner@example.com"), true);
 assert.equal(constantTimeEmailMatch("other@example.com", "owner@example.com"), false);
 
