@@ -88,7 +88,7 @@ def operating_days(service_id, calendars, exceptions):
             except ValueError: pass
     return [label for _,label in DAY_FIELDS if label in days]
 
-def build(zip_path,out_dir):
+def build(zip_path,out_dir,test_mode=False):
     with zipfile.ZipFile(zip_path) as z:
         agencies=read_csv(z,"agency.txt",True); routes=read_csv(z,"routes.txt",True)
         stops=read_csv(z,"stops.txt",True); trips=read_csv(z,"trips.txt",True)
@@ -169,7 +169,7 @@ def build(zip_path,out_dir):
         if current_departure > patterns[key]["lastDepartureTime"]: patterns[key]["lastDepartureTime"]=current_departure
         patterns[key]["operatingDays"]=sorted(set(patterns[key]["operatingDays"])|set(days),
             key=lambda d:next(i for i,(_,label) in enumerate(DAY_FIELDS) if label==d))
-    if len(timetable_rows)<1000 or len(patterns)<10: raise ValueError("Unexpectedly few current trips or route patterns")
+    if not test_mode and (len(timetable_rows)<1000 or len(patterns)<10): raise ValueError("Unexpectedly few current trips or route patterns")
     out_dir.mkdir(parents=True,exist_ok=True); statements=[]
     op={"id":"op-tgsrtc","name":agency_name,"shortCode":"TGSRTC","state":STATE,"serviceArea":"Telangana",
         "isGovernment":True,"verificationStatus":"published_unverified","sourceDataset":DATASET,
@@ -221,10 +221,10 @@ def self_test():
         root=Path(td); zpath=root/"test.zip"
         with zipfile.ZipFile(zpath,"w") as z:
             for name,data in sample.items(): z.writestr(name,data)
-        result=build(zpath,root/"out")
+        result=build(zpath,root/"out",test_mode=True)
         assert result["stopCount"]==2 and result["routePatternCount"]==1 and result["tripCount"]==1
         sqls="\n".join(p.read_text() for p in (root/"out").glob("*.sql"))
-        assert "INSERT OR IGNORE INTO timetables" in sqls and "'fareInRupees':" not in sqls
+        assert "INSERT OR IGNORE INTO timetables" in sqls and '"fareInRupees":null' in sqls
     print("TGSRTC GTFS importer self-test passed.")
 
 if __name__=="__main__":
