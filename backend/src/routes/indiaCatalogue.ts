@@ -11,6 +11,7 @@ indiaCatalogueRouter.get('/', (_req, res) => {
   const unionTerritories = INDIA_ADMINISTRATIVE_UNITS.filter(unit => unit.kind === 'UNION_TERRITORY');
   const pilotTowns = INDIA_ADMIN_AREA_PLACES.filter(place => place.id.startsWith('wb-pilot-town-'));
   const pilotTerminals = INDIA_ADMIN_AREA_PLACES.filter(place => place.id.startsWith('wb-pilot-terminal-'));
+  const westBengalDirectoryTerminals = INDIA_ADMIN_AREA_PLACES.filter(place => place.id.startsWith('wb-directory-terminal-'));
 
   res.setHeader('Cache-Control', 'public, max-age=3600, stale-while-revalidate=86400');
   return res.json({
@@ -22,6 +23,7 @@ indiaCatalogueRouter.get('/', (_req, res) => {
       governmentOperatorDirectoryEntries: INDIA_GOVERNMENT_OPERATORS.length,
       pilotTownIndexEntries: pilotTowns.length,
       pilotTerminalIndexEntries: pilotTerminals.length,
+      westBengalDirectoryTerminalEntries: westBengalDirectoryTerminals.length,
       lgdIndexRecords: LGD_INDEX_METADATA.totalRecords,
       lgdUrbanLocalBodies: LGD_INDEX_METADATA.urbanLocalBodies,
       lgdSnapshotDate: LGD_INDEX_METADATA.snapshotDate,
@@ -45,7 +47,7 @@ indiaCatalogueRouter.get('/', (_req, res) => {
     pilotCorridor: {
       name: 'Jhargram – Kharagpur – Kolkata',
       state: 'West Bengal',
-      terminals: pilotTerminals.map(place => ({
+      terminals: [...pilotTerminals, ...westBengalDirectoryTerminals].map(place => ({
         id: place.id, name: place.canonicalName, district: place.district,
         sourceUrl: place.sourceUrl, sourceSnapshotDate: place.sourceSnapshotDate,
         verificationStatus: place.verificationStatus,
