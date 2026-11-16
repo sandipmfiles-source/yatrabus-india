@@ -25,6 +25,15 @@ required_timetable_columns = {"service_start_date", "service_end_date", "service
 missing_calendar_columns = required_timetable_columns - timetable_columns
 if missing_calendar_columns:
     raise SystemExit(f"Missing timetable calendar columns: {', '.join(sorted(missing_calendar_columns))}")
+location_indexes = {row[1] for row in db.execute("PRAGMA index_list('location_observations')")}
+journey_indexes = {row[1] for row in db.execute("PRAGMA index_list('journey_sessions')")}
+required_gps_indexes = {
+    "idx_location_session_observed", "idx_location_route_observed",
+    "idx_journey_route_status", "idx_journey_status_started",
+}
+missing_gps_indexes = required_gps_indexes - location_indexes - journey_indexes
+if missing_gps_indexes:
+    raise SystemExit(f"Missing consented GPS indexes: {', '.join(sorted(missing_gps_indexes))}")
 
 db.execute(
     "INSERT INTO places (id, canonical_name, place_type, state, district, payload_json) "
@@ -49,4 +58,4 @@ db.execute(
 if db.execute("PRAGMA foreign_key_check").fetchall():
     raise SystemExit("D1 migration has foreign-key violations")
 
-print(f"D1 migrations OK: {len(migration_files)} files, {len(required)} required tables and {len(required_timetable_columns)} timetable calendar columns; place search and security table smoke tests passed.")
+print(f"D1 migrations OK: {len(migration_files)} files, {len(required)} required tables, {len(required_timetable_columns)} timetable calendar columns and {len(required_gps_indexes)} consented GPS indexes; place search and security table smoke tests passed.")
