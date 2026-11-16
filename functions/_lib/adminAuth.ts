@@ -11,9 +11,13 @@ export interface AdminSessionPayload {
 }
 
 export function adminIsConfigured(env: PagesEnv): boolean {
+  const [salt, digest, extra] = (env.ADMIN_PASSWORD_HASH || "").split(":");
   return Boolean(
     env.ADMIN_EMAIL?.trim() &&
-    env.ADMIN_PASSWORD_HASH?.trim() &&
+    salt &&
+    digest &&
+    extra === undefined &&
+    /^[a-f0-9]{128}$/i.test(digest) &&
     (env.ADMIN_JWT_SECRET || "").length >= 32
   );
 }
