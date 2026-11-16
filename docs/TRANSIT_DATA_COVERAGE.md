@@ -24,7 +24,7 @@ This document separates administrative location data from real public-transport 
 - The importer does not invent fares, individual buses or live GPS positions. Fare and vehicle data remain unavailable unless a trusted source supplies them.
 - D1 import is append-only and verifies stop, route, timetable and normalized route-stop counts after import.
 
-The CI workflow prints the actual counts from the pinned archive. Production D1 counts are reported only after the import workflow completes successfully.
+The CI workflow prints the actual counts from the pinned archive. Production counts above are from the successful post-import D1 verification, not estimates.
 
 ### Telangana TGSRTC
 
