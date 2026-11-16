@@ -68,4 +68,4 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           set -euo pipefail
-          npx --yes wrangler@4 d1 execute yatrabus-india-db --remote --yes --command="SELECT name FROM sqlite_master WHERE type = 'table' AND name IN ('places','operators','buses','routes','timetables','journey_sessions','location_observations','community_submissions','audit_logs','automation_rules','schema_migrations','admin_sessions','admin_login_attempts','operator_claims','service_alerts') ORDER BY name;"
+          npx --yes wrangler@4 d1 execute yatrabus-india-db --remote --yes --command="SELECT name FROM sqlite_master WHERE type = 'table' AND name IN ('places','operators','buses','routes','timetables','journey_sessions','location_observations','community_submissions','audit_logs','automation_rules','schema_migrations','admin_sessions','admin_login_attempts','operator_claims','service_alerts','public_rate_limits') ORDER BY name;"
