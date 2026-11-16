@@ -5,6 +5,7 @@ import {
   readAdminSession, tokenHash, verifyAdminPassword
 } from "../functions/_lib/adminAuth";
 
+// Test-only fixture; never reused for a production administrator account.
 const password = "test-only-admin-password";
 const salt = randomBytes(16).toString("hex");
 const encodedHash = salt + ":" + scryptSync(password, salt, 64).toString("hex");
