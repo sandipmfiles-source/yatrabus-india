@@ -33,3 +33,28 @@ jobs:
           python3 scripts/validate-d1-migration.py
           node --check scripts/import-india-lgd-to-d1.mjs
           node scripts/import-india-lgd-to-d1.mjs --self-test
+
+      - name: Dry-run pinned TGSRTC GTFS feed (feed-import PR only)
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.ref == 'feat/tgsrtc-gtfs-import'
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/tgsrtc
+          if ! curl --fail --location --retry 2 --retry-all-errors \
+            --user-agent 'Mozilla/5.0 (compatible; YatraBusIndiaDataImporter/1.0)' \
+            --referer 'https://data.opencity.in/dataset/hyderabad-bus-stops' \
+            'https://data.opencity.in/dataset/88e2d145-7ec6-4666-88dd-6cf18b18312e/resource/1b0d18bb-b2fb-4a79-8ed0-1e071da5790c/download/telangana_opendata_gtfs_tgsrtc_08_february_2026.zip' \
+            --output /tmp/tgsrtc/tgsrtc.zip; then
+            echo 'Producer URL denied automated access; trying the MobilityData mirror.'
+            curl --fail --location --retry 2 --retry-all-errors \
+              'https://storage.googleapis.com/mdb-latest/in-hyderabad-bus-gtfs-3361.zip' \
+              --output /tmp/tgsrtc/tgsrtc.zip
+          fi
+          echo '4c4b332dd8a42c9727233733d839e0c14dc58a3c  /tmp/tgsrtc/tgsrtc.zip' | sha1sum --check -
+          python3 -m py_compile scripts/import-tgsrtc-gtfs-to-d1.py
+          python3 scripts/import-tgsrtc-gtfs-to-d1.py --input /tmp/tgsrtc/tgsrtc.zip --output-dir /tmp/tgsrtc/sql
+          python3 - <<'PY'
+          import json
+          m=json.load(open('/tmp/tgsrtc/sql/manifest.json'))
+          assert m['stopCount'] >= 1000 and m['routePatternCount'] >= 100 and m['tripCount'] >= 10000, m
+          print(json.dumps(m, indent=2))
+          PY
