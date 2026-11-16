@@ -99,6 +99,7 @@ You do **not** need Android Studio installed locally. The repository includes an
 - **[Privacy & Data Minimization](docs/PRIVACY.md)**: Consent lifecycle, 12-hour session limits, and bus-level anonymization.
 - **[Production Deployment (₹0 Tier)](docs/DEPLOYMENT.md)**: Setup guide for Supabase/Neon PostgreSQL and hosting.
 - **[Milestone Verification Report](docs/MILESTONE_REPORT.md)**: Audit checklist of completed requirements.
+- **[West Bengal Bus Directory](data/WEST_BENGAL_BUS_DIRECTORY.md)**: Source-attributed WB operators, 54 depot references, and 67 district-wise terminal references with Bengali aliases and explicit verification status.
 
 ---
 
