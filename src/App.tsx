@@ -72,7 +72,13 @@ export const App: React.FC = () => {
         (position, error) => {
           if (cancelled) return;
           if (error) {
-            setTrackingError(error.message || t('gps_sharing_failed'));
+            setTrackingError(error.code === 1 ? t('gps_permission_denied') : (error.message || t('gps_sharing_failed')));
+            if (error.code === 1) {
+              void ApiClient.stopJourneySession(activeSessionId).catch(() => undefined);
+              setActiveSessionId(null);
+              setActiveBusId(null);
+              setActiveRouteId(null);
+            }
             return;
           }
           if (!position) return;
@@ -106,7 +112,13 @@ export const App: React.FC = () => {
           watchId = id;
         }
       }).catch(() => {
-        if (!cancelled) setTrackingError(t('gps_sharing_failed'));
+        if (!cancelled) {
+          setTrackingError(t('gps_sharing_failed'));
+          void ApiClient.stopJourneySession(activeSessionId).catch(() => undefined);
+          setActiveSessionId(null);
+          setActiveBusId(null);
+          setActiveRouteId(null);
+        }
       });
     }
 
