@@ -244,12 +244,15 @@ def build(zip_path,out_dir,test_mode=False):
             f"({sql(place_id)},{sql(stop['stop_name'].strip())},'bus_stop',{sql(STATE)},{sql(DISTRICT)},{sql(stop['_lat'])},{sql(stop['_lon'])},{sql(DATASET)},'published_unverified',{sql(SNAPSHOT_DATE)},'[]',{sql(js(place))});")
     for route in patterns.values():
         route.pop("durationSamples",None)
-        statements.append("INSERT OR IGNORE INTO routes (id,name,origin_place_id,destination_place_id,status,stops_json,payload_json) VALUES "
-            f"({sql(route['id'])},{sql(route['name'])},{sql(route['originPlaceId'])},{sql(route['destinationPlaceId'])},'active',{sql(js(route['stops']))},{sql(js(route))});")
+        statements.append("INSERT INTO routes (id,name,origin_place_id,destination_place_id,status,stops_json,payload_json) VALUES "
+            f"({sql(route['id'])},{sql(route['name'])},{sql(route['originPlaceId'])},{sql(route['destinationPlaceId'])},'active',{sql(js(route['stops']))},{sql(js(route))}) "
+            "ON CONFLICT(id) DO UPDATE SET stops_json=excluded.stops_json,"
+            "payload_json=json_set(routes.payload_json,'$.operatingDays',json(json_extract(excluded.payload_json,'$.operatingDays')),'$.firstDepartureTime',json_extract(excluded.payload_json,'$.firstDepartureTime'),'$.lastDepartureTime',json_extract(excluded.payload_json,'$.lastDepartureTime'),'$.frequencyMinutes',json_extract(excluded.payload_json,'$.frequencyMinutes'));")
     for route in patterns.values():
         for stop in route["stops"]:
-            statements.append("INSERT OR IGNORE INTO route_stops (route_id,stop_id,stop_sequence,stop_name,arrival_offset_minutes,departure_offset_minutes) VALUES "
-                f"({sql(route['id'])},{sql(stop['stopId'])},{sql(stop['stopSequence'])},{sql(stop['stopName'])},{sql(stop['arrivalOffsetMinutes'])},{sql(stop['departureOffsetMinutes'])});")
+            statements.append("INSERT INTO route_stops (route_id,stop_id,stop_sequence,stop_name,arrival_offset_minutes,departure_offset_minutes) VALUES "
+                f"({sql(route['id'])},{sql(stop['stopId'])},{sql(stop['stopSequence'])},{sql(stop['stopName'])},{sql(stop['arrivalOffsetMinutes'])},{sql(stop['departureOffsetMinutes'])}) "
+                "ON CONFLICT(route_id,stop_sequence) DO UPDATE SET stop_id=excluded.stop_id,stop_name=excluded.stop_name,arrival_offset_minutes=excluded.arrival_offset_minutes,departure_offset_minutes=excluded.departure_offset_minutes;")
     for timetable in timetable_rows:
         statements.append("INSERT INTO timetables (id,route_id,departure_time,service_days_json,service_start_date,service_end_date,service_exceptions_json,payload_json) VALUES "
             f"({sql(timetable['id'])},{sql(timetable['routeId'])},{sql(timetable['departureTime'])},{sql(js(timetable['operatingDays']))},{sql(timetable['serviceStartDate'])},{sql(timetable['serviceEndDate'])},{sql(js(timetable['serviceExceptions']))},{sql(js(timetable))}) "
@@ -296,7 +299,7 @@ def self_test():
         base_days=service_days("WK",{"WK":{"monday":"1","tuesday":"1","wednesday":"1","thursday":"1","friday":"1","saturday":"0","sunday":"0"}},{"WK":[]})
         assert base_days==["Mon","Tue","Wed","Thu","Fri"]
         sqls="\n".join(p.read_text() for p in (root/"out").glob("*.sql"))
-        assert "INSERT OR IGNORE INTO route_stops" in sqls and "service_start_date" in sqls and "ON CONFLICT(id) DO UPDATE" in sqls
+        assert "INSERT INTO route_stops" in sqls and "ON CONFLICT(route_id,stop_sequence) DO UPDATE" in sqls and "service_start_date" in sqls and "ON CONFLICT(id) DO UPDATE" in sqls
         assert "2026-01-01" in sqls and "2030-12-31" in sqls and "2026-11-17" in sqls and "2026-11-22" in sqls
         assert '"fareInRupees":null' in sqls
     print("RRL Rajkot GTFS importer self-test passed.")
