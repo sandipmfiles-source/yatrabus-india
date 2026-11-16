@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Import the pinned RRL Rajkot GTFS schedule into Cloudflare D1 (append-only)."""
+"""Import the pinned RRL GTFS feed; append route data and enrich timetable calendars idempotently."""
 from __future__ import annotations
 import argparse, csv, hashlib, io, json, math, re, zipfile
 from collections import defaultdict
@@ -35,6 +35,15 @@ def hhmm(value):
     parse_time(value)
     h,m,_=map(int,value.split(":"))
     return f"{h:02d}:{m:02d}"
+
+def iso_gtfs_date(value):
+    raw=str(value or "").strip()
+    if not re.fullmatch(r"\\d{8}",raw): return None
+    try:
+        date(int(raw[:4]),int(raw[4:6]),int(raw[6:8]))
+        return f"{raw[:4]}-{raw[4:6]}-{raw[6:8]}"
+    except ValueError:
+        return None
 
 def num(value,field):
     try: result=float(value)
@@ -77,17 +86,10 @@ def service_is_current(service,exceptions,today):
         except ValueError: pass
     return False
 
-def service_days(service_id,calendars,exceptions):
+def service_days(service_id,calendars,exceptions=None):
+    # Weekly days are kept separate from date-specific additions/removals.
     row=calendars.get(service_id,{})
     days={label for field,label in DAY_FIELDS if row.get(field)=="1"}
-    for ex in exceptions.get(service_id,[]):
-        if ex.get("exception_type")!="1": continue
-        raw=ex.get("date","")
-        try:
-            d=date(int(raw[:4]),int(raw[4:6]),int(raw[6:8]))
-            if date.today()<=d<=date.today()+timedelta(days=365):
-                days.add(DAY_FIELDS[d.weekday()][1])
-        except ValueError: pass
     return [label for _,label in DAY_FIELDS if label in days]
 
 def build(zip_path,out_dir,test_mode=False):
@@ -179,12 +181,24 @@ def build(zip_path,out_dir,test_mode=False):
                 "polyline":[[r["latitude"],r["longitude"]] for r in stops_out],"stops":stops_out
             }
         days=service_days(service_id,calendars,exceptions)
+        service=calendars.get(service_id,{})
+        service_exceptions=[]
+        for exception in exceptions.get(service_id,[]):
+            exception_date=iso_gtfs_date(exception.get("date"))
+            try: exception_type=int(exception.get("exception_type","0"))
+            except (TypeError,ValueError): continue
+            if exception_date and exception_type in (1,2):
+                service_exceptions.append({"date":exception_date,"exceptionType":exception_type})
+        service_exceptions.sort(key=lambda item:(item["date"],item["exceptionType"]))
         departure=hhmm(seq[0].get("departure_time") or seq[0].get("arrival_time") or "")
         arrival=hhmm(seq[-1].get("arrival_time") or seq[-1].get("departure_time") or "")
         timetable_rows.append({
             "id":sid("tt-rrl",route_id,digest,trip_id),"routeId":route_out_id,
             "tripCode":trip_id,"departureTime":departure,"arrivalTime":arrival,
             "operatingDays":days,"serviceId":service_id,
+            "serviceStartDate":iso_gtfs_date(service.get("start_date")),
+            "serviceEndDate":iso_gtfs_date(service.get("end_date")),
+            "serviceExceptions":service_exceptions,
             "headsign":(trip.get("trip_headsign") or "").strip() or None,
             "directionId":trip.get("direction_id") or None,"vehicleType":None,"fareInRupees":None,
             "isConfirmed":False,"verificationStatus":"published_unverified","version":1,
@@ -237,8 +251,10 @@ def build(zip_path,out_dir,test_mode=False):
             statements.append("INSERT OR IGNORE INTO route_stops (route_id,stop_id,stop_sequence,stop_name,arrival_offset_minutes,departure_offset_minutes) VALUES "
                 f"({sql(route['id'])},{sql(stop['stopId'])},{sql(stop['stopSequence'])},{sql(stop['stopName'])},{sql(stop['arrivalOffsetMinutes'])},{sql(stop['departureOffsetMinutes'])});")
     for timetable in timetable_rows:
-        statements.append("INSERT OR IGNORE INTO timetables (id,route_id,departure_time,service_days_json,payload_json) VALUES "
-            f"({sql(timetable['id'])},{sql(timetable['routeId'])},{sql(timetable['departureTime'])},{sql(js(timetable['operatingDays']))},{sql(js(timetable))});")
+        statements.append("INSERT INTO timetables (id,route_id,departure_time,service_days_json,service_start_date,service_end_date,service_exceptions_json,payload_json) VALUES "
+            f"({sql(timetable['id'])},{sql(timetable['routeId'])},{sql(timetable['departureTime'])},{sql(js(timetable['operatingDays']))},{sql(timetable['serviceStartDate'])},{sql(timetable['serviceEndDate'])},{sql(js(timetable['serviceExceptions']))},{sql(js(timetable))}) "
+            "ON CONFLICT(id) DO UPDATE SET service_days_json=excluded.service_days_json,service_start_date=excluded.service_start_date,service_end_date=excluded.service_end_date,service_exceptions_json=excluded.service_exceptions_json,"
+            "payload_json=json_set(timetables.payload_json,'$.operatingDays',json(excluded.service_days_json),'$.serviceStartDate',excluded.service_start_date,'$.serviceEndDate',excluded.service_end_date,'$.serviceExceptions',json(excluded.service_exceptions_json));")
     files=[]; batch=[]; size=0; index=0
     for statement in statements:
         n=len(statement.encode("utf-8"))+1
