@@ -38,6 +38,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
   const [loading, setLoading] = useState(true);
   const [reviewRemarks, setReviewRemarks] = useState('');
   const [selectedSubId, setSelectedSubId] = useState<string | null>(null);
+  const [claimActionError, setClaimActionError] = useState('');
 
   const loadData = async () => {
     setLoading(true);
@@ -75,6 +76,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
     } catch (err) {
       console.error('Review error:', err);
     }
+  };
+
+  const handleReviewClaim = async (id: string, action: 'approved' | 'rejected') => {
+    setClaimActionError('');
+    const result = await ApiClient.reviewOperatorClaim(id, action);
+    if (!result.success) {
+      setClaimActionError(result.error || 'Operator claim could not be reviewed.');
+      return;
+    }
+    loadData();
   };
 
   const handleUpdateRule = async (ruleId: string, currentVal: any, isEnabled: boolean) => {
@@ -304,6 +315,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
             <span className="text-xs text-slate-500">Official verification queue</span>
           </div>
 
+          {claimActionError && <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700">{claimActionError}</div>}
           {claims.length === 0 ? (
             <div className="p-8 text-center bg-white rounded-3xl border border-surface-border text-slate-500 text-xs">
               No operator claims currently submitted.
@@ -337,6 +349,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
 
                   {claim.supportingDocumentsNote && (
                     <p className="text-slate-600 italic">Notes: "{claim.supportingDocumentsNote}"</p>
+                  )}
+                  {claim.status === 'pending_review' && (
+                    <div className="flex gap-2 pt-2">
+                      <button onClick={() => handleReviewClaim(claim.id, 'approved')} className="px-3 py-2 rounded-xl bg-emerald-700 text-white text-xs font-semibold">Approve ownership</button>
+                      <button onClick={() => handleReviewClaim(claim.id, 'rejected')} className="px-3 py-2 rounded-xl bg-red-600 text-white text-xs font-semibold">Reject claim</button>
+                    </div>
                   )}
                 </div>
               ))}
