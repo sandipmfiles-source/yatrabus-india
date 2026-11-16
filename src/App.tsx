@@ -344,6 +344,14 @@ export const App: React.FC = () => {
 
       {/* Offline Connectivity Notification Banner */}
       <OfflineBanner />
+      {trackingError && (
+        <div role="alert" className="max-w-6xl w-full mx-auto px-4 sm:px-6 pt-3">
+          <div className="flex items-center justify-between gap-3 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-900">
+            <span>{trackingError}</span>
+            <button onClick={() => setTrackingError('')} aria-label="Dismiss" className="shrink-0"><X className="w-4 h-4" /></button>
+          </div>
+        </div>
+      )}
 
       {/* Main View Container */}
       <main className="flex-1 pb-16 md:pb-0">
