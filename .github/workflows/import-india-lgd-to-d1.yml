@@ -5,6 +5,13 @@ on:
     paths:
       - 'scripts/import-india-lgd-to-d1.mjs'
       - '.github/workflows/import-india-lgd-to-d1.yml'
+      - 'src/components/home/HomeScreen.tsx'
+      - 'src/types/index.ts'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/import-india-lgd-to-d1.mjs'
+      - '.github/workflows/import-india-lgd-to-d1.yml'
   workflow_dispatch:
     inputs:
       confirm_production:
@@ -31,6 +38,21 @@ jobs:
           set -euo pipefail
           node --check scripts/import-india-lgd-to-d1.mjs
           node scripts/import-india-lgd-to-d1.mjs --self-test
+      - name: Dry-run the pinned full India LGD snapshot
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/yatrabus-lgd
+          curl --fail --location --retry 3 --retry-all-errors \
+            'https://raw.githubusercontent.com/sandipmfiles-source/yatrabus-india/1056c20c32457a1d3b8f7a7a124e574dc4d5c64b/backend/data/india-lgd-directory.json.gz' \
+            --output /tmp/yatrabus-lgd/india-lgd-directory.json.gz
+          gzip --test /tmp/yatrabus-lgd/india-lgd-directory.json.gz
+          actual="$(git hash-object /tmp/yatrabus-lgd/india-lgd-directory.json.gz)"
+          expected='b9c7719f7f4f0d84eff12e62d4078791f6b13e74'
+          test "$actual" = "$expected"
+          node scripts/import-india-lgd-to-d1.mjs \
+            --input /tmp/yatrabus-lgd/india-lgd-directory.json.gz \
+            --output-dir /tmp/yatrabus-lgd/dry-run
+          test -s /tmp/yatrabus-lgd/dry-run/manifest.json
       - name: Run application tests and production build
         run: |
           set -euo pipefail
@@ -39,7 +61,7 @@ jobs:
           npm run build
 
   import:
-    if: github.event_name == 'workflow_dispatch' && inputs.confirm_production == true && github.ref == 'refs/heads/main'
+    if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'workflow_dispatch' && inputs.confirm_production == true && github.ref == 'refs/heads/main')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
