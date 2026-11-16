@@ -1,4 +1,5 @@
 import type { Place } from '../../../packages/shared/src/types/places.js';
+import westBengalDirectory from '../../../data/west-bengal-bus-directory.json';
 import { INDIA_ADMINISTRATIVE_UNITS } from '../../../packages/shared/src/data/indiaCatalogue.js';
 
 const catalogueDate = '2026-11-03';
@@ -114,4 +115,42 @@ const pilotTerminalPlaces: Place[] = westBengalPilotTerminals.map((terminal, ind
   updatedAt: catalogueDate + 'T00:00:00.000Z',
 }));
 
-export const INDIA_ADMIN_AREA_PLACES: Place[] = [...administrativePlaces, ...pilotTownPlaces, ...pilotTerminalPlaces];
+
+
+/**
+ * Passenger-search entries from the source-attributed WB directory.
+ * Proposed records are excluded from ordinary autocomplete. Historical 2017
+ * entries remain UNVERIFIED and intentionally have no fabricated coordinates.
+ * Existing hand-curated pilot records win when the same terminal is already present.
+ */
+const existingTerminalKeys = new Set(
+  [...pilotTerminalPlaces.flatMap(place => [place.canonicalName, ...place.aliases])]
+    .map(name => name.toLocaleLowerCase('en-IN').replace(/[^\\p{L}\\p{N}]+/gu, ' ').trim())
+);
+const westBengalDirectoryPlaces: Place[] = westBengalDirectory.terminals
+  .filter(terminal => terminal.listingStatus !== 'PROPOSED_IN_SOURCE')
+  .filter(terminal => {
+    const names = [terminal.name, ...(terminal.aliases || [])];
+    return !names.some(name => existingTerminalKeys.has(
+      name.toLocaleLowerCase('en-IN').replace(/[^\\p{L}\\p{N}]+/gu, ' ').trim()
+    ));
+  })
+  .map((terminal, index) => ({
+    id: 'wb-directory-terminal-' + terminal.id.toLowerCase(),
+    canonicalName: terminal.name,
+    names: { en: terminal.name, bn: terminal.nameLocal || undefined },
+    placeType: 'BUS_TERMINAL',
+    district: terminal.district,
+    state: 'West Bengal',
+    sourceDataset: 'WEST_BENGAL_TRANSPORT_DEPARTMENT_BUS_TERMINALS',
+    sourceRecordId: terminal.id,
+    sourceLicense: 'Public government directory reference; source reuse terms require review',
+    sourceUrl: 'https://transport.wb.gov.in/infrastructure/bus-depots-terminals/',
+    sourceSnapshotDate: '2017-03-03',
+    verificationStatus: 'UNVERIFIED',
+    aliases: terminal.aliases || [],
+    createdAt: catalogueDate + 'T00:00:00.000Z',
+    updatedAt: catalogueDate + 'T00:00:00.000Z',
+  }));
+
+export const INDIA_ADMIN_AREA_PLACES: Place[] = [...administrativePlaces, ...pilotTownPlaces, ...pilotTerminalPlaces, ...westBengalDirectoryPlaces];
