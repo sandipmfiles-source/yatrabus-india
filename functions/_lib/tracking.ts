@@ -2,7 +2,7 @@ import { D1Database } from "./api";
 
 export async function getLatestConsentedBusLocation(db: D1Database, busId: string): Promise<any | null> {
   const row = await db.prepare(
-    "SELECT lo.latitude,lo.longitude,lo.accuracy,lo.speed,lo.heading,lo.observed_at,lo.route_id,js.id AS session_id,js.started_at,js.payload_json AS session_payload " +
+    "SELECT lo.id,lo.latitude,lo.longitude,lo.accuracy,lo.speed,lo.heading,lo.observed_at,lo.route_id,js.id AS session_id,js.started_at,js.payload_json AS session_payload " +
     "FROM location_observations lo JOIN journey_sessions js ON js.id = lo.session_id " +
     "WHERE lo.bus_id = ? AND js.status = 'active' AND js.consent_given = 1 " +
     "ORDER BY lo.observed_at DESC LIMIT 1"
@@ -30,6 +30,7 @@ export async function getLatestConsentedBusLocation(db: D1Database, busId: strin
   let observationPayload: any = {};
   const confidence = Number(row.accuracy) <= 25 ? "high" : "medium";
   return {
+    id: row.id,
     routeId: row.route_id,
     latitude: Number(row.latitude),
     longitude: Number(row.longitude),
@@ -37,9 +38,11 @@ export async function getLatestConsentedBusLocation(db: D1Database, busId: strin
     speedKmh: row.speed == null ? null : Number(row.speed),
     heading: row.heading == null ? null : Number(row.heading),
     observedAt: row.observed_at,
+    timestamp: row.observed_at,
     ageSeconds,
     isLive: ageSeconds <= 120,
     status: ageSeconds <= 120 ? "live" : "last_known",
+    trackingStatus: ageSeconds <= 120 ? "live_gps" : "last_known",
     confidence,
     source: "consented_community_device"
   };
