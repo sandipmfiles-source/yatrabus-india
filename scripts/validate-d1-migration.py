@@ -11,7 +11,7 @@ for migration_file in migration_files:
     db.executescript(migration_file.read_text(encoding="utf-8"))
 
 required = {
-    "places", "operators", "buses", "routes", "timetables",
+    "places", "operators", "buses", "routes", "route_stops", "timetables",
     "journey_sessions", "location_observations", "community_submissions",
     "audit_logs", "automation_rules", "schema_migrations",
     "admin_sessions", "admin_login_attempts", "operator_claims", "service_alerts", "public_rate_limits",
