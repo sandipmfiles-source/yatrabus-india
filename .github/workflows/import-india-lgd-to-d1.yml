@@ -23,6 +23,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: yatrabus-d1-production-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   validate:
     if: github.event_name == 'pull_request'
@@ -77,6 +81,11 @@ jobs:
           set -euo pipefail
           test -n "$CLOUDFLARE_API_TOKEN"
           test -n "$CLOUDFLARE_ACCOUNT_ID"
+      - name: Apply pending versioned D1 migrations before import
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx --yes wrangler@4 d1 migrations apply yatrabus-india-db --remote
       - name: Download pinned India LGD snapshot and verify its Git object hash
         run: |
           set -euo pipefail
