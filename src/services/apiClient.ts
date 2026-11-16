@@ -193,7 +193,11 @@ export class ApiClient {
   }
 
   public static async verifyAdminSession(): Promise<ApiResponse> {
-    return request('/api/v1/admin/session', { method: 'GET' });
+    const result = await request('/api/v1/admin/session', { method: 'GET' });
+    if (!result.success && typeof localStorage !== 'undefined') {
+      localStorage.removeItem('yatrabus_admin_token');
+    }
+    return result;
   }
 
   public static async adminLogout(): Promise<void> {
