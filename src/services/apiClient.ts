@@ -261,4 +261,11 @@ export class ApiClient {
     const q = status ? `?status=${encodeURIComponent(status)}` : '';
     return request(`/api/v1/admin/claims${q}`, { method: 'GET' });
   }
+
+  public static async reviewOperatorClaim(id: string, action: 'approved' | 'rejected', remarks?: string): Promise<ApiResponse> {
+    return request(`/api/v1/admin/claims/${encodeURIComponent(id)}/review`, {
+      method: 'POST',
+      body: JSON.stringify({ action, remarks })
+    });
+  }
 }
