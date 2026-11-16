@@ -25,7 +25,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, Record<string, string>> = {
     clear_recent: 'Clear History',
     nearby_stops_title: 'Nearby Bus Stops & Terminals',
     popular_routes_title: 'Routes with Published Data',
-    no_results_found: 'No verified direct bus found for this route.',
+    no_results_found: 'No published bus route was found for this journey.',
     suggest_missing_prompt: 'Help other passengers by submitting this missing bus or route!',
 
     // Verification Badges
@@ -36,6 +36,8 @@ export const TRANSLATIONS: Record<SupportedLanguage, Record<string, string>> = {
     operating_days: 'Published service days',
     schedule_days_unavailable: 'Days not provided',
     fare_not_provided: 'Fare not provided by operator',
+    published_fare: 'Published fare',
+    fare_unavailable: 'Fare unavailable',
     source_attribution: 'Contains data provided by TGSRTC',
     independent_service_notice: 'YatraBus India is an independent service and is not endorsed by TGSRTC.',
     tracking_not_available: 'No individual bus or live GPS position is available for this published schedule.',
@@ -127,7 +129,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, Record<string, string>> = {
     clear_recent: 'इतिहास साफ़ करें',
     nearby_stops_title: 'आसपास के बस स्टॉप और टर्मिनल',
     popular_routes_title: 'प्रकाशित जानकारी वाले बस रूट',
-    no_results_found: 'इस रूट के लिए कोई सत्यापित सीधी बस नहीं मिली।',
+    no_results_found: 'इस यात्रा के लिए कोई प्रकाशित बस रूट नहीं मिला।',
     suggest_missing_prompt: 'अन्य यात्रियों की मदद के लिए इस छूटी हुई बस की जानकारी जोड़ें!',
 
     badge_admin_verified: 'सत्यापित आधिकारिक',
@@ -137,6 +139,8 @@ export const TRANSLATIONS: Record<SupportedLanguage, Record<string, string>> = {
     operating_days: 'प्रकाशित सेवा के दिन',
     schedule_days_unavailable: 'दिनों की जानकारी उपलब्ध नहीं',
     fare_not_provided: 'परिवहन निगम ने किराया नहीं दिया है',
+    published_fare: 'प्रकाशित किराया',
+    fare_unavailable: 'किराये की जानकारी उपलब्ध नहीं',
     source_attribution: 'TGSRTC द्वारा उपलब्ध कराया गया डेटा',
     independent_service_notice: 'YatraBus India स्वतंत्र सेवा है; TGSRTC इसका समर्थन नहीं करता।',
     tracking_not_available: 'इस प्रकाशित समय-सारणी के लिए किसी बस या लाइव GPS की जानकारी उपलब्ध नहीं है।',
@@ -223,7 +227,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, Record<string, string>> = {
     clear_recent: 'মুছে ফেলুন',
     nearby_stops_title: 'কাছের বাস টার্মিনাল ও স্টপ',
     popular_routes_title: 'প্রকাশিত তথ্যযুক্ত বাস রুট',
-    no_results_found: 'এই রুটে সরাসরি কোনো বাস পাওয়া যায়নি।',
+    no_results_found: 'এই যাত্রার জন্য কোনো প্রকাশিত বাস রুট পাওয়া যায়নি।',
     suggest_missing_prompt: 'অন্য যাত্রীদের সাহায্য করতে এই বাসের তথ্য যুক্ত করুন!',
 
     badge_admin_verified: 'সরকারি যাচাইকৃত',
@@ -233,6 +237,8 @@ export const TRANSLATIONS: Record<SupportedLanguage, Record<string, string>> = {
     operating_days: 'প্রকাশিত পরিষেবার দিন',
     schedule_days_unavailable: 'দিনের তথ্য নেই',
     fare_not_provided: 'পরিবহন সংস্থা ভাড়ার তথ্য দেয়নি',
+    published_fare: 'প্রকাশিত ভাড়া',
+    fare_unavailable: 'ভাড়ার তথ্য পাওয়া যায়নি',
     source_attribution: 'TGSRTC-এর দেওয়া তথ্য',
     independent_service_notice: 'YatraBus India একটি স্বাধীন পরিষেবা; TGSRTC এটি অনুমোদন করেনি।',
     tracking_not_available: 'এই প্রকাশিত সময়সূচির জন্য কোনো নির্দিষ্ট বাস বা লাইভ GPS অবস্থান নেই।',
