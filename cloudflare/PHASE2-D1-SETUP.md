@@ -5,6 +5,7 @@
 - A Pages Function at `/api/v1/health`.
 - D1-backed public read APIs for places, nearby places, routes, route search, timetables, buses and operators.
 - D1-backed public contribution submission and status lookup APIs.
+- Shared API CORS preflight handling for GET and POST requests.
 - A SQLite-compatible initial D1 schema in `migrations/0001_initial.sql`.
 - An explicit health response when D1 is missing, unreachable, or not migrated.
 - No production secrets, database IDs, or credentials are committed.
