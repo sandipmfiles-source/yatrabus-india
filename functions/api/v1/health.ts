@@ -51,18 +51,25 @@ export async function onRequestGet({ env }: PagesContext): Promise<Response> {
     const coreTables = await env.DB.prepare(
       "SELECT COUNT(DISTINCT name) AS count FROM sqlite_master WHERE type = 'table' AND name IN ('places','operators','buses','routes','route_stops','timetables','journey_sessions','location_observations','community_submissions','audit_logs','automation_rules','schema_migrations')"
     ).first<{ count: number }>();
+    const timetableColumns = await env.DB.prepare(
+      "SELECT COUNT(*) AS count FROM pragma_table_info('timetables') WHERE name IN ('service_start_date','service_end_date','service_exceptions_json')"
+    ).first<{ count: number }>();
     const adminTables = await env.DB.prepare(
       "SELECT COUNT(DISTINCT name) AS count FROM sqlite_master WHERE type = 'table' AND name IN ('admin_sessions','admin_login_attempts','operator_claims','service_alerts','public_rate_limits')"
     ).first<{ count: number }>();
 
     const coreTablesPresent = Number(coreTables?.count || 0);
     const adminSecurityTablesPresent = Number(adminTables?.count || 0);
+    const timetableCalendarColumnsPresent = Number(timetableColumns?.count || 0);
     const schemaReady = coreTablesPresent === 12;
+    const timetableCalendarReady = timetableCalendarColumnsPresent === 3;
     const adminSecurityReady = adminSecurityTablesPresent === 5;
-    const ready = schemaReady && adminSecurityReady;
+    const ready = schemaReady && timetableCalendarReady && adminSecurityReady;
     const error = !schemaReady
       ? 'Core D1 schema is incomplete. Apply all pending migrations.'
-      : (!adminSecurityReady ? 'Admin security migration is not applied.' : undefined);
+      : (!timetableCalendarReady
+        ? 'Date-accurate timetable calendar migration is not applied.'
+        : (!adminSecurityReady ? 'Admin security migration is not applied.' : undefined));
     return json({
       success: ready,
       data: {
@@ -73,7 +80,9 @@ export async function onRequestGet({ env }: PagesContext): Promise<Response> {
         schemaReady,
         coreTablesPresent,
         adminSecurityReady,
-        adminSecurityTablesPresent
+        adminSecurityTablesPresent,
+        timetableCalendarReady,
+        timetableCalendarColumnsPresent
       },
       ...(error ? { error } : {})
     }, ready ? 200 : 503);

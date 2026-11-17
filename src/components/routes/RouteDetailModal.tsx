@@ -22,6 +22,7 @@ import { t } from '../../i18n';
 
 interface RouteDetailModalProps {
   route: Route;
+  serviceDate: string;
   onClose: () => void;
   onOpenContribution: (routeId: string) => void;
   activeJourneySessionId: string | null;
@@ -30,12 +31,14 @@ interface RouteDetailModalProps {
 
 export const RouteDetailModal: React.FC<RouteDetailModalProps> = ({
   route,
+  serviceDate,
   onClose,
   onOpenContribution,
   activeJourneySessionId,
   onStartTracking
 }) => {
   const [activeTab, setActiveTab] = useState<'stops' | 'timetable' | 'map'>('stops');
+  const [selectedServiceDate, setSelectedServiceDate] = useState(serviceDate);
   const [timetables, setTimetables] = useState<TimetableDeparture[]>([]);
   const [buses, setBuses] = useState<Bus[]>([]);
   const [selectedBus, setSelectedBus] = useState<Bus | null>(null);
@@ -46,10 +49,14 @@ export const RouteDetailModal: React.FC<RouteDetailModalProps> = ({
   const [serviceAlerts, setServiceAlerts] = useState<ServiceAlert[]>(route.serviceAlerts || []);
 
   useEffect(() => {
+    setSelectedServiceDate(serviceDate);
+  }, [serviceDate]);
+
+  useEffect(() => {
     const fetchData = async () => {
       try {
         const [ttRes, busesRes, routeRes] = await Promise.all([
-          ApiClient.getTimetables(route.id),
+          ApiClient.getTimetables(route.id, selectedServiceDate),
           ApiClient.getAllBuses(),
           ApiClient.getRouteById(route.id)
         ]);
@@ -75,15 +82,15 @@ export const RouteDetailModal: React.FC<RouteDetailModalProps> = ({
     };
 
     fetchData();
-  }, [route.id]);
+  }, [route.id, selectedServiceDate]);
 
   useEffect(() => {
     if (selectedStopId) {
-      ApiClient.getETA(route.id, selectedStopId).then(res => {
+      ApiClient.getETA(route.id, selectedStopId, selectedServiceDate).then(res => {
         if (res.success) setEta(res.data);
       });
     }
-  }, [route.id, selectedStopId]);
+  }, [route.id, selectedStopId, selectedServiceDate]);
 
   const handleConsentDecision = (consentGiven: boolean) => {
     if (consentGiven && selectedBus) {
@@ -243,8 +250,17 @@ export const RouteDetailModal: React.FC<RouteDetailModalProps> = ({
           {/* Tab 2: Timetable Departures */}
           {activeTab === 'timetable' && (
             <div className="space-y-3">
-              <div className="flex items-center justify-between text-xs text-slate-500 px-1">
+              <div className="flex items-center justify-between gap-3 text-xs text-slate-500 px-1">
                 <span>{t('operating_days')}: {route.operatingDays?.join(' · ') || t('schedule_days_unavailable')}</span>
+                <input
+                  type="date"
+                  required
+                  aria-label={t('travel_date')}
+                  min={new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())}
+                  value={selectedServiceDate}
+                  onChange={event => setSelectedServiceDate(event.target.value)}
+                  className="rounded-lg border border-surface-border bg-white px-2 py-1.5 text-xs font-semibold text-slate-800"
+                />
               </div>
 
               <div className="space-y-2">

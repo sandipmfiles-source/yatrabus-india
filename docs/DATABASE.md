@@ -17,6 +17,8 @@ The D1 `route_stops` table is the indexed stop-to-route lookup used by passenger
 - Indexes on `(stop_id, route_id, stop_sequence)` and `(route_id, stop_sequence)` allow origin/destination and transfer searches without scanning every route payload.
 - Migration `0003_route_stop_index.sql` backfills existing route stop arrays safely with `INSERT OR IGNORE`.
 
+Migration `0004_timetable_service_dates.sql` adds `service_start_date`, `service_end_date`, and `service_exceptions_json` to timetable rows. The GTFS importer keeps recurring weekday service separate from one-off added/removed calendar dates. Passenger route search and timetable lookup can therefore reject a service outside its published date range or on a GTFS removal exception, and include one-off additions. Existing timetable rows are enriched by the pinned feed importer without deleting route, stop, or trip records.
+
 A static GTFS timetable is not live vehicle tracking. Feed records retain source attribution and verification status; individual vehicle locations and fares are never inferred from static schedules.
 
 ---

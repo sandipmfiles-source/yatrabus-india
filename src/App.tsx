@@ -27,6 +27,7 @@ export const App: React.FC = () => {
   const [currentLang, setCurrentLang] = useState<SupportedLanguage>(getLanguage());
   const [view, setView] = useState<'home' | 'admin' | 'all_routes'>('home');
   const [selectedRoute, setSelectedRoute] = useState<Route | null>(null);
+  const [selectedServiceDate, setSelectedServiceDate] = useState(() => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()));
   const [showContributionModal, setShowContributionModal] = useState(false);
   const [showOperatorClaimModal, setShowOperatorClaimModal] = useState(false);
   const [prefillRouteId, setPrefillRouteId] = useState<string | undefined>(undefined);
@@ -288,7 +289,10 @@ export const App: React.FC = () => {
       <main className="flex-1 pb-16 md:pb-0">
         {view === 'home' && (
           <HomeScreen
-            onSelectRoute={setSelectedRoute}
+            onSelectRoute={(route, serviceDate) => {
+              setSelectedRoute(route);
+              if (serviceDate) setSelectedServiceDate(serviceDate);
+            }}
             onOpenContribution={routeId => {
               setPrefillRouteId(routeId);
               setShowContributionModal(true);
@@ -342,6 +346,7 @@ export const App: React.FC = () => {
       {selectedRoute && (
         <RouteDetailModal
           route={selectedRoute}
+          serviceDate={selectedServiceDate}
           onClose={() => setSelectedRoute(null)}
           onOpenContribution={routeId => {
             setPrefillRouteId(routeId);

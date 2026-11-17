@@ -14,7 +14,7 @@ on:
   workflow_dispatch:
     inputs:
       confirm_production:
-        description: 'Confirm append-only import of the pinned Rajkot community GTFS snapshot into production D1'
+        description: 'Confirm idempotent import and calendar enrichment of the pinned Rajkot community GTFS snapshot into production D1'
         required: true
         type: boolean
         default: false
@@ -107,7 +107,7 @@ jobs:
             exit 1
           fi
           python scripts/import-rrl-gtfs-to-d1.py --input /tmp/rrl/gtfs.zip --output-dir /tmp/rrl/sql
-      - name: Import RRL stops, routes and timetable rows (append-only)
+      - name: Import RRL stops, routes and timetable rows (idempotent source-preserving upsert)
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
@@ -123,7 +123,7 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           set -euo pipefail
-          payload="$(jq -n --arg sql "SELECT (SELECT COUNT(*) FROM places WHERE source_dataset = 'RRL_RAJKOT_GTFS_2026_11_16') AS stops, (SELECT COUNT(*) FROM routes WHERE payload_json LIKE '%RRL_RAJKOT_GTFS_2026_11_16%') AS routes, (SELECT COUNT(*) FROM timetables WHERE payload_json LIKE '%RRL_RAJKOT_GTFS_2026_11_16%') AS trips, (SELECT COUNT(*) FROM route_stops WHERE route_id IN (SELECT id FROM routes WHERE payload_json LIKE '%RRL_RAJKOT_GTFS_2026_11_16%')) AS route_stops, (SELECT COUNT(*) FROM buses WHERE payload_json LIKE '%RRL_RAJKOT_GTFS_2026_11_16%') AS vehicles, (SELECT COUNT(*) FROM timetables WHERE payload_json LIKE '%RRL_RAJKOT_GTFS_2026_11_16%' AND json_extract(payload_json, '$.fareInRupees') IS NOT NULL) AS invented_fares;" '{sql: $sql}')"
+          payload="$(jq -n --arg sql "SELECT (SELECT COUNT(*) FROM places WHERE source_dataset = 'RRL_RAJKOT_GTFS_2026_11_16') AS stops, (SELECT COUNT(*) FROM routes WHERE payload_json LIKE '%RRL_RAJKOT_GTFS_2026_11_16%') AS routes, (SELECT COUNT(*) FROM timetables WHERE payload_json LIKE '%RRL_RAJKOT_GTFS_2026_11_16%') AS trips, (SELECT COUNT(*) FROM route_stops WHERE route_id IN (SELECT id FROM routes WHERE payload_json LIKE '%RRL_RAJKOT_GTFS_2026_11_16%')) AS route_stops, (SELECT COUNT(*) FROM timetables WHERE payload_json LIKE '%RRL_RAJKOT_GTFS_2026_11_16%' AND service_start_date IS NOT NULL AND service_end_date IS NOT NULL) AS calendar_rows, (SELECT COUNT(*) FROM buses WHERE payload_json LIKE '%RRL_RAJKOT_GTFS_2026_11_16%') AS vehicles, (SELECT COUNT(*) FROM timetables WHERE payload_json LIKE '%RRL_RAJKOT_GTFS_2026_11_16%' AND json_extract(payload_json, '$.fareInRupees') IS NOT NULL) AS invented_fares;" '{sql: $sql}')"
           response="$(curl --fail --silent --show-error \
             --request POST \
             "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/d1/database/ad817522-9239-4574-8b23-17b8d45d756e/query" \
@@ -135,10 +135,44 @@ jobs:
           routes="$(printf '%s' "$response" | jq -er '.result[0].results[0].routes')"
           trips="$(printf '%s' "$response" | jq -er '.result[0].results[0].trips')"
           route_stops="$(printf '%s' "$response" | jq -er '.result[0].results[0].route_stops')"
+          calendar_rows="$(printf '%s' "$response" | jq -er '.result[0].results[0].calendar_rows')"
           vehicles="$(printf '%s' "$response" | jq -er '.result[0].results[0].vehicles')"
           fares="$(printf '%s' "$response" | jq -er '.result[0].results[0].invented_fares')"
-          if [ "$stops" -lt 10 ] || [ "$routes" -lt 1 ] || [ "$trips" -lt 10 ] || [ "$route_stops" -lt 100 ] || [ "$vehicles" -ne 0 ] || [ "$fares" -ne 0 ]; then
-            echo "::error::RRL D1 verification failed: stops=$stops routes=$routes trips=$trips route_stops=$route_stops vehicles=$vehicles fares=$fares"
+          if [ "$stops" -lt 10 ] || [ "$routes" -lt 1 ] || [ "$trips" -lt 10 ] || [ "$route_stops" -lt 100 ] || [ "$calendar_rows" -lt 100 ] || [ "$vehicles" -ne 0 ] || [ "$fares" -ne 0 ]; then
+            echo "::error::RRL D1 verification failed: stops=$stops routes=$routes trips=$trips route_stops=$route_stops calendar_rows=$calendar_rows vehicles=$vehicles fares=$fares"
             exit 1
           fi
-          echo "Verified Rajkot RRL feed: $stops stops, $routes route patterns, $trips scheduled trips and $route_stops indexed stop positions; no individual vehicles or fares invented."
+          echo "Verified Rajkot RRL feed: $stops stops, $routes route patterns, $trips scheduled trips and $route_stops indexed stop positions; $calendar_rows timetables with verified GTFS calendar ranges; no individual vehicles or fares invented."
+
+      - name: Smoke-test date-aware production route search
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          sql="WITH RECURSIVE dates(service_date,days_ahead) AS (SELECT date('now','+330 minutes'),0 UNION ALL SELECT date(service_date,'+1 day'),days_ahead+1 FROM dates WHERE days_ahead<60), service AS (SELECT t.route_id,candidate.service_date FROM timetables AS t JOIN dates AS candidate JOIN routes AS r ON r.id=t.route_id WHERE r.payload_json LIKE '%RRL_RAJKOT_GTFS_2026_11_16%' AND t.payload_json LIKE '%RRL_RAJKOT_GTFS_2026_11_16%' AND t.service_start_date <= candidate.service_date AND t.service_end_date >= candidate.service_date AND (EXISTS (SELECT 1 FROM json_each(t.service_days_json) AS weekly WHERE weekly.value=CASE strftime('%w',candidate.service_date) WHEN '0' THEN 'Sun' WHEN '1' THEN 'Mon' WHEN '2' THEN 'Tue' WHEN '3' THEN 'Wed' WHEN '4' THEN 'Thu' WHEN '5' THEN 'Fri' WHEN '6' THEN 'Sat' END) OR EXISTS (SELECT 1 FROM json_each(t.service_exceptions_json) AS added WHERE json_extract(added.value,'$.date')=candidate.service_date AND CAST(json_extract(added.value,'$.exceptionType') AS INTEGER)=1)) AND NOT EXISTS (SELECT 1 FROM json_each(t.service_exceptions_json) AS removed WHERE json_extract(removed.value,'$.date')=candidate.service_date AND CAST(json_extract(removed.value,'$.exceptionType') AS INTEGER)=2) AND EXISTS (SELECT 1 FROM route_stops AS rs WHERE rs.route_id=t.route_id) ORDER BY candidate.service_date,t.route_id LIMIT 1) SELECT board.stop_id AS origin, alight.stop_id AS destination, service.service_date AS service_date FROM service JOIN route_stops AS board ON board.route_id=service.route_id JOIN route_stops AS alight ON alight.route_id=board.route_id AND alight.stop_sequence>board.stop_sequence JOIN routes AS r ON r.id=service.route_id WHERE r.payload_json LIKE '%RRL_RAJKOT_GTFS_2026_11_16%' ORDER BY board.stop_sequence,alight.stop_sequence LIMIT 1;"
+          payload="$(jq -n --arg sql "$sql" '{sql: $sql}')"
+          d1_response="$(curl --fail --silent --show-error --request POST "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/d1/database/ad817522-9239-4574-8b23-17b8d45d756e/query" --header "Authorization: Bearer $CLOUDFLARE_API_TOKEN" --header "Content-Type: application/json" --data "$payload")"
+          printf '%s' "$d1_response" | jq -e '.success == true' >/dev/null
+          origin="$(printf '%s' "$d1_response" | jq -er '.result[0].results[0].origin')"
+          destination="$(printf '%s' "$d1_response" | jq -er '.result[0].results[0].destination')"
+          service_date="$(printf '%s' "$d1_response" | jq -er '.result[0].results[0].service_date')"
+          health_url="https://yatrabus-india.pages.dev/api/v1/health"
+          ready=false
+          for attempt in $(seq 1 30); do
+            health="$(curl --silent --show-error "$health_url" || true)"
+            if printf '%s' "$health" | jq -e '.success == true and .data.timetableCalendarReady == true' >/dev/null 2>&1; then
+              ready=true
+              break
+            fi
+            echo "Waiting for date-aware Pages deployment (attempt $attempt/30)."
+            sleep 10
+          done
+          if [ "$ready" != true ]; then
+            echo "::error::Date-aware production Pages API did not become healthy."
+            printf '%s\n' "$health"
+            exit 1
+          fi
+          search_response="$(curl --fail --silent --show-error --get --data-urlencode "origin=$origin" --data-urlencode "destination=$destination" --data-urlencode "date=$service_date" "https://yatrabus-india.pages.dev/api/v1/routes/search")"
+          printf '%s' "$search_response" | jq -e '.success == true and (.data.directRoutes | length > 0)' >/dev/null
+          echo "Date-aware production route search passed for service date $service_date."

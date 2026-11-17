@@ -1,4 +1,5 @@
 import { PagesContext, json, unavailable, parsePayload } from "../../../_lib/api";
+import { parseServiceDate, routeHasServiceFilter, serviceDateParams } from "../../../_lib/serviceCalendar";
 
 type Stop = {
   stopId: string;
@@ -24,6 +25,10 @@ export async function onRequestGet({ request, env }: PagesContext): Promise<Resp
   const url = new URL(request.url);
   const origin = (url.searchParams.get("origin") || "").trim();
   const destination = (url.searchParams.get("destination") || "").trim();
+  const dateValue = url.searchParams.get("date");
+  const serviceDate = dateValue ? parseServiceDate(dateValue) : null;
+  if (dateValue && !serviceDate) return json({ success: false, error: "Date must be a valid YYYY-MM-DD value" }, 400);
+  const dateParams = serviceDate ? serviceDateParams(serviceDate) : [];
   if (!origin || !destination) {
     return json({ success: false, error: "Origin and destination place IDs are required" }, 400);
   }
@@ -47,9 +52,10 @@ export async function onRequestGet({ request, env }: PagesContext): Promise<Resp
       JOIN routes AS r ON r.id = board.route_id
       WHERE board.stop_id = ?
         AND r.status = 'active'
+        ${serviceDate ? `AND ${routeHasServiceFilter("r")}` : ""}
       ORDER BY (alight.arrival_offset_minutes - board.departure_offset_minutes), r.name
       LIMIT 50
-    `).bind(destination, origin).all<IndexedLeg>();
+    `).bind(destination, origin, ...dateParams).all<IndexedLeg>();
 
     const directRoutes = (directRows.results || []).map(row => {
       const route = parsePayload(row) as Route | null;
@@ -70,8 +76,9 @@ export async function onRequestGet({ request, env }: PagesContext): Promise<Resp
         FROM route_stops AS board
         JOIN routes AS r ON r.id = board.route_id
         WHERE board.stop_id = ? AND r.status = 'active'
+          ${serviceDate ? `AND ${routeHasServiceFilter("r")}` : ""}
         LIMIT 20
-      `).bind(origin).all<IndexedBoard>();
+      `).bind(origin, ...dateParams).all<IndexedBoard>();
 
       const firstLegsByTransfer = new Map<string, Array<{ route: Route; originStop: Stop; transferStop: Stop }>>();
       for (const row of firstRows.results || []) {
@@ -106,9 +113,10 @@ export async function onRequestGet({ request, env }: PagesContext): Promise<Resp
           JOIN routes AS second ON second.id = board.route_id
           WHERE board.stop_id IN (${placeholders})
             AND second.status = 'active'
+            ${serviceDate ? `AND ${routeHasServiceFilter("second")}` : ""}
           ORDER BY (alight.arrival_offset_minutes - board.departure_offset_minutes)
           LIMIT 100
-        `).bind(destination, ...transferIds).all<IndexedLeg & { transfer_stop_id: string }>();
+        `).bind(destination, ...transferIds, ...dateParams).all<IndexedLeg & { transfer_stop_id: string }>();
 
         const placeRows = await env.DB.prepare(`
           SELECT id, payload_json FROM places WHERE id IN (${placeholders})
@@ -145,7 +153,7 @@ export async function onRequestGet({ request, env }: PagesContext): Promise<Resp
     return json({
       success: true,
       data: { directRoutes, transferRoutes },
-      meta: { directCount: directRoutes.length, transferCount: transferRoutes.length }
+      meta: { directCount: directRoutes.length, transferCount: transferRoutes.length, serviceDate: serviceDate?.date || null }
     });
   } catch {
     return json({ success: false, error: "Route search is temporarily unavailable." }, 503);

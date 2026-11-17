@@ -22,7 +22,8 @@ This document separates administrative location data from real public-transport 
 - CI dry-run of this pinned snapshot found 760 stops, 267 route patterns and 3,140 current scheduled trips, with zero trips skipped. The normalized route-stop index records each stop's position on each route. Source-archive counts are not production D1 counts until the post-import verification completes.
 - Imported routes and timetables are labelled `published_unverified`: they are from a community-published feed and have not been independently confirmed by YatraBus India or the operator.
 - The importer does not invent fares, individual buses or live GPS positions. Fare and vehicle data remain unavailable unless a trusted source supplies them.
-- D1 import is append-only and verifies stop, route, timetable and normalized route-stop counts after import.
+- D1 import preserves route and stop records, enriches timetable calendar metadata idempotently, and verifies stop, route, timetable, normalized route-stop and service-calendar counts after import.
+- Passenger search accepts a travel date and applies GTFS weekday, start/end date and calendar exception rules; an exception-added Sunday service is not treated as a recurring Sunday route.
 
 The CI workflow prints the actual counts from the pinned archive. Production counts above are from the successful post-import D1 verification, not estimates.
 

@@ -89,8 +89,9 @@ export class ApiClient {
     return request(`/api/v1/places/${encodeURIComponent(id)}`, { method: 'GET' });
   }
 
-  public static async searchRoutes(originId: string, destinationId: string): Promise<ApiResponse> {
-    return request(`/api/v1/routes/search?origin=${encodeURIComponent(originId)}&destination=${encodeURIComponent(destinationId)}`, { method: 'GET' });
+  public static async searchRoutes(originId: string, destinationId: string, serviceDate?: string): Promise<ApiResponse> {
+    const dateQuery = serviceDate ? `&date=${encodeURIComponent(serviceDate)}` : '';
+    return request(`/api/v1/routes/search?origin=${encodeURIComponent(originId)}&destination=${encodeURIComponent(destinationId)}${dateQuery}`, { method: 'GET' });
   }
 
   public static async getAllRoutes(): Promise<ApiResponse> {
@@ -101,12 +102,14 @@ export class ApiClient {
     return request(`/api/v1/routes/${encodeURIComponent(id)}`, { method: 'GET' });
   }
 
-  public static async getTimetables(routeId: string): Promise<ApiResponse> {
-    return request(`/api/v1/routes/${encodeURIComponent(routeId)}/timetables`, { method: 'GET' });
+  public static async getTimetables(routeId: string, serviceDate?: string): Promise<ApiResponse> {
+    const dateQuery = serviceDate ? `?date=${encodeURIComponent(serviceDate)}` : '';
+    return request(`/api/v1/routes/${encodeURIComponent(routeId)}/timetables${dateQuery}`, { method: 'GET' });
   }
 
-  public static async getETA(routeId: string, stopId: string): Promise<ApiResponse> {
-    return request(`/api/v1/routes/${encodeURIComponent(routeId)}/stops/${encodeURIComponent(stopId)}/eta`, { method: 'GET' });
+  public static async getETA(routeId: string, stopId: string, serviceDate?: string): Promise<ApiResponse> {
+    const dateQuery = serviceDate ? `?date=${encodeURIComponent(serviceDate)}` : '';
+    return request(`/api/v1/routes/${encodeURIComponent(routeId)}/stops/${encodeURIComponent(stopId)}/eta${dateQuery}`, { method: 'GET' });
   }
 
   public static async getAllBuses(): Promise<ApiResponse> {
