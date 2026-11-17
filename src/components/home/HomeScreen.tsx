@@ -194,33 +194,28 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         </div>
       )}
 
-      {/* Hero Brand Banner */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-brand-900 to-brand-800 text-white shadow-xl relative overflow-hidden">
-        <div className="absolute right-0 top-0 bottom-0 w-1/3 opacity-10 pointer-events-none flex items-center justify-end pr-6">
-          <BusIllustration variant="banner" className="h-48 w-48" />
+      {/* Original YatraBus home heading */}
+      <div className="text-center space-y-3">
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-yatribrand-100 text-yatribrand-900 text-xs font-semibold">
+          <Sparkles className="w-3.5 h-3.5 text-yatribrand-700" />
+          <span>India Bus Travel Directory</span>
         </div>
-
-        <div className="relative z-10 max-w-xl">
-          <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-xs font-semibold mb-3">
-            <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-            <span>India Bus Travel Directory</span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-            {t('home_tagline')}
-          </h1>
-          <p className="text-xs sm:text-sm text-brand-100 mt-2">
-            {t('home_coverage_notice')}
-          </p>
-        </div>
+        <h1 className="text-[clamp(0.9rem,4.2vw,2rem)] font-extrabold text-yatriwarm-950 tracking-tight">
+          {t('home_tagline')}
+        </h1>
+        <p className="text-[10px] sm:text-xs leading-tight text-yatriwarm-600 max-w-2xl mx-auto">
+          {t('home_coverage_notice')}
+        </p>
       </div>
 
       {/* Route Search Card */}
-      <div className="p-5 sm:p-7 rounded-3xl bg-white border border-surface-border shadow-md">
+      <div className="p-5 sm:p-7 rounded-3xl bg-white border border-yatriwarm-200 shadow-elevated relative z-20">
         <form onSubmit={handleSearch} className="space-y-4">
-          <div className="relative space-y-3">
+          <div className="relative grid grid-cols-1 md:grid-cols-[1fr,auto,1fr] gap-y-3.5 gap-x-3 items-center">
             {/* Origin Input */}
             <div className="relative">
-              <label className="block text-xs font-bold text-slate-700 mb-1">
+              <label className="block text-xs font-bold text-yatriwarm-700 uppercase tracking-wider mb-1.5 flex items-center gap-1">
+                <BusIllustration variant="icon" className="w-4 h-4" />
                 {t('search_from_label')}
               </label>
               <div className="relative">
@@ -236,7 +231,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                     setOriginQuery(e.target.value);
                     setOriginPlace(null);
                   }}
-                  className="w-full pl-10 pr-10 py-3 rounded-2xl border border-surface-border text-sm focus:ring-2 focus:ring-brand-900 focus:outline-none bg-surface-subtle"
+                  className="w-full px-4 py-3 bg-yatriwarm-50 border border-yatriwarm-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-yatribrand-800 focus:bg-white transition-all"
                 />
                 {originQuery && (
                   <button
@@ -281,20 +276,21 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             </div>
 
             {/* Swap Origin & Destination Button */}
-            <div className="flex justify-center -my-1">
+            <div className="absolute left-1/2 top-1/2 z-10 flex -translate-x-1/2 -translate-y-1/2 justify-center md:static md:translate-x-0 md:translate-y-0 md:pt-6">
               <button
                 type="button"
                 onClick={handleSwap}
-                className="p-2 rounded-full bg-surface-subtle hover:bg-brand-50 border border-surface-border text-slate-600 hover:text-brand-900 transition shadow-sm"
+                className="h-9 w-9 p-2 rounded-full bg-white hover:bg-yatribrand-100 text-yatribrand-900 border-2 border-yatriwarm-200 transition-colors shadow-md"
                 title={t('swap_btn')}
               >
-                <ArrowUpDown className="w-4 h-4" />
+                <ArrowUpDown className="w-4 h-4 md:rotate-90" />
               </button>
             </div>
 
             {/* Destination Input */}
             <div className="relative">
-              <label className="block text-xs font-bold text-slate-700 mb-1">
+              <label className="block text-xs font-bold text-yatriwarm-700 uppercase tracking-wider mb-1.5 flex items-center gap-1">
+                <BusIllustration variant="icon" className="w-4 h-4" />
                 {t('search_to_label')}
               </label>
               <div className="relative">
