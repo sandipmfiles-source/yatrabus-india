@@ -147,7 +147,7 @@ jobs:
             jhargram_nearby="$(curl --silent --show-error --max-time 30 --get --data-urlencode 'lat=22.43962' --data-urlencode 'lon=86.99267' --data-urlencode 'radius=5000' "$base/places/nearby" || true)"
             if ! printf '%s' "$jhargram_nearby" | jq -e '.success == true and any(.stops[]; .place.canonicalName == "Jhargram New Bus Stand" and .source == "OPENSTREETMAP" and .place.busServiceVerified == false)' >/dev/null 2>&1; then
               echo "::error::Jhargram New Bus Stand was not returned as an attributed, unverified mapped location."
-              printf '%s\\n' "$jhargram_nearby" | jq '{success, stops, meta, error}' || true
+              printf '%s\n' "$jhargram_nearby" | jq '{success, stops, meta, error}' || true
               exit 1
             fi
 
