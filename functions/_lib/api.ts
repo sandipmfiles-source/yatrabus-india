@@ -36,6 +36,7 @@ export function parsePayload(row: { payload_json?: string } | null): any {
   try { return JSON.parse(row.payload_json); } catch { return null; }
 }
 export function boundedInt(value: string | null, fallback: number, min: number, max: number): number {
+  if (value === null || value.trim() === "") return fallback;
   const n = Number(value);
   return Number.isFinite(n) ? Math.max(min, Math.min(max, Math.floor(n))) : fallback;
 }
