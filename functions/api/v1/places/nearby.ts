@@ -183,13 +183,21 @@ export async function onRequestGet({ request, env }: PagesContext): Promise<Resp
     // Supplement it with mapped OSM stops so towns without a published GTFS feed
     // can still discover nearby physical bus stands/stops.
     let osmStops: OSMStop[] = [];
-    let osmAvailable = true;
+    let osmAvailable: boolean | null = null;
+    let osmQueried = false;
     let osmError: string | null = null;
-    try {
-      osmStops = await fetchOsmNearbyStops(lat, lng, Math.round(radiusKm * 1000));
-    } catch (error) {
-      osmAvailable = false;
-      osmError = error instanceof Error ? error.message.slice(0, 80) : "OSM_UPSTREAM_FAILED";
+    // Prefer the already-geocoded D1 directory. Only call public Overpass mirrors
+    // when D1 has no nearby mapped result; this avoids a 54-second upstream wait
+    // and unnecessary rate-limit traffic when curated stops are already available.
+    if (directoryStops.length === 0) {
+      osmQueried = true;
+      osmAvailable = true;
+      try {
+        osmStops = await fetchOsmNearbyStops(lat, lng, Math.round(radiusKm * 1000));
+      } catch (error) {
+        osmAvailable = false;
+        osmError = error instanceof Error ? error.message.slice(0, 80) : "OSM_UPSTREAM_FAILED";
+      }
     }
     const knownNames = new Set(directoryStops.map((item:any) =>
       String(item.place?.canonicalName || "").trim().toLocaleLowerCase("en-IN")
@@ -215,6 +223,7 @@ export async function onRequestGet({ request, env }: PagesContext): Promise<Resp
           yatribusDirectory: directoryStops.filter((item:any) => item.source !== "OPENSTREETMAP").length,
           openStreetMap: directoryStops.filter((item:any) => item.source === "OPENSTREETMAP").length + uniqueOsmStops.length
         },
+        osmQueried,
         osmAvailable,
         osmError,
         timetableVerified: false
