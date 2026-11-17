@@ -97,7 +97,7 @@ export interface Place {
 export interface PlaceSearchResult {
   place: Place;
   matchScore: number;
-  matchType: 'EXACT' | 'PREFIX' | 'ALIAS' | 'TYPO' | 'TRANSLITERATION';
+  matchType: 'EXACT' | 'PREFIX' | 'ALIAS' | 'CONTEXT' | 'TYPO' | 'TRANSLITERATION';
   displayLabel: string;
   subtitle: string;
 }
