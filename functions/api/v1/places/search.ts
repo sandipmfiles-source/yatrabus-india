@@ -19,7 +19,7 @@ export async function onRequestGet({ request, env }: PagesContext): Promise<Resp
       : await env.DB.prepare("SELECT payload_json, canonical_name FROM places ORDER BY canonical_name LIMIT ?")
           .bind(limit).all<{payload_json:string;canonical_name:string}>();
     const data = (result.results || []).map(row => parsePayload(row)).filter(Boolean);
-    return json({ success: true, data, meta: { totalResults: data.length, query: q } });
+    return json({ success: true, data, results: data, meta: { totalResults: data.length, query: q } });
   } catch {
     return json({ success: false, error: "Place search is temporarily unavailable." }, 503);
   }

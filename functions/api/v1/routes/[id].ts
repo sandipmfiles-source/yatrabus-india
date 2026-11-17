@@ -11,6 +11,6 @@ export async function onRequestGet({ env, params }: PagesContext): Promise<Respo
         .bind(params?.id || "", new Date().toISOString()).all<{payload_json:string}>();
       serviceAlerts = (alerts.results || []).map(item => parsePayload(item)).filter(Boolean);
     } catch { /* Route reads remain available until the admin migration is applied. */ }
-    return json({ success: true, data: { ...route, serviceAlerts } });
+    return json({ success: true, data: { ...route, serviceAlerts }, route: { ...route, serviceAlerts } });
   } catch { return json({ success: false, error: "Route lookup is temporarily unavailable." }, 503); }
 }

@@ -23,8 +23,8 @@ type IndexedBoard = { payload_json: string };
 export async function onRequestGet({ request, env }: PagesContext): Promise<Response> {
   if (!env.DB) return unavailable();
   const url = new URL(request.url);
-  const origin = (url.searchParams.get("origin") || "").trim();
-  const destination = (url.searchParams.get("destination") || "").trim();
+  const origin = (url.searchParams.get("origin") || url.searchParams.get("from") || "").trim();
+  const destination = (url.searchParams.get("destination") || url.searchParams.get("to") || "").trim();
   const dateValue = url.searchParams.get("date");
   const serviceDate = dateValue ? parseServiceDate(dateValue) : null;
   if (dateValue && !serviceDate) return json({ success: false, error: "Date must be a valid YYYY-MM-DD value" }, 400);
@@ -33,7 +33,7 @@ export async function onRequestGet({ request, env }: PagesContext): Promise<Resp
     return json({ success: false, error: "Origin and destination place IDs are required" }, 400);
   }
   if (origin === destination) {
-    return json({ success: true, data: { directRoutes: [], transferRoutes: [] }, meta: { directCount: 0, transferCount: 0 } });
+    return json({ success: true, directRoutes: [], transferRoutes: [], data: { directRoutes: [], transferRoutes: [] }, meta: { directCount: 0, transferCount: 0 } });
   }
 
   try {
@@ -152,7 +152,7 @@ export async function onRequestGet({ request, env }: PagesContext): Promise<Resp
 
     return json({
       success: true,
-      data: { directRoutes, transferRoutes },
+      directRoutes,\n      transferRoutes,\n      data: { directRoutes, transferRoutes },
       meta: { directCount: directRoutes.length, transferCount: transferRoutes.length, serviceDate: serviceDate?.date || null }
     });
   } catch {
