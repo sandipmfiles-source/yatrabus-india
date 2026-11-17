@@ -89,8 +89,22 @@ jobs:
       - name: Restore stable Android debug signing keystore
         uses: actions/cache@v4
         with:
-          path: ~/.android/debug.keystore
+          path: android/debug.keystore
           key: yatribus-android-debug-keystore-v1
+
+      - name: Create stable Android debug signing keystore when cache is empty
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p android
+          if [ ! -s android/debug.keystore ]; then
+            keytool -genkeypair -noprompt -v \\
+              -keystore android/debug.keystore -storetype JKS \\
+              -storepass yatribus-debug-only -keypass yatribus-debug-only \\
+              -alias yatribusdebug -keyalg RSA -keysize 2048 -validity 10000 \\
+              -dname "CN=YatraBus Debug, OU=Development, O=YatraBus, L=Kolkata, ST=West Bengal, C=IN"
+          fi
+          keytool -list -keystore android/debug.keystore -storepass yatribus-debug-only -alias yatribusdebug
 
       - name: Grant Execute Permissions for Gradle Wrapper
         run: |
