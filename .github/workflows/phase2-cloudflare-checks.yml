@@ -131,13 +131,15 @@ jobs:
             nearby_ready=false
             for attempt in $(seq 1 3); do
               nearby="$(curl --silent --show-error --max-time 65 --get --data-urlencode 'lat=22.5665' --data-urlencode 'lon=88.3500' --data-urlencode 'radius=8000' "$base/places/nearby" || true)"
-              if printf '%s' "$nearby" | jq -e '.success == true and (.stops | length > 0) and (.meta.sources.openStreetMap > 0) and (.meta.timetableVerified == false)' >/dev/null 2>&1; then
+              if printf '%s' "$nearby" | jq -e '.success == true and (.stops | length >= 5) and (.meta.sources.openStreetMap >= 5) and (.meta.timetableVerified == false) and (.meta.osmQueried == false)' >/dev/null 2>&1; then
                 nearby_ready=true
                 break
               fi
               echo "Waiting for nearby mapped stops from the deployed OSM fallback (attempt $attempt/3)."
               sleep 10
             done
+            echo "Verified Kolkata nearby-stop response:"
+            printf '%s' "$nearby" | jq '{success, count:(.stops | length), meta, stops:[.stops[].place.canonicalName]}'
             if [ "$nearby_ready" != true ]; then
               echo "::error::Production nearby endpoint returned no mapped bus stops."
               printf '%s\n' "$nearby" | jq '{success, count:(.stops | length), meta, error}' || true
