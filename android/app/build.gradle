@@ -22,10 +22,16 @@ android {
         }
     }
 
-    // Release signing is injected only by the protected GitHub Actions release workflow.
-    // No keystore or password is stored in the repository or APK source tree.
-    if (releaseSigningReady) {
-        signingConfigs {
+    // This key is generated and cached only by the Android debug CI workflow.
+    // It is for the .debug sideload package only, never for production releases.
+    signingConfigs {
+        debugStable {
+            storeFile rootProject.file("debug.keystore")
+            storePassword "yatribus-debug-only"
+            keyAlias "yatribusdebug"
+            keyPassword "yatribus-debug-only"
+        }
+        if (releaseSigningReady) {
             release {
                 storeFile file(releaseKeystorePath)
                 storePassword releaseStorePassword
@@ -47,6 +53,9 @@ android {
         debug {
             applicationIdSuffix ".debug"
             debuggable true
+            if (rootProject.file("debug.keystore").exists()) {
+                signingConfig signingConfigs.debugStable
+            }
         }
     }
 }
