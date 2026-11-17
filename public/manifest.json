@@ -4,8 +4,8 @@
   "description": "India-Wide Public Transport Directory, Community-Powered Live Tracking & Timetables",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#FFFEF8",
-  "theme_color": "#0E4D34",
+  "background_color": "#fbfdfa",
+  "theme_color": "#0e5a36",
   "orientation": "portrait-primary",
   "icons": [
     {

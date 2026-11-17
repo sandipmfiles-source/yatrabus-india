@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { Place, Route } from '../../types';
 import { ApiClient } from '../../services/apiClient';
-import { BusIllustration } from '../../assets/BusIllustration';
+import { CustomBusIllustration } from '../common/CustomBusIllustration';
 import {
   Search,
   ArrowUpDown,
   MapPin,
-  Navigation,
   Clock,
   Sparkles,
   ShieldCheck,
   ChevronRight,
   Radio,
+  Navigation,
   PlusCircle,
   X,
   History,
@@ -195,7 +195,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8 space-y-8">
+    <div className="max-w-4xl mx-auto p-4 sm:p-6 space-y-6">
       {/* Active Live Tracking Banner if enabled */}
       {activeJourneySessionId && (
         <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-950 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-sm animate-fade-in">
@@ -214,28 +214,33 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         </div>
       )}
 
-      {/* Original YatraBus home heading */}
-      <div className="text-center space-y-3">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-yatribrand-100 text-yatribrand-900 text-xs font-semibold">
-          <Sparkles className="w-3.5 h-3.5 text-yatribrand-700" />
-          <span>India Bus Travel Directory</span>
+      {/* Hero Brand Banner */}
+      <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-brand-900 to-brand-800 text-white shadow-xl relative overflow-hidden">
+        <div className="absolute right-0 top-0 bottom-0 w-1/3 opacity-10 pointer-events-none flex items-center justify-end pr-6">
+          <CustomBusIllustration className="h-48 w-48" />
         </div>
-        <h1 className="text-[clamp(0.78rem,4.2vw,2rem)] whitespace-nowrap font-extrabold text-yatriwarm-950 tracking-tight">
-          {t('home_tagline')}
-        </h1>
-        <p className="text-[10px] sm:text-xs leading-tight text-yatriwarm-600 max-w-2xl mx-auto">
-          {t('home_coverage_notice')}
-        </p>
+
+        <div className="relative z-10 max-w-xl">
+          <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-xs font-semibold mb-3">
+            <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+            <span>India Bus Travel Directory</span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+            {t('home_tagline')}
+          </h1>
+          <p className="text-xs sm:text-sm text-brand-100 mt-2">
+            {t('home_coverage_notice')}
+          </p>
+        </div>
       </div>
 
       {/* Route Search Card */}
-      <div className="p-5 sm:p-7 rounded-3xl bg-white border border-yatriwarm-200 shadow-elevated relative z-20">
+      <div className="p-5 sm:p-7 rounded-3xl bg-white border border-surface-border shadow-md">
         <form onSubmit={handleSearch} className="space-y-4">
-          <div className="relative grid grid-cols-1 md:grid-cols-[1fr,auto,1fr] gap-y-3.5 gap-x-3 items-center">
+          <div className="relative space-y-3">
             {/* Origin Input */}
             <div className="relative">
-              <label className="block text-xs font-bold text-yatriwarm-700 uppercase tracking-wider mb-1.5 flex items-center gap-1">
-                <BusIllustration variant="icon" className="w-4 h-4" />
+              <label className="block text-xs font-bold text-slate-700 mb-1">
                 {t('search_from_label')}
               </label>
               <div className="relative">
@@ -251,7 +256,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                     setOriginQuery(e.target.value);
                     setOriginPlace(null);
                   }}
-                  className="w-full px-4 py-3 bg-yatriwarm-50 border border-yatriwarm-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-yatribrand-800 focus:bg-white transition-all"
+                  className="w-full pl-10 pr-10 py-3 rounded-2xl border border-surface-border text-sm focus:ring-2 focus:ring-brand-900 focus:outline-none bg-surface-subtle"
                 />
                 {originQuery && (
                   <button
@@ -296,21 +301,20 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             </div>
 
             {/* Swap Origin & Destination Button */}
-            <div className="absolute left-1/2 top-1/2 z-10 flex -translate-x-1/2 -translate-y-1/2 justify-center md:static md:translate-x-0 md:translate-y-0 md:pt-6">
+            <div className="flex justify-center -my-1">
               <button
                 type="button"
                 onClick={handleSwap}
-                className="h-9 w-9 p-2 rounded-full bg-white hover:bg-yatribrand-100 text-yatribrand-900 border-2 border-yatriwarm-200 transition-colors shadow-md"
+                className="p-2 rounded-full bg-surface-subtle hover:bg-brand-50 border border-surface-border text-slate-600 hover:text-brand-900 transition shadow-sm"
                 title={t('swap_btn')}
               >
-                <ArrowUpDown className="w-4 h-4 md:rotate-90" />
+                <ArrowUpDown className="w-4 h-4" />
               </button>
             </div>
 
             {/* Destination Input */}
             <div className="relative">
-              <label className="block text-xs font-bold text-yatriwarm-700 uppercase tracking-wider mb-1.5 flex items-center gap-1">
-                <BusIllustration variant="icon" className="w-4 h-4" />
+              <label className="block text-xs font-bold text-slate-700 mb-1">
                 {t('search_to_label')}
               </label>
               <div className="relative">
@@ -326,7 +330,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                     setDestinationQuery(e.target.value);
                     setDestinationPlace(null);
                   }}
-                  className="w-full px-4 py-3 bg-yatriwarm-50 border border-yatriwarm-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-yatribrand-800 focus:bg-white transition-all"
+                  className="w-full pl-10 pr-10 py-3 rounded-2xl border border-surface-border text-sm focus:ring-2 focus:ring-brand-900 focus:outline-none bg-surface-subtle"
                 />
                 {destinationQuery && (
                   <button
@@ -581,29 +585,23 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         </div>
       </div>
 
-      {/* Nearby bus stands and bus stops: location is requested only after the user taps */}
-      <section className="yb-nearby-stop-panel rounded-2xl p-5 border shadow-subtle">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <h2 className="text-sm font-bold flex items-center gap-1.5">
-              <Navigation className="w-4 h-4" />
-              {t('nearby_stops_title')}
-            </h2>
-            <p className="text-xs text-yatriwarm-600 mt-1">{t('nearby_stops_description')}</p>
-          </div>
+      {/* Nearby Bus Stops — explicit location request, retaining the original card style */}
+      <section className="space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-sm font-bold text-slate-900">{t('nearby_stops_title')}</h2>
           <button
             type="button"
             onClick={handleFindNearbyStops}
             disabled={isLocating}
-            className="yb-nearby-stop-button px-3 py-2 text-white text-xs font-bold rounded-xl border transition-all flex items-center gap-1.5 shrink-0 shadow-sm"
+            className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-wait disabled:opacity-70"
           >
-            <Navigation className={`w-3.5 h-3.5 ${isLocating ? 'animate-spin' : ''}`} />
+            <Navigation className={`h-4 w-4 ${isLocating ? 'animate-spin' : ''}`} />
             {isLocating ? t('nearby_searching') : t('find_stops_near_me')}
           </button>
         </div>
-        {nearbyError && <p role="status" className="text-xs text-rose-700 mt-3">{nearbyError}</p>}
+        {nearbyError && <p role="status" className="text-xs text-rose-700">{nearbyError}</p>}
         {nearbyStops.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-3 pt-3 border-t border-emerald-200">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {nearbyStops.map(stop => (
               <button
                 type="button"
@@ -613,13 +611,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                   setOriginQuery(stop.canonicalName);
                   setActiveInput(null);
                 }}
-                className="p-2.5 rounded-xl bg-white/80 hover:bg-white cursor-pointer border border-emerald-200 transition-colors flex items-center justify-between text-left"
+                className="p-3.5 rounded-2xl bg-white border border-surface-border shadow-sm hover:border-brand-900 cursor-pointer transition text-left text-xs"
               >
-                <span>
-                  <span className="block text-xs font-semibold text-yatriwarm-900">{stop.canonicalName}</span>
-                  <span className="block text-[11px] text-yatriwarm-600">{stop.district}, {stop.state}</span>
-                </span>
-                <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-md capitalize">{stop.placeType.replace('_', ' ')}</span>
+                <MapPin className="w-4 h-4 text-brand-900 mb-1" />
+                <span className="block font-bold text-slate-900 line-clamp-1">{stop.canonicalName}</span>
+                <span className="text-[10px] text-slate-500 capitalize">{stop.placeType.replace('_', ' ')}</span>
               </button>
             ))}
           </div>

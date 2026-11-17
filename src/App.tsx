@@ -5,7 +5,7 @@ import { HomeScreen } from './components/home/HomeScreen';
 import { RouteDetailModal } from './components/routes/RouteDetailModal';
 import { ContributionModal } from './components/contribution/ContributionModal';
 import { AdminDashboard } from './components/admin/AdminDashboard';
-import { BusIllustration } from './assets/BusIllustration';
+import { CustomBusIllustration } from './components/common/CustomBusIllustration';
 import { MobileBottomNav } from './components/navigation/MobileBottomNav';
 import { OperatorClaimModal } from './components/operator/OperatorClaimModal';
 import {
@@ -128,7 +128,7 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="yatribus-theme min-h-screen flex flex-col text-slate-800">
+    <div className="min-h-screen bg-surface-warm flex flex-col text-slate-800">
       {/* Top Navbar */}
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-surface-border shadow-sm">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
@@ -137,19 +137,19 @@ export const App: React.FC = () => {
             onClick={() => setView('home')}
             className="flex items-center space-x-2.5 cursor-pointer select-none"
           >
-            <div className="yb-brand-mark w-11 h-11 rounded-2xl flex items-center justify-center shadow-subtle">
-              <BusIllustration variant="icon" className="w-7 h-7" />
+            <div className="w-10 h-10 rounded-2xl bg-brand-900 text-white flex items-center justify-center shadow-md">
+              <Navigation className="w-5 h-5 text-amber-300" />
             </div>
             <div>
               <div className="flex items-center space-x-1.5">
-                <span className="yb-brand-name font-extrabold text-base tracking-tight text-white">
+                <span className="font-extrabold text-base tracking-tight text-slate-900">
                   {t('app_title')}
                 </span>
-                <span className="yb-brand-country text-[10px] font-bold uppercase px-1.5 py-0.5 rounded-full">
+                <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
                   India
                 </span>
               </div>
-              <p className="yb-brand-tagline text-[10px] font-medium hidden sm:block">
+              <p className="text-[10px] text-slate-500 font-medium hidden sm:block">
                 Smart Transport Directory
               </p>
             </div>
