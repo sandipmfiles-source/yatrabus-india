@@ -8,7 +8,7 @@ export async function onRequestGet(context: PagesContext): Promise<Response> {
   const url = new URL(request.url);
   const from = (url.searchParams.get("from") || url.searchParams.get("origin") || "").trim();
   const to = (url.searchParams.get("to") || url.searchParams.get("destination") || "").trim();
-  const date = parseServiceDate(url.searchParams.get("date"));
+  const date = parseServiceDate(url.searchParams.get("date") || "");
   const limit = boundedInt(url.searchParams.get("limit"), 20, 1, 50);
   if (!from || !to || !date) return json({ error: "Required: from, to and a valid YYYY-MM-DD date.", timetableStatus: "UNAVAILABLE", results: [] }, 400);
 
