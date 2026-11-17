@@ -114,10 +114,38 @@ jobs:
           cd android
           ./gradlew --no-daemon assembleDebug
 
+      - name: Verify APK package, alignment, and signature
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK="android/app/build/outputs/apk/debug/app-debug.apk"
+          test -s "$APK"
+
+          APKSIGNER="$ANDROID_HOME/build-tools/35.0.0/apksigner"
+          AAPT="$ANDROID_HOME/build-tools/35.0.0/aapt"
+          ZIPALIGN="$ANDROID_HOME/build-tools/35.0.0/zipalign"
+
+          test -x "$APKSIGNER"
+          test -x "$AAPT"
+          test -x "$ZIPALIGN"
+
+          "$APKSIGNER" verify --verbose --print-certs "$APK"
+          "$ZIPALIGN" -c -v 4 "$APK"
+
+          BADGING="$("$AAPT" dump badging "$APK")"
+          printf '%s\\n' "$BADGING"
+          printf '%s\\n' "$BADGING" | grep -F "package: name='in.yatrabus.app.debug'"
+          printf '%s\\n' "$BADGING" | grep -F "sdkVersion:'22'"
+          printf '%s\\n' "$BADGING" | grep -F "targetSdkVersion:'34'"
+
+          mkdir -p verified-apk
+          cp "$APK" verified-apk/YatraBus-India-Android.apk
+          sha256sum verified-apk/YatraBus-India-Android.apk | tee verified-apk/SHA256SUMS.txt
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: yatrabus-india-debug-apk
-          path: android/app/build/outputs/apk/debug/*.apk
+          path: verified-apk/*
           if-no-files-found: error
           retention-days: 14
