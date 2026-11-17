@@ -98,11 +98,7 @@ jobs:
           set -euo pipefail
           mkdir -p android
           if [ ! -s android/debug.keystore ]; then
-            keytool -genkeypair -noprompt -v \\
-              -keystore android/debug.keystore -storetype JKS \\
-              -storepass yatribus-debug-only -keypass yatribus-debug-only \\
-              -alias yatribusdebug -keyalg RSA -keysize 2048 -validity 10000 \\
-              -dname "CN=YatraBus Debug, OU=Development, O=YatraBus, L=Kolkata, ST=West Bengal, C=IN"
+            keytool -genkeypair -noprompt -v -keystore android/debug.keystore -storetype JKS -storepass yatribus-debug-only -keypass yatribus-debug-only -alias yatribusdebug -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=YatraBus Debug, OU=Development, O=YatraBus, L=Kolkata, ST=West Bengal, C=IN"
           fi
           keytool -list -keystore android/debug.keystore -storepass yatribus-debug-only -alias yatribusdebug
 
