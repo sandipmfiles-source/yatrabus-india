@@ -35,8 +35,6 @@ export function runIndiaCatalogueTests(assert: (description: string, pass: boole
   assert('Every administrative state/UT and capital has source provenance', INDIA_ADMIN_AREA_PLACES
     .filter(item => item.id.startsWith('india-admin-'))
     .every(item => !!item.sourceUrl && !!item.sourceSnapshotDate && item.verificationStatus === 'UNVERIFIED'));
-}
-
 
   const osmSeed = JSON.parse(readFileSync('data/osm-west-bengal-bus-stops.json', 'utf8')) as {
     license: string;
@@ -62,3 +60,4 @@ export function runIndiaCatalogueTests(assert: (description: string, pass: boole
   ));
   assert('Nearby stop lookup matches imported place types case-insensitively', /LOWER\(place_type\) IN/.test(nearbyEndpoint));
   assert('Nearby stop endpoint never labels mapped directory records as timetable-verified', /timetableVerified:\s*false/.test(nearbyEndpoint));
+}
