@@ -49,7 +49,7 @@ jobs:
           kolkata="$(curl --fail --silent --show-error --retry 3 --retry-delay 2 --get --data-urlencode 'q=Kolkata' --data-urlencode 'limit=8' "$base/places/search")"
           printf '%s' "$kolkata" | jq -e '.success == true and (.data | length > 0)' >/dev/null
           terminal="$(curl --fail --silent --show-error --retry 3 --retry-delay 2 --get --data-urlencode 'q=Esplanade' --data-urlencode 'limit=8' "$base/places/search")"
-          printf '%s' "$terminal" | jq -e '.success == true and any(.data[]; .placeType == "bus_terminal")' >/dev/null
+          printf '%s' "$terminal" | jq -e '.success == true and any(.data[]; (.place.placeType // .placeType) == "bus_terminal")' >/dev/null
           routes="$(curl --fail --silent --show-error --retry 3 --retry-delay 2 "$base/routes")"
           printf '%s' "$routes" | jq -e '.success == true and (.data | length > 0)' >/dev/null
           echo "Production API smoke test passed: India place data, Kolkata search, Esplanade bus terminal, published routes and timetables are reachable."
