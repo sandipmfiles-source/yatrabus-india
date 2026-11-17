@@ -2,9 +2,9 @@ name: Phase 6 Final QA Gate
 
 on:
   pull_request:
-    branches: [phase5-production-readiness]
+    branches: [main, phase5-production-readiness]
   push:
-    branches: [phase6-final-qa]
+    branches: [main, phase6-final-qa]
 
 permissions:
   contents: read
