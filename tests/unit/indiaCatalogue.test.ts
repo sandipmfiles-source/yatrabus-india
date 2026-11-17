@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { boundedInt } from '../../functions/_lib/api.js';
 import { INDIA_ADMINISTRATIVE_UNITS, INDIA_STATE_COUNT, INDIA_UT_COUNT } from '../../packages/shared/src/data/indiaCatalogue.js';
 import { INDIA_GOVERNMENT_OPERATORS } from '../../packages/shared/src/data/indiaGovernmentOperators.js';
 import { INDIA_ADMIN_AREA_PLACES } from '../../backend/src/db/indiaAdminAreas.js';
@@ -66,4 +67,8 @@ export function runIndiaCatalogueTests(assert: (description: string, pass: boole
   const androidVersionName = androidGradle.match(/versionName\s+"([^"]+)"/)?.[1] || '';
   assert('Android update increments versionCode and keeps a valid semantic versionName', androidVersionCode > 2 &&
     /^\d+\.\d+\.\d+$/.test(androidVersionName));
+  assert('Missing or blank API limit query parameters use the documented fallback', boundedInt(null, 10, 1, 50) === 10 &&
+    boundedInt('', 10, 1, 50) === 10 && boundedInt('invalid', 10, 1, 50) === 10 &&
+    boundedInt('3', 10, 1, 50) === 3 && boundedInt('0', 10, 1, 50) === 1 &&
+    boundedInt('99', 10, 1, 50) === 50);
 }
