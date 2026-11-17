@@ -1,6 +1,6 @@
 import { PagesContext, json, unavailable } from "../../../_lib/api.js";
 import { getRoute } from "../../../_lib/tracking.js";
-import { evaluateJourneyPrompt } from "../../../packages/shared/src/engine/journeyConfirmationEngine.js";
+import { evaluateJourneyPrompt } from "../../../../packages/shared/src/engine/journeyConfirmationEngine.js";
 export { onRequestOptions } from "../../../_lib/api.js";
 
 export async function onRequestPost({request,env}:PagesContext):Promise<Response>{

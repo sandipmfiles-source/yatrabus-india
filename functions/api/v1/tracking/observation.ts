@@ -1,4 +1,4 @@
-import { PagesContext, json, unavailable, parsePayload } from "../../../_lib/api.js";
+import { PagesContext, json, unavailable } from "../../../_lib/api.js";
 import { getJourneySession, getRoute, sessionIsActiveAndConsented, routeDistance, evaluateGpsObservation, distanceMeters } from "../../../_lib/tracking.js";
 export { onRequestOptions } from "../../../_lib/api.js";
 
@@ -8,7 +8,7 @@ export async function onRequestPost({request,env}:PagesContext):Promise<Response
   const sessionId=String(body?.sessionId||""),busId=String(body?.busId||""),routeId=String(body?.routeId||"");
   const latitude=Number(body?.latitude),longitude=Number(body?.longitude),accuracyMeters=Number(body?.accuracyMeters);
   const locationSource=String(body?.locationSource||"GPS").toUpperCase()==="NETWORK"?"NETWORK":"GPS";
-  const timestamp=body?.timestamp?new Date(body.timestamp).toISOString():new Date().toISOString();
+  const timestampValue=body?.timestamp?Date.parse(body.timestamp):Date.now();\n  if(!Number.isFinite(timestampValue)) return json({accepted:false,error:"Location timestamp is invalid."},400);\n  const timestamp=new Date(timestampValue).toISOString();
   const speedKmh=body?.speedKmh==null?undefined:Number(body.speedKmh);
   const headingDegrees=body?.headingDegrees==null?undefined:Number(body.headingDegrees);
   if(!sessionId||!busId||!routeId||!Number.isFinite(latitude)||!Number.isFinite(longitude)||Math.abs(latitude)>90||Math.abs(longitude)>180||!Number.isFinite(accuracyMeters)||accuracyMeters<=0)
