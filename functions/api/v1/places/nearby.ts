@@ -31,37 +31,38 @@ async function fetchOsmNearbyStops(lat: number, lng: number, radiusMeters: numbe
     ');out center tags;';
 
   let payload: { elements?: Array<Record<string, any>> } | null = null;
-  const endpoints = [
-    "https://overpass-api.de/api/interpreter",
-    "https://overpass.kumi.systems/api/interpreter",
-    "https://overpass.nchc.org.tw/api/interpreter",
-    "https://overpass.private.coffee/api/interpreter",
+  const endpoints: Array<{ url: string; method: "POST" | "GET" }> = [
+    { url: "https://overpass-api.de/api/interpreter", method: "POST" },
+    { url: "https://overpass.kumi.systems/api/interpreter", method: "POST" },
+    { url: "https://overpass.nchc.org.tw/api/interpreter", method: "GET" },
+    { url: "https://overpass.private.coffee/api/interpreter", method: "GET" },
   ];
+  let emptyPayload: { elements?: Array<Record<string, any>> } | null = null;
   for (const endpoint of endpoints) {
-    for (const method of ["POST", "GET"] as const) {
-      try {
-        const requestUrl = method === "GET" ? endpoint + "?data=" + encodeURIComponent(query) : endpoint;
-        const response = await fetch(requestUrl, {
-          method,
-          headers: {
-            "Accept": "application/json",
-            ...(method === "POST" ? { "Content-Type": "application/x-www-form-urlencoded" } : {}),
-          },
-          ...(method === "POST" ? { body: "data=" + encodeURIComponent(query) } : {}),
-          signal: AbortSignal.timeout(15000),
-        });
-        if (!response.ok) continue;
-        const candidate = await response.json() as { elements?: Array<Record<string, any>> };
-        if (Array.isArray(candidate.elements)) {
-          payload = candidate;
-          break;
-        }
-      } catch {
-        // Try another public Overpass instance or its GET interface.
+    try {
+      const requestUrl = endpoint.method === "GET" ? endpoint.url + "?data=" + encodeURIComponent(query) : endpoint.url;
+      const response = await fetch(requestUrl, {
+        method: endpoint.method,
+        headers: {
+          "Accept": "application/json",
+          ...(endpoint.method === "POST" ? { "Content-Type": "application/x-www-form-urlencoded" } : {}),
+        },
+        ...(endpoint.method === "POST" ? { body: "data=" + encodeURIComponent(query) } : {}),
+        signal: AbortSignal.timeout(15000),
+      });
+      if (!response.ok) continue;
+      const candidate = await response.json() as { elements?: Array<Record<string, any>> };
+      if (!Array.isArray(candidate.elements)) continue;
+      if (candidate.elements.length > 0) {
+        payload = candidate;
+        break;
       }
+      emptyPayload = candidate;
+    } catch {
+      // Continue to the next public Overpass instance.
     }
-    if (payload) break;
   }
+  payload = payload || emptyPayload;
   if (!payload) throw new Error("OpenStreetMap nearby lookup failed");
   const radians = (value: number) => value * Math.PI / 180;
   const distance = (aLat: number, aLng: number) => {
