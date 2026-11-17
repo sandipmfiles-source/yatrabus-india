@@ -2,41 +2,175 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  color-scheme: light;
+  --yb-yellow: #FACC15;
+  --yb-yellow-soft: #FFF7D6;
+  --yb-red: #DC2626;
+  --yb-red-dark: #991B1B;
+  --yb-charcoal: #171717;
+  --yb-charcoal-soft: #292524;
+  --yb-paper: #FFFEF8;
+}
+
 @layer base {
+  html { background: var(--yb-paper); }
   body {
-    @apply bg-surface-warm text-slate-800 antialiased;
+    @apply text-slate-800 antialiased font-sans;
+    -webkit-tap-highlight-color: transparent;
+    background-color: var(--yb-paper);
+    background-image: radial-gradient(circle at 1px 1px, rgba(41, 37, 36, 0.055) 1px, transparent 0);
+    background-size: 22px 22px;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
+  button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+  :focus-visible {
+    outline: 3px solid rgba(220, 38, 38, 0.55);
+    outline-offset: 2px;
+  }
 }
 
+.animate-fade-in { animation: fadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: scale(0.98);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
+  from { opacity: 0; transform: scale(0.98); }
+  to { opacity: 1; transform: scale(1); }
 }
 
-.animate-fade-in {
-  animation: fadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+/* Original YatraBus traffic-signal identity: warm paper, charcoal, yellow and signal red. */
+.yatribus-theme { min-height: 100vh; background: var(--yb-paper); }
+.yatribus-theme header {
+  color: #fff;
+  background: rgba(12, 15, 22, .96);
+  border-bottom: 2px solid rgba(250, 204, 21, .72);
+  box-shadow: 0 12px 36px rgba(12, 15, 22, .18);
+  backdrop-filter: blur(18px) saturate(145%);
+}
+.yatribus-theme header a,
+.yatribus-theme header button { color: #fff; }
+.yatribus-theme header a:hover,
+.yatribus-theme header button:hover { color: var(--yb-yellow); }
+.yatribus-theme header .bg-brand-900,
+.yatribus-theme header .bg-brand-800 {
+  color: var(--yb-charcoal);
+  background: linear-gradient(145deg, #fff2ad 0%, #facc15 65%, #eab308 100%);
+  border: 1px solid rgba(255,255,255,.55);
+  box-shadow: 0 0 0 4px rgba(250,204,21,.08), 0 8px 22px rgba(250,204,21,.2);
+}
+.yatribus-theme header .text-slate-900,
+.yatribus-theme header .text-slate-800,
+.yatribus-theme header .text-slate-600,
+.yatribus-theme header .text-slate-500 { color: #f5f5f4; }
+.yatribus-theme header .bg-emerald-100 { color: var(--yb-charcoal); background: var(--yb-yellow); }
+.yatribus-theme header .bg-surface-subtle { background: rgba(255,255,255,.1); border-color: rgba(255,255,255,.18); }
+.yatribus-theme header .border-surface-border { border-color: rgba(255,255,255,.2); }
+.yatribus-theme header nav button { border: 1px solid transparent; }
+.yatribus-theme header nav button:hover { border-color: rgba(250,204,21,.24); }
+.yatribus-theme header p { color: #cbd5e1; }
+.yatribus-theme main { background: transparent; }
+
+/* Warm paper and softly raised cards, matching the original YatraBus interface. */
+.yatribus-theme main .bg-white,
+.yatribus-theme footer.bg-white {
+  border-color: #F1E3B5;
+  box-shadow: 0 8px 28px rgba(41, 37, 36, .055);
+}
+.yatribus-theme main input,
+.yatribus-theme main select,
+.yatribus-theme main textarea {
+  border-color: #E8D9A7;
+  background-color: #FFFEF8;
+}
+.yatribus-theme main input:focus,
+.yatribus-theme main select:focus,
+.yatribus-theme main textarea:focus {
+  border-color: var(--yb-red);
+  --tw-ring-color: rgba(220, 38, 38, .2);
+}
+.yatribus-theme main button.bg-brand-900,
+.yatribus-theme main a.bg-brand-900,
+.yatribus-theme main button[type="submit"] {
+  color: var(--yb-charcoal);
+  background: linear-gradient(135deg, #FDE68A 0%, var(--yb-yellow) 100%);
+  border: 1px solid #EAB308;
+  box-shadow: 0 6px 16px rgba(234, 179, 8, .22);
+}
+.yatribus-theme main button.bg-brand-900:hover,
+.yatribus-theme main a.bg-brand-900:hover,
+.yatribus-theme main button[type="submit"]:hover {
+  color: #111;
+  background: #FBBF24;
+  transform: translateY(-1px);
+}
+.yatribus-theme main .bg-gradient-to-r {
+  background-image: linear-gradient(115deg, #171717 0%, #292524 72%, #7F1D1D 100%);
+  border: 1px solid rgba(250, 204, 21, .35);
+}
+.yatribus-theme main .bg-gradient-to-r .text-brand-100 { color: #FDE68A; }
+.yatribus-theme main .text-emerald-600,
+.yatribus-theme main .text-emerald-500 { color: #059669; }
+.yatribus-theme main .bg-emerald-50,
+.yatribus-theme main .bg-emerald-100 { background-color: #ECFDF5; }
+.yatribus-theme main .border-emerald-200 { border-color: #A7F3D0; }
+
+/* Premium brand motion, reduced automatically for accessibility preferences. */
+.yatribus-theme header .rounded-2xl { transition: box-shadow .25s ease, transform .25s ease; }
+.yatribus-theme header .rounded-2xl:hover { box-shadow: 0 0 0 4px rgba(250,204,21,.12), 0 10px 24px rgba(250,204,21,.2); }
+.yatribus-theme main .rounded-3xl { transition: box-shadow .25s ease, border-color .25s ease, transform .25s ease; }
+.yatribus-theme main .rounded-3xl:hover { box-shadow: 0 16px 38px rgba(23,23,23,.09); }
+.yb-route-line { background: linear-gradient(180deg, #facc15, #dc2626 55%, rgba(220,38,38,.12)); }
+.yb-route-stop { position: relative; }
+.yb-route-stop::before {
+  content: ""; position: absolute; left: -1.32rem; top: .35rem; width: .7rem; height: .7rem;
+  border-radius: 999px; background: #facc15; border: 2px solid #171717;
+  box-shadow: 0 0 0 3px rgba(250,204,21,.18);
+}
+.live-pulse-badge { --yb-pulse: rgba(5,150,105,.5); animation: pulse-ring 2s infinite cubic-bezier(.45,0,.55,1); }
+@keyframes pulse-ring {
+  0% { transform: scale(.95); box-shadow: 0 0 0 0 var(--yb-pulse); }
+  70% { transform: scale(1.12); box-shadow: 0 0 0 9px rgba(5,150,105,0); }
+  100% { transform: scale(.95); box-shadow: 0 0 0 0 rgba(5,150,105,0); }
 }
 
-/* Custom Leaflet Map styling overrides */
-.leaflet-container {
-  width: 100%;
-  height: 100%;
-  border-radius: 1rem;
-  z-index: 10;
+/* Nearby stop action intentionally remains green to indicate GPS/live availability. */
+.yatribus-theme main .yb-nearby-stop-panel {
+  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+  border-color: #86efac;
+  box-shadow: 0 10px 28px rgba(5,150,105,.1);
 }
+.yatribus-theme main .yb-nearby-stop-button {
+  color: #fff !important;
+  background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+  border-color: #047857 !important;
+}
+.yatribus-theme main .yb-nearby-stop-button:hover:not(:disabled) { background: #065f46 !important; }
 
+.leaflet-container { width: 100%; height: 100%; border-radius: 1rem; z-index: 10; }
 .leaflet-popup-content-wrapper {
-  border-radius: 0.75rem !important;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+  border-radius: .75rem !important;
+  box-shadow: 0 10px 15px -3px rgba(0,0,0,.1), 0 4px 6px -2px rgba(0,0,0,.05) !important;
 }
+.leaflet-popup-tip { background: white !important; }
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #FFF9E8; }
+::-webkit-scrollbar-thumb { background: #D6C58D; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #A89A6C; }
 
-.leaflet-popup-tip {
-  background: white !important;
+html[data-text-size="large"] { font-size: 112.5%; }
+html[data-text-size="largest"] { font-size: 125%; }
+html[data-high-contrast="true"] { --yb-paper: #fff; color: #000; }
+html[data-high-contrast="true"] body,
+html[data-high-contrast="true"] .yatribus-theme { background: #fff; color: #000; }
+html[data-high-contrast="true"] :focus-visible { outline: 4px solid #000; outline-offset: 3px; }
+html[data-reduced-motion="true"] *,
+html[data-reduced-motion="true"] *::before,
+html[data-reduced-motion="true"] *::after {
+  animation-duration: .01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: .01ms !important;
+  scroll-behavior: auto !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .live-pulse-badge { animation: none !important; }
+  .yatribus-theme main .rounded-3xl,
+  .yatribus-theme header .rounded-2xl { transition: none !important; }
 }
