@@ -37,6 +37,22 @@ jobs:
         run: npm ci
       - name: Build website
         run: npm run build
+      - name: Smoke-test live production data, place suggestions and route directory
+        shell: bash
+        run: |
+          set -euo pipefail
+          base='https://yatrabus-india.pages.dev/api/v1'
+          health="$(curl --fail --silent --show-error --retry 3 --retry-delay 2 "$base/health")"
+          printf '%s' "$health" | jq -e '.success == true and .data.schemaReady == true and .data.timetableCalendarReady == true' >/dev/null
+          coverage="$(curl --fail --silent --show-error --retry 3 --retry-delay 2 "$base/data/status")"
+          printf '%s' "$coverage" | jq -e '.success == true and .data.administrativeDirectory.records >= 15000 and .data.busServiceData.routes > 0 and .data.busServiceData.timetables > 0' >/dev/null
+          kolkata="$(curl --fail --silent --show-error --retry 3 --retry-delay 2 --get --data-urlencode 'q=Kolkata' --data-urlencode 'limit=8' "$base/places/search")"
+          printf '%s' "$kolkata" | jq -e '.success == true and (.data | length > 0)' >/dev/null
+          terminal="$(curl --fail --silent --show-error --retry 3 --retry-delay 2 --get --data-urlencode 'q=Esplanade' --data-urlencode 'limit=8' "$base/places/search")"
+          printf '%s' "$terminal" | jq -e '.success == true and any(.data[]; .placeType == "bus_terminal")' >/dev/null
+          routes="$(curl --fail --silent --show-error --retry 3 --retry-delay 2 "$base/routes")"
+          printf '%s' "$routes" | jq -e '.success == true and (.data | length > 0)' >/dev/null
+          echo "Production API smoke test passed: India place data, Kolkata search, Esplanade bus terminal, published routes and timetables are reachable."
       - name: Type-check Cloudflare Pages Functions
         run: |
           find functions -name '*.ts' -print0 | xargs -0 npx tsc --noEmit --target ES2022 --module ESNext --moduleResolution bundler --strict --skipLibCheck --lib ES2022,DOM
