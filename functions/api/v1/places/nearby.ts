@@ -28,14 +28,28 @@ async function fetchOsmNearbyStops(lat: number, lng: number, radiusMeters: numbe
     'way(around:' + radiusMeters + ',' + lat + ',' + lng + ')["public_transport"="platform"];' +
     ');out center tags;';
 
-  const response = await fetch("https://overpass-api.de/api/interpreter", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded", "User-Agent": "YatraBusIndia/1.0" },
-    body: "data=" + encodeURIComponent(query),
-    signal: AbortSignal.timeout(15000),
-  });
-  if (!response.ok) throw new Error("OpenStreetMap nearby lookup failed");
-  const payload = await response.json() as { elements?: Array<Record<string, any>> };
+  let payload: { elements?: Array<Record<string, any>> } | null = null;
+  const endpoints = [
+    "https://overpass-api.de/api/interpreter",
+    "https://overpass.kumi.systems/api/interpreter",
+  ];
+  for (const endpoint of endpoints) {
+    try {
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded", "User-Agent": "YatraBusIndia/1.0" },
+        body: "data=" + encodeURIComponent(query),
+        signal: AbortSignal.timeout(12000),
+      });
+      if (!response.ok) continue;
+      payload = await response.json() as { elements?: Array<Record<string, any>> };
+      if (Array.isArray(payload.elements)) break;
+      payload = null;
+    } catch {
+      // Retry once against a separate public Overpass instance.
+    }
+  }
+  if (!payload) throw new Error("OpenStreetMap nearby lookup failed");
   const radians = (value: number) => value * Math.PI / 180;
   const distance = (aLat: number, aLng: number) => {
     const dLat = radians(aLat - lat), dLng = radians(aLng - lng);
@@ -47,12 +61,13 @@ async function fetchOsmNearbyStops(lat: number, lng: number, radiusMeters: numbe
   const stops: OSMStop[] = [];
   for (const element of Array.isArray(payload.elements) ? payload.elements : []) {
     const tags = element.tags || {};
-    const name = String(tags.name || tags["name:en"] || tags["name:hi"] || tags.official_name || tags.ref || "").trim();
+    const rawName = String(tags.name || tags["name:en"] || tags["name:hi"] || tags.official_name || tags.ref || "").trim();
     const isStand = tags.amenity === "bus_station" || tags.public_transport === "station" ||
-      /\b(isbt|bus\s*(stand|station|terminal|depot)|terminal|depot)\b/i.test(name);
+      /\b(isbt|bus\s*(stand|station|terminal|depot)|terminal|depot)\b/i.test(rawName);
     const isStop = tags.highway === "bus_stop" || tags.public_transport === "platform" ||
       tags.public_transport === "stop_position" || tags.bus === "yes";
-    if (!name || (!isStand && !isStop)) continue;
+    if (!isStand && !isStop) continue;
+    const name = rawName || String(tags["addr:street"] || tags["addr:suburb"] || tags.operator || (isStand ? "Bus stand" : "Bus stop")).trim();
     const stopLat = Number(element.lat ?? element.center?.lat);
     const stopLng = Number(element.lon ?? element.center?.lon);
     if (!Number.isFinite(stopLat) || !Number.isFinite(stopLng) ||
