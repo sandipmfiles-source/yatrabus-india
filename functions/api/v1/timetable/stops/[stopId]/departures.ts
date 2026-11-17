@@ -16,7 +16,7 @@ export async function onRequestGet({ request, env, params }: PagesContext): Prom
   if (!env.DB) return unavailable();
   const stopId = String(params?.stopId || "");
   const url = new URL(request.url);
-  const date = parseServiceDate(url.searchParams.get("date"));
+  const date = parseServiceDate(url.searchParams.get("date") || "");
   const limit = boundedInt(url.searchParams.get("limit"), 20, 1, 50);
   if (!stopId || !date) return json({ error: "Required: stopId and a valid date (YYYY-MM-DD).", timetableStatus: "UNAVAILABLE", departures: [] }, 400);
   try {
