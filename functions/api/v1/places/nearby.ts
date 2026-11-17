@@ -35,6 +35,7 @@ async function fetchOsmNearbyStops(lat: number, lng: number, radiusMeters: numbe
     "https://overpass-api.de/api/interpreter",
     "https://overpass.kumi.systems/api/interpreter",
     "https://overpass.nchc.org.tw/api/interpreter",
+    "https://overpass.private.coffee/api/interpreter",
   ];
   for (const endpoint of endpoints) {
     for (const method of ["POST", "GET"] as const) {
@@ -44,11 +45,10 @@ async function fetchOsmNearbyStops(lat: number, lng: number, radiusMeters: numbe
           method,
           headers: {
             "Accept": "application/json",
-            "User-Agent": "YatraBusIndia/1.0 (+https://github.com/sandipmfiles-source/yatrabus-india)",
             ...(method === "POST" ? { "Content-Type": "application/x-www-form-urlencoded" } : {}),
           },
           ...(method === "POST" ? { body: "data=" + encodeURIComponent(query) } : {}),
-          signal: AbortSignal.timeout(10000),
+          signal: AbortSignal.timeout(15000),
         });
         if (!response.ok) continue;
         const candidate = await response.json() as { elements?: Array<Record<string, any>> };
