@@ -261,7 +261,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, Record<string, string>> = {
     nearby_searching: 'কাছের স্টপ খোঁজা হচ্ছে…',
     nearby_location_unavailable: 'এই ডিভাইসে অবস্থান উপলব্ধ নয়।',
     nearby_permission_needed: 'কাছের বাস স্টপ খুঁজতে অবস্থানের অনুমতি দিন।',
-    nearby_search_failed: 'কাছের বাস স্টপ লোড করা যায়নি। আবার চেষ্টা করুন。',
+    nearby_search_failed: 'কাছের বাস স্টপ লোড করা যায়নি। আবার চেষ্টা করুন।',
     popular_routes_title: 'প্রকাশিত তথ্যযুক্ত বাস রুট',
     no_results_found: 'এই যাত্রার জন্য কোনো প্রকাশিত বাস রুট পাওয়া যায়নি।',
     suggest_missing_prompt: 'অন্য যাত্রীদের সাহায্য করতে এই বাসের তথ্য যুক্ত করুন!',
