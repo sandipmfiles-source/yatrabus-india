@@ -15,6 +15,8 @@ export interface PagesEnv {
   ADMIN_PASSWORD_HASH?: string;
   ADMIN_JWT_SECRET?: string;
   RATE_LIMIT_SECRET?: string;
+  OPENCELLID_API_KEY?: string;
+  QR_SIGNING_SECRET?: string;
 }
 export interface PagesContext { request: Request; env: PagesEnv; params?: Record<string, string> }
 export function json(body: unknown, status = 200): Response {
@@ -22,7 +24,7 @@ export function json(body: unknown, status = 200): Response {
     "Content-Type": "application/json; charset=utf-8",
     "Cache-Control": "no-store",
     "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, Authorization"
   }});
 }
@@ -40,7 +42,7 @@ export function boundedInt(value: string | null, fallback: number, min: number, 
 export async function onRequestOptions(): Promise<Response> {
   return new Response(null, { status: 204, headers: {
     "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, Authorization",
     "Access-Control-Max-Age": "86400"
   }});

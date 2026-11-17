@@ -1,361 +1,140 @@
-import http from 'http';
-import { parse as parseUrl } from 'url';
-import { ApiHandler } from './routes/api';
-import { OperatorClaimService } from './services/operatorClaimService';
-import { initDatabase } from './db/db';
-import { AdminAuthService } from './services/adminAuthService';
+import express, { Request, Response, NextFunction } from 'express';
+import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { CONFIG } from './config.js';
+import { repository } from './db/repository.js';
+import { installRepositoryPersistence, isRepositoryPersistenceReady } from './db/persistence.js';
+import { placesRouter } from './routes/places.js';
+import { routesRouter } from './routes/routes.js';
+import { busesRouter } from './routes/buses.js';
+import { trackingRouter } from './routes/tracking.js';
+import { contributionsRouter } from './routes/contributions.js';
+import { adminRouter } from './routes/admin.js';
+import { indiaCatalogueRouter } from './routes/indiaCatalogue.js';
+import { timetableRouter } from './routes/timetable.js';
 
-const PORT = process.env.PORT || 3000;
+export function createServer() {
+  installRepositoryPersistence();
+  repository.ensureSuperAdmin(CONFIG.ADMIN_EMAIL);
+  const app = express();
+  // Trust forwarded client IPs only when the deployment explicitly configures
+  // the exact number of trusted reverse-proxy hops. Never trust arbitrary headers.
+  app.set('trust proxy', CONFIG.TRUST_PROXY_HOPS);
 
-function setCorsHeaders(res: http.ServerResponse) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
-}
+  // Reduce avoidable information disclosure and browser-side attack surface.
+  app.disable('x-powered-by');
+  app.use((_req: Request, res: Response, next: NextFunction) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('Referrer-Policy', 'no-referrer');
+    res.setHeader('Permissions-Policy', 'camera=(self), microphone=(self), geolocation=(self)');
+    next();
+  });
 
-function requireAdminAuth(req: http.IncomingMessage, res: http.ServerResponse): boolean {
-  const authHeader = req.headers['authorization'] || '';
-  if (!authHeader.startsWith('Bearer ')) {
-    res.writeHead(401, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ success: false, error: 'Unauthorized: Valid administrator Bearer token required' }));
-    return false;
-  }
+  // GTFS ZIP uploads have a dedicated bounded 14 MB JSON limit; all other APIs remain 1 MB.
+  app.use('/api/admin/gtfs', express.json({ limit: '14mb' }));
+  app.use(express.json({ limit: '1mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '1mb', parameterLimit: 100 }));
 
-  const token = authHeader.substring(7).trim();
-  const authResult = AdminAuthService.validateSession(token);
-  if (!authResult.valid) {
-    res.writeHead(401, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ success: false, error: authResult.error || 'Invalid or expired administrator token' }));
-    return false;
-  }
-
-  return true;
-}
-
-function parseJsonBody(req: http.IncomingMessage): Promise<any> {
-  return new Promise((resolve, reject) => {
-    let body = '';
-    req.on('data', chunk => {
-      body += chunk.toString();
-    });
-    req.on('end', () => {
-      if (!body) return resolve({});
+  // Cross-origin browser access is allow-listed. Native Capacitor HTTP and same-origin
+  // requests do not require a permissive wildcard CORS policy.
+  const allowedOrigins = new Set(CONFIG.CORS_ALLOWED_ORIGINS);
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    const origin = req.headers.origin;
+    res.vary('Origin');
+    let sameHostOrigin = false;
+    if (origin) {
       try {
-        resolve(JSON.parse(body));
-      } catch (err) {
-        reject(err);
+        const requestOrigin = `${req.protocol}://${req.get('host')}`;
+        sameHostOrigin = new URL(origin).origin === new URL(requestOrigin).origin;
+      } catch {
+        return res.status(403).json({ error: 'Origin not allowed.' });
       }
-    });
-    req.on('error', reject);
+    }
+    if (origin && !sameHostOrigin && !allowedOrigins.has(origin)) {
+      return res.status(403).json({ error: 'Origin not allowed.' });
+    }
+    if (origin) res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+    if (req.method === 'OPTIONS') return res.sendStatus(204);
+    next();
   });
+
+  // Health checks also verify that the persistent state file is writable.
+  const healthHandler = (_req: Request, res: Response) => {
+    const storageReady = isRepositoryPersistenceReady();
+    const [adminSalt, adminHash, adminHashExtra] = CONFIG.ADMIN_PASSWORD_HASH.split(':');
+    const adminAuthReady = Boolean(
+      CONFIG.ADMIN_EMAIL && adminSalt && adminHashExtra === undefined &&
+      /^[a-f0-9]{128}$/i.test(adminHash || '') && CONFIG.ADMIN_JWT_SECRET.length >= 32
+    );
+    const productionConfigReady = CONFIG.NODE_ENV !== 'production' || adminAuthReady;
+    const serviceReady = storageReady && productionConfigReady;
+    res.status(serviceReady ? 200 : 503).json({
+      status: serviceReady ? 'UP' : 'DEGRADED',
+      storageReady,
+      adminAuthReady,
+      productionConfigReady,
+      storageMode: 'JSON_FILE',
+      service: 'YatriBus Backend API',
+      timestamp: new Date().toISOString(),
+    });
+  };
+  app.get('/health', healthHandler);
+  app.get('/api/health', healthHandler);
+
+  // Mount API routers
+  app.use('/api/places', placesRouter);
+  app.use('/api/routes', routesRouter);
+  app.use('/api/buses', busesRouter);
+  app.use('/api/tracking', trackingRouter);
+  app.use('/api/contributions', contributionsRouter);
+  app.use('/api/admin', adminRouter);
+  app.use('/api/india/catalogue', indiaCatalogueRouter);
+  app.use('/api/timetable', timetableRouter);
+
+  // Serve the built passenger app and API from one HTTPS host/container.
+  const webDist = resolve(process.cwd(), 'dist');
+  const webIndex = resolve(webDist, 'index.html');
+  if (existsSync(webIndex)) {
+    app.use(express.static(webDist, { index: false, maxAge: '1h' }));
+    app.use((req: Request, res: Response, next: NextFunction) => {
+      if (req.method === 'GET' && !req.path.startsWith('/api/') && req.path !== '/health') {
+        return res.sendFile(webIndex);
+      }
+      next();
+    });
+  }
+
+  // 404 handler
+  app.use((req: Request, res: Response) => {
+    res.status(404).json({ error: 'Endpoint Not Found', path: req.path });
+  });
+
+  // Never send internal exception messages, file paths or stack details to clients.
+  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+    console.error('Server error:', err);
+    const status = Number.isInteger(err?.status) && err.status >= 400 && err.status < 500
+      ? err.status
+      : 500;
+    if (status === 413) {
+      return res.status(413).json({ error: 'Request body exceeds the endpoint upload limit (GTFS import: 14 MB; other APIs: 1 MB).' });
+    }
+    if (status === 400) {
+      return res.status(400).json({ error: 'Invalid request body.' });
+    }
+    return res.status(500).json({ error: 'Internal Server Error' });
+  });
+
+  return app;
 }
 
-const server = http.createServer(async (req, res) => {
-  setCorsHeaders(res);
+export const app = createServer();
 
-  if (req.method === 'OPTIONS') {
-    res.writeHead(204);
-    res.end();
-    return;
-  }
-
-  const parsed = parseUrl(req.url || '', true);
-  const pathname = parsed.pathname || '';
-  const query = parsed.query;
-
-  try {
-    // 1. Health check
-    if (pathname === '/api/v1/health' && req.method === 'GET') {
-      const response = await ApiHandler.getHealth();
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify(response));
-      return;
-    }
-
-    // 2. Places search
-    if (pathname === '/api/v1/places/search' && req.method === 'GET') {
-      const q = (query.q as string) || '';
-      const limit = query.limit ? parseInt(query.limit as string) : 8;
-      const response = await ApiHandler.searchPlaces(q, limit);
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify(response));
-      return;
-    }
-
-    // 3. Nearby places
-    if (pathname === '/api/v1/places/nearby' && req.method === 'GET') {
-      const lat = parseFloat(query.lat as string);
-      const lng = parseFloat(query.lng as string);
-      const radiusKm = query.radiusKm ? parseFloat(query.radiusKm as string) : 5;
-      const response = await ApiHandler.getNearbyPlaces(lat, lng, radiusKm);
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify(response));
-      return;
-    }
-
-    // 4. Place by ID
-    const placeMatch = pathname.match(/^\/api\/v1\/places\/([a-zA-Z0-9_-]+)$/);
-    if (placeMatch && req.method === 'GET') {
-      const id = placeMatch[1];
-      const response = await ApiHandler.getPlaceById(id);
-      res.writeHead(response.success ? 200 : 404, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify(response));
-      return;
-    }
-
-    // 4.5. All Routes
-    if (pathname === '/api/v1/routes' && req.method === 'GET') {
-      const response = await ApiHandler.getAllRoutes();
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify(response));
-      return;
-    }
-
-    // 5. Routes search
-    if (pathname === '/api/v1/routes/search' && req.method === 'GET') {
-      const origin = (query.origin as string) || '';
-      const destination = (query.destination as string) || '';
-      const response = await ApiHandler.searchRoutes(origin, destination);
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify(response));
-      return;
-    }
-
-    // 6. Timetables by route
-    const ttMatch = pathname.match(/^\/api\/v1\/routes\/([a-zA-Z0-9_-]+)\/timetables$/);
-    if (ttMatch && req.method === 'GET') {
-      const routeId = ttMatch[1];
-      const response = await ApiHandler.getTimetables(routeId);
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify(response));
-      return;
-    }
-
-    // 7. Route by ID
-    const routeMatch = pathname.match(/^\/api\/v1\/routes\/([a-zA-Z0-9_-]+)$/);
-    if (routeMatch && req.method === 'GET') {
-      const id = routeMatch[1];
-      const response = await ApiHandler.getRouteById(id);
-      res.writeHead(response.success ? 200 : 404, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify(response));
-      return;
-    }
-
-    // 8. Dynamic ETA
-    const etaMatch = pathname.match(/^\/api\/v1\/routes\/([a-zA-Z0-9_-]+)\/stops\/([a-zA-Z0-9_-]+)\/eta$/);
-    if (etaMatch && req.method === 'GET') {
-      const routeId = etaMatch[1];
-      const stopId = etaMatch[2];
-      const response = await ApiHandler.getETA(routeId, stopId);
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify(response));
-      return;
-    }
-
-    // 9. All Buses
-    if (pathname === '/api/v1/buses' && req.method === 'GET') {
-      const response = await ApiHandler.getAllBuses();
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify(response));
-      return;
-    }
-
-    // 10. Bus by ID
-    const busMatch = pathname.match(/^\/api\/v1\/buses\/([a-zA-Z0-9_-]+)$/);
-    if (busMatch && req.method === 'GET') {
-      const id = busMatch[1];
-      const response = await ApiHandler.getBusById(id);
-      res.writeHead(response.success ? 200 : 404, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify(response));
-      return;
-    }
-
-    // 11. All Operators
-    if (pathname === '/api/v1/operators' && req.method === 'GET') {
-      const response = await ApiHandler.getAllOperators();
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify(response));
-      return;
-    }
-
-    // 12. Start Journey Tracking Session
-    if (pathname === '/api/v1/tracking/session/start' && req.method === 'POST') {
-      const body = await parseJsonBody(req);
-      const response = await ApiHandler.startJourneySession(body);
-      res.writeHead(response.success ? 201 : 400, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify(response));
-      return;
-    }
-
-    // 13. Stop Journey Tracking Session
-    const stopMatch = pathname.match(/^\/api\/v1\/tracking\/session\/([a-zA-Z0-9_-]+)\/stop$/);
-    if (stopMatch && req.method === 'POST') {
-      const sessionId = stopMatch[1];
-      const response = await ApiHandler.stopJourneySession(sessionId);
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify(response));
-      return;
-    }
-
-    // 14. Ingest Observation
-    if (pathname === '/api/v1/tracking/observation' && req.method === 'POST') {
-      const body = await parseJsonBody(req);
-      const response = await ApiHandler.ingestObservation(body);
-      res.writeHead(response.success ? 201 : 400, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify(response));
-      return;
-    }
-
-    // 15. Submit Community Contribution
-    if (pathname === '/api/v1/contributions' && req.method === 'POST') {
-      const body = await parseJsonBody(req);
-      const response = await ApiHandler.submitContribution(body);
-      res.writeHead(response.success ? 201 : 400, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify(response));
-      return;
-    }
-
-    // 16. Contribution Status Lookup
-    const subMatch = pathname.match(/^\/api\/v1\/contributions\/([a-zA-Z0-9_-]+)$/);
-    if (subMatch && req.method === 'GET') {
-      const id = subMatch[1];
-      const response = await ApiHandler.getContributionStatus(id);
-      res.writeHead(response.success ? 200 : 404, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify(response));
-      return;
-    }
-
-    // 16.5. Admin Login
-    if (pathname === '/api/v1/admin/login' && req.method === 'POST') {
-      const body = await parseJsonBody(req);
-      const clientIp = (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress || '127.0.0.1';
-      const response = await ApiHandler.adminLogin(body.username, body.password, clientIp);
-      const statusCode = response.success ? 200 : (response.meta?.retryAfterSeconds ? 429 : 401);
-      res.writeHead(statusCode, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify(response));
-      return;
-    }
-
-    // 16.6. Admin Logout
-    if (pathname === '/api/v1/admin/logout' && req.method === 'POST') {
-      const authHeader = req.headers['authorization'] || '';
-      const token = authHeader.startsWith('Bearer ') ? authHeader.substring(7).trim() : '';
-      const response = ApiHandler.adminLogout(token);
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify(response));
-      return;
-    }
-
-    // 17. Admin Submissions Queue (Protected)
-    if (pathname === '/api/v1/admin/submissions' && req.method === 'GET') {
-      if (!requireAdminAuth(req, res)) return;
-      const status = query.status as string;
-      const response = await ApiHandler.getAdminSubmissions(status);
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify(response));
-      return;
-    }
-
-    // 18. Admin Review Submission (Protected)
-    const reviewMatch = pathname.match(/^\/api\/v1\/admin\/submissions\/([a-zA-Z0-9_-]+)\/review$/);
-    if (reviewMatch && req.method === 'POST') {
-      if (!requireAdminAuth(req, res)) return;
-      const id = reviewMatch[1];
-      const body = await parseJsonBody(req);
-      const response = await ApiHandler.reviewSubmission(id, body.action, body.remarks);
-      res.writeHead(response.success ? 200 : 400, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify(response));
-      return;
-    }
-
-    // 19. Admin Audit Logs (Protected)
-    if (pathname === '/api/v1/admin/audit-logs' && req.method === 'GET') {
-      if (!requireAdminAuth(req, res)) return;
-      const response = await ApiHandler.getAuditLogs();
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify(response));
-      return;
-    }
-
-    // 20. Admin Automation Rules (Protected)
-    if (pathname === '/api/v1/admin/rules' && req.method === 'GET') {
-      if (!requireAdminAuth(req, res)) return;
-      const response = await ApiHandler.getAutomationRules();
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify(response));
-      return;
-    }
-
-    const ruleMatch = pathname.match(/^\/api\/v1\/admin\/rules\/([a-zA-Z0-9_-]+)$/);
-    if (ruleMatch && (req.method === 'PUT' || req.method === 'POST')) {
-      if (!requireAdminAuth(req, res)) return;
-      const id = ruleMatch[1];
-      const body = await parseJsonBody(req);
-      const response = await ApiHandler.updateAutomationRule(id, body.thresholdValue, body.isEnabled);
-      res.writeHead(response.success ? 200 : 400, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify(response));
-      return;
-    }
-
-    // 21. Submit Operator Claim
-    if (pathname === '/api/v1/operator/claim' && req.method === 'POST') {
-      const body = await parseJsonBody(req);
-      const claim = OperatorClaimService.submitClaim(
-        body.operatorId,
-        body.claimantName,
-        body.claimantDesignation,
-        body.officialPhone,
-        body.officialEmail,
-        body.notes
-      );
-      res.writeHead(201, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ success: true, data: claim }));
-      return;
-    }
-
-    // 22. Get Operator Claims (Protected)
-    if (pathname === '/api/v1/admin/claims' && req.method === 'GET') {
-      if (!requireAdminAuth(req, res)) return;
-      const status = query.status as string;
-      const claims = OperatorClaimService.getAllClaims(status);
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ success: true, data: claims }));
-      return;
-    }
-
-    // Default 404
-    res.writeHead(404, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ success: false, error: 'Endpoint not found' }));
-  } catch (err: any) {
-    console.error('Server error:', err);
-    res.writeHead(500, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ success: false, error: err?.message || 'Internal server error' }));
-  }
-});
-
-initDatabase().then((dbStatus) => {
-  if (process.env.NODE_ENV === 'production') {
-    if (!process.env.DATABASE_URL || process.env.DATABASE_URL === 'embedded') {
-      console.error('FATAL: DATABASE_URL must be configured in production mode.');
-      process.exit(1);
-    }
-    if (dbStatus.type !== 'postgres' || !dbStatus.connected) {
-      console.error('FATAL: Failed to connect to PostgreSQL database in production mode.');
-      process.exit(1);
-    }
-  }
-
-  server.listen(PORT, () => {
-    console.log(`India Smart Bus Platform API Server running on port ${PORT}`);
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(CONFIG.PORT, () => {
+    console.log(`YatriBus Backend API listening on port ${CONFIG.PORT}`);
+    console.log(`Environment: ${CONFIG.NODE_ENV} | Primary Market: India`);
   });
-}).catch(err => {
-  console.error('Failed to initialize database layer:', err);
-  if (process.env.NODE_ENV === 'production') {
-    process.exit(1);
-  }
-  server.listen(PORT, () => {
-    console.log(`India Smart Bus Platform API Server running on port ${PORT} (fallback mode)`);
-  });
-});
-
-export default server;
+}

@@ -1,0 +1,182 @@
+{
+  "schemaVersion": 1,
+  "checkedAt": "2026-11-03",
+  "scope": "28 states and 8 union territories; bus-only focus, rail feeds excluded",
+  "states": [
+    {
+      "name": "Andhra Pradesh",
+      "status": "No reusable current feed verified",
+      "notes": "APSRTC community feed is expired / has validation errors; official live tracking portal exists but no open feed credentials"
+    },
+    {
+      "name": "Arunachal Pradesh",
+      "status": "No public GTFS feed verified",
+      "notes": "Agency timetable / source partnership required"
+    },
+    {
+      "name": "Assam",
+      "status": "No public GTFS feed verified",
+      "notes": "ASTC public schedule/API discovery required"
+    },
+    {
+      "name": "Bihar",
+      "status": "No public GTFS feed verified",
+      "notes": "BSRTC and city operators source discovery required"
+    },
+    {
+      "name": "Chhattisgarh",
+      "status": "No public GTFS feed verified",
+      "notes": "CSRTC / city bus data discovery required"
+    },
+    {
+      "name": "Goa",
+      "status": "Official GTFS published; stale",
+      "notes": "Government GTFS page last updated 31 Jan 2025; CC BY 4.0; revalidate service calendar before use"
+    },
+    {
+      "name": "Gujarat",
+      "status": "Community city feeds only; licence review",
+      "notes": "Ahmedabad Janmarg, Rajkot Rampath and Vapi catalogue candidates; no statewide feed verified"
+    },
+    {
+      "name": "Haryana",
+      "status": "No public GTFS feed verified",
+      "notes": "State/city operator source discovery required"
+    },
+    {
+      "name": "Himachal Pradesh",
+      "status": "No public GTFS feed verified",
+      "notes": "HRTC schedules are not verified as a reusable GTFS feed"
+    },
+    {
+      "name": "Jharkhand",
+      "status": "No public GTFS feed verified",
+      "notes": "JRTC / city operator source discovery required"
+    },
+    {
+      "name": "Karnataka",
+      "status": "Community city feed candidates; licence/freshness review",
+      "notes": "BMTC archive and Hubli-Dharwad BRTS candidate feeds"
+    },
+    {
+      "name": "Kerala",
+      "status": "Community Kochi feed; stale",
+      "notes": "Kochi bus/ferry GTFS service period ended 25 Mar 2023; not current timetable"
+    },
+    {
+      "name": "Madhya Pradesh",
+      "status": "No public GTFS feed verified",
+      "notes": "MPSRTC / city operator source discovery required"
+    },
+    {
+      "name": "Maharashtra",
+      "status": "Community city feeds; licence review",
+      "notes": "PMPML and KDMT/BEST candidates; MSRTC feed expired and only 2 routes"
+    },
+    {
+      "name": "Manipur",
+      "status": "No public GTFS feed verified",
+      "notes": "State/city operator source discovery required"
+    },
+    {
+      "name": "Meghalaya",
+      "status": "No public GTFS feed verified",
+      "notes": "State/city operator source discovery required"
+    },
+    {
+      "name": "Mizoram",
+      "status": "No public GTFS feed verified",
+      "notes": "State/city operator source discovery required"
+    },
+    {
+      "name": "Nagaland",
+      "status": "No public GTFS feed verified",
+      "notes": "State/city operator source discovery required"
+    },
+    {
+      "name": "Odisha",
+      "status": "No public GTFS feed verified",
+      "notes": "OSRTC / city operator source discovery required"
+    },
+    {
+      "name": "Punjab",
+      "status": "No public GTFS feed verified",
+      "notes": "PUNBUS / Punjab Roadways source discovery required"
+    },
+    {
+      "name": "Rajasthan",
+      "status": "No public GTFS feed verified",
+      "notes": "RSRTC / city operator source discovery required"
+    },
+    {
+      "name": "Sikkim",
+      "status": "No public GTFS feed verified",
+      "notes": "SNT / city operator source discovery required"
+    },
+    {
+      "name": "Tamil Nadu",
+      "status": "Community Chennai feed; rights/quality review",
+      "notes": "MTC/CMRL unified feed has no confirmed publisher redistribution rights and validation errors; SETC open data listing is old (2018)"
+    },
+    {
+      "name": "Telangana",
+      "status": "Official TGSRTC GTFS imported",
+      "notes": "TGSRTC terms permit redistribution with attribution; source page says updates are not guaranteed"
+    },
+    {
+      "name": "Tripura",
+      "status": "No public GTFS feed verified",
+      "notes": "TRTC / city operator source discovery required"
+    },
+    {
+      "name": "Uttar Pradesh",
+      "status": "No public GTFS feed verified",
+      "notes": "UPSRTC / city operator source discovery required"
+    },
+    {
+      "name": "Uttarakhand",
+      "status": "No public GTFS feed verified",
+      "notes": "UTC / city operator source discovery required"
+    },
+    {
+      "name": "West Bengal",
+      "status": "No public GTFS feed verified",
+      "notes": "SBSTC / NBSTC / WBTC / private operators source discovery required"
+    }
+  ],
+  "unionTerritories": [
+    {
+      "name": "Andaman and Nicobar Islands",
+      "status": "No public GTFS feed verified"
+    },
+    {
+      "name": "Chandigarh",
+      "status": "No public GTFS feed verified"
+    },
+    {
+      "name": "Dadra and Nagar Haveli and Daman and Diu",
+      "status": "No public GTFS feed verified"
+    },
+    {
+      "name": "Delhi",
+      "status": "Official static feed exists but is stale and access/terms gated; realtime requires authorised private key"
+    },
+    {
+      "name": "Jammu and Kashmir",
+      "status": "No public GTFS feed verified"
+    },
+    {
+      "name": "Ladakh",
+      "status": "No public GTFS feed verified"
+    },
+    {
+      "name": "Lakshadweep",
+      "status": "No public GTFS feed verified"
+    },
+    {
+      "name": "Puducherry",
+      "status": "No public GTFS feed verified"
+    }
+  ],
+  "important": "This is a source-discovery and verification matrix, not a claim that every operator or service is covered. A missing public feed does not mean buses do not operate. No timetable should be inferred from this status."
+}

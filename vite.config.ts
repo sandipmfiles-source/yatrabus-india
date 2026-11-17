@@ -8,15 +8,15 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      '@shared': path.resolve(__dirname, './packages/shared/src'),
     },
   },
   server: {
-    port: 5173,
+    port: 3000,
     host: true,
   },
   build: {
     outDir: 'dist',
-    sourcemap: false,
-    chunkSizeWarningLimit: 1000,
-  },
+    sourcemap: true,
+  }
 });
