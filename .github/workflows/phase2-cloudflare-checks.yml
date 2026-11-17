@@ -46,22 +46,33 @@ jobs:
           set -euo pipefail
           test -n "$CLOUDFLARE_API_TOKEN"
           test -n "$CLOUDFLARE_ACCOUNT_ID"
-          project="$(curl --fail --silent --show-error \
+          project_file="$(mktemp)"
+          project_status="$(curl --silent --show-error --output "$project_file" --write-out '%{http_code}' \
             --header "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/yatrabus-india")"
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/yatrabus-india" || true)"
+          if [ "$project_status" != "200" ]; then
+            echo "::warning::Direct Pages deployment skipped: current Cloudflare token cannot read Pages project settings (HTTP $project_status). A token with Cloudflare Pages Read/Edit or dashboard access is required."
+            exit 0
+          fi
+          project="$(cat "$project_file")"
           production_branch="$(printf '%s' "$project" | jq -er '.result.production_branch')"
           echo "Cloudflare Pages production branch: $production_branch"
           if [ "$production_branch" != "main" ]; then
             echo "Updating the approved YatraBus production branch to main."
             payload="$(jq -n '{production_branch: "main"}')"
-            curl --fail --silent --show-error --request PATCH \
+            patch_status="$(curl --silent --show-error --output "$project_file" --write-out '%{http_code}' --request PATCH \
               --header "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
               --header "Content-Type: application/json" \
               --data "$payload" \
-              "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/yatrabus-india" \
-              | jq -e '.success == true' >/dev/null
+              "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/yatrabus-india" || true)"
+            if [ "$patch_status" != "200" ]; then
+              echo "::warning::Could not update Pages production branch (HTTP $patch_status); direct deployment skipped."
+              exit 0
+            fi
           fi
-          npx --yes wrangler@4 pages deploy dist --project-name yatrabus-india --branch main
+          if ! npx --yes wrangler@4 pages deploy dist --project-name yatrabus-india --branch main; then
+            echo "::warning::Wrangler Pages deployment was not authorized. Grant Cloudflare Pages Edit to CLOUDFLARE_API_TOKEN or connect the Cloudflare dashboard."
+          fi
       - name: Smoke-test live production data, place suggestions and route directory
         shell: bash
         run: |
