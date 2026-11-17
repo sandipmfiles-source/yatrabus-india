@@ -57,7 +57,15 @@ jobs:
           fi
           routes="$(curl --fail --silent --show-error --retry 3 --retry-delay 2 "$base/routes")"
           printf '%s' "$routes" | jq -e '.success == true and (.data | length > 0)' >/dev/null
-          echo "Production API smoke test passed: India place data, Kolkata search, Esplanade bus terminal, published routes and timetables are reachable."
+          if [ "$GITHUB_EVENT_NAME" = "push" ]; then
+            printf '%s' "$kolkata" | jq -e 'all(.data[]; .place.canonicalName != null and .displayLabel != null and .matchType != null)' >/dev/null
+            route_pair="$(printf '%s' "$routes" | jq -er '[.data[] | select((.stops | length) >= 2) | {from: .stops[0].stopName, to: .stops[-1].stopName}] | first')"
+            origin="$(printf '%s' "$route_pair" | jq -er '.from')"
+            destination="$(printf '%s' "$route_pair" | jq -er '.to')"
+            named_route="$(curl --fail --silent --show-error --retry 3 --retry-delay 2 --get --data-urlencode "from=$origin" --data-urlencode "to=$destination" "$base/routes/search")"
+            printf '%s' "$named_route" | jq -e '.success == true and (.directRoutes | length > 0)' >/dev/null
+          fi
+          echo "Production API smoke test passed: India place data, autocomplete, nearby stops, route directory and passenger name-based route search are reachable."
       - name: Type-check Cloudflare Pages Functions
         run: |
           find functions -name '*.ts' -print0 | xargs -0 npx tsc --noEmit --target ES2022 --module ESNext --moduleResolution bundler --strict --skipLibCheck --lib ES2022,DOM
