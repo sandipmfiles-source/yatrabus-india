@@ -138,7 +138,7 @@ export async function onRequestGet({ request, env }: PagesContext): Promise<Resp
     const rows = await env.DB.prepare(`
       SELECT id, place_type, payload_json, latitude, longitude
       FROM places
-      WHERE place_type IN ('bus_stop','bus_terminal','bus_station','bus_stand')
+      WHERE LOWER(place_type) IN ('bus_stop','bus_terminal','bus_station','bus_stand')
         AND latitude BETWEEN ? AND ?
         AND longitude BETWEEN ? AND ?
     `).bind(lat-latDelta, lat+latDelta, lng-lngDelta, lng+lngDelta)
