@@ -23,7 +23,12 @@
       "aliases": [
         "Babughat",
         "Babu Ghat"
-      ]
+      ],
+      "sourceUrl": "https://www.openstreetmap.org/node/6528659485",
+      "sourceLicense": "ODbL-1.0",
+      "busServiceVerified": false,
+      "operationalStatus": "UNKNOWN",
+      "verificationStatus": "published_unverified"
     },
     {
       "id": "osm-node-6143232250",
@@ -42,7 +47,12 @@
       "aliases": [
         "Esplanade Bus Stand",
         "Dharmatala Bus Terminus"
-      ]
+      ],
+      "sourceUrl": "https://www.openstreetmap.org/node/6143232250",
+      "sourceLicense": "ODbL-1.0",
+      "busServiceVerified": false,
+      "operationalStatus": "UNKNOWN",
+      "verificationStatus": "published_unverified"
     },
     {
       "id": "osm-node-4178789864",
@@ -61,7 +71,12 @@
       "aliases": [
         "Howrah Bus Terminus",
         "Howrah Railway Station Bus Stand"
-      ]
+      ],
+      "sourceUrl": "https://www.openstreetmap.org/node/4178789864",
+      "sourceLicense": "ODbL-1.0",
+      "busServiceVerified": false,
+      "operationalStatus": "UNKNOWN",
+      "verificationStatus": "published_unverified"
     },
     {
       "id": "osm-node-2464905500",
@@ -80,7 +95,12 @@
       "aliases": [
         "Santragachi",
         "Santragachi Bus Stop"
-      ]
+      ],
+      "sourceUrl": "https://www.openstreetmap.org/node/2464905500",
+      "sourceLicense": "ODbL-1.0",
+      "busServiceVerified": false,
+      "operationalStatus": "UNKNOWN",
+      "verificationStatus": "published_unverified"
     },
     {
       "id": "osm-node-4178731066",
@@ -99,7 +119,12 @@
       "aliases": [
         "BBD Bagh",
         "Dalhousie"
-      ]
+      ],
+      "sourceUrl": "https://www.openstreetmap.org/node/4178731066",
+      "sourceLicense": "ODbL-1.0",
+      "busServiceVerified": false,
+      "operationalStatus": "UNKNOWN",
+      "verificationStatus": "published_unverified"
     },
     {
       "id": "osm-node-1307939452",
@@ -117,7 +142,12 @@
       "sourcePage": "https://mapcarta.com/N1307939452",
       "aliases": [
         "15 No Bus Stand"
-      ]
+      ],
+      "sourceUrl": "https://www.openstreetmap.org/node/1307939452",
+      "sourceLicense": "ODbL-1.0",
+      "busServiceVerified": false,
+      "operationalStatus": "UNKNOWN",
+      "verificationStatus": "published_unverified"
     },
     {
       "id": "osm-node-4175410289",
@@ -135,7 +165,12 @@
       "sourcePage": "https://mapcarta.com/N4175410289",
       "aliases": [
         "Kolkata Railway Station Bus Terminal"
-      ]
+      ],
+      "sourceUrl": "https://www.openstreetmap.org/node/4175410289",
+      "sourceLicense": "ODbL-1.0",
+      "busServiceVerified": false,
+      "operationalStatus": "UNKNOWN",
+      "verificationStatus": "published_unverified"
     },
     {
       "id": "osm-way-394768163",
@@ -153,7 +188,12 @@
       "aliases": [
         "Jhargram Bus Stand",
         "Jhargram New Bus Terminus"
-      ]
+      ],
+      "sourceUrl": "https://www.openstreetmap.org/way/394768163",
+      "sourceLicense": "ODbL-1.0",
+      "busServiceVerified": false,
+      "operationalStatus": "UNKNOWN",
+      "verificationStatus": "published_unverified"
     },
     {
       "id": "osm-way-216241119",
@@ -171,7 +211,12 @@
       "aliases": [
         "Medinipore Central Bus Stand",
         "Medinipur Bus Stand"
-      ]
+      ],
+      "sourceUrl": "https://www.openstreetmap.org/way/216241119",
+      "sourceLicense": "ODbL-1.0",
+      "busServiceVerified": false,
+      "operationalStatus": "UNKNOWN",
+      "verificationStatus": "published_unverified"
     }
   ]
 }
