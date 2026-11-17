@@ -68,9 +68,9 @@ export function runIndiaCatalogueTests(assert: (description: string, pass: boole
   assert('Android update increments versionCode and keeps a valid semantic versionName', androidVersionCode > 2 &&
     /^\d+\.\d+\.\d+$/.test(androidVersionName));
   const androidWorkflow = readFileSync('.github/workflows/android-apk.yml', 'utf8');
-  assert('Android debug APK uses a generated cached stable signing keystore', /path:\\s*android\\/debug\\.keystore/.test(androidWorkflow) &&
-    /keytool -genkeypair/.test(androidWorkflow) && /signingConfig signingConfigs\\.debugStable/.test(androidGradle) &&
-    /debug\\.keystore/.test(readFileSync('android/.gitignore', 'utf8')));
+  assert('Android debug APK uses a generated cached stable signing keystore', /path:\s*android\/debug\.keystore/.test(androidWorkflow) &&
+    /keytool -genkeypair/.test(androidWorkflow) && /signingConfig signingConfigs\.debugStable/.test(androidGradle) &&
+    /debug\.keystore/.test(readFileSync('android/.gitignore', 'utf8')));
   assert('Missing or blank API limit query parameters use the documented fallback', boundedInt(null, 10, 1, 50) === 10 &&
     boundedInt('', 10, 1, 50) === 10 && boundedInt('invalid', 10, 1, 50) === 10 &&
     boundedInt('3', 10, 1, 50) === 3 && boundedInt('0', 10, 1, 50) === 1 &&
