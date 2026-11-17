@@ -42,31 +42,21 @@ def make_icon(size):
             for x in range(cx-radius, cx+radius+1):
                 if (x-cx)**2 + (y-cy)**2 <= radius**2:
                     put(x, y, color)
-    s = size / 192
+    s = size / 64
     def q(v): return int(round(v*s))
-    # Signal-yellow rounded square background.
-    rect(q(0), q(0), q(192), q(192), (255, 205, 55, 255), q(38))
-    # Road stripe.
-    rect(q(0), q(145), q(192), q(192), (241, 179, 29, 255), q(20))
-    # Bus silhouette and front windscreen.
-    rect(q(30), q(48), q(162), q(139), (27, 35, 45, 255), q(18))
-    rect(q(42), q(61), q(150), q(104), (239, 245, 248, 255), q(8))
-    rect(q(48), q(67), q(91), q(98), (67, 104, 126, 255), q(5))
-    rect(q(99), q(67), q(144), q(98), (67, 104, 126, 255), q(5))
-    # Front destination panel and signal-red route marker.
-    rect(q(42), q(111), q(150), q(124), (255, 205, 55, 255), q(4))
-    circle(q(139), q(117), q(4), (220, 55, 54, 255))
-    # Wheels.
-    circle(q(59), q(139), q(13), (20, 25, 31, 255))
-    circle(q(134), q(139), q(13), (20, 25, 31, 255))
-    circle(q(59), q(139), q(5), (210, 218, 222, 255))
-    circle(q(134), q(139), q(5), (210, 218, 222, 255))
-    # Small route line below the bus.
-    rect(q(55), q(165), q(137), q(171), (27, 35, 45, 255), q(3))
-    circle(q(48), q(168), q(6), (220, 55, 54, 255))
-    circle(q(144), q(168), q(6), (45, 145, 91, 255))
+    # Exact original YatraBus launcher mark from the 16 Nov app:
+    # deep-green rounded tile, green bus body, mint windshield and amber lamps.
+    rect(q(0), q(0), q(64), q(64), (14, 77, 52, 255), q(16))
+    rect(q(12), q(10), q(52), q(50), (21, 128, 61, 255), q(8))
+    rect(q(16), q(14), q(48), q(30), (209, 250, 229, 255), q(4))
+    rect(q(16), q(34), q(24), q(40), (254, 240, 138, 255), q(2))
+    rect(q(40), q(34), q(48), q(40), (254, 240, 138, 255), q(2))
+    rect(q(26), q(36), q(38), q(38), (255, 255, 255, 255), q(1))
+    circle(q(20), q(52), q(5), (17, 24, 39, 255))
+    circle(q(44), q(52), q(5), (17, 24, 39, 255))
+    circle(q(20), q(52), q(2), (156, 163, 175, 255))
+    circle(q(44), q(52), q(2), (156, 163, 175, 255))
     return png_rgba(size, size, px)
-
 
 def main():
     for density, size in DENSITIES.items():
