@@ -112,7 +112,7 @@ export const HomePage: React.FC = () => {
         try {
           const stops = await api.getNearbyStops(pos.coords.latitude, pos.coords.longitude, 8000);
           setNearbyStops(stops);
-          if (!stops.length) setNearbyError('No active public-feed bus stands or stops were found nearby. Local services may not yet publish an open timetable feed.');
+          if (!stops.length) setNearbyError('No mapped bus stands or stops were found within 8 km. This does not mean local buses are unavailable; the nearby map data may be incomplete.');
         } catch (error) {
           setNearbyError(error instanceof Error ? error.message : 'Nearby bus stops could not be loaded. Please try again.');
         } finally {
