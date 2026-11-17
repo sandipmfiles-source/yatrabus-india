@@ -195,7 +195,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-4 sm:p-6 space-y-6">
+    <div className="max-w-4xl mx-auto px-4 py-8 space-y-8">
       {/* Active Live Tracking Banner if enabled */}
       {activeJourneySessionId && (
         <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-950 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-sm animate-fade-in">
@@ -220,7 +220,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           <Sparkles className="w-3.5 h-3.5 text-yatribrand-700" />
           <span>India Bus Travel Directory</span>
         </div>
-        <h1 className="text-[clamp(0.9rem,4.2vw,2rem)] font-extrabold text-yatriwarm-950 tracking-tight">
+        <h1 className="text-[clamp(0.78rem,4.2vw,2rem)] whitespace-nowrap font-extrabold text-yatriwarm-950 tracking-tight">
           {t('home_tagline')}
         </h1>
         <p className="text-[10px] sm:text-xs leading-tight text-yatriwarm-600 max-w-2xl mx-auto">
