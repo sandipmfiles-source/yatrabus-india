@@ -131,7 +131,7 @@ jobs:
             nearby_ready=false
             for attempt in $(seq 1 3); do
               nearby="$(curl --silent --show-error --max-time 65 --get --data-urlencode 'lat=22.5665' --data-urlencode 'lon=88.3500' --data-urlencode 'radius=8000' "$base/places/nearby" || true)"
-              if printf '%s' "$nearby" | jq -e '.success == true and (.stops | length > 0)' >/dev/null 2>&1; then
+              if printf '%s' "$nearby" | jq -e '.success == true and (.stops | length > 0) and (.meta.sources.openStreetMap > 0) and (.meta.timetableVerified == false)' >/dev/null 2>&1; then
                 nearby_ready=true
                 break
               fi
@@ -144,8 +144,15 @@ jobs:
               exit 1
             fi
 
+            jhargram_nearby="$(curl --silent --show-error --max-time 30 --get --data-urlencode 'lat=22.43962' --data-urlencode 'lon=86.99267' --data-urlencode 'radius=5000' "$base/places/nearby" || true)"
+            if ! printf '%s' "$jhargram_nearby" | jq -e '.success == true and any(.stops[]; .place.canonicalName == "Jhargram New Bus Stand" and .source == "OPENSTREETMAP" and .place.busServiceVerified == false)' >/dev/null 2>&1; then
+              echo "::error::Jhargram New Bus Stand was not returned as an attributed, unverified mapped location."
+              printf '%s\\n' "$jhargram_nearby" | jq '{success, stops, meta, error}' || true
+              exit 1
+            fi
+
           fi
-          echo "Production API smoke test passed: India place data, autocomplete, nearby stops, route directory and passenger name-based route search are reachable."
+          echo "Production API smoke test passed: India place data, autocomplete, Kolkata and Jhargram nearby stops, route directory and passenger name-based route search are reachable."
       - name: Type-check Cloudflare Pages Functions
         run: |
           find functions -name '*.ts' -print0 | xargs -0 npx tsc --noEmit --target ES2022 --module ESNext --moduleResolution bundler --strict --skipLibCheck --lib ES2022,DOM
