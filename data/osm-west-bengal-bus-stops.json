@@ -1,0 +1,222 @@
+{
+  "schemaVersion": 1,
+  "datasetId": "IN-WB-OSM-BUS-STOPS",
+  "generatedAt": "2026-11-17",
+  "license": "ODbL-1.0",
+  "attribution": "© OpenStreetMap contributors",
+  "source": "OpenStreetMap objects surfaced by Mapcarta; each record preserves its OSM node/way ID and direct object URL.",
+  "records": [
+    {
+      "id": "osm-node-6528659485",
+      "osmType": "node",
+      "osmId": "6528659485",
+      "name": "Babughat bus stand",
+      "placeType": "bus_station",
+      "district": "Kolkata",
+      "latitude": 22.56512,
+      "longitude": 88.33978,
+      "osmTags": [
+        "amenity=bus_station",
+        "public_transport=station"
+      ],
+      "sourcePage": "https://mapcarta.com/N6528659485",
+      "aliases": [
+        "Babughat",
+        "Babu Ghat"
+      ],
+      "sourceUrl": "https://www.openstreetmap.org/node/6528659485",
+      "sourceLicense": "ODbL-1.0",
+      "busServiceVerified": false,
+      "operationalStatus": "UNKNOWN",
+      "verificationStatus": "published_unverified"
+    },
+    {
+      "id": "osm-node-6143232250",
+      "osmType": "node",
+      "osmId": "6143232250",
+      "name": "Esplanade",
+      "placeType": "bus_station",
+      "district": "Kolkata",
+      "latitude": 22.56525,
+      "longitude": 88.34999,
+      "osmTags": [
+        "amenity=bus_station",
+        "public_transport=station"
+      ],
+      "sourcePage": "https://mapcarta.com/N6143232250",
+      "aliases": [
+        "Esplanade Bus Stand",
+        "Dharmatala Bus Terminus"
+      ],
+      "sourceUrl": "https://www.openstreetmap.org/node/6143232250",
+      "sourceLicense": "ODbL-1.0",
+      "busServiceVerified": false,
+      "operationalStatus": "UNKNOWN",
+      "verificationStatus": "published_unverified"
+    },
+    {
+      "id": "osm-node-4178789864",
+      "osmType": "node",
+      "osmId": "4178789864",
+      "name": "Howrah Bus Station",
+      "placeType": "bus_station",
+      "district": "Howrah",
+      "latitude": 22.58618,
+      "longitude": 88.34299,
+      "osmTags": [
+        "amenity=bus_station",
+        "public_transport=station"
+      ],
+      "sourcePage": "https://mapcarta.com/N4178789864",
+      "aliases": [
+        "Howrah Bus Terminus",
+        "Howrah Railway Station Bus Stand"
+      ],
+      "sourceUrl": "https://www.openstreetmap.org/node/4178789864",
+      "sourceLicense": "ODbL-1.0",
+      "busServiceVerified": false,
+      "operationalStatus": "UNKNOWN",
+      "verificationStatus": "published_unverified"
+    },
+    {
+      "id": "osm-node-2464905500",
+      "osmType": "node",
+      "osmId": "2464905500",
+      "name": "Santragachhi",
+      "placeType": "bus_stop",
+      "district": "Howrah",
+      "latitude": 22.58547,
+      "longitude": 88.28294,
+      "osmTags": [
+        "highway=bus_stop",
+        "public_transport=platform"
+      ],
+      "sourcePage": "https://mapcarta.com/N2464905500",
+      "aliases": [
+        "Santragachi",
+        "Santragachi Bus Stop"
+      ],
+      "sourceUrl": "https://www.openstreetmap.org/node/2464905500",
+      "sourceLicense": "ODbL-1.0",
+      "busServiceVerified": false,
+      "operationalStatus": "UNKNOWN",
+      "verificationStatus": "published_unverified"
+    },
+    {
+      "id": "osm-node-4178731066",
+      "osmType": "node",
+      "osmId": "4178731066",
+      "name": "B.B.D. Bag",
+      "placeType": "bus_station",
+      "district": "Kolkata",
+      "latitude": 22.5716,
+      "longitude": 88.35026,
+      "osmTags": [
+        "amenity=bus_station",
+        "public_transport=station"
+      ],
+      "sourcePage": "https://mapcarta.com/N4178731066",
+      "aliases": [
+        "BBD Bagh",
+        "Dalhousie"
+      ],
+      "sourceUrl": "https://www.openstreetmap.org/node/4178731066",
+      "sourceLicense": "ODbL-1.0",
+      "busServiceVerified": false,
+      "operationalStatus": "UNKNOWN",
+      "verificationStatus": "published_unverified"
+    },
+    {
+      "id": "osm-node-1307939452",
+      "osmType": "node",
+      "osmId": "1307939452",
+      "name": "15 No Bus Stand (S30)",
+      "placeType": "bus_station",
+      "district": "Kolkata",
+      "latitude": 22.59265,
+      "longitude": 88.38875,
+      "osmTags": [
+        "amenity=bus_station",
+        "public_transport=station"
+      ],
+      "sourcePage": "https://mapcarta.com/N1307939452",
+      "aliases": [
+        "15 No Bus Stand"
+      ],
+      "sourceUrl": "https://www.openstreetmap.org/node/1307939452",
+      "sourceLicense": "ODbL-1.0",
+      "busServiceVerified": false,
+      "operationalStatus": "UNKNOWN",
+      "verificationStatus": "published_unverified"
+    },
+    {
+      "id": "osm-node-4175410289",
+      "osmType": "node",
+      "osmId": "4175410289",
+      "name": "Kolkata Station Bus Terminal",
+      "placeType": "bus_station",
+      "district": "Kolkata",
+      "latitude": 22.60152,
+      "longitude": 88.38221,
+      "osmTags": [
+        "amenity=bus_station",
+        "public_transport=station"
+      ],
+      "sourcePage": "https://mapcarta.com/N4175410289",
+      "aliases": [
+        "Kolkata Railway Station Bus Terminal"
+      ],
+      "sourceUrl": "https://www.openstreetmap.org/node/4175410289",
+      "sourceLicense": "ODbL-1.0",
+      "busServiceVerified": false,
+      "operationalStatus": "UNKNOWN",
+      "verificationStatus": "published_unverified"
+    },
+    {
+      "id": "osm-way-394768163",
+      "osmType": "way",
+      "osmId": "394768163",
+      "name": "Jhargram New Bus Stand",
+      "placeType": "bus_station",
+      "district": "Jhargram",
+      "latitude": 22.43962,
+      "longitude": 86.99267,
+      "osmTags": [
+        "amenity=bus_station"
+      ],
+      "sourcePage": "https://mapcarta.com/W394768163",
+      "aliases": [
+        "Jhargram Bus Stand",
+        "Jhargram New Bus Terminus"
+      ],
+      "sourceUrl": "https://www.openstreetmap.org/way/394768163",
+      "sourceLicense": "ODbL-1.0",
+      "busServiceVerified": false,
+      "operationalStatus": "UNKNOWN",
+      "verificationStatus": "published_unverified"
+    },
+    {
+      "id": "osm-way-216241119",
+      "osmType": "way",
+      "osmId": "216241119",
+      "name": "Midnapore Central Bus Stand",
+      "placeType": "bus_station",
+      "district": "Paschim Medinipur",
+      "latitude": 22.42762,
+      "longitude": 87.31607,
+      "osmTags": [
+        "amenity=bus_station"
+      ],
+      "sourcePage": "https://mapcarta.com/W216241119",
+      "aliases": [
+        "Medinipore Central Bus Stand",
+        "Medinipur Bus Stand"
+      ],
+      "sourceUrl": "https://www.openstreetmap.org/way/216241119",
+      "sourceLicense": "ODbL-1.0",
+      "busServiceVerified": false,
+      "operationalStatus": "UNKNOWN",
+      "verificationStatus": "published_unverified"
+    }
+  ]
+}

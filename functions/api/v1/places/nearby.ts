@@ -174,7 +174,9 @@ export async function onRequestGet({ request, env }: PagesContext): Promise<Resp
       kind: ["bus_terminal","bus_station","bus_stand"].includes(String(place.placeType || "")) ? "BUS_STAND" : "BUS_STOP",
       feedName: place.sourceDataset || "",
       routeCount: routeCounts.get(String(place.id)) || 0,
-      source: "YATRIBUS_DIRECTORY"
+      source: String(place.sourceDataset || "").toUpperCase() === "OPENSTREETMAP"
+        ? "OPENSTREETMAP"
+        : "YATRIBUS_DIRECTORY"
     }));
 
     // D1 is the curated directory, not a complete inventory of every local bus stop.
@@ -209,10 +211,13 @@ export async function onRequestGet({ request, env }: PagesContext): Promise<Resp
       meta: {
         count: stops.length,
         radiusKm,
-        sources: { yatribusDirectory: directoryStops.length, openStreetMap: uniqueOsmStops.length },
+        sources: {
+          yatribusDirectory: directoryStops.filter((item:any) => item.source !== "OPENSTREETMAP").length,
+          openStreetMap: directoryStops.filter((item:any) => item.source === "OPENSTREETMAP").length + uniqueOsmStops.length
+        },
         osmAvailable,
         osmError,
-        timetableVerified: directoryStops.length > 0 && uniqueOsmStops.length === 0
+        timetableVerified: false
       },
       attribution: "Mapped stop data © OpenStreetMap contributors. OSM locations do not by themselves verify current bus service or timetable."
     });
