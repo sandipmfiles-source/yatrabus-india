@@ -49,7 +49,7 @@ async function fetchOsmNearbyStops(lat: number, lng: number, radiusMeters: numbe
     const tags = element.tags || {};
     const name = String(tags.name || tags["name:en"] || tags["name:hi"] || tags.official_name || tags.ref || "").trim();
     const isStand = tags.amenity === "bus_station" || tags.public_transport === "station" ||
-      /\\b(isbt|bus\\s*(stand|station|terminal|depot)|terminal|depot)\\b/i.test(name);
+      /\b(isbt|bus\s*(stand|station|terminal|depot)|terminal|depot)\b/i.test(name);
     const isStop = tags.highway === "bus_stop" || tags.public_transport === "platform" ||
       tags.public_transport === "stop_position" || tags.bus === "yes";
     if (!name || (!isStand && !isStop)) continue;
