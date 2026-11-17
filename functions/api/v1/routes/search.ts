@@ -153,7 +153,8 @@ export async function onRequestGet({ request, env }: PagesContext): Promise<Resp
     return json({
       success: true,
       directRoutes,
-      transferRoutes,\n      data: { directRoutes, transferRoutes },
+      transferRoutes,
+      data: { directRoutes, transferRoutes },
       meta: { directCount: directRoutes.length, transferCount: transferRoutes.length, serviceDate: serviceDate?.date || null }
     });
   } catch {
