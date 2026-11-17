@@ -2,7 +2,7 @@ name: Tests & Verification Suite
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, master, phase5-production-readiness, phase6-final-qa]
   pull_request:
     branches: [main, master]
 

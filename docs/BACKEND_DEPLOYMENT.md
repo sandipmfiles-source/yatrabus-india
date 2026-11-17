@@ -38,7 +38,7 @@ After deploying the backend, set a GitHub Actions repository variable named `VIT
 https://YOUR-BACKEND-HOST.example/api
 ```
 
-Do not include a trailing slash. The Android workflow injects this value into the web build. If it is unset, the app uses the local relative `/api` path; on an installed APK this will not reach a separately hosted backend, so submissions and shared live tracking will not work until configured.
+Do not include a trailing slash. The Android workflow injects this value into the web build. Also set `VITE_PUBLIC_APP_URL` to the public HTTPS frontend origin so Super Admin QR labels can generate links that open the hosted app. If it is unset, the app uses the local relative `/api` path; on an installed APK this will not reach a separately hosted backend, so submissions and shared live tracking will not work until configured.
 
 ## Android tracking permissions
 
