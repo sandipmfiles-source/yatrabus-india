@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - 'scripts/import-india-lgd-to-d1.mjs'
+      - 'backend/data/india-lgd-directory.json.gz'
       - '.github/workflows/import-india-lgd-to-d1.yml'
       - 'src/components/home/HomeScreen.tsx'
       - 'src/types/index.ts'
