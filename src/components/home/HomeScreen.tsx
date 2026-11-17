@@ -217,7 +217,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       {/* Route Search Card */}
       <div className="p-5 sm:p-7 rounded-3xl bg-white border border-surface-border shadow-md">
         <form onSubmit={handleSearch} className="space-y-4">
-          <div className="relative space-y-3">
+          <div className="relative grid grid-cols-1 md:grid-cols-[minmax(0,1fr),auto,minmax(0,1fr)] gap-y-3.5 gap-x-3 items-center">
             {/* Origin Input */}
             <div className="relative">
               <label className="block text-xs font-bold text-slate-700 mb-1">
