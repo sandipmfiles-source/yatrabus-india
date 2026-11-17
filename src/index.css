@@ -228,3 +228,23 @@ html[data-reduced-motion="true"] *::after {
 .leaflet-container { width:100%; height:100%; border-radius:1rem; z-index:10; }
 .leaflet-popup-content-wrapper { border-radius:.75rem !important; box-shadow:0 10px 15px -3px rgba(0,0,0,.1),0 4px 6px -2px rgba(0,0,0,.05) !important; }
 .leaflet-popup-tip { background:white !important; }
+
+
+/* Current production navbar uses buttons; retain the original dark header contrast. */
+.yatribus-theme header > div nav button {
+  color: #F5F5F4;
+  border: 1px solid transparent;
+}
+.yatribus-theme header > div nav button:hover {
+  color: var(--yb-yellow);
+  background: rgba(255,255,255,.08);
+  border-color: rgba(250,204,21,.22);
+}
+.yatribus-theme header > div nav button.bg-surface-subtle {
+  color: var(--yb-charcoal);
+  background: var(--yb-yellow);
+}
+.yatribus-theme header > div nav button.bg-surface-subtle:hover {
+  color: var(--yb-charcoal);
+  background: #FBBF24;
+}
