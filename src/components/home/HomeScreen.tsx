@@ -306,7 +306,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                     setDestinationQuery(e.target.value);
                     setDestinationPlace(null);
                   }}
-                  className="w-full pl-10 pr-10 py-3 rounded-2xl border border-surface-border text-sm focus:ring-2 focus:ring-brand-900 focus:outline-none bg-surface-subtle"
+                  className="w-full px-4 py-3 bg-yatriwarm-50 border border-yatriwarm-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-yatribrand-800 focus:bg-white transition-all"
                 />
                 {destinationQuery && (
                   <button
