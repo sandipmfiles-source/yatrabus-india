@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [main]
   push:
-    branches: [phase2-cloudflare-pages-d1, feat/super-admin-pages-api]
+    branches: [main, phase2-cloudflare-pages-d1, feat/super-admin-pages-api]
 
 permissions:
   contents: read
@@ -47,12 +47,53 @@ jobs:
           coverage="$(curl --fail --silent --show-error --retry 3 --retry-delay 2 "$base/data/status")"
           printf '%s' "$coverage" | jq -e '.success == true and .data.administrativeDirectory.records >= 15000 and .data.busServiceData.routes > 0 and .data.busServiceData.timetables > 0' >/dev/null
           kolkata="$(curl --fail --silent --show-error --retry 3 --retry-delay 2 --get --data-urlencode 'q=Kolkata' --data-urlencode 'limit=8' "$base/places/search")"
-          printf '%s' "$kolkata" | jq -e '.success == true and (.data | length > 0)' >/dev/null
+          printf '%s' "$kolkata" | jq -e '.success == true and (.data | length > 0) and all(.data[]; ((.place.canonicalName // .canonicalName) != null) and ((.displayLabel // .canonicalName) != null))' >/dev/null
           terminal="$(curl --fail --silent --show-error --retry 3 --retry-delay 2 --get --data-urlencode 'q=Esplanade' --data-urlencode 'limit=8' "$base/places/search")"
-          printf '%s' "$terminal" | jq -e '.success == true and any(.data[]; .placeType == "bus_terminal")' >/dev/null
+          printf '%s' "$terminal" | jq -e '.success == true and any(.data[]; (.place.placeType // .placeType) == "bus_terminal")' >/dev/null
+          nearby="$(curl --silent --show-error --retry 3 --retry-delay 2 --get --data-urlencode 'lat=22.5665' --data-urlencode 'lon=88.3500' --data-urlencode 'radius=8000' "$base/places/nearby")"
+          printf '%s' "$nearby" | jq '{success, count:(.stops | length), meta, error}'
           routes="$(curl --fail --silent --show-error --retry 3 --retry-delay 2 "$base/routes")"
           printf '%s' "$routes" | jq -e '.success == true and (.data | length > 0)' >/dev/null
-          echo "Production API smoke test passed: India place data, Kolkata search, Esplanade bus terminal, published routes and timetables are reachable."
+          if [ "$GITHUB_EVENT_NAME" = "push" ]; then
+            places_ready=false
+            for attempt in $(seq 1 30); do
+              kolkata="$(curl --silent --show-error --get --data-urlencode 'q=Kolkata' --data-urlencode 'limit=8' "$base/places/search" || true)"
+              if printf '%s' "$kolkata" | jq -e '.success == true and (.data | length > 0) and all(.data[]; .place.canonicalName != null and .displayLabel != null and .matchType != null)' >/dev/null 2>&1; then
+                places_ready=true
+                break
+              fi
+              echo "Waiting for the new passenger autocomplete API (attempt $attempt/30)."
+              sleep 10
+            done
+            if [ "$places_ready" != true ]; then
+              echo "::error::Production autocomplete API did not switch to the PlaceSearchResult response shape."
+              printf '%s\n' "$kolkata"
+              exit 1
+            fi
+
+            nearby_ready=false
+            for attempt in $(seq 1 30); do
+              nearby="$(curl --silent --show-error --get --data-urlencode 'lat=22.5665' --data-urlencode 'lon=88.3500' --data-urlencode 'radius=8000' "$base/places/nearby" || true)"
+              if printf '%s' "$nearby" | jq -e '.success == true and (.stops | length > 0)' >/dev/null 2>&1; then
+                nearby_ready=true
+                break
+              fi
+              echo "Waiting for nearby mapped stops from the deployed OSM fallback (attempt $attempt/30)."
+              sleep 10
+            done
+            if [ "$nearby_ready" != true ]; then
+              echo "::error::Production nearby endpoint returned no mapped bus stops."
+              printf '%s\n' "$nearby" | jq '{success, count:(.stops | length), meta, error}' || true
+              exit 1
+            fi
+
+            route_pair="$(printf '%s' "$routes" | jq -er '[.data[] | select((.stops | length) >= 2) | {from: .stops[0].stopName, to: .stops[-1].stopName}] | first')"
+            origin="$(printf '%s' "$route_pair" | jq -er '.from')"
+            destination="$(printf '%s' "$route_pair" | jq -er '.to')"
+            named_route="$(curl --fail --silent --show-error --retry 3 --retry-delay 2 --get --data-urlencode "from=$origin" --data-urlencode "to=$destination" "$base/routes/search")"
+            printf '%s' "$named_route" | jq -e '.success == true and (.directRoutes | length > 0)' >/dev/null
+          fi
+          echo "Production API smoke test passed: India place data, autocomplete, nearby stops, route directory and passenger name-based route search are reachable."
       - name: Type-check Cloudflare Pages Functions
         run: |
           find functions -name '*.ts' -print0 | xargs -0 npx tsc --noEmit --target ES2022 --module ESNext --moduleResolution bundler --strict --skipLibCheck --lib ES2022,DOM

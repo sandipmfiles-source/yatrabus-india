@@ -20,23 +20,88 @@ type IndexedLeg = {
 };
 type IndexedBoard = { payload_json: string };
 
+async function resolvePlaceId(db: NonNullable<PagesContext["env"]["DB"]>, value: string): Promise<string | null> {
+  const byId = await db.prepare("SELECT id FROM places WHERE id = ? LIMIT 1")
+    .bind(value).first<{ id: string }>();
+  if (byId?.id) return byId.id;
+
+  const escaped = value.replace(/[\\%_]/g, "\\$&");
+  const pattern = `%${escaped}%`;
+  const prefix = `${escaped}%`;
+  const rows = await db.prepare(`
+    SELECT p.id, p.canonical_name, p.place_type, p.aliases_json,
+           COUNT(DISTINCT active_route.id) AS active_route_count
+    FROM places AS p
+    LEFT JOIN route_stops AS rs ON rs.stop_id = p.id
+    LEFT JOIN routes AS active_route ON active_route.id = rs.route_id AND active_route.status = 'active'
+    WHERE p.canonical_name LIKE ? ESCAPE '\\' COLLATE NOCASE
+       OR p.aliases_json LIKE ? ESCAPE '\\' COLLATE NOCASE
+    GROUP BY p.id
+    ORDER BY
+      active_route_count DESC,
+      CASE WHEN p.canonical_name = ? COLLATE NOCASE THEN 0
+           WHEN p.canonical_name LIKE ? ESCAPE '\\' COLLATE NOCASE THEN 1
+           ELSE 2 END,
+      CASE WHEN p.place_type IN ('BUS_STOP','BUS_TERMINAL','BUS_STATION','TRANSIT_HUB','bus_stop','bus_terminal','bus_station') THEN 0 ELSE 1 END,
+      p.canonical_name
+    LIMIT 20
+  `).bind(pattern, pattern, value, prefix)
+    .all<{ id: string; canonical_name: string; place_type: string; aliases_json?: string; active_route_count: number }>();
+
+  const candidates = rows.results || [];
+  const query = value.normalize("NFKC").trim().toLocaleLowerCase("en-IN");
+  const exactAlias = candidates.find(row => {
+    try {
+      const aliases = JSON.parse(row.aliases_json || "[]");
+      return Array.isArray(aliases) && aliases.some((alias: unknown) =>
+        String(alias).normalize("NFKC").trim().toLocaleLowerCase("en-IN") === query
+      );
+    } catch {
+      return false;
+    }
+  });
+  return (exactAlias || candidates[0])?.id || null;
+}
+
+
 export async function onRequestGet({ request, env }: PagesContext): Promise<Response> {
   if (!env.DB) return unavailable();
   const url = new URL(request.url);
-  const origin = (url.searchParams.get("origin") || url.searchParams.get("from") || "").trim();
-  const destination = (url.searchParams.get("destination") || url.searchParams.get("to") || "").trim();
+  const originQuery = (url.searchParams.get("origin") || url.searchParams.get("from") || "").trim();
+  const destinationQuery = (url.searchParams.get("destination") || url.searchParams.get("to") || "").trim();
   const dateValue = url.searchParams.get("date");
   const serviceDate = dateValue ? parseServiceDate(dateValue) : null;
   if (dateValue && !serviceDate) return json({ success: false, error: "Date must be a valid YYYY-MM-DD value" }, 400);
   const dateParams = serviceDate ? serviceDateParams(serviceDate) : [];
-  if (!origin || !destination) {
-    return json({ success: false, error: "Origin and destination place IDs are required" }, 400);
-  }
-  if (origin === destination) {
-    return json({ success: true, directRoutes: [], transferRoutes: [], data: { directRoutes: [], transferRoutes: [] }, meta: { directCount: 0, transferCount: 0 } });
+  if (!originQuery || !destinationQuery) {
+    return json({ success: false, error: "Origin and destination are required." }, 400);
   }
 
   try {
+    // The passenger app submits readable place names. Resolve them to the exact
+    // D1 place IDs used by route_stops; older clients may submit IDs directly.
+    const [origin, destination] = await Promise.all([
+      resolvePlaceId(env.DB, originQuery),
+      resolvePlaceId(env.DB, destinationQuery),
+    ]);
+    if (!origin || !destination) {
+      return json({
+        success: true,
+        directRoutes: [],
+        transferRoutes: [],
+        data: { directRoutes: [], transferRoutes: [] },
+        meta: {
+          directCount: 0,
+          transferCount: 0,
+          unresolved: { origin: !origin, destination: !destination },
+          message: "Choose a place suggestion that matches a mapped YatraBus stop or directory entry.",
+        },
+      });
+    }
+    if (origin === destination) {
+      return json({ success: true, directRoutes: [], transferRoutes: [], data: { directRoutes: [], transferRoutes: [] }, meta: { directCount: 0, transferCount: 0 } });
+    }
+
     // The indexed stop table avoids loading every route into memory for each search.
     const directRows = await env.DB.prepare(`
       SELECT r.payload_json,
