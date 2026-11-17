@@ -7,7 +7,6 @@ import { ContributionModal } from './components/contribution/ContributionModal';
 import { AdminDashboard } from './components/admin/AdminDashboard';
 import { BusIllustration } from './assets/BusIllustration';
 import { MobileBottomNav } from './components/navigation/MobileBottomNav';
-import { OfflineBanner } from './components/common/OfflineBanner';
 import { OperatorClaimModal } from './components/operator/OperatorClaimModal';
 import {
   Navigation,
@@ -281,9 +280,6 @@ export const App: React.FC = () => {
           </div>
         )}
       </header>
-
-      {/* Offline Connectivity Notification Banner */}
-      <OfflineBanner />
 
       {/* Main View Container */}
       <main className="flex-1 pb-16 md:pb-0">
