@@ -17,27 +17,21 @@ async function fetchOsmNearbyStops(lat: number, lng: number, radiusMeters: numbe
   const cached = osmNearbyCache.get(cacheKey);
   if (cached && cached.expiresAt > Date.now()) return cached.stops;
 
-  const query = '[out:json][timeout:12];(' +
-    'node(around:' + radiusMeters + ',' + lat + ',' + lng + ')["amenity"="bus_station"];' +
-    'way(around:' + radiusMeters + ',' + lat + ',' + lng + ')["amenity"="bus_station"];' +
-    'relation(around:' + radiusMeters + ',' + lat + ',' + lng + ')["amenity"="bus_station"];' +
-    'node(around:' + radiusMeters + ',' + lat + ',' + lng + ')["public_transport"="station"];' +
-    'way(around:' + radiusMeters + ',' + lat + ',' + lng + ')["public_transport"="station"];' +
-    'node(around:' + radiusMeters + ',' + lat + ',' + lng + ')["highway"="bus_stop"];' +
-    'node(around:' + radiusMeters + ',' + lat + ',' + lng + ')["public_transport"="platform"];' +
-    'way(around:' + radiusMeters + ',' + lat + ',' + lng + ')["public_transport"="platform"];' +
-    'node(around:' + radiusMeters + ',' + lat + ',' + lng + ')["public_transport"="stop_position"];' +
-    'node(around:' + radiusMeters + ',' + lat + ',' + lng + ')[bus=yes];' +
-    ');out center tags;';
+  const query = '[out:json][timeout:15];(' +
+    'nwr(around:' + radiusMeters + ',' + lat + ',' + lng + ')["amenity"="bus_station"];' +
+    'nwr(around:' + radiusMeters + ',' + lat + ',' + lng + ')["highway"="bus_stop"];' +
+    'nwr(around:' + radiusMeters + ',' + lat + ',' + lng + ')["public_transport"~"^(station|platform|stop_position)$"];' +
+    'nwr(around:' + radiusMeters + ',' + lat + ',' + lng + ')[bus=yes];' +
+    ');out center tags 100;';
 
   let payload: { elements?: Array<Record<string, any>> } | null = null;
   const endpoints: Array<{ url: string; method: "POST" | "GET" }> = [
     { url: "https://overpass-api.de/api/interpreter", method: "POST" },
     { url: "https://overpass.kumi.systems/api/interpreter", method: "POST" },
-    { url: "https://overpass.nchc.org.tw/api/interpreter", method: "GET" },
     { url: "https://overpass.private.coffee/api/interpreter", method: "GET" },
   ];
   let emptyPayload: { elements?: Array<Record<string, any>> } | null = null;
+  let lastFailure = "NO_RESPONSE";
   for (const endpoint of endpoints) {
     try {
       const requestUrl = endpoint.method === "GET" ? endpoint.url + "?data=" + encodeURIComponent(query) : endpoint.url;
@@ -48,22 +42,29 @@ async function fetchOsmNearbyStops(lat: number, lng: number, radiusMeters: numbe
           ...(endpoint.method === "POST" ? { "Content-Type": "application/x-www-form-urlencoded" } : {}),
         },
         ...(endpoint.method === "POST" ? { body: "data=" + encodeURIComponent(query) } : {}),
-        signal: AbortSignal.timeout(15000),
+        signal: AbortSignal.timeout(18000),
       });
-      if (!response.ok) continue;
+      if (!response.ok) {
+        lastFailure = "HTTP_" + response.status;
+        continue;
+      }
       const candidate = await response.json() as { elements?: Array<Record<string, any>> };
-      if (!Array.isArray(candidate.elements)) continue;
+      if (!Array.isArray(candidate.elements)) {
+        lastFailure = "INVALID_JSON_SHAPE";
+        continue;
+      }
       if (candidate.elements.length > 0) {
         payload = candidate;
         break;
       }
       emptyPayload = candidate;
-    } catch {
-      // Continue to the next public Overpass instance.
+      lastFailure = "EMPTY_RESULT";
+    } catch (error) {
+      lastFailure = error instanceof Error ? error.name : "FETCH_FAILED";
     }
   }
   payload = payload || emptyPayload;
-  if (!payload) throw new Error("OpenStreetMap nearby lookup failed");
+  if (!payload) throw new Error("OSM_UPSTREAM_" + lastFailure);
   const radians = (value: number) => value * Math.PI / 180;
   const distance = (aLat: number, aLng: number) => {
     const dLat = radians(aLat - lat), dLng = radians(aLng - lng);
@@ -181,10 +182,12 @@ export async function onRequestGet({ request, env }: PagesContext): Promise<Resp
     // can still discover nearby physical bus stands/stops.
     let osmStops: OSMStop[] = [];
     let osmAvailable = true;
+    let osmError: string | null = null;
     try {
       osmStops = await fetchOsmNearbyStops(lat, lng, Math.round(radiusKm * 1000));
-    } catch {
+    } catch (error) {
       osmAvailable = false;
+      osmError = error instanceof Error ? error.message.slice(0, 80) : "OSM_UPSTREAM_FAILED";
     }
     const knownNames = new Set(directoryStops.map((item:any) =>
       String(item.place?.canonicalName || "").trim().toLocaleLowerCase("en-IN")
@@ -208,6 +211,7 @@ export async function onRequestGet({ request, env }: PagesContext): Promise<Resp
         radiusKm,
         sources: { yatribusDirectory: directoryStops.length, openStreetMap: uniqueOsmStops.length },
         osmAvailable,
+        osmError,
         timetableVerified: directoryStops.length > 0 && uniqueOsmStops.length === 0
       },
       attribution: "Mapped stop data © OpenStreetMap contributors. OSM locations do not by themselves verify current bus service or timetable."
