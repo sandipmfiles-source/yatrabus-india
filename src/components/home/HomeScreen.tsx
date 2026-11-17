@@ -6,6 +6,7 @@ import {
   Search,
   ArrowUpDown,
   MapPin,
+  Navigation,
   Clock,
   Sparkles,
   ShieldCheck,
@@ -43,6 +44,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   const [searchResults, setSearchResults] = useState<any | null>(null);
   const [popularRoutes, setPopularRoutes] = useState<Route[]>([]);
   const [nearbyStops, setNearbyStops] = useState<Place[]>([]);
+  const [isLocating, setIsLocating] = useState(false);
+  const [nearbyError, setNearbyError] = useState('');
   const [recentSearches, setRecentSearches] = useState<{ origin: string; dest: string; originId?: string; destId?: string; date?: string }[]>([]);
   const [travelDate, setTravelDate] = useState(() => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()));
   const [loading, setLoading] = useState(false);
@@ -63,21 +66,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       if (res.success) setPopularRoutes(res.data.slice(0, 4));
     });
 
-    // Check user location for nearby stops (without hardcoding Delhi or any specific city)
-    if (typeof navigator !== 'undefined' && 'geolocation' in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        pos => {
-          ApiClient.getNearbyPlaces(pos.coords.latitude, pos.coords.longitude, 10).then(res => {
-            if (res.success) setNearbyStops(res.data.slice(0, 4));
-          });
-        },
-        () => {
-          // No location permission - do not fabricate default locations
-          setNearbyStops([]);
-        },
-        { maximumAge: 60000, timeout: 5000 }
-      );
-    }
   }, []);
 
   // Place Autocomplete for Origin
@@ -107,6 +95,38 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       setDestSuggestions([]);
     }
   }, [destinationQuery, destinationPlace]);
+
+  const handleFindNearbyStops = () => {
+    setNearbyError('');
+    if (typeof navigator === 'undefined' || !('geolocation' in navigator)) {
+      setNearbyError(t('nearby_location_unavailable'));
+      return;
+    }
+    setIsLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      position => {
+        ApiClient.getNearbyPlaces(position.coords.latitude, position.coords.longitude, 10)
+          .then(res => {
+            if (res.success) setNearbyStops(res.data.slice(0, 6));
+            else {
+              setNearbyStops([]);
+              setNearbyError(res.error || t('nearby_search_failed'));
+            }
+          })
+          .catch(() => {
+            setNearbyStops([]);
+            setNearbyError(t('nearby_search_failed'));
+          })
+          .finally(() => setIsLocating(false));
+      },
+      () => {
+        setNearbyStops([]);
+        setNearbyError(t('nearby_permission_needed'));
+        setIsLocating(false);
+      },
+      { maximumAge: 60000, timeout: 8000 }
+    );
+  };
 
   const handleSwap = () => {
     const tempP = originPlace;
@@ -561,28 +581,50 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         </div>
       </div>
 
-      {/* Nearby Bus Stops */}
-      {nearbyStops.length > 0 && (
-        <div className="space-y-3">
-          <h2 className="text-sm font-bold text-slate-900">{t('nearby_stops_title')}</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      {/* Nearby bus stands and bus stops: location is requested only after the user taps */}
+      <section className="yb-nearby-stop-panel rounded-2xl p-5 border shadow-subtle">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-bold flex items-center gap-1.5">
+              <Navigation className="w-4 h-4" />
+              {t('nearby_stops_title')}
+            </h2>
+            <p className="text-xs text-yatriwarm-600 mt-1">{t('nearby_stops_description')}</p>
+          </div>
+          <button
+            type="button"
+            onClick={handleFindNearbyStops}
+            disabled={isLocating}
+            className="yb-nearby-stop-button px-3 py-2 text-white text-xs font-bold rounded-xl border transition-all flex items-center gap-1.5 shrink-0 shadow-sm"
+          >
+            <Navigation className={`w-3.5 h-3.5 ${isLocating ? 'animate-spin' : ''}`} />
+            {isLocating ? t('nearby_searching') : t('find_stops_near_me')}
+          </button>
+        </div>
+        {nearbyError && <p role="status" className="text-xs text-rose-700 mt-3">{nearbyError}</p>}
+        {nearbyStops.length > 0 && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-3 pt-3 border-t border-emerald-200">
             {nearbyStops.map(stop => (
-              <div
+              <button
+                type="button"
                 key={stop.id}
                 onClick={() => {
                   setOriginPlace(stop);
                   setOriginQuery(stop.canonicalName);
+                  setActiveInput(null);
                 }}
-                className="p-3.5 rounded-2xl bg-white border border-surface-border shadow-sm hover:border-brand-900 cursor-pointer transition text-xs"
+                className="p-2.5 rounded-xl bg-white/80 hover:bg-white cursor-pointer border border-emerald-200 transition-colors flex items-center justify-between text-left"
               >
-                <MapPin className="w-4 h-4 text-brand-900 mb-1" />
-                <div className="font-bold text-slate-900 line-clamp-1">{stop.canonicalName}</div>
-                <span className="text-[10px] text-slate-500 capitalize">{stop.placeType.replace('_', ' ')}</span>
-              </div>
+                <span>
+                  <span className="block text-xs font-semibold text-yatriwarm-900">{stop.canonicalName}</span>
+                  <span className="block text-[11px] text-yatriwarm-600">{stop.district}, {stop.state}</span>
+                </span>
+                <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-md capitalize">{stop.placeType.replace('_', ' ')}</span>
+              </button>
             ))}
           </div>
-        </div>
-      )}
+        )}
+      </section>
     </div>
   );
 };
