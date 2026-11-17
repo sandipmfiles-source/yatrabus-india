@@ -25,7 +25,7 @@ async function resolvePlaceId(db: NonNullable<PagesContext["env"]["DB"]>, value:
     .bind(value).first<{ id: string }>();
   if (byId?.id) return byId.id;
 
-  const escaped = value.replace(/[\\%_]/g, "\\type IndexedBoard = { payload_json: string };");
+  const escaped = value.replace(/[\\%_]/g, "\\$&");
   const pattern = `%${escaped}%`;
   const prefix = `${escaped}%`;
   const rows = await db.prepare(`
