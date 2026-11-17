@@ -56,13 +56,13 @@ jobs:
           printf '%s' "$routes" | jq -e '.success == true and (.data | length > 0)' >/dev/null
           if [ "$GITHUB_EVENT_NAME" = "push" ]; then
             places_ready=false
-            for attempt in $(seq 1 30); do
-              kolkata="$(curl --silent --show-error --get --data-urlencode 'q=Kolkata' --data-urlencode 'limit=8' "$base/places/search" || true)"
+            for attempt in $(seq 1 15); do
+              kolkata="$(curl --silent --show-error --max-time 10 --get --data-urlencode 'q=Kolkata' --data-urlencode 'limit=8' "$base/places/search" || true)"
               if printf '%s' "$kolkata" | jq -e '.success == true and (.data | length > 0) and all(.data[]; .place.canonicalName != null and .displayLabel != null and .matchType != null)' >/dev/null 2>&1; then
                 places_ready=true
                 break
               fi
-              echo "Waiting for the new passenger autocomplete API (attempt $attempt/30)."
+              echo "Waiting for the new passenger autocomplete API (attempt $attempt/15)."
               sleep 10
             done
             if [ "$places_ready" != true ]; then
@@ -72,13 +72,13 @@ jobs:
             fi
 
             nearby_ready=false
-            for attempt in $(seq 1 30); do
-              nearby="$(curl --silent --show-error --get --data-urlencode 'lat=22.5665' --data-urlencode 'lon=88.3500' --data-urlencode 'radius=8000' "$base/places/nearby" || true)"
+            for attempt in $(seq 1 3); do
+              nearby="$(curl --silent --show-error --max-time 65 --get --data-urlencode 'lat=22.5665' --data-urlencode 'lon=88.3500' --data-urlencode 'radius=8000' "$base/places/nearby" || true)"
               if printf '%s' "$nearby" | jq -e '.success == true and (.stops | length > 0)' >/dev/null 2>&1; then
                 nearby_ready=true
                 break
               fi
-              echo "Waiting for nearby mapped stops from the deployed OSM fallback (attempt $attempt/30)."
+              echo "Waiting for nearby mapped stops from the deployed OSM fallback (attempt $attempt/3)."
               sleep 10
             done
             if [ "$nearby_ready" != true ]; then
