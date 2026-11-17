@@ -129,7 +129,7 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-surface-warm flex flex-col text-slate-800">
+    <div className="yatribus-theme min-h-screen bg-surface-warm flex flex-col text-slate-800">
       {/* Top Navbar */}
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-surface-border shadow-sm">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
@@ -139,7 +139,7 @@ export const App: React.FC = () => {
             className="flex items-center space-x-2.5 cursor-pointer select-none"
           >
             <div className="w-10 h-10 rounded-2xl bg-brand-900 text-white flex items-center justify-center shadow-md">
-              <Navigation className="w-5 h-5 text-amber-300" />
+              <CustomBusIllustration className="w-7 h-7 text-amber-300" />
             </div>
             <div>
               <div className="flex items-center space-x-1.5">
