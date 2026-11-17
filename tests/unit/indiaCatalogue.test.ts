@@ -62,8 +62,8 @@ export function runIndiaCatalogueTests(assert: (description: string, pass: boole
   assert('Nearby stop endpoint never labels mapped directory records as timetable-verified', /timetableVerified:\s*false/.test(nearbyEndpoint));
   assert('Nearby endpoint skips slow Overpass requests when D1 already has mapped stops', /if \(directoryStops\.length === 0\)/.test(nearbyEndpoint) && /osmQueried/.test(nearbyEndpoint));
   const androidGradle = readFileSync('android/app/build.gradle', 'utf8');
-  const androidVersionCode = Number(androidGradle.match(/versionCode\\s+(\\d+)/)?.[1] || 0);
-  const androidVersionName = androidGradle.match(/versionName\\s+"([^"]+)"/)?.[1] || '';
+  const androidVersionCode = Number(androidGradle.match(/versionCode\s+(\d+)/)?.[1] || 0);
+  const androidVersionName = androidGradle.match(/versionName\s+"([^"]+)"/)?.[1] || '';
   assert('Android update increments versionCode and keeps a valid semantic versionName', androidVersionCode > 2 &&
-    /^\\d+\\.\\d+\\.\\d+$/.test(androidVersionName));
+    /^\d+\.\d+\.\d+$/.test(androidVersionName));
 }
