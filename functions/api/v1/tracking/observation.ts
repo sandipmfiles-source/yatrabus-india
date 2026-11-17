@@ -8,7 +8,9 @@ export async function onRequestPost({request,env}:PagesContext):Promise<Response
   const sessionId=String(body?.sessionId||""),busId=String(body?.busId||""),routeId=String(body?.routeId||"");
   const latitude=Number(body?.latitude),longitude=Number(body?.longitude),accuracyMeters=Number(body?.accuracyMeters);
   const locationSource=String(body?.locationSource||"GPS").toUpperCase()==="NETWORK"?"NETWORK":"GPS";
-  const timestampValue=body?.timestamp?Date.parse(body.timestamp):Date.now();\n  if(!Number.isFinite(timestampValue)) return json({accepted:false,error:"Location timestamp is invalid."},400);\n  const timestamp=new Date(timestampValue).toISOString();
+  const timestampValue=body?.timestamp?Date.parse(body.timestamp):Date.now();
+  if(!Number.isFinite(timestampValue)) return json({accepted:false,error:"Location timestamp is invalid."},400);
+  const timestamp=new Date(timestampValue).toISOString();
   const speedKmh=body?.speedKmh==null?undefined:Number(body.speedKmh);
   const headingDegrees=body?.headingDegrees==null?undefined:Number(body.headingDegrees);
   if(!sessionId||!busId||!routeId||!Number.isFinite(latitude)||!Number.isFinite(longitude)||Math.abs(latitude)>90||Math.abs(longitude)>180||!Number.isFinite(accuracyMeters)||accuracyMeters<=0)
