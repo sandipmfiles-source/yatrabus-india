@@ -84,6 +84,14 @@ jobs:
       - name: Sync Capacitor Android Assets
         run: npx cap sync android
 
+      # Reuse the same debug certificate across ephemeral GitHub runners so
+      # future sideloaded debug APKs can update the previously installed build.
+      - name: Restore stable Android debug signing keystore
+        uses: actions/cache@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: yatribus-android-debug-keystore-v1
+
       - name: Grant Execute Permissions for Gradle Wrapper
         run: |
           if [ -f android/gradlew ]; then
