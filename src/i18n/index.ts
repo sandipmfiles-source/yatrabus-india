@@ -7,8 +7,8 @@ export type SupportedLanguage = 'en' | 'hi' | 'bn';
 
 export const TRANSLATIONS: Record<SupportedLanguage, Record<string, string>> = {
   en: {
-    app_title: 'YatraBus India',
-    app_tagline: 'Smart Transport Directory & Community Live Tracking',
+    app_title: 'YatriBus',
+    app_tagline: 'Community Transit Directory',
     nav_home: 'Home',
     nav_routes: 'Routes',
     nav_stops: 'Nearby Stops',
@@ -55,8 +55,8 @@ export const TRANSLATIONS: Record<SupportedLanguage, Record<string, string>> = {
     valid_until: 'Valid until',
     no_scheduled_departures: 'No scheduled departures are available for this route.',
     location_only_unverified: 'Location only · bus service not verified',
-    home_tagline: 'Search published bus routes',
-    home_coverage_notice: 'Coverage is added city by city. Timetables appear only when published source data is available.',
+    home_tagline: 'Find Buses, Routes & Live GPS Tracking',
+    home_coverage_notice: 'Free across 28 States & 8 UTs. Search buses, routes & timetables; share GPS with consent; suggest corrections—no sign-in.',
     badge_disputed: 'Disputed Timetable',
     badge_disrupted: 'Service Disruption',
 
@@ -125,8 +125,8 @@ export const TRANSLATIONS: Record<SupportedLanguage, Record<string, string>> = {
   },
 
   hi: {
-    app_title: 'यात्रा बस इंडिया',
-    app_tagline: 'भारत का स्मार्ट बस डायरेक्टरी और लाइव ट्रैकिंग प्लेटफॉर्म',
+    app_title: 'यात्रीबस (YatriBus)',
+    app_tagline: 'सामुदायिक बस निर्देशिका',
     nav_home: 'होम',
     nav_routes: 'रूट खोजें',
     nav_stops: 'आसपास के स्टॉप',
@@ -172,8 +172,8 @@ export const TRANSLATIONS: Record<SupportedLanguage, Record<string, string>> = {
     valid_until: 'मान्य समय',
     no_scheduled_departures: 'इस रूट के लिए प्रस्थान समय उपलब्ध नहीं है।',
     location_only_unverified: 'केवल स्थान संदर्भ · बस सेवा सत्यापित नहीं',
-    home_tagline: 'प्रकाशित बस मार्ग खोजें',
-    home_coverage_notice: 'शहर-दर-शहर डेटा जोड़ा जा रहा है। समय-सारणी तभी दिखेगी जब प्रकाशित स्रोत उपलब्ध होगा।',
+    home_tagline: 'बसें, मार्ग और लाइव GPS ट्रैकिंग खोजें',
+    home_coverage_notice: 'भारत के सभी 28 राज्यों और 8 केंद्रशासित प्रदेशों में निःशुल्क उपयोग करें। बस, मार्ग और समय-सारणी खोजें; अनुमति देकर ही GPS साझा करें और बिना साइन-इन सुधार भेजें।',
     badge_disputed: 'विवादित समय सारणी',
     badge_disrupted: 'रूट में बाधा',
 
@@ -237,8 +237,8 @@ export const TRANSLATIONS: Record<SupportedLanguage, Record<string, string>> = {
   },
 
   bn: {
-    app_title: 'যাত্রাবাস ইন্ডিয়া',
-    app_tagline: 'ভারতের স্মার্ট বাস ডিরেক্টরি ও লাইভ ট্র্যাকিং প্ল্যাটফর্ম',
+    app_title: 'যাত্রীবাস (YatriBus)',
+    app_tagline: 'যাত্রী-সহায়তায় বাস ডিরেক্টরি',
     nav_home: 'হোম',
     nav_routes: 'রুট খুঁজুন',
     nav_stops: 'কাছের বাস স্টপ',
@@ -284,8 +284,8 @@ export const TRANSLATIONS: Record<SupportedLanguage, Record<string, string>> = {
     valid_until: 'যতক্ষণ বৈধ',
     no_scheduled_departures: 'এই রুটের জন্য কোনো প্রকাশিত ছাড়ার সময় নেই।',
     location_only_unverified: 'শুধু অবস্থানের তথ্য · বাস পরিষেবা যাচাই করা হয়নি',
-    home_tagline: 'প্রকাশিত বাস রুট খুঁজুন',
-    home_coverage_notice: 'শহর ধরে ধরে তথ্য যোগ হচ্ছে। প্রকাশিত উৎসের তথ্য থাকলেই সময়সূচি দেখানো হবে।',
+    home_tagline: 'বাস, রুট ও লাইভ GPS ট্র্যাকিং খুঁজুন',
+    home_coverage_notice: 'ভারতের সব ২৮টি রাজ্য ও ৮টি কেন্দ্রশাসিত অঞ্চলে বিনামূল্যে ব্যবহার করুন। বাস, রুট ও সময়সূচি খুঁজুন; সম্মতি দিলেই GPS শেয়ার হবে এবং সাইন-ইন ছাড়াই সংশোধন পাঠান।',
     badge_disputed: 'বিরোধপূর্ণ সময়সূচী',
     badge_disrupted: 'রুট ব্যাহত',
 

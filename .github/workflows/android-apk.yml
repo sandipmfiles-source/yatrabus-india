@@ -134,13 +134,13 @@ jobs:
 
           BADGING="$("$AAPT" dump badging "$APK")"
           printf '%s\\n' "$BADGING"
-          printf '%s\\n' "$BADGING" | grep -F "package: name='in.yatrabus.app.debug'"
+          printf '%s\\n' "$BADGING" | grep -F "package: name='in.yatribus.app'"
           printf '%s\\n' "$BADGING" | grep -F "sdkVersion:'22'"
           printf '%s\\n' "$BADGING" | grep -F "targetSdkVersion:'34'"
 
           mkdir -p verified-apk
-          cp "$APK" verified-apk/YatraBus-India-Android.apk
-          sha256sum verified-apk/YatraBus-India-Android.apk | tee verified-apk/SHA256SUMS.txt
+          cp "$APK" verified-apk/YatriBus-Android.apk
+          sha256sum verified-apk/YatriBus-Android.apk | tee verified-apk/SHA256SUMS.txt
 
       - name: Upload APK
         uses: actions/upload-artifact@v4

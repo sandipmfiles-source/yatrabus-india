@@ -1,8 +1,8 @@
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'in.yatrabus.app',
-  appName: 'YatraBus India',
+  appId: 'in.yatribus.app',
+  appName: 'YatriBus',
   webDir: 'dist',
   server: {
     androidScheme: 'https',

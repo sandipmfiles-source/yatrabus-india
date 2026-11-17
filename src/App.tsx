@@ -150,7 +150,7 @@ export const App: React.FC = () => {
                 </span>
               </div>
               <p className="yb-brand-tagline text-[10px] font-medium hidden sm:block">
-                Smart Transport Directory
+                {t('app_tagline')}
               </p>
             </div>
           </div>
