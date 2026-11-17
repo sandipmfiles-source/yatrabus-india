@@ -26,28 +26,41 @@ async function fetchOsmNearbyStops(lat: number, lng: number, radiusMeters: numbe
     'node(around:' + radiusMeters + ',' + lat + ',' + lng + ')["highway"="bus_stop"];' +
     'node(around:' + radiusMeters + ',' + lat + ',' + lng + ')["public_transport"="platform"];' +
     'way(around:' + radiusMeters + ',' + lat + ',' + lng + ')["public_transport"="platform"];' +
+    'node(around:' + radiusMeters + ',' + lat + ',' + lng + ')["public_transport"="stop_position"];' +
+    'node(around:' + radiusMeters + ',' + lat + ',' + lng + ')[bus=yes];' +
     ');out center tags;';
 
   let payload: { elements?: Array<Record<string, any>> } | null = null;
   const endpoints = [
     "https://overpass-api.de/api/interpreter",
     "https://overpass.kumi.systems/api/interpreter",
+    "https://overpass.nchc.org.tw/api/interpreter",
   ];
   for (const endpoint of endpoints) {
-    try {
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded", "User-Agent": "YatraBusIndia/1.0" },
-        body: "data=" + encodeURIComponent(query),
-        signal: AbortSignal.timeout(12000),
-      });
-      if (!response.ok) continue;
-      payload = await response.json() as { elements?: Array<Record<string, any>> };
-      if (Array.isArray(payload.elements)) break;
-      payload = null;
-    } catch {
-      // Retry once against a separate public Overpass instance.
+    for (const method of ["POST", "GET"] as const) {
+      try {
+        const requestUrl = method === "GET" ? endpoint + "?data=" + encodeURIComponent(query) : endpoint;
+        const response = await fetch(requestUrl, {
+          method,
+          headers: {
+            "Accept": "application/json",
+            "User-Agent": "YatraBusIndia/1.0 (+https://github.com/sandipmfiles-source/yatrabus-india)",
+            ...(method === "POST" ? { "Content-Type": "application/x-www-form-urlencoded" } : {}),
+          },
+          ...(method === "POST" ? { body: "data=" + encodeURIComponent(query) } : {}),
+          signal: AbortSignal.timeout(10000),
+        });
+        if (!response.ok) continue;
+        const candidate = await response.json() as { elements?: Array<Record<string, any>> };
+        if (Array.isArray(candidate.elements)) {
+          payload = candidate;
+          break;
+        }
+      } catch {
+        // Try another public Overpass instance or its GET interface.
+      }
     }
+    if (payload) break;
   }
   if (!payload) throw new Error("OpenStreetMap nearby lookup failed");
   const radians = (value: number) => value * Math.PI / 180;
