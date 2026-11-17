@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { INDIA_ADMINISTRATIVE_UNITS, INDIA_STATE_COUNT, INDIA_UT_COUNT } from '../../packages/shared/src/data/indiaCatalogue.js';
 import { INDIA_GOVERNMENT_OPERATORS } from '../../packages/shared/src/data/indiaGovernmentOperators.js';
 import { INDIA_ADMIN_AREA_PLACES } from '../../backend/src/db/indiaAdminAreas.js';
@@ -35,3 +36,29 @@ export function runIndiaCatalogueTests(assert: (description: string, pass: boole
     .filter(item => item.id.startsWith('india-admin-'))
     .every(item => !!item.sourceUrl && !!item.sourceSnapshotDate && item.verificationStatus === 'UNVERIFIED'));
 }
+
+
+  const osmSeed = JSON.parse(readFileSync('data/osm-west-bengal-bus-stops.json', 'utf8')) as {
+    license: string;
+    attribution: string;
+    records: Array<{ id: string; sourceUrl: string; sourcePage: string; sourceLicense: string; placeType: string; busServiceVerified: boolean; operationalStatus: string }>;
+  };
+  const osmMigration = readFileSync('migrations/0007_osm_west_bengal_bus_stops.sql', 'utf8');
+  const nearbyEndpoint = readFileSync('functions/api/v1/places/nearby.ts', 'utf8');
+  assert('West Bengal OSM stop seed has stable records and ODbL attribution', osmSeed.records.length >= 9 &&
+    osmSeed.license === 'ODbL-1.0' && osmSeed.attribution.includes('OpenStreetMap contributors'));
+  assert('Every OSM seed record retains an OSM object URL and source page', osmSeed.records.every(item =>
+    /^https:\/\/www\.openstreetmap\.org\/(node|way)\//.test(item.sourceUrl) &&
+    /^https:\/\/mapcarta\.com\//.test(item.sourcePage) && item.sourceLicense === 'ODbL-1.0'
+  ));
+  assert('OSM mapped bus locations are not falsely marked as verified services', osmSeed.records.every(item =>
+    item.busServiceVerified === false && item.operationalStatus === 'UNKNOWN'
+  ));
+  assert('Jhargram and Midnapore bus stands are included in the mapped West Bengal seed', ['osm-way-394768163', 'osm-way-216241119'].every(id =>
+    osmSeed.records.some(item => item.id === id)
+  ));
+  assert('Every OSM source record is present in the idempotent D1 migration', osmSeed.records.every(item =>
+    osmMigration.includes(item.id)
+  ));
+  assert('Nearby stop lookup matches imported place types case-insensitively', /LOWER\(place_type\) IN/.test(nearbyEndpoint));
+  assert('Nearby stop endpoint never labels mapped directory records as timetable-verified', /timetableVerified:\s*false/.test(nearbyEndpoint));
