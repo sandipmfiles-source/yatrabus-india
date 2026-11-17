@@ -5,7 +5,7 @@ import registry from "../../../../data/gtfs/sources.json";
 export async function onRequestGet({ env }: PagesContext): Promise<Response> {
   if (!env.DB) return unavailable();
   try {
-    const catalogue = buildPublicGtfsCatalogue(registry as { feeds?: Array<Record<string, unknown>> });
+    const catalogue = buildPublicGtfsCatalogue(registry as Parameters<typeof buildPublicGtfsCatalogue>[0]);
     const rows = await env.DB.prepare(`
       SELECT json_extract(payload_json, '$.sourceDataset') AS source_dataset,
              MAX(json_extract(payload_json, '$.sourceSnapshotDate')) AS imported_at,
