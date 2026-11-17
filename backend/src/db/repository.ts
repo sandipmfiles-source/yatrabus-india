@@ -1,0 +1,598 @@
+import { Place } from '../../../packages/shared/src/types/places.js';
+import { Bus, Operator, Route } from '../../../packages/shared/src/types/bus.js';
+import {
+  ConsentRecord,
+  JourneySession,
+  LocationObservation,
+  AggregatedBusLocation,
+  CellTowerObservation,
+} from '../../../packages/shared/src/types/tracking.js';
+import {
+  CommunitySubmission,
+  DuplicateCandidate,
+  OperatorClaimRequest,
+} from '../../../packages/shared/src/types/contribution.js';
+import { AdminUser, AuditLogEntry, AutomationRule, SystemHealthStats } from '../../../packages/shared/src/types/admin.js';
+import { SEED_PLACES, SEED_OPERATORS, SEED_ROUTES, SEED_BUSES } from './seedData.js';
+import { INDIA_ADMIN_AREA_PLACES } from './indiaAdminAreas.js';
+import { INDIA_GOVERNMENT_OPERATORS } from '../../../packages/shared/src/data/indiaGovernmentOperators.js';
+import { searchPlaces as runSearchPlaces } from '../../../packages/shared/src/search/typoSearch.js';
+import { haversineDistanceMeters } from '../../../packages/shared/src/engine/routeMatcher.js';
+
+export class TransitRepository {
+  private places: Map<string, Place> = new Map();
+  private operators: Map<string, Operator> = new Map();
+  private routes: Map<string, Route> = new Map();
+  private buses: Map<string, Bus> = new Map();
+  private consentRecords: Map<string, ConsentRecord> = new Map();
+  private journeySessions: Map<string, JourneySession> = new Map();
+  private observations: LocationObservation[] = [];
+  private busLocations: Map<string, AggregatedBusLocation> = new Map();
+  private cellTowerObservations: CellTowerObservation[] = [];
+  private submissions: Map<string, CommunitySubmission> = new Map();
+  private duplicateCandidates: Map<string, DuplicateCandidate> = new Map();
+  private operatorClaims: Map<string, OperatorClaimRequest> = new Map();
+  private automationRules: Map<string, AutomationRule> = new Map();
+  private auditLogs: AuditLogEntry[] = [];
+  private adminUsers: Map<string, AdminUser> = new Map();
+
+  private startTimeMs: number = Date.now();
+
+  constructor() {
+    this.seedInitialData();
+  }
+
+  private seedInitialData() {
+    // Seed Places
+    for (const p of [...INDIA_ADMIN_AREA_PLACES, ...SEED_PLACES]) {
+      this.places.set(p.id, p);
+    }
+    // Seed Operators
+    for (const op of SEED_OPERATORS) {
+      this.operators.set(op.id, op);
+    }
+    // Add further government transport undertakings without overwriting richer legacy seed entries.
+    for (const op of INDIA_GOVERNMENT_OPERATORS) {
+      if (!this.operators.has(op.id)) this.operators.set(op.id, op);
+    }
+    // Seed Routes
+    for (const r of SEED_ROUTES) {
+      // Existing demo/sample route times have no traceable official timetable source.
+      // Keep them searchable for UI development but never classify them as published schedules.
+      this.routes.set(r.id, {
+        ...r,
+        timetableDataStatus: r.timetableSource && r.timetableVerifiedAt ? 'SCHEDULED' : 'UNAVAILABLE',
+      });
+    }
+    // Seed buses with an explicit unavailable location state. Never fabricate a GPS
+    // position or label a demo coordinate as a live/estimated bus location.
+    for (const b of SEED_BUSES) {
+      this.buses.set(b.id, b);
+      const routeId = b.routeId || '';
+      this.busLocations.set(b.id, {
+        busId: b.id,
+        routeId,
+        displayState: 'UNAVAILABLE',
+        confidenceCategory: 'LOW',
+        confidenceScore: 0,
+        observationCount: 0,
+        independentContributorsCount: 0,
+        isLive: false,
+        statusExplanation: 'No passenger GPS observation has been received. Use the published timetable for schedule estimates.',
+        updatedAt: new Date().toISOString(),
+      });
+    }
+
+    // Seed Default Automation Rules
+    const defaultRules: AutomationRule[] = [
+      {
+        id: 'rule-gps-freshness',
+        ruleCode: 'GPS_FRESHNESS_MONITOR',
+        name: 'GPS Freshness Enforcer',
+        description: 'Marks observations older than 120s as Last Known, and >600s as Unavailable',
+        isEnabled: true,
+        parameters: { gpsFreshnessLiveSeconds: 120, gpsFreshnessStaleSeconds: 600 },
+        updatedAt: new Date().toISOString(),
+      },
+      {
+        id: 'rule-auto-publish-minor',
+        ruleCode: 'AUTO_PUBLISH_MINOR_TIMETABLE',
+        name: 'Low-Risk Timetable Correction Review',
+        description: 'Requires explicit administrator verification for schedule shifts exceeding 15 minutes',
+        isEnabled: false,
+        parameters: { autoPublishLowRiskMinorCorrections: false },
+        updatedAt: new Date().toISOString(),
+      },
+      {
+        id: 'rule-duplicate-scanner',
+        ruleCode: 'DUPLICATE_STOP_SCANNER',
+        name: 'Duplicate Transit Stops Candidate Generator',
+        description: 'Flags stops within 150m with >65% token similarity',
+        isEnabled: true,
+        parameters: { duplicateSimilarityThreshold: 0.65, duplicateMaxDistanceMeters: 150 },
+        updatedAt: new Date().toISOString(),
+      },
+      {
+        id: 'rule-session-safety-expiry',
+        ruleCode: 'SESSION_SAFETY_EXPIRY',
+        name: '12-Hour Journey Session Enforcer',
+        description: 'Terminates journey tracking sessions older than 12 hours automatically',
+        isEnabled: true,
+        parameters: { maxJourneySessionHours: 12 },
+        updatedAt: new Date().toISOString(),
+      },
+    ];
+
+    for (const rule of defaultRules) {
+      this.automationRules.set(rule.id, rule);
+    }
+
+    // The sole Super Admin is provisioned from the deployment's ADMIN_EMAIL at server startup.
+  }
+
+  // ==================== PLACES ====================
+  public searchPlaces(query: string, limit: number = 8) {
+    const all = Array.from(this.places.values());
+    return runSearchPlaces(query, all, limit);
+  }
+
+  public findNearbyStops(lat: number, lon: number, maxDistanceMeters: number = 3000): { place: Place; distanceMeters: number }[] {
+    const matches: { place: Place; distanceMeters: number }[] = [];
+    for (const p of this.places.values()) {
+      if (p.latitude !== undefined && p.longitude !== undefined) {
+        const dist = haversineDistanceMeters(lat, lon, p.latitude, p.longitude);
+        if (dist <= maxDistanceMeters) {
+          matches.push({ place: p, distanceMeters: Math.round(dist) });
+        }
+      }
+    }
+    matches.sort((a, b) => a.distanceMeters - b.distanceMeters);
+    return matches.slice(0, 10);
+  }
+
+  public getPlaceById(id: string): Place | undefined {
+    return this.places.get(id);
+  }
+
+  public addPlace(place: Place): Place {
+    this.places.set(place.id, place);
+    return place;
+  }
+
+  // ==================== ROUTES & BUSES ====================
+  public getAllRoutes(): Route[] {
+    return Array.from(this.routes.values()).map(route => ({
+      ...route,
+      timetableDataStatus: route.timetableDataStatus ?? 'UNAVAILABLE',
+    }));
+  }
+
+  public getAllBuses(): Bus[] {
+    return Array.from(this.buses.values());
+  }
+
+  public getRouteById(id: string): Route | undefined {
+    const route = this.routes.get(id);
+    return route ? { ...route, timetableDataStatus: route.timetableDataStatus ?? 'UNAVAILABLE' } : undefined;
+  }
+
+  public getRouteByNumber(routeNumber: string): Route | undefined {
+    const normalized = routeNumber.trim().toLowerCase();
+    return Array.from(this.routes.values()).find(route => route.routeNumber.trim().toLowerCase() === normalized);
+  }
+
+  public getOperatorByName(name: string): Operator | undefined {
+    const normalized = name.trim().toLowerCase();
+    return Array.from(this.operators.values()).find(operator => operator.name.trim().toLowerCase() === normalized);
+  }
+
+  public addOperator(operator: Operator): Operator {
+    this.operators.set(operator.id, operator);
+    return operator;
+  }
+
+  public addRoute(route: Route): Route {
+    const normalized = {
+      ...route,
+      timetableDataStatus: route.timetableDataStatus ?? 'UNAVAILABLE',
+    };
+    this.routes.set(route.id, normalized);
+    return normalized;
+  }
+
+  public addTimetableDeparture(routeId: string, departure: NonNullable<Route['departures']>[number], frequencyMinutes?: number): boolean {
+    const route = this.routes.get(routeId);
+    if (!route) return false;
+    const current = route.departures || [];
+    const duplicate = current.some(item => item.departureTime === departure.departureTime &&
+      (item.busIdentifier || '').toLowerCase() === (departure.busIdentifier || '').toLowerCase() && !item.isCancelled);
+    if (duplicate) return false;
+    route.departures = [...current, departure].sort((a, b) => a.departureTime.localeCompare(b.departureTime));
+    if (Number.isFinite(frequencyMinutes) && frequencyMinutes && frequencyMinutes > 0) route.frequencyMinutes = frequencyMinutes;
+    route.updatedAt = new Date().toISOString();
+    return true;
+  }
+
+  public getBusById(id: string): Bus | undefined {
+    return this.buses.get(id);
+  }
+
+  public updateTimetableDeparture(routeId: string, busIdentifier: string, departureTime: string, arrivalTime: string, newBusIdentifier?: string, stopTimes?: NonNullable<Route['departures']>[number]['stopTimes']): boolean {
+    const route = this.routes.get(routeId);
+    if (!route || !route.departures?.length) return false;
+    const index = route.departures.findIndex(item => (item.busIdentifier || '').toLowerCase() === busIdentifier.toLowerCase() && !item.isCancelled);
+    if (index < 0) return false;
+    route.departures[index] = { ...route.departures[index], departureTime, arrivalTime, busIdentifier: newBusIdentifier || route.departures[index].busIdentifier, stopTimes: stopTimes || route.departures[index].stopTimes };
+    route.updatedAt = new Date().toISOString();
+    return true;
+  }
+
+  public getBusesForRoute(routeId: string): Bus[] {
+    const route = this.routes.get(routeId);
+    if (!route) return [];
+    return Array.from(this.buses.values()).filter(b => b.isActive && (
+      b.routeId === routeId ||
+      (!b.routeId && b.operatorId === route.operatorId)
+    ));
+  }
+
+  public addBus(bus: Bus): Bus {
+    this.buses.set(bus.id, bus);
+    return bus;
+  }
+
+  // ==================== CONSENT & TRACKING ====================
+  public recordConsent(record: ConsentRecord): void {
+    this.consentRecords.set(record.sessionId, record);
+  }
+
+  public getConsent(sessionId: string): ConsentRecord | undefined {
+    return this.consentRecords.get(sessionId);
+  }
+
+  public createJourneySession(session: JourneySession): JourneySession {
+    this.journeySessions.set(session.sessionId, session);
+    return session;
+  }
+
+  public getJourneySession(sessionId: string): JourneySession | undefined {
+    return this.journeySessions.get(sessionId);
+  }
+
+  private pruneExpiredTrackingData(nowMs: number = Date.now()): void {
+    const retentionCutoff = nowMs - 12 * 60 * 60 * 1000;
+    const inactiveSessionIds = new Set<string>();
+    for (const [sessionId, session] of this.journeySessions) {
+      const expiryMs = new Date(session.maxExpiryTime).getTime();
+      if (session.isActive && Number.isFinite(expiryMs) && nowMs >= expiryMs) {
+        session.isActive = false;
+        session.stoppedReason = 'SESSION_EXPIRED';
+        session.lastActiveTime = new Date(nowMs).toISOString();
+        const consent = this.consentRecords.get(sessionId);
+        if (consent?.status === 'GRANTED') {
+          this.consentRecords.set(sessionId, { ...consent, status: 'REVOKED', revokedAt: new Date(nowMs).toISOString() });
+        }
+      }
+      if (!session.isActive) inactiveSessionIds.add(sessionId);
+    }
+    this.observations = this.observations.filter(observation =>
+      !inactiveSessionIds.has(observation.sessionId) &&
+      new Date(observation.timestamp).getTime() >= retentionCutoff
+    );
+  }
+
+  /** Requires two accurate GPS fixes at least 20 seconds apart before auto-completing a trip. */
+  public recordDestinationArrival(sessionId: string, isNearDestination: boolean, observedAt: string): boolean {
+    const session = this.journeySessions.get(sessionId);
+    if (!session || !session.isActive || !session.destinationStopId) return false;
+    if (!isNearDestination) {
+      session.destinationArrivalCount = 0;
+      session.lastDestinationArrivalAt = undefined;
+      return false;
+    }
+    const nowMs = new Date(observedAt).getTime();
+    const previousMs = session.lastDestinationArrivalAt ? new Date(session.lastDestinationArrivalAt).getTime() : NaN;
+    if (!Number.isFinite(nowMs) || nowMs > Date.now() + 60_000) return false;
+    if (!Number.isFinite(previousMs) || nowMs - previousMs < 20_000 || nowMs - previousMs > 5 * 60_000) {
+      session.destinationArrivalCount = 1;
+    } else {
+      session.destinationArrivalCount = (session.destinationArrivalCount || 0) + 1;
+    }
+    session.lastDestinationArrivalAt = observedAt;
+    if ((session.destinationArrivalCount || 0) >= 2) {
+      this.stopJourneySession(sessionId, 'JOURNEY_COMPLETED');
+      return true;
+    }
+    return false;
+  }
+
+  public stopJourneySession(sessionId: string, reason: JourneySession['stoppedReason']): boolean {
+    const sess = this.journeySessions.get(sessionId);
+    if (!sess) return false;
+    sess.isActive = false;
+    sess.stoppedReason = reason;
+    sess.lastActiveTime = new Date().toISOString();
+    const consent = this.consentRecords.get(sessionId);
+    if (consent?.status === 'GRANTED') {
+      this.consentRecords.set(sessionId, { ...consent, status: 'REVOKED', revokedAt: new Date().toISOString() });
+    }
+    this.pruneExpiredTrackingData();
+    return true;
+  }
+
+  public ingestObservation(obs: LocationObservation): void {
+    this.pruneExpiredTrackingData();
+    this.observations.push(obs);
+    // Increment session counter
+    const sess = this.journeySessions.get(obs.sessionId);
+    if (sess) {
+      sess.observationsContributedCount++;
+      sess.lastActiveTime = new Date().toISOString();
+    }
+  }
+
+  public getDistinctSessionsForBus(busId: string, sinceIso: string): number {
+    this.pruneExpiredTrackingData();
+    const sinceMs = new Date(sinceIso).getTime();
+    const sessions = new Set<string>();
+    for (const obs of this.observations) {
+      if (obs.busId === busId && new Date(obs.timestamp).getTime() >= sinceMs) {
+        sessions.add(obs.sessionId);
+      }
+    }
+    return sessions.size;
+  }
+
+  public ingestCellTowerObservation(observation: CellTowerObservation): void {
+    this.pruneExpiredTrackingData();
+    this.cellTowerObservations.push(observation);
+    const cutoff = Date.now() - 30 * 60 * 1000;
+    this.cellTowerObservations = this.cellTowerObservations.filter(item =>
+      new Date(item.timestamp).getTime() >= cutoff
+    ).slice(-10000);
+    const session = this.journeySessions.get(observation.sessionId);
+    if (session) {
+      session.observationsContributedCount++;
+      session.lastActiveTime = new Date().toISOString();
+    }
+  }
+
+  public getCellTowerObservationsForBus(busId: string, sinceIso: string): CellTowerObservation[] {
+    const since = new Date(sinceIso).getTime();
+    return this.cellTowerObservations.filter(item =>
+      item.busId === busId && new Date(item.timestamp).getTime() >= since
+    );
+  }
+
+  public getBusLocation(busId: string): AggregatedBusLocation | undefined {
+    return this.busLocations.get(busId);
+  }
+
+  public updateBusLocation(busId: string, loc: AggregatedBusLocation): void {
+    this.busLocations.set(busId, loc);
+  }
+
+  // ==================== COMMUNITY SUBMISSIONS ====================
+  public createSubmission(submission: CommunitySubmission): CommunitySubmission {
+    this.submissions.set(submission.id, submission);
+    return submission;
+  }
+
+  public recordSubmissionVote(id: string, voterKey: string, field: string, value: string): { success: boolean; counts?: Record<string, number>; error?: string } {
+    const submission = this.submissions.get(id);
+    if (!submission) return { success: false, error: 'Submission not found' };
+    const key = voterKey.slice(0, 128);
+    if (!key || (submission.voterKeys || []).includes(key)) return { success: false, error: 'This device has already voted on this correction' };
+    const voteKey = field.slice(0, 60) + ':' + value.slice(0, 120);
+    submission.communityVotes = submission.communityVotes || {};
+    submission.communityVotes[voteKey] = (submission.communityVotes[voteKey] || 0) + 1;
+    submission.corroborationCount = (submission.corroborationCount || 0) + 1;
+    submission.voterKeys = [...(submission.voterKeys || []), key].slice(-20000);
+    return { success: true, counts: { ...submission.communityVotes } };
+  }
+
+  public getSubmissionByReference(refId: string): CommunitySubmission | undefined {
+    for (const sub of this.submissions.values()) {
+      if (sub.referenceId.toLowerCase() === refId.toLowerCase()) {
+        return sub;
+      }
+    }
+    return undefined;
+  }
+
+  public listSubmissions(status?: string): CommunitySubmission[] {
+    const all = Array.from(this.submissions.values());
+    if (!status) return all;
+    return all.filter(s => s.status === status);
+  }
+
+  public updateSubmissionReview(id: string, status: CommunitySubmission['status'], reason: string, adminId: string): boolean {
+    const sub = this.submissions.get(id);
+    if (!sub) return false;
+    sub.status = status;
+    sub.adminDecisionReason = reason;
+    sub.reviewedBy = adminId;
+    sub.reviewedAt = new Date().toISOString();
+    return true;
+  }
+
+  // ==================== OPERATOR CLAIMS ====================
+  public createOperatorClaim(claim: OperatorClaimRequest): OperatorClaimRequest {
+    this.operatorClaims.set(claim.id, claim);
+    return claim;
+  }
+
+  public listOperatorClaims(): OperatorClaimRequest[] {
+    return Array.from(this.operatorClaims.values());
+  }
+
+  // ==================== DUPLICATE CANDIDATES ====================
+  public addDuplicateCandidate(cand: DuplicateCandidate): DuplicateCandidate {
+    this.duplicateCandidates.set(cand.id, cand);
+    return cand;
+  }
+
+  public listDuplicateCandidates(): DuplicateCandidate[] {
+    return Array.from(this.duplicateCandidates.values());
+  }
+
+  public resolveDuplicateCandidate(id: string, status: DuplicateCandidate['status'], adminId: string): boolean {
+    const cand = this.duplicateCandidates.get(id);
+    if (!cand) return false;
+    cand.status = status;
+    cand.resolvedBy = adminId;
+    cand.resolvedAt = new Date().toISOString();
+    return true;
+  }
+
+  // ==================== AUTOMATION RULES ====================
+  public getAutomationRules(): AutomationRule[] {
+    // This platform policy is fail-safe even if an older persisted snapshot
+    // contains an enabled auto-publish flag.
+    const autoPublishRule = Array.from(this.automationRules.values()).find(
+      rule => rule.ruleCode === 'AUTO_PUBLISH_MINOR_TIMETABLE'
+    );
+    if (autoPublishRule) {
+      autoPublishRule.isEnabled = false;
+      autoPublishRule.parameters = { ...autoPublishRule.parameters, autoPublishLowRiskMinorCorrections: false };
+    }
+    return Array.from(this.automationRules.values());
+  }
+
+  public getAutomationRuleByCode(ruleCode: string): AutomationRule | undefined {
+    return Array.from(this.automationRules.values()).find(rule => rule.ruleCode === ruleCode);
+  }
+
+  public updateAutomationRule(id: string, isEnabled: boolean, params: Record<string, any>): boolean {
+    const rule = this.automationRules.get(id);
+    if (!rule) return false;
+    if (rule.ruleCode === 'AUTO_PUBLISH_MINOR_TIMETABLE' &&
+        (isEnabled || params.autoPublishLowRiskMinorCorrections === true)) {
+      return false;
+    }
+    rule.isEnabled = isEnabled;
+    rule.parameters = { ...rule.parameters, ...params };
+    if (rule.ruleCode === 'AUTO_PUBLISH_MINOR_TIMETABLE') {
+      rule.isEnabled = false;
+      rule.parameters.autoPublishLowRiskMinorCorrections = false;
+    }
+    rule.updatedAt = new Date().toISOString();
+    return true;
+  }
+
+  // ==================== AUDIT LOGS ====================
+  public createAuditLog(log: AuditLogEntry): void {
+    this.auditLogs.unshift(log);
+    if (this.auditLogs.length > 500) {
+      this.auditLogs.pop();
+    }
+  }
+
+  public getAuditLogs(limit: number = 50): AuditLogEntry[] {
+    return this.auditLogs.slice(0, limit);
+  }
+
+  public exportState(): Record<string, unknown> {
+    this.pruneExpiredTrackingData();
+    return {
+      places: Array.from(this.places.values()),
+      operators: Array.from(this.operators.values()),
+      routes: Array.from(this.routes.values()),
+      buses: Array.from(this.buses.values()),
+      consentRecords: Array.from(this.consentRecords.values()),
+      journeySessions: Array.from(this.journeySessions.values()),
+      observations: this.observations.slice(-10000),
+      busLocations: Array.from(this.busLocations.values()),
+      submissions: Array.from(this.submissions.values()),
+      duplicateCandidates: Array.from(this.duplicateCandidates.values()),
+      operatorClaims: Array.from(this.operatorClaims.values()),
+      automationRules: Array.from(this.automationRules.values()),
+      auditLogs: this.auditLogs.slice(0, 500),
+      adminUsers: Array.from(this.adminUsers.values()),
+    };
+  }
+
+  public importState(snapshot: Record<string, unknown>): void {
+    const restore = <T,>(target: Map<string, T>, values: unknown, key: (item: T) => string) => {
+      if (!Array.isArray(values)) return;
+      for (const item of values as T[]) {
+        const id = key(item);
+        if (id) target.set(id, item);
+      }
+    };
+    restore(this.places, snapshot.places, item => (item as any).id);
+    restore(this.operators, snapshot.operators, item => (item as any).id);
+    restore(this.routes, snapshot.routes, item => (item as any).id);
+    restore(this.buses, snapshot.buses, item => (item as any).id);
+    restore(this.consentRecords, snapshot.consentRecords, item => (item as any).sessionId);
+    restore(this.journeySessions, snapshot.journeySessions, item => (item as any).sessionId);
+    restore(this.busLocations, snapshot.busLocations, item => (item as any).busId);
+    restore(this.submissions, snapshot.submissions, item => (item as any).id);
+    restore(this.duplicateCandidates, snapshot.duplicateCandidates, item => (item as any).id);
+    restore(this.operatorClaims, snapshot.operatorClaims, item => (item as any).id);
+    restore(this.automationRules, snapshot.automationRules, item => (item as any).id);
+    restore(this.adminUsers, snapshot.adminUsers, item => (item as any).id);
+    if (Array.isArray(snapshot.observations)) this.observations = (snapshot.observations as LocationObservation[]).slice(-10000);
+    this.pruneExpiredTrackingData();
+    if (Array.isArray(snapshot.auditLogs)) this.auditLogs = (snapshot.auditLogs as AuditLogEntry[]).slice(0, 500);
+  }
+
+  // ==================== ADMIN & HEALTH ====================
+  public ensureSuperAdmin(email: string): AdminUser | undefined {
+    const normalizedEmail = email.trim().toLowerCase();
+    // Enforce a single owner account; never retain seeded or additional admin identities.
+    this.adminUsers.clear();
+    if (!normalizedEmail) return undefined;
+    const owner: AdminUser = {
+      id: 'owner-super-admin',
+      email: normalizedEmail,
+      name: 'YatraBus Owner',
+      role: 'SUPER_ADMIN',
+      isActive: true,
+      createdAt: new Date().toISOString(),
+    };
+    this.adminUsers.set(owner.id, owner);
+    return owner;
+  }
+
+  public getAdminByEmail(email: string): AdminUser | undefined {
+    for (const u of this.adminUsers.values()) {
+      if (u.email.toLowerCase() === email.toLowerCase()) {
+        return u;
+      }
+    }
+    return undefined;
+  }
+
+  public getSystemHealthStats(): SystemHealthStats {
+    const activeSessions = Array.from(this.journeySessions.values()).filter(s => s.isActive).length;
+    const liveBuses = Array.from(this.busLocations.values()).filter(b => b.displayState === 'LIVE').length;
+    const pendingSubs = Array.from(this.submissions.values()).filter(s => s.status === 'PENDING_REVIEW').length;
+    const pendingDups = Array.from(this.duplicateCandidates.values()).filter(d => d.status === 'PENDING').length;
+
+    let scoreSum = 0;
+    const locs = Array.from(this.busLocations.values());
+    for (const l of locs) {
+      scoreSum += l.confidenceScore;
+    }
+    const avgScore = locs.length > 0 ? Math.round(scoreSum / locs.length) : 0;
+
+    return {
+      status: 'HEALTHY',
+      uptimeSeconds: Math.floor((Date.now() - this.startTimeMs) / 1000),
+      databaseConnected: false, // Runtime currently uses JSON-file persistence, not PostgreSQL/PostGIS.
+      totalPlaces: this.places.size,
+      totalBuses: this.buses.size,
+      totalRoutes: this.routes.size,
+      totalStops: Array.from(this.routes.values()).reduce((acc, r) => acc + r.stops.length, 0),
+      activeJourneySessionsCount: activeSessions,
+      liveBusesTrackingCount: liveBuses,
+      pendingSubmissionsCount: pendingSubs,
+      pendingDuplicatesCount: pendingDups,
+      averageConfidenceScore: avgScore,
+    };
+  }
+}
+
+// Global Singleton Repository instance
+export const repository = new TransitRepository();

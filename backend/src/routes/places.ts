@@ -1,0 +1,506 @@
+import { Router, Request, Response } from 'express';
+import { readFileSync, readdirSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { resolve } from 'node:path';
+import { gunzipSync } from 'node:zlib';
+import { repository } from '../db/repository.js';
+import { publicSearchLimiter } from '../middleware/rateLimiter.js';
+import { loadNormalizedGtfsFeeds } from '../engine/publicGtfsRuntime.js';
+import { buildBusConnectedPlaceSuggestions, buildNearbyBusPlaceSuggestions } from '../engine/busConnectedPlaces.js';
+import { mapOsmNearbyStops } from '../engine/osmNearbyStops.js';
+
+export const placesRouter = Router();
+const osmNearbyCache = new Map<string, { expiresAt: number; stops: any[] }>();
+
+const geocodeCache = new Map<string, { expiresAt: number; results: any[] }>();
+let lastGeocodeRequestAt = 0;
+const lgdSuggestionCache = new Map<string, { expiresAt: number; results: any[] }>();
+let blockDirectoryPromise: Promise<any[]> | null = null;
+
+function normaliseDirectoryRows(payload: any, query: string) {
+  const data = payload?.data || {};
+  const groups: [string, string][] = [
+    ['states', 'State / UT'],
+    ['districts', 'District'],
+    ['subdistricts', 'Sub-district / Tehsil'],
+    ['urban_local_bodies', 'City / Town'],
+    ['villages', 'Village'],
+    ['blocks', 'Block'],
+  ];
+  const needle = query.toLocaleLowerCase('en-IN');
+  const results: any[] = [];
+  for (const [key, level] of groups) {
+    const rows = Array.isArray(data[key]) ? data[key] : [];
+    for (const row of rows) {
+      const name = String(row?.name || '').trim();
+      if (!name || !name.toLocaleLowerCase('en-IN').includes(needle)) continue;
+      const parents = [row.subdistrictName, row.districtName, row.stateName].filter(Boolean);
+      results.push({
+        id: 'lgd-' + key + '-' + String(row.code || name) + '-' + String(row.districtCode || ''),
+        name,
+        address: [level, ...parents].join(' · ') + ' · Government Local Government Directory',
+        latitude: Number.isFinite(Number(row.latitude)) ? Number(row.latitude) : undefined,
+        longitude: Number.isFinite(Number(row.longitude)) ? Number(row.longitude) : undefined,
+        source: 'LOCAL_GOVERNMENT_DIRECTORY',
+        level,
+      });
+    }
+  }
+  return results;
+}
+
+async function loadBlockDirectory() {
+  if (!blockDirectoryPromise) {
+    blockDirectoryPromise = (async () => {
+      const response = await fetch('https://raw.githubusercontent.com/planemad/india-local-government-directory/main/administrative/blocks.csv', {
+        signal: AbortSignal.timeout(6000),
+        headers: { 'User-Agent': 'YatraBusIndia/1.0' },
+      });
+      if (!response.ok) throw new Error('Block directory download failed');
+      const csv = await response.text();
+      return csv.split(/\r?\n/).slice(1).map(line => {
+        const cols = line.split(',').map(value => value.trim().replace(/^"|"$/g, ''));
+        return { code: cols[5], name: cols[7], districtName: cols[4], stateName: cols[2] };
+      }).filter(row => row.name);
+    })().catch(error => { blockDirectoryPromise = null; throw error; });
+  }
+  return blockDirectoryPromise;
+}
+
+const lgdCatalogue = (() => {
+  const normaliseRows = (rows: any[], metadata: any = {}) => rows.map((row: any) => Array.isArray(row)
+    ? ({
+        id: row[0], code: row[1], name: row[2], level: row[3], state: row[4],
+        district: row[5], subdistrict: row[6], localName: row[7], snapshotDate: row[8] || metadata.snapshotDate,
+        sourceUrl: metadata.sourceUrl, sourceLicense: metadata.sourceLicense,
+      })
+    : ({
+        id: row.id, code: row.sourceRecordId || row.code, name: row.canonicalName || row.name,
+        level: row.level || row.placeType, state: row.state, district: row.district, subdistrict: row.subdistrict,
+        localName: row.localName, snapshotDate: row.sourceSnapshotDate || metadata.snapshotDate,
+        sourceUrl: row.sourceUrl || metadata.sourceUrl, sourceLicense: row.sourceLicense || metadata.sourceLicense,
+        latitude: row.latitude, longitude: row.longitude,
+      }));
+  const merged = new Map<string, any>();
+  const addRows = (payload: any) => {
+    const rows = Array.isArray(payload?.places) ? normaliseRows(payload.places, payload) : [];
+    for (const row of rows) {
+      if (!row.id) continue;
+      const existing = merged.get(row.id);
+      // Prefer the newest dated source snapshot for the same LGD code.
+      if (!existing || String(row.snapshotDate || '') >= String(existing.snapshotDate || '')) merged.set(row.id, row);
+    }
+  };
+  try {
+    const directory = fileURLToPath(new URL('../../../data/lgd-index/', import.meta.url));
+    const files = readdirSync(directory).filter(name => name.toLowerCase().endsWith('.json'));
+    for (const name of files) addRows(JSON.parse(readFileSync(resolve(directory, name), 'utf8')));
+  } catch {
+    // The compact split index is optional when a deployment uses only the compressed snapshot.
+  }
+  try {
+    const file = new URL('../../data/india-lgd-directory.json.gz', import.meta.url);
+    addRows(JSON.parse(gunzipSync(readFileSync(file)).toString('utf8')));
+  } catch {
+    // A deployment without the optional gzip snapshot still uses any available split indexes.
+  }
+  return Array.from(merged.values());
+})();;
+
+function villageShardKey(value: string): string {
+  const first = String(value || '').normalize('NFKC').trim().toLocaleLowerCase('en-IN').match(/[\p{L}\p{N}]/u)?.[0];
+  return first ? 'u' + first.codePointAt(0)!.toString(16) : '';
+}
+
+const villageShardCache = new Map<string, any[]>();
+
+function loadVillageShard(key: string): any[] {
+  const cached = villageShardCache.get(key);
+  if (cached) return cached;
+  const file = new URL('../../data/lgd-villages/' + key + '.json.gz', import.meta.url);
+  const payload = JSON.parse(gunzipSync(readFileSync(file)).toString('utf8'));
+  const rows = Array.isArray(payload?.places) ? payload.places : [];
+  if (villageShardCache.size >= 12) {
+    const oldest = villageShardCache.keys().next().value;
+    if (oldest) villageShardCache.delete(oldest);
+  }
+  villageShardCache.set(key, rows);
+  return rows;
+}
+
+/** Search only the matching first-character shard; the 676k+ village roster is never
+ * expanded or scanned as one in-memory array. English and local-language names are indexed. */
+function fetchLgdVillageSuggestions(query: string, limit: number) {
+  const shardKey = villageShardKey(query);
+  if (!shardKey) return [];
+  let rows: any[];
+  try {
+    rows = loadVillageShard(shardKey);
+  } catch {
+    return [];
+  }
+  const needle = query.toLocaleLowerCase('en-IN');
+  const snapshotDate = new Date().toISOString().slice(0, 10);
+  return rows
+    .filter((row: any[]) => String(row?.[2] || '').toLocaleLowerCase('en-IN').includes(needle) ||
+      String(row?.[6] || '').toLocaleLowerCase('en-IN').includes(needle))
+    .map((row: any[]) => {
+      const name = String(row[2] || '');
+      const localName = String(row[6] || '');
+      const recordSnapshotDate = String(row[7] || snapshotDate);
+      const exact = name.toLocaleLowerCase('en-IN') === needle || localName.toLocaleLowerCase('en-IN') === needle;
+      const prefix = name.toLocaleLowerCase('en-IN').startsWith(needle) || localName.toLocaleLowerCase('en-IN').startsWith(needle);
+      const place = {
+        id: String(row[0]),
+        canonicalName: name,
+        names: { en: name, ...(localName ? { local: localName } : {}) },
+        placeType: 'VILLAGE',
+        state: row[3] || undefined,
+        district: row[4] || undefined,
+        subdistrict: row[5] || undefined,
+        sourceDataset: 'INDIA_LOCAL_GOVERNMENT_DIRECTORY',
+        sourceRecordId: String(row[1] || ''),
+        sourceLicense: 'Government Open Data License - India (GODL-India)',
+        sourceUrl: 'https://lgdirectory.gov.in/',
+        sourceSnapshotDate: recordSnapshotDate,
+        verificationStatus: 'UNVERIFIED',
+        aliases: localName ? [localName] : [],
+        createdAt: recordSnapshotDate + 'T00:00:00.000Z',
+        updatedAt: recordSnapshotDate + 'T00:00:00.000Z',
+      };
+      return {
+        place,
+        matchScore: exact ? 100 : prefix ? 88 : 74,
+        matchType: exact ? (localName.toLocaleLowerCase('en-IN') === needle ? 'ALIAS' : 'EXACT') : 'PREFIX',
+        displayLabel: name,
+        subtitle: [row[5], row[4], row[3], 'LGD village'].filter(Boolean).join(' · '),
+      };
+    })
+    .sort((a: any, b: any) => b.matchScore - a.matchScore || String(a.displayLabel).localeCompare(String(b.displayLabel), 'en-IN'))
+    .slice(0, Math.min(6, limit));
+}
+
+async function fetchLgdDirectorySuggestions(query: string) {
+  const key = query.toLocaleLowerCase('en-IN');
+  const cached = lgdSuggestionCache.get(key);
+  if (cached && cached.expiresAt > Date.now()) return cached.results;
+
+  const localMatches = (lgdCatalogue as any[])
+    .filter((item: any) => String(item.name || '').toLocaleLowerCase('en-IN').includes(key) ||
+      String(item.localName || '').toLocaleLowerCase('en-IN').includes(key))
+    .sort((a: any, b: any) => {
+      const aPrefix = String(a.name || '').toLocaleLowerCase('en-IN').startsWith(key) ? 0 : 1;
+      const bPrefix = String(b.name || '').toLocaleLowerCase('en-IN').startsWith(key) ? 0 : 1;
+      return aPrefix - bPrefix || String(a.name).localeCompare(String(b.name));
+    })
+    .slice(0, 8)
+    .map((item: any) => ({
+      id: item.id,
+      name: item.name,
+      address: [item.level, item.subdistrict, item.district, item.state, 'LGD snapshot ' + (item.snapshotDate || 'date unknown')].filter(Boolean).join(' · '),
+      source: 'LOCAL_GOVERNMENT_DIRECTORY',
+      level: item.level,
+      code: item.code,
+      localName: item.localName,
+      snapshotDate: item.snapshotDate,
+      sourceUrl: item.sourceUrl || 'https://lgdirectory.gov.in/',
+      sourceLicense: item.sourceLicense || 'Government Open Data License - India (GODL-India)',
+    }));
+
+  let fallback: any[] = [];
+  if (localMatches.length < 8) {
+    try {
+      const url = 'https://lgd-json-api.vercel.app/api/search?q=' + encodeURIComponent(query) + '&limit=8';
+      const response = await fetch(url, {
+        headers: { 'User-Agent': 'YatraBusIndia/1.0', 'Accept': 'application/json' },
+        signal: AbortSignal.timeout(5000),
+      });
+      if (response.ok) fallback = normaliseDirectoryRows(await response.json() as any, query);
+    } catch {
+      // The bundled LGD catalogue remains available even when the optional mirror is offline.
+    }
+  }
+  const results = Array.from(new Map([...localMatches, ...fallback].map(item => [item.id, item])).values()).slice(0, 8);
+  if (lgdSuggestionCache.size > 500) lgdSuggestionCache.delete(lgdSuggestionCache.keys().next().value as string);
+  lgdSuggestionCache.set(key, { expiresAt: Date.now() + 24 * 60 * 60 * 1000, results });
+  return results;
+}
+
+
+// Free OpenStreetMap Nominatim suggestions. Queries are cached and throttled to respect
+// the public service usage policy; selected coordinates are sent with route submissions.
+placesRouter.get('/geocode-search', publicSearchLimiter, async (req: Request, res: Response) => {
+  const query = typeof req.query.q === 'string' ? req.query.q.trim() : '';
+  if (query.length < 3 || query.length > 120) return res.json({ query, results: [] });
+  const key = query.toLocaleLowerCase();
+  const cached = geocodeCache.get(key);
+  if (cached && cached.expiresAt > Date.now()) return res.json({ query, results: cached.results, cache: 'HIT' });
+  const directoryResults = await fetchLgdDirectorySuggestions(query);
+  const waitMs = 1100 - (Date.now() - lastGeocodeRequestAt);
+  if (waitMs > 0) await new Promise(resolve => setTimeout(resolve, waitMs));
+  lastGeocodeRequestAt = Date.now();
+  try {
+    const url = 'https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&countrycodes=in&limit=6&q=' + encodeURIComponent(query);
+    const response = await fetch(url, {
+      headers: { 'User-Agent': 'YatraBusIndia/1.0 (+https://github.com/sandipmfiles-source/yatrabus-india)', 'Accept-Language': 'en,hi,bn' },
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!response.ok) return res.json({ query, results: directoryResults, source: 'LOCAL_GOVERNMENT_DIRECTORY', attribution: 'Government Local Government Directory' });
+    const data = await response.json() as any[];
+    const mapResults = (Array.isArray(data) ? data : []).map(item => ({
+      id: String(item.place_id),
+      name: String(item.name || item.display_name?.split(',')[0] || query),
+      address: String(item.display_name || ''),
+      latitude: Number(item.lat),
+      longitude: Number(item.lon),
+      source: 'OPENSTREETMAP_NOMINATIM',
+      level: 'Mapped place',
+    })).filter(item => Number.isFinite(item.latitude) && Number.isFinite(item.longitude));
+    const merged = [...directoryResults, ...mapResults];
+    const results = Array.from(new Map(merged.map(item => [item.id, item])).values()).slice(0, 12);
+    if (geocodeCache.size > 500) geocodeCache.delete(geocodeCache.keys().next().value as string);
+    geocodeCache.set(key, { expiresAt: Date.now() + 24 * 60 * 60 * 1000, results });
+    return res.json({ query, results, source: 'LGD + OPENSTREETMAP', attribution: 'Government Local Government Directory · © OpenStreetMap contributors' });
+  } catch {
+    return res.json({ query, results: directoryResults, source: 'LOCAL_GOVERNMENT_DIRECTORY', attribution: 'Ministry of Panchayati Raj · Local Government Directory' });
+  }
+});
+
+// Resolve a GPS point to a readable place/road name using free OpenStreetMap data.
+placesRouter.get('/reverse-geocode', publicSearchLimiter, async (req: Request, res: Response) => {
+  const latitude = Number(req.query.lat);
+  const longitude = Number(req.query.lon);
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude) || latitude < 6 || latitude > 38 || longitude < 68 || longitude > 98) {
+    return res.status(400).json({ error: 'INVALID_COORDINATES', message: 'Valid India GPS coordinates are required.' });
+  }
+  const key = latitude.toFixed(4) + ',' + longitude.toFixed(4);
+  const cached = geocodeCache.get('reverse:' + key);
+  if (cached && cached.expiresAt > Date.now() && cached.results[0]) return res.json({ place: cached.results[0], cache: 'HIT' });
+  const waitMs = 1100 - (Date.now() - lastGeocodeRequestAt);
+  if (waitMs > 0) await new Promise(resolve => setTimeout(resolve, waitMs));
+  lastGeocodeRequestAt = Date.now();
+  try {
+    const url = 'https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=18&addressdetails=1&lat=' + latitude + '&lon=' + longitude;
+    const response = await fetch(url, { headers: { 'User-Agent': 'YatraBusIndia/1.0 (+https://github.com/sandipmfiles-source/yatrabus-india)', 'Accept-Language': 'en,hi,bn' }, signal: AbortSignal.timeout(10000) });
+    if (!response.ok) return res.status(502).json({ error: 'REVERSE_GEOCODE_UNAVAILABLE', message: 'GPS coordinates saved, but the place name could not be fetched.' });
+    const data = await response.json() as any;
+    const address = data.address || {};
+    const name = data.name || address.bus_stop || address.road || address.suburb || address.village || address.town || address.city || address.county || '';
+    const place = name ? { name: String(name), address: String(data.display_name || ''), latitude, longitude, source: 'OPENSTREETMAP_NOMINATIM' } : null;
+    geocodeCache.set('reverse:' + key, { expiresAt: Date.now() + 24 * 60 * 60 * 1000, results: place ? [place] : [] });
+    return res.json({ place, attribution: '© OpenStreetMap contributors' });
+  } catch {
+    return res.status(502).json({ error: 'REVERSE_GEOCODE_UNAVAILABLE', message: 'GPS coordinates saved, but the place name could not be fetched.' });
+  }
+});
+
+// Free local catalogue search. External paid geocoding is deliberately not required.
+placesRouter.get('/search', publicSearchLimiter, (req: Request, res: Response) => {
+  const query = typeof req.query.q === 'string' ? req.query.q.trim() : '';
+  const requestedLimit = req.query.limit ? Number.parseInt(String(req.query.limit), 10) : 8;
+  const limit = Number.isFinite(requestedLimit) ? Math.max(1, Math.min(12, requestedLimit)) : 8;
+  if (query.length < 2) return res.json({ query, count: 0, results: [], sources: { activeGtfsStops: 0 } });
+
+  // Passenger origin/destination suggestions are deliberately restricted to real,
+  // coordinate-bearing bus stops with stop_times on trips active for today's India date.
+  // LGD remains available as a reference directory, but an administrative place name
+  // alone is not evidence of a road or a running bus service.
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).formatToParts(new Date());
+  const dateParts = Object.fromEntries(parts.map(part => [part.type, part.value]));
+  const serviceDate = String(dateParts.year) + '-' + String(dateParts.month) + '-' + String(dateParts.day);
+  const feeds = loadNormalizedGtfsFeeds();
+  const results = buildBusConnectedPlaceSuggestions(feeds, query, serviceDate, limit);
+  res.setHeader('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
+  return res.json({
+    query,
+    count: results.length,
+    results,
+    sources: { activeGtfsStops: results.length },
+    serviceDate,
+    placeEligibility: 'ACTIVE_BUS_SERVICE_AND_COORDINATE_REQUIRED',
+    coverageNote: 'Only installed feeds with active scheduled trips are shown. No result does not prove that buses do not operate in the area; the operator may not publish a reusable feed.',
+    attribution: 'GTFS source attribution is included on each result. Place coordinates come from the source stop record.',
+  });
+});
+
+// GET /api/places/nearby?lat=28.6675&lon=77.2285&radius=3000
+placesRouter.get('/nearby', publicSearchLimiter, async (req: Request, res: Response) => {
+  const latStr = req.query.lat as string;
+  const lonStr = req.query.lon as string;
+  const radius = req.query.radius ? parseInt(req.query.radius as string, 10) : 5000;
+
+  if (!latStr || !lonStr) {
+    return res.status(400).json({ error: 'Missing coordinates: lat and lon required' });
+  }
+
+  const lat = parseFloat(latStr);
+  const lon = parseFloat(lonStr);
+  if (!Number.isFinite(lat) || !Number.isFinite(lon) || lat < 6 || lat > 38 || lon < 68 || lon > 98 ||
+      !Number.isFinite(radius) || radius < 1 || radius > 50000) {
+    return res.status(400).json({ error: 'Invalid India coordinates or radius' });
+  }
+
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).formatToParts(new Date());
+  const dateParts = Object.fromEntries(parts.map(part => [part.type, part.value]));
+  const serviceDate = String(dateParts.year) + '-' + String(dateParts.month) + '-' + String(dateParts.day);
+  const feeds = loadNormalizedGtfsFeeds();
+  const gtfsStops = buildNearbyBusPlaceSuggestions(feeds, lat, lon, serviceDate, radius, 30);
+
+  // Supplement limited GTFS coverage with mapped OSM bus stations/stops.
+  // OSM locations are clearly labelled as mapped, not as timetable-verified service.
+  const cacheKey = lat.toFixed(3) + ':' + lon.toFixed(3) + ':' + radius;
+  let osmStops: any[] = [];
+  const cached = osmNearbyCache.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) {
+    osmStops = cached.stops;
+  } else {
+    try {
+      const query = '[out:json][timeout:12];(' +
+        'node(around:' + radius + ',' + lat + ',' + lon + ')["amenity"="bus_station"];' +
+        'way(around:' + radius + ',' + lat + ',' + lon + ')["amenity"="bus_station"];' +
+        'relation(around:' + radius + ',' + lat + ',' + lon + ')["amenity"="bus_station"];' +
+        'node(around:' + radius + ',' + lat + ',' + lon + ')["highway"="bus_stop"];' +
+        'node(around:' + radius + ',' + lat + ',' + lon + ')["public_transport"="platform"];' +
+        'way(around:' + radius + ',' + lat + ',' + lon + ')["public_transport"="platform"];' +
+        ');out center tags;';
+      const response = await fetch('https://overpass-api.de/api/interpreter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'User-Agent': 'YatraBusIndia/1.0 (+https://github.com/sandipmfiles-source/yatrabus-india)' },
+        body: 'data=' + encodeURIComponent(query),
+        signal: AbortSignal.timeout(15000),
+      });
+      if (response.ok) {
+        const payload = await response.json() as any;
+        osmStops = mapOsmNearbyStops(Array.isArray(payload?.elements) ? payload.elements : [], lat, lon, radius, 30);
+        if (osmNearbyCache.size > 300) osmNearbyCache.delete(osmNearbyCache.keys().next().value as string);
+        osmNearbyCache.set(cacheKey, { expiresAt: Date.now() + 10 * 60 * 1000, stops: osmStops });
+      }
+    } catch {
+      // A temporary public Overpass outage must not suppress any GTFS results.
+    }
+  }
+
+  const gtfsNames = new Set(gtfsStops.map(item => String(item.place.canonicalName || '').toLocaleLowerCase('en-IN')));
+  const uniqueOsm = osmStops.filter(item => !gtfsNames.has(String(item.place.canonicalName || '').toLocaleLowerCase('en-IN')));
+  const stops = [...gtfsStops, ...uniqueOsm]
+    .sort((a, b) =>
+      (a.kind === b.kind ? 0 : a.kind === 'BUS_STAND' ? -1 : 1) ||
+      a.distanceMeters - b.distanceMeters ||
+      a.place.canonicalName.localeCompare(b.place.canonicalName, 'en-IN')
+    ).slice(0, 40);
+
+  return res.json({
+    count: stops.length,
+    stops,
+    serviceDate,
+    ordering: 'MAJOR_BUS_STANDS_FIRST_THEN_NEAREST_BUS_STOPS',
+    coverageNote: 'GTFS entries have active scheduled trip evidence for the service date. OpenStreetMap entries are mapped bus stands/stops only; their current service and timetable are not independently verified. Missing results do not prove that no local bus service exists.',
+    attribution: 'GTFS source attribution is retained where supplied. Mapped stop data © OpenStreetMap contributors.',
+  });
+});
+
+// GET /api/places/:id
+placesRouter.get('/:id', (req: Request, res: Response) => {
+  const place = repository.getPlaceById(String(req.params.id));
+  if (!place) return res.status(404).json({ error: 'Place not found' });
+  return res.json({ place });
+});
+
+
+
+function resolveRoutePoint(value: unknown): { name: string; latitude: number; longitude: number } | null {
+  if (typeof value !== 'string') return null;
+  const parts = value.split('|').map(part => part.trim());
+  const name = parts[0] || '';
+  if (name.length < 2 || name.length > 180) return null;
+  if (parts.length >= 3 && parts[1] && parts[2]) {
+    const latitude = Number(parts[1]);
+    const longitude = Number(parts[2]);
+    if (Number.isFinite(latitude) && Number.isFinite(longitude) && latitude >= 6 && latitude <= 38 && longitude >= 68 && longitude <= 98) {
+      return { name, latitude, longitude };
+    }
+    return null;
+  }
+  const matches = repository.searchPlaces(name, 8)
+    .filter(item => item.matchScore >= 95 && Number.isFinite(item.place.latitude) && Number.isFinite(item.place.longitude));
+  if (matches.length !== 1) return null;
+  const place = matches[0].place;
+  return { name: place.canonicalName, latitude: place.latitude!, longitude: place.longitude! };
+}
+
+const osrmRouteCache = new Map<string, { expiresAt: number; payload: Record<string, unknown> }>();
+let lastOsrmRequestAt = 0;
+
+placesRouter.post('/route-preview', publicSearchLimiter, async (req: Request, res: Response) => {
+  const originRaw = typeof req.body?.origin === 'string' ? req.body.origin.trim() : '';
+  const destinationRaw = typeof req.body?.destination === 'string' ? req.body.destination.trim() : '';
+  const stopsRaw = (Array.isArray(req.body?.stops) ? req.body.stops : [])
+    .filter((value: unknown): value is string => typeof value === 'string')
+    .map((value: string) => value.trim()).filter(Boolean);
+  if (stopsRaw.length > 998) return res.status(400).json({ error: 'TOO_MANY_STOPS', message: 'This route contains too many stops for one contribution. Please split unusually long routes into separate services.' });
+  const points = [originRaw, ...stopsRaw, destinationRaw].map(resolveRoutePoint);
+  const missingIndex = points.findIndex(point => point === null);
+  if (missingIndex >= 0) {
+    const field = missingIndex === 0 ? 'starting place' : missingIndex === points.length - 1 ? 'destination' : 'intermediate stop';
+    return res.status(422).json({
+      error: 'PLACE_COORDINATES_REQUIRED',
+      message: 'Could not find exact coordinates for the ' + field + '. Use a saved YatraBus place or enter it as Name | latitude | longitude.',
+    });
+  }
+  const resolved = points as { name: string; latitude: number; longitude: number }[];
+  const names = resolved.map(point => point.name.toLocaleLowerCase());
+  if (new Set(names).size !== names.length) return res.status(400).json({ error: 'DUPLICATE_STOPS', message: 'A place appears more than once. Check the stop sequence.' });
+  const coordinates = resolved.map(point => point.longitude + ',' + point.latitude).join(';');
+  const cached = osrmRouteCache.get(coordinates);
+  if (cached && cached.expiresAt > Date.now()) return res.json({ ...cached.payload, cache: 'HIT' });
+  if (Date.now() - lastOsrmRequestAt < 1100) return res.status(429).json({ error: 'ROUTE_RATE_LIMIT', message: 'Please wait a moment before checking another route.' });
+  lastOsrmRequestAt = Date.now();
+  try {
+    // The public OSRM demo limits waypoints per request. Validate long routes
+    // in overlapping chunks so the stop count follows the actual bus service.
+    let totalDistanceMeters = 0;
+    let totalDurationSeconds = 0;
+    for (let start = 0; start < resolved.length - 1; start += 99) {
+      const chunk = resolved.slice(start, Math.min(start + 100, resolved.length));
+      const waitMs = 1100 - (Date.now() - lastOsrmRequestAt);
+      if (start > 0 && waitMs > 0) await new Promise(resolve => setTimeout(resolve, waitMs));
+      const chunkCoordinates = chunk.map(point => point.longitude + ',' + point.latitude).join(';');
+      const url = 'https://router.project-osrm.org/route/v1/driving/' + chunkCoordinates + '?overview=false&steps=false&alternatives=false';
+      const response = await fetch(url, {
+        headers: { 'User-Agent': 'YatraBusIndia/1.0 (+https://github.com/sandipmfiles-source/yatrabus-india)' },
+        signal: AbortSignal.timeout(20000),
+      });
+      lastOsrmRequestAt = Date.now();
+      const data = await response.json() as any;
+      const route = data.routes?.[0];
+      if (!response.ok || data.code !== 'Ok' || !route) {
+        return res.status(502).json({ error: 'OSRM_ROUTE_FAILED', message: 'OpenStreetMap could not connect every stop in the submitted order. Check the selected stop locations and sequence.' });
+      }
+      totalDistanceMeters += Number(route.distance) || 0;
+      totalDurationSeconds += Number(route.duration) || 0;
+    }
+    const payload = {
+      provider: 'OPENSTREETMAP_OSRM',
+      routeStatus: 'ROAD_ROUTE_FOUND_IN_SUBMITTED_ORDER',
+      distanceKm: Math.round(totalDistanceMeters / 100) / 10,
+      durationSeconds: Math.round(totalDurationSeconds),
+      encodedPolyline: null,
+      submittedStops: resolved.slice(1, -1).map(point => point.name),
+      points: resolved.map(point => ({ name: point.name, latitude: point.latitude, longitude: point.longitude })),
+      orderChanged: false,
+      disclaimer: 'OpenStreetMap road-network estimate via OSRM. It confirms a drivable road path in the submitted order, not that a public bus operates on it. Timetable and route publication still require Super Admin review.',
+      attribution: '© OpenStreetMap contributors · Routing by OSRM',
+    };
+    if (osrmRouteCache.size > 200) {
+      const firstKey = osrmRouteCache.keys().next().value;
+      if (firstKey) osrmRouteCache.delete(firstKey);
+    }
+    osrmRouteCache.set(coordinates, { expiresAt: Date.now() + 10 * 60 * 1000, payload });
+    return res.json({ ...payload, cache: 'MISS' });
+  } catch {
+    return res.status(502).json({ error: 'OSRM_UNAVAILABLE', message: 'The free OpenStreetMap demo routing service is temporarily unavailable. Please try again.' });
+  }});

@@ -1,464 +1,135 @@
-import React, { useState, useEffect } from 'react';
-import { Route, Place } from './types';
-import { ApiClient } from './services/apiClient';
-import { HomeScreen } from './components/home/HomeScreen';
-import { RouteDetailModal } from './components/routes/RouteDetailModal';
-import { ContributionModal } from './components/contribution/ContributionModal';
-import { AdminDashboard } from './components/admin/AdminDashboard';
-import { BusIllustration } from './assets/BusIllustration';
-import { MobileBottomNav } from './components/navigation/MobileBottomNav';
-import { OperatorClaimModal } from './components/operator/OperatorClaimModal';
-import {
-  Navigation,
-  Globe,
-  ShieldAlert,
-  PlusCircle,
-  Radio,
-  MapPin,
-  Search,
-  Lock,
-  X,
-  Menu
-} from 'lucide-react';
-import { t, setLanguage, getLanguage, SupportedLanguage } from './i18n';
+import React, { useEffect, useRef, useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { LocalNotifications } from '@capacitor/local-notifications';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { LanguageProvider } from './context/LanguageContext.js';
+import { TrackingProvider } from './context/TrackingContext.js';
+import { Navbar } from './components/Navbar.js';
+import { Footer } from './components/Footer.js';
+import { LocationConsentModal } from './components/LocationConsentModal.js';
+import { ActiveTrackingWidget } from './components/ActiveTrackingWidget.js';
+import { FirstLaunchLanguagePrompt } from './components/FirstLaunchLanguagePrompt.js';
 
-export const App: React.FC = () => {
-  const [currentLang, setCurrentLang] = useState<SupportedLanguage>(getLanguage());
-  const [view, setView] = useState<'home' | 'admin' | 'all_routes'>('home');
-  const [selectedRoute, setSelectedRoute] = useState<Route | null>(null);
-  const [selectedServiceDate, setSelectedServiceDate] = useState(() => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()));
-  const [showContributionModal, setShowContributionModal] = useState(false);
-  const [showOperatorClaimModal, setShowOperatorClaimModal] = useState(false);
-  const [prefillRouteId, setPrefillRouteId] = useState<string | undefined>(undefined);
+import { HomePage } from './pages/HomePage.js';
+import { IndiaDirectoryPage } from './pages/IndiaDirectoryPage.js';
+import { SearchResultsPage } from './pages/SearchResultsPage.js';
+import { BusDetailPage } from './pages/BusDetailPage.js';
+import { ContributePage } from './pages/ContributePage.js';
+import { OperatorClaimPage } from './pages/OperatorClaimPage.js';
+import { OwnerDashboardPage } from './pages/OwnerDashboardPage.js';
+import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage.js';
 
-  // Active Journey Tracking State
-  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
-  const [activeBusId, setActiveBusId] = useState<string | null>(null);
-  const [activeRouteId, setActiveRouteId] = useState<string | null>(null);
+import { AdminLoginPage } from './pages/admin/AdminLoginPage.js';
+import { AdminDashboardPage } from './pages/admin/AdminDashboardPage.js';
+import { AdminSubmissionsPage } from './pages/admin/AdminSubmissionsPage.js';
+import { AdminDuplicatesPage } from './pages/admin/AdminDuplicatesPage.js';
+import { AdminTrackingPage } from './pages/admin/AdminTrackingPage.js';
+import { AdminPlacesPage } from './pages/admin/AdminPlacesPage.js';
+import { AdminBusesPage } from './pages/admin/AdminBusesPage.js';
+import { AdminAutomationPage } from './pages/admin/AdminAutomationPage.js';
+import { AdminHealthPage } from './pages/admin/AdminHealthPage.js';
+import { AdminGtfsImportPage } from './pages/admin/AdminGtfsImportPage.js';
+import { AdminTimetablePage } from './pages/admin/AdminTimetablePage.js';
+import { AdminAnalyticsPage } from './pages/admin/AdminAnalyticsPage.js';
+import { StopLinkResolver } from './pages/StopLinkResolver.js';
+import { StopQrResolverPage } from './pages/StopQrResolverPage.js';
+import { AdminQrLabelsPage } from './pages/admin/AdminQrLabelsPage.js';
+import { phase4 } from './services/phase4.js';
 
-  // Admin Auth State
-  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
-  const [showAdminLoginModal, setShowAdminLoginModal] = useState(false);
-  const [adminUsername, setAdminUsername] = useState('');
-  const [adminPassword, setAdminPassword] = useState('');
-  const [adminAuthError, setAdminAuthError] = useState('');
-
-  // Routes directory list
-  const [allRoutes, setAllRoutes] = useState<Route[]>([]);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
+const NotificationNavigationHandler: React.FC = () => {
+  const navigate = useNavigate();
   useEffect(() => {
-    ApiClient.getAllRoutes().then(res => {
-      if (res.success) setAllRoutes(res.data);
-    });
-    ApiClient.verifyAdminSession().then(res => {
-      if (res.success) setIsAdminLoggedIn(true);
-    }).catch(() => setIsAdminLoggedIn(false));
-  }, []);
-
-  // Live Location Tracker Worker
-  useEffect(() => {
-    let watchId: number | null = null;
-
-    if (activeSessionId && activeBusId && activeRouteId) {
-      if ('geolocation' in navigator) {
-        watchId = navigator.geolocation.watchPosition(
-          pos => {
-            ApiClient.sendLocationObservation(
-              activeSessionId,
-              activeBusId,
-              activeRouteId,
-              pos.coords.latitude,
-              pos.coords.longitude,
-              pos.coords.accuracy,
-              pos.coords.speed !== null && pos.coords.speed !== undefined ? (pos.coords.speed * 3.6) : undefined,
-              pos.coords.heading ?? undefined
-            );
-          },
-          err => console.warn('Geolocation warning:', err.message),
-          { enableHighAccuracy: true, maximumAge: 10000, timeout: 15000 }
-        );
-      }
-    }
-
+    let active = true;
+    let listener: { remove: () => Promise<void> } | undefined;
+    LocalNotifications.addListener('localNotificationActionPerformed', event => {
+      const extra = event.notification.extra as Record<string, unknown> | undefined;
+      const alertKey = typeof extra?.alertKey === 'string' ? extra.alertKey : '';
+      const [alertKind, alertRouteId, alertStopId] = alertKey.split(':');
+      const routeId = typeof extra?.routeId === 'string' ? extra.routeId : alertRouteId;
+      const stopQuery = alertStopId && ['arrival', 'delay'].includes(alertKind) ? `?stop=${encodeURIComponent(alertStopId)}` : '';
+      if (routeId) navigate(`/routes/${encodeURIComponent(routeId)}${stopQuery}`);
+    }).then(handle => {
+      if (active) listener = handle;
+      else void handle.remove();
+    }).catch(() => undefined);
     return () => {
-      if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+      active = false;
+      if (listener) void listener.remove();
     };
-  }, [activeSessionId, activeBusId, activeRouteId]);
+  }, [navigate]);
+  return null;
+};
 
-  const handleLanguageChange = (lang: SupportedLanguage) => {
-    setLanguage(lang);
-    setCurrentLang(lang);
-  };
-
-  const handleStartTracking = async (busId: string, routeId: string) => {
-    const res = await ApiClient.startJourneySession(busId, routeId, true);
-    if (res.success && res.data) {
-      setActiveSessionId(res.data.sessionId);
-      setActiveBusId(busId);
-      setActiveRouteId(routeId);
-    }
-  };
-
-  const handleStopTracking = async () => {
-    if (activeSessionId) {
-      await ApiClient.stopJourneySession(activeSessionId);
-      setActiveSessionId(null);
-      setActiveBusId(null);
-      setActiveRouteId(null);
-    }
-  };
-
-  const handleAdminLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setAdminAuthError('');
-    try {
-      const res = await ApiClient.adminLogin(adminPassword, adminUsername);
-      if (res.success) {
-        setIsAdminLoggedIn(true);
-        setShowAdminLoginModal(false);
-        setView('admin');
-        setAdminPassword('');
-      } else {
-        setAdminAuthError(res.error || 'Invalid administrator credentials.');
+const AndroidBackNavigationHandler: React.FC = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const lastHomeBackAt = useRef(0);
+  const [showExitHint, setShowExitHint] = useState(false);
+  useEffect(() => {
+    window.yatribusHandleBack = () => {
+      if (location.pathname !== '/') {
+        lastHomeBackAt.current = 0;
+        setShowExitHint(false);
+        if (window.history.length > 1) navigate(-1); else navigate('/');
+        return true;
       }
-    } catch {
-      setAdminAuthError('Failed to communicate with authentication server.');
-    }
-  };
-
+      const now = Date.now();
+      if (now - lastHomeBackAt.current <= 2200) return false;
+      lastHomeBackAt.current = now;
+      setShowExitHint(true);
+      return true;
+    };
+    return () => { delete window.yatribusHandleBack; };
+  }, [location.pathname, navigate]);
+  useEffect(() => { lastHomeBackAt.current = 0; setShowExitHint(false); }, [location.pathname]);
+  return showExitHint ? <div role="status" aria-live="polite" className="fixed bottom-6 left-1/2 z-[100] -translate-x-1/2 rounded-full bg-yatriwarm-950 px-5 py-3 text-sm font-semibold text-white shadow-elevated">Press Back again to exit YatraBus</div> : null;
+};
+export const App: React.FC = () => {
+  useEffect(() => { phase4.applyAccessibility(); }, []);
   return (
-    <div className="yatribus-theme min-h-screen flex flex-col text-slate-800">
-      {/* Top Navbar */}
-      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-surface-border shadow-sm">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          {/* Brand Logo */}
-          <div
-            onClick={() => setView('home')}
-            className="flex items-center space-x-2.5 cursor-pointer select-none"
-          >
-            <div className="yb-brand-mark w-11 h-11 rounded-2xl flex items-center justify-center shadow-subtle">
-              <BusIllustration variant="icon" className="w-7 h-7" />
-            </div>
-            <div>
-              <div className="flex items-center space-x-1.5">
-                <span className="yb-brand-name font-extrabold text-base tracking-tight text-white">
-                  {t('app_title')}
-                </span>
-                <span className="yb-brand-country text-[10px] font-bold uppercase px-1.5 py-0.5 rounded-full">
-                  India
-                </span>
-              </div>
-              <p className="yb-brand-tagline text-[10px] font-medium hidden sm:block">
-                {t('app_tagline')}
-              </p>
-            </div>
+    <LanguageProvider>
+      <TrackingProvider>
+        <BrowserRouter>
+          <div className="yatribus-theme flex flex-col min-h-screen">
+            <AndroidBackNavigationHandler />
+            <Navbar />
+            <main className="flex-1">
+              <Routes>
+                <Route path="/" element={<HomePage />} />
+                <Route path="/search" element={<SearchResultsPage />} />
+                <Route path="/india-directory" element={<IndiaDirectoryPage />} />
+                <Route path="/routes/:id" element={<BusDetailPage />} />
+                <Route path="/contribute" element={<ContributePage />} />
+                <Route path="/operator" element={<OwnerDashboardPage />} />
+                <Route path="/operator-claim" element={<OperatorClaimPage />} />
+                <Route path="/privacy" element={<PrivacyPolicyPage />} />
+                <Route path="/stop/:routeId/:stopId" element={<StopLinkResolver />} />
+                <Route path="/stopqr/:token" element={<StopQrResolverPage />} />
+                <Route path="/admin" element={<AdminLoginPage />} />
+                <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
+                <Route path="/admin/submissions" element={<AdminSubmissionsPage />} />
+                <Route path="/admin/duplicates" element={<AdminDuplicatesPage />} />
+                <Route path="/admin/tracking" element={<AdminTrackingPage />} />
+                <Route path="/admin/places" element={<AdminPlacesPage />} />
+                <Route path="/admin/buses" element={<AdminBusesPage />} />
+                <Route path="/admin/automation" element={<AdminAutomationPage />} />
+                <Route path="/admin/health" element={<AdminHealthPage />} />
+                <Route path="/admin/gtfs" element={<AdminGtfsImportPage />} />
+                <Route path="/admin/timetables" element={<AdminTimetablePage />} />
+                <Route path="/admin/analytics" element={<AdminAnalyticsPage />} />
+                <Route path="/admin/qr" element={<AdminQrLabelsPage />} />
+              </Routes>
+            </main>
+            <Footer />
+            <FirstLaunchLanguagePrompt />
+            {/* Location is requested only by features that need it, never as an app-wide startup gate. */}
+            <LocationConsentModal />
+            <ActiveTrackingWidget />
           </div>
-
-          {/* Center Navigation Links (Desktop) */}
-          <nav className="hidden md:flex items-center space-x-1 text-xs font-bold text-slate-600">
-            <button
-              onClick={() => setView('home')}
-              className={`py-2 px-3 rounded-xl transition ${view === 'home' ? 'bg-surface-subtle text-brand-900' : 'hover:bg-surface-subtle'}`}
-            >
-              {t('nav_home')}
-            </button>
-            <button
-              onClick={() => setView('all_routes')}
-              className={`py-2 px-3 rounded-xl transition ${view === 'all_routes' ? 'bg-surface-subtle text-brand-900' : 'hover:bg-surface-subtle'}`}
-            >
-              {t('nav_routes')}
-            </button>
-            <button
-              onClick={() => {
-                setPrefillRouteId(undefined);
-                setShowContributionModal(true);
-              }}
-              className="py-2 px-3 rounded-xl hover:bg-surface-subtle transition flex items-center space-x-1 text-brand-900"
-            >
-              <PlusCircle className="w-3.5 h-3.5" />
-              <span>{t('nav_contribute')}</span>
-            </button>
-            <button
-              onClick={() => {
-                if (isAdminLoggedIn) setView('admin');
-                else setShowAdminLoginModal(true);
-              }}
-              className={`py-2 px-3 rounded-xl transition flex items-center space-x-1 ${view === 'admin' ? 'bg-surface-subtle text-brand-900' : 'hover:bg-surface-subtle text-slate-500'}`}
-            >
-              <ShieldAlert className="w-3.5 h-3.5" />
-              <span>{t('nav_admin')}</span>
-            </button>
-          </nav>
-
-          {/* Right Language Selector & Tracking Pill */}
-          <div className="flex items-center space-x-2">
-            {activeSessionId && (
-              <div className="hidden sm:flex items-center space-x-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-xs font-semibold text-emerald-800">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span>Tracking Live</span>
-              </div>
-            )}
-
-            {/* Language Switcher Dropdown */}
-            <div className="flex items-center bg-surface-subtle border border-surface-border rounded-xl p-0.5 text-xs font-semibold">
-              <button
-                onClick={() => handleLanguageChange('en')}
-                className={`px-2 py-1 rounded-lg transition ${currentLang === 'en' ? 'bg-white shadow text-brand-900' : 'text-slate-600'}`}
-              >
-                EN
-              </button>
-              <button
-                onClick={() => handleLanguageChange('hi')}
-                className={`px-2 py-1 rounded-lg transition ${currentLang === 'hi' ? 'bg-white shadow text-brand-900' : 'text-slate-600'}`}
-              >
-                हिन्दी
-              </button>
-              <button
-                onClick={() => handleLanguageChange('bn')}
-                className={`px-2 py-1 rounded-lg transition ${currentLang === 'bn' ? 'bg-white shadow text-brand-900' : 'text-slate-600'}`}
-              >
-                বাংলা
-              </button>
-            </div>
-
-            {/* Mobile Menu Button */}
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 rounded-xl border border-surface-border md:hidden text-slate-600"
-              aria-label="Toggle navigation menu"
-            >
-              <Menu className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-
-        {/* Mobile Dropdown Menu */}
-        {mobileMenuOpen && (
-          <div className="md:hidden border-t border-surface-border bg-white px-4 py-3 space-y-2 text-xs font-bold divide-y divide-surface-border">
-            <div className="space-y-1">
-              <button
-                onClick={() => {
-                  setView('home');
-                  setMobileMenuOpen(false);
-                }}
-                className="w-full text-left py-2 px-3 rounded-xl hover:bg-surface-subtle text-slate-800"
-              >
-                {t('nav_home')}
-              </button>
-              <button
-                onClick={() => {
-                  setView('all_routes');
-                  setMobileMenuOpen(false);
-                }}
-                className="w-full text-left py-2 px-3 rounded-xl hover:bg-surface-subtle text-slate-800"
-              >
-                {t('nav_routes')}
-              </button>
-              <button
-                onClick={() => {
-                  setShowContributionModal(true);
-                  setMobileMenuOpen(false);
-                }}
-                className="w-full text-left py-2 px-3 rounded-xl hover:bg-surface-subtle text-brand-900 flex items-center space-x-1.5"
-              >
-                <PlusCircle className="w-4 h-4" />
-                <span>{t('nav_contribute')}</span>
-              </button>
-              <button
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  if (isAdminLoggedIn) setView('admin');
-                  else setShowAdminLoginModal(true);
-                }}
-                className="w-full text-left py-2 px-3 rounded-xl hover:bg-surface-subtle text-slate-600 flex items-center space-x-1.5"
-              >
-                <ShieldAlert className="w-4 h-4" />
-                <span>{t('nav_admin')}</span>
-              </button>
-            </div>
-          </div>
-        )}
-      </header>
-
-      {/* Main View Container */}
-      <main className="flex-1 pb-16 md:pb-0">
-        {view === 'home' && (
-          <HomeScreen
-            onSelectRoute={(route, serviceDate) => {
-              setSelectedRoute(route);
-              if (serviceDate) setSelectedServiceDate(serviceDate);
-            }}
-            onOpenContribution={routeId => {
-              setPrefillRouteId(routeId);
-              setShowContributionModal(true);
-            }}
-            activeJourneySessionId={activeSessionId}
-            onStopTracking={handleStopTracking}
-          />
-        )}
-
-        {view === 'all_routes' && (
-          <div className="max-w-4xl mx-auto p-4 sm:p-6 space-y-4">
-            <h2 className="text-xl font-bold text-slate-900">All India Bus Routes Directory</h2>
-            <div className="space-y-3">
-              {allRoutes.map(r => (
-                <div
-                  key={r.id}
-                  onClick={() => setSelectedRoute(r)}
-                  className="p-5 rounded-3xl bg-white border border-surface-border shadow-sm hover:border-brand-900 cursor-pointer transition flex items-center justify-between"
-                >
-                  <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12 rounded-2xl bg-brand-50 border border-brand-200 text-brand-900 flex flex-col items-center justify-center shrink-0">
-                      <span className="text-[10px] font-bold">ROUTE</span>
-                      <span className="text-xs font-extrabold">{r.routeNumber}</span>
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-sm text-slate-900">{r.name}</h3>
-                      <p className="text-xs text-slate-500 mt-0.5">
-                        {r.originName} ➔ {r.destinationName} • {r.stops.length} stops • {r.distanceKm} km
-                      </p>
-                    </div>
-                  </div>
-                  <span className="text-xs font-bold text-brand-900">View Details ➔</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {view === 'admin' && isAdminLoggedIn && (
-          <AdminDashboard
-            onLogout={() => {
-              void ApiClient.adminLogout();
-              setIsAdminLoggedIn(false);
-              setView('home');
-            }}
-          />
-        )}
-      </main>
-
-      {/* Route Detail Modal */}
-      {selectedRoute && (
-        <RouteDetailModal
-          route={selectedRoute}
-          serviceDate={selectedServiceDate}
-          onClose={() => setSelectedRoute(null)}
-          onOpenContribution={routeId => {
-            setPrefillRouteId(routeId);
-            setShowContributionModal(true);
-          }}
-          activeJourneySessionId={activeSessionId}
-          onStartTracking={handleStartTracking}
-        />
-      )}
-
-      {/* Community Contribution Modal */}
-      <ContributionModal
-        isOpen={showContributionModal}
-        onClose={() => setShowContributionModal(false)}
-        prefillRouteId={prefillRouteId}
-      />
-
-      {/* Admin Login Modal */}
-      {showAdminLoginModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-          <div className="w-full max-w-sm bg-white rounded-3xl p-6 shadow-2xl border border-surface-border text-slate-800 relative">
-            <button
-              onClick={() => setShowAdminLoginModal(false)}
-              className="absolute top-4 right-4 p-2 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition"
-              aria-label="Close"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            <div className="w-12 h-12 rounded-2xl bg-brand-900 text-white flex items-center justify-center mb-4 shadow">
-              <Lock className="w-6 h-6 text-amber-300" />
-            </div>
-
-            <h3 className="text-lg font-bold text-slate-900">{t('admin_login_title')}</h3>
-            <p className="text-xs text-slate-500 mt-1 mb-4">
-              Single-owner Super Admin access only.
-            </p>
-
-            {adminAuthError && (
-              <div className="mb-3 p-2.5 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700">
-                {adminAuthError}
-              </div>
-            )}
-
-            <form onSubmit={handleAdminLogin} className="space-y-3 text-xs">
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">Super Admin Email</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="owner@example.com"
-                  value={adminUsername}
-                  onChange={e => setAdminUsername(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-surface-border focus:ring-2 focus:ring-brand-900 focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">Admin Password</label>
-                <input
-                  type="password"
-                  required
-                  placeholder="Enter your secure password"
-                  value={adminPassword}
-                  onChange={e => setAdminPassword(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-surface-border focus:ring-2 focus:ring-brand-900 focus:outline-none"
-                />
-              </div>
-
-              <button
-                type="submit"
-                className="w-full py-2.5 rounded-xl bg-brand-900 hover:bg-brand-950 font-bold text-white shadow transition mt-2"
-              >
-                Sign In as Super Admin
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Operator Listing Claim Modal */}
-      <OperatorClaimModal
-        isOpen={showOperatorClaimModal}
-        onClose={() => setShowOperatorClaimModal(false)}
-      />
-
-      {/* Mobile Responsive Bottom Navigation */}
-      <MobileBottomNav
-        currentView={view}
-        onSelectView={setView}
-        onOpenContribution={() => setShowContributionModal(true)}
-        activeSessionId={activeSessionId}
-      />
-
-      {/* Footer */}
-      <footer className="mt-auto border-t border-surface-border bg-white py-6 px-4 text-center text-xs text-slate-500 mb-14 md:mb-0">
-        <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
-          <p>
-            © 2026 YatraBus India • Built with OpenStreetMap & Community Contributions.
-          </p>
-          <div className="flex flex-wrap justify-center gap-3 text-slate-600 font-medium">
-            <span
-              onClick={() => setShowOperatorClaimModal(true)}
-              className="hover:text-brand-900 cursor-pointer text-brand-900 font-bold"
-            >
-              Operator Listing Portal
-            </span>
-            <span>•</span>
-            <span className="hover:text-brand-900 cursor-pointer">Privacy & Consent</span>
-            <span>•</span>
-            <span className="hover:text-brand-900 cursor-pointer">Data Sources</span>
-            <span>•</span>
-            <span className="hover:text-brand-900 cursor-pointer">₹0 Tech Architecture</span>
-          </div>
-        </div>
-      </footer>
-    </div>
+        </BrowserRouter>
+      </TrackingProvider>
+    </LanguageProvider>
   );
 };
+
+export default App;

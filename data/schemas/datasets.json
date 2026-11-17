@@ -1,0 +1,37 @@
+{
+  "datasets": [
+    {
+      "id": "dtc-open-transit",
+      "name": "Delhi Transport Corporation Open Data",
+      "provider": "Government of NCT of Delhi / Open Transit Data",
+      "license": "Open Data Commons Open Database License (ODbL)",
+      "attribution": "Data provided by Transport Department, GNCTD / Delhi Open Transit Data",
+      "coverage": "Delhi National Capital Territory",
+      "recordsEstimate": 4500,
+      "format": "GTFS / JSON",
+      "cost": "₹0 Free Public Tier"
+    },
+    {
+      "id": "osm-india-transit",
+      "name": "OpenStreetMap India Public Transport Extract",
+      "provider": "OpenStreetMap Contributors",
+      "license": "ODbL 1.0",
+      "attribution": "© OpenStreetMap contributors",
+      "coverage": "All Indian States and Union Territories",
+      "recordsEstimate": 50000,
+      "format": "OSM XML / PBF / Overpass API",
+      "cost": "₹0 Free Open Source"
+    },
+    {
+      "id": "best-gtfs",
+      "name": "BEST Undertaking Mumbai Open GTFS",
+      "provider": "Brihanmumbai Electric Supply and Transport",
+      "license": "Government Open Data License - India (GODL-India)",
+      "attribution": "BEST Undertaking Municipal Corporation of Greater Mumbai",
+      "coverage": "Mumbai & Navi Mumbai",
+      "recordsEstimate": 6000,
+      "format": "GTFS Static",
+      "cost": "₹0 Free Public Data"
+    }
+  ]
+}
