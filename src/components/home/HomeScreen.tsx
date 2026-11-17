@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Place, Route } from '../../types';
 import { ApiClient } from '../../services/apiClient';
-import { CustomBusIllustration } from '../common/CustomBusIllustration';
+import { BusIllustration } from '../../assets/BusIllustration';
 import {
   Search,
   ArrowUpDown,
@@ -197,7 +197,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       {/* Hero Brand Banner */}
       <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-brand-900 to-brand-800 text-white shadow-xl relative overflow-hidden">
         <div className="absolute right-0 top-0 bottom-0 w-1/3 opacity-10 pointer-events-none flex items-center justify-end pr-6">
-          <CustomBusIllustration className="h-48 w-48" />
+          <BusIllustration variant="banner" className="h-48 w-48" />
         </div>
 
         <div className="relative z-10 max-w-xl">
