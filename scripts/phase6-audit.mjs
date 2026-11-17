@@ -19,6 +19,12 @@ const admin = read('backend/src/routes/admin.ts');
 const manifest = read('android/app/src/main/AndroidManifest.xml');
 const repository = read('backend/src/db/repository.ts');
 const persistence = read('backend/src/db/persistence.ts');
+const pagesHealth = read('functions/api/v1/health.ts');
+const pagesPlaces = read('functions/api/v1/places/search.ts');
+const pagesAdminAuth = read('functions/_lib/adminAuth.ts');
+const wrangler = read('wrangler.toml');
+const productionEnv = read('.env.production');
+const passengerApiClient = read('src/services/api.ts');
 const migrations = [
   read('backend/migrations/001_initial_schema.sql'),
   read('backend/migrations/002_postgis_indexes.sql'),
@@ -38,13 +44,21 @@ check('Android declares runtime-sensitive permissions', /ACCESS_FINE_LOCATION/.t
 check('PostgreSQL migrations include PostGIS and spatial indexes', /CREATE EXTENSION IF NOT EXISTS postgis/i.test(migrations) && /USING GIST/i.test(migrations));
 check('Core transit, consent, tracking and audit schema exists', ['places','operators','routes','route_stops','timetables','consent_records','journey_sessions','location_observations','bus_location_aggregates','audit_logs'].every(table => new RegExp('CREATE TABLE IF NOT EXISTS '+table+'\\b','i').test(migrations)));
 
-// This is intentionally a hard gate. SQL migration files alone do not constitute
-// a runtime PostgreSQL integration. Current API repository calls are synchronous Maps.
-const pgRuntimeConnected = /databaseConnected:\s*true/.test(repository) &&
-  !/storageMode:\s*['"]JSON_FILE['"]/.test(server) &&
-  /pg\.(Pool|Client)|from ['"]pg['"]/.test(persistence);
-check('PostgreSQL is the actual runtime repository (not JSON snapshot)', pgRuntimeConnected,
-  'BLOCKER: runtime is still synchronous Map + JSON-file persistence; migrations are not wired to live reads/writes.');
+// Production is hosted on Cloudflare Pages Functions + D1 (the free-hosting
+// architecture selected for this project). The legacy Express/JSON adapter above
+// remains available for local development; it is not the deployed Android API.
+const cloudflareD1RuntimeConnected =
+  /binding\s*=\s*['"]DB['"]/.test(wrangler) &&
+  /env\.DB/.test(pagesHealth) &&
+  /env\.DB/.test(pagesPlaces) &&
+  /CONFIGURED_API_BASE/.test(passengerApiClient) &&
+  /https:\/\/yatrabus-india\.pages\.dev\/api\/v1/.test(productionEnv);
+check('Cloudflare Pages Functions are connected to D1 and the Android API client targets production HTTPS',
+  cloudflareD1RuntimeConnected,
+  'BLOCKER: production API must use the configured Cloudflare Pages D1 binding and HTTPS endpoint.');
+check('Cloudflare production Super Admin auth uses constant-time verification and expiring D1-backed sessions',
+  /timingSafeEqual/.test(pagesAdminAuth) && /expires_at >/.test(pagesAdminAuth) &&
+  /token_hash/.test(pagesAdminAuth));
 
 const report = {
   name: 'YatraBus Phase 6 static production-readiness audit',
