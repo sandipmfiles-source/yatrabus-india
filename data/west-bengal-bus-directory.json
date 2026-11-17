@@ -1,0 +1,1459 @@
+{
+  "schemaVersion": 1,
+  "datasetId": "IN-WB-BUS-DIRECTORY",
+  "generatedAt": "2026-11-16",
+  "state": {
+    "name": "West Bengal",
+    "nameLocal": "পশ্চিমবঙ্গ",
+    "nameHindi": "पश्चिम बंगाल",
+    "isoCode": "IN-WB"
+  },
+  "operators": [
+    {
+      "id": "WBTC",
+      "name": "West Bengal Transport Corporation",
+      "shortName": "WBTC",
+      "status": "CURRENT_OFFICIAL_REFERENCE",
+      "website": "https://wbtconline.in/"
+    },
+    {
+      "id": "NBSTC",
+      "name": "North Bengal State Transport Corporation",
+      "shortName": "NBSTC",
+      "status": "CURRENT_OFFICIAL_REFERENCE",
+      "website": "https://nbstc.in/"
+    },
+    {
+      "id": "SBSTC",
+      "name": "South Bengal State Transport Corporation",
+      "shortName": "SBSTC",
+      "status": "CURRENT_OFFICIAL_REFERENCE",
+      "website": "https://sbstc.co.in/"
+    },
+    {
+      "id": "CSTC",
+      "name": "Calcutta State Transport Corporation",
+      "shortName": "CSTC",
+      "status": "LEGACY_GOVERNMENT_DIRECTORY_REFERENCE",
+      "website": null
+    },
+    {
+      "id": "WBSTC",
+      "name": "West Bengal Surface Transport Corporation",
+      "shortName": "WBSTC",
+      "status": "GOVERNMENT_DIRECTORY_REFERENCE_REQUIRES_CURRENT_VALIDATION",
+      "website": null
+    }
+  ],
+  "depots": [
+    {
+      "id": "WB-DEPOT-001",
+      "operatorId": "CSTC",
+      "name": "Nilgunj",
+      "status": "OFFICIAL_DIRECTORY_LISTING_UNVERIFIED",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-DEPOT-002",
+      "operatorId": "CSTC",
+      "name": "Belghoria",
+      "status": "OFFICIAL_DIRECTORY_LISTING_UNVERIFIED",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-DEPOT-003",
+      "operatorId": "CSTC",
+      "name": "Paikpara",
+      "status": "OFFICIAL_DIRECTORY_LISTING_UNVERIFIED",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-DEPOT-004",
+      "operatorId": "CSTC",
+      "name": "Manicktala",
+      "status": "OFFICIAL_DIRECTORY_LISTING_UNVERIFIED",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-DEPOT-005",
+      "operatorId": "CSTC",
+      "name": "Salt Lake",
+      "status": "OFFICIAL_DIRECTORY_LISTING_UNVERIFIED",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-DEPOT-006",
+      "operatorId": "CSTC",
+      "name": "Kasba",
+      "status": "OFFICIAL_DIRECTORY_LISTING_UNVERIFIED",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-DEPOT-007",
+      "operatorId": "CSTC",
+      "name": "Garia",
+      "status": "OFFICIAL_DIRECTORY_LISTING_UNVERIFIED",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-DEPOT-008",
+      "operatorId": "CSTC",
+      "name": "Lake",
+      "status": "OFFICIAL_DIRECTORY_LISTING_UNVERIFIED",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-DEPOT-009",
+      "operatorId": "CSTC",
+      "name": "Taratala",
+      "status": "OFFICIAL_DIRECTORY_LISTING_UNVERIFIED",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-DEPOT-010",
+      "operatorId": "CSTC",
+      "name": "Thakurpukur",
+      "status": "OFFICIAL_DIRECTORY_LISTING_UNVERIFIED",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-DEPOT-011",
+      "operatorId": "CSTC",
+      "name": "Howrah",
+      "status": "OFFICIAL_DIRECTORY_LISTING_UNVERIFIED",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-DEPOT-012",
+      "operatorId": "WBTC",
+      "name": "Tollygunj",
+      "status": "OFFICIAL_DIRECTORY_LISTING_UNVERIFIED",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-DEPOT-013",
+      "operatorId": "WBTC",
+      "name": "Khidirpur",
+      "status": "OFFICIAL_DIRECTORY_LISTING_UNVERIFIED",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-DEPOT-014",
+      "operatorId": "WBTC",
+      "name": "Kalighat",
+      "status": "OFFICIAL_DIRECTORY_LISTING_UNVERIFIED",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-DEPOT-015",
+      "operatorId": "WBTC",
+      "name": "Gariahat",
+      "status": "OFFICIAL_DIRECTORY_LISTING_UNVERIFIED",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-DEPOT-016",
+      "operatorId": "WBTC",
+      "name": "Park Circus",
+      "status": "OFFICIAL_DIRECTORY_LISTING_UNVERIFIED",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-DEPOT-017",
+      "operatorId": "WBTC",
+      "name": "Rajabazar",
+      "status": "OFFICIAL_DIRECTORY_LISTING_UNVERIFIED",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-DEPOT-018",
+      "operatorId": "WBTC",
+      "name": "Ultadanga",
+      "status": "OFFICIAL_DIRECTORY_LISTING_UNVERIFIED",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-DEPOT-019",
+      "operatorId": "WBTC",
+      "name": "Belgachia",
+      "status": "OFFICIAL_DIRECTORY_LISTING_UNVERIFIED",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-DEPOT-020",
+      "operatorId": "WBTC",
+      "name": "Barasat",
+      "status": "OFFICIAL_DIRECTORY_LISTING_UNVERIFIED",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-DEPOT-021",
+      "operatorId": "WBTC",
+      "name": "Habra",
+      "status": "OFFICIAL_DIRECTORY_LISTING_UNVERIFIED",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-DEPOT-022",
+      "operatorId": "WBTC",
+      "name": "Joka",
+      "status": "OFFICIAL_DIRECTORY_LISTING_UNVERIFIED",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-DEPOT-023",
+      "operatorId": "WBSTC",
+      "name": "Howrah",
+      "status": "OFFICIAL_DIRECTORY_LISTING_UNVERIFIED",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-DEPOT-024",
+      "operatorId": "WBSTC",
+      "name": "Salt Lake",
+      "status": "OFFICIAL_DIRECTORY_LISTING_UNVERIFIED",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-DEPOT-025",
+      "operatorId": "WBSTC",
+      "name": "Sector V",
+      "status": "OFFICIAL_DIRECTORY_LISTING_UNVERIFIED",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-DEPOT-026",
+      "operatorId": "NBSTC",
+      "name": "Cooch Behar",
+      "status": "OFFICIAL_DIRECTORY_LISTING_UNVERIFIED",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-DEPOT-027",
+      "operatorId": "NBSTC",
+      "name": "Alipurduar",
+      "status": "OFFICIAL_DIRECTORY_LISTING_UNVERIFIED",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-DEPOT-028",
+      "operatorId": "NBSTC",
+      "name": "Mathabhanga",
+      "status": "OFFICIAL_DIRECTORY_LISTING_UNVERIFIED",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-DEPOT-029",
+      "operatorId": "NBSTC",
+      "name": "Dinhata",
+      "status": "OFFICIAL_DIRECTORY_LISTING_UNVERIFIED",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-DEPOT-030",
+      "operatorId": "NBSTC",
+      "name": "Tufanganj",
+      "status": "OFFICIAL_DIRECTORY_LISTING_UNVERIFIED",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-DEPOT-031",
+      "operatorId": "NBSTC",
+      "name": "Siliguri",
+      "status": "OFFICIAL_DIRECTORY_LISTING_UNVERIFIED",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-DEPOT-032",
+      "operatorId": "NBSTC",
+      "name": "Jalpaiguri",
+      "status": "OFFICIAL_DIRECTORY_LISTING_UNVERIFIED",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-DEPOT-033",
+      "operatorId": "NBSTC",
+      "name": "Mainaguri",
+      "status": "OFFICIAL_DIRECTORY_LISTING_UNVERIFIED",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-DEPOT-034",
+      "operatorId": "NBSTC",
+      "name": "Malbazar",
+      "status": "OFFICIAL_DIRECTORY_LISTING_UNVERIFIED",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-DEPOT-035",
+      "operatorId": "NBSTC",
+      "name": "Darjeeling",
+      "status": "OFFICIAL_DIRECTORY_LISTING_UNVERIFIED",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-DEPOT-036",
+      "operatorId": "NBSTC",
+      "name": "Kalimpong",
+      "status": "OFFICIAL_DIRECTORY_LISTING_UNVERIFIED",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-DEPOT-037",
+      "operatorId": "NBSTC",
+      "name": "Islampur",
+      "status": "OFFICIAL_DIRECTORY_LISTING_UNVERIFIED",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-DEPOT-038",
+      "operatorId": "NBSTC",
+      "name": "Berhampore",
+      "status": "OFFICIAL_DIRECTORY_LISTING_UNVERIFIED",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-DEPOT-039",
+      "operatorId": "NBSTC",
+      "name": "Suri",
+      "status": "OFFICIAL_DIRECTORY_LISTING_UNVERIFIED",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-DEPOT-040",
+      "operatorId": "NBSTC",
+      "name": "Ranaghat",
+      "status": "OFFICIAL_DIRECTORY_LISTING_UNVERIFIED",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-DEPOT-041",
+      "operatorId": "NBSTC",
+      "name": "Ultadanga",
+      "status": "OFFICIAL_DIRECTORY_LISTING_UNVERIFIED",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-DEPOT-042",
+      "operatorId": "SBSTC",
+      "name": "Durgapur",
+      "status": "OFFICIAL_DIRECTORY_LISTING_UNVERIFIED",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-DEPOT-043",
+      "operatorId": "SBSTC",
+      "name": "Asansol",
+      "status": "OFFICIAL_DIRECTORY_LISTING_UNVERIFIED",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-DEPOT-044",
+      "operatorId": "SBSTC",
+      "name": "Burdwan",
+      "status": "OFFICIAL_DIRECTORY_LISTING_UNVERIFIED",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-DEPOT-045",
+      "operatorId": "SBSTC",
+      "name": "Arambagh",
+      "status": "OFFICIAL_DIRECTORY_LISTING_UNVERIFIED",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-DEPOT-046",
+      "operatorId": "SBSTC",
+      "name": "Kalna",
+      "status": "OFFICIAL_DIRECTORY_LISTING_UNVERIFIED",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-DEPOT-047",
+      "operatorId": "SBSTC",
+      "name": "Bankura",
+      "status": "OFFICIAL_DIRECTORY_LISTING_UNVERIFIED",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-DEPOT-048",
+      "operatorId": "SBSTC",
+      "name": "Purulia",
+      "status": "OFFICIAL_DIRECTORY_LISTING_UNVERIFIED",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-DEPOT-049",
+      "operatorId": "SBSTC",
+      "name": "Belghoria",
+      "status": "OFFICIAL_DIRECTORY_LISTING_UNVERIFIED",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-DEPOT-050",
+      "operatorId": "SBSTC",
+      "name": "Howrah",
+      "status": "OFFICIAL_DIRECTORY_LISTING_UNVERIFIED",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-DEPOT-051",
+      "operatorId": "SBSTC",
+      "name": "Haldia",
+      "status": "OFFICIAL_DIRECTORY_LISTING_UNVERIFIED",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-DEPOT-052",
+      "operatorId": "SBSTC",
+      "name": "Digha",
+      "status": "OFFICIAL_DIRECTORY_LISTING_UNVERIFIED",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-DEPOT-053",
+      "operatorId": "SBSTC",
+      "name": "Midnapore",
+      "status": "OFFICIAL_DIRECTORY_LISTING_UNVERIFIED",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-DEPOT-054",
+      "operatorId": "SBSTC",
+      "name": "Falta",
+      "status": "OFFICIAL_DIRECTORY_LISTING_UNVERIFIED",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    }
+  ],
+  "terminals": [
+    {
+      "id": "WB-TERM-001",
+      "district": "Kolkata",
+      "name": "Babughat Bus Terminus",
+      "nameLocal": "বাবুঘাট বাস টার্মিনাস",
+      "aliases": [
+        "Babughat",
+        "বাবুঘাট বাস টার্মিনাস"
+      ],
+      "category": "bus_terminal",
+      "listingStatus": "LISTED_IN_OFFICIAL_DIRECTORY",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-TERM-002",
+      "district": "Kolkata",
+      "name": "Esplanade Bus Terminus",
+      "nameLocal": "এসপ্ল্যানেড বাস টার্মিনাস",
+      "aliases": [
+        "Esplanade",
+        "এসপ্ল্যানেড বাস টার্মিনাস"
+      ],
+      "category": "bus_terminal",
+      "listingStatus": "LISTED_IN_OFFICIAL_DIRECTORY",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-TERM-003",
+      "district": "Howrah",
+      "name": "Howrah Railway Station Central Bus Terminus",
+      "nameLocal": "হাওড়া স্টেশন কেন্দ্রীয় বাস টার্মিনাস",
+      "aliases": [
+        "Howrah Railway Station Central",
+        "হাওড়া স্টেশন কেন্দ্রীয় বাস টার্মিনাস"
+      ],
+      "category": "bus_terminal",
+      "listingStatus": "LISTED_IN_OFFICIAL_DIRECTORY",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-TERM-004",
+      "district": "Howrah",
+      "name": "Santragachi Bus Terminus",
+      "nameLocal": "সাঁতরাগাছি বাস টার্মিনাস",
+      "aliases": [
+        "Santragachi",
+        "সাঁতরাগাছি বাস টার্মিনাস"
+      ],
+      "category": "bus_terminal",
+      "listingStatus": "LISTED_IN_OFFICIAL_DIRECTORY",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-TERM-005",
+      "district": "Howrah",
+      "name": "Shalimar Bus Terminus",
+      "nameLocal": "শালিমার বাস টার্মিনাস",
+      "aliases": [
+        "Shalimar",
+        "শালিমার বাস টার্মিনাস"
+      ],
+      "category": "bus_terminal",
+      "listingStatus": "LISTED_IN_OFFICIAL_DIRECTORY",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-TERM-006",
+      "district": "Howrah",
+      "name": "Bagnan Bus Terminus",
+      "nameLocal": "বাগনান বাস টার্মিনাস",
+      "aliases": [
+        "Bagnan",
+        "বাগনান বাস টার্মিনাস"
+      ],
+      "category": "bus_terminal",
+      "listingStatus": "LISTED_IN_OFFICIAL_DIRECTORY",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-TERM-007",
+      "district": "Howrah",
+      "name": "SBSTC Bus Terminus under Vidyasagar Setu",
+      "nameLocal": "বিদ্যাসাগর সেতুর নিচে এসবিএসটিসি বাস টার্মিনাস",
+      "aliases": [
+        "SBSTC under Vidyasagar Setu",
+        "বিদ্যাসাগর সেতুর নিচে এসবিএসটিসি বাস টার্মিনাস"
+      ],
+      "category": "bus_terminal",
+      "listingStatus": "LISTED_IN_OFFICIAL_DIRECTORY",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-TERM-008",
+      "district": "Howrah",
+      "name": "Uluberia Bus Terminus",
+      "nameLocal": "উলুবেড়িয়া বাস টার্মিনাস",
+      "aliases": [
+        "Uluberia",
+        "উলুবেড়িয়া বাস টার্মিনাস"
+      ],
+      "category": "bus_terminal",
+      "listingStatus": "LISTED_IN_OFFICIAL_DIRECTORY",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-TERM-009",
+      "district": "Howrah",
+      "name": "Udaynarayanpur Bus Terminus",
+      "nameLocal": "উদয়নারায়ণপুর বাস টার্মিনাস",
+      "aliases": [
+        "Udaynarayanpur",
+        "উদয়নারায়ণপুর বাস টার্মিনাস"
+      ],
+      "category": "bus_terminal",
+      "listingStatus": "LISTED_IN_OFFICIAL_DIRECTORY",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-TERM-010",
+      "district": "Howrah",
+      "name": "Gadiara Bus Terminus",
+      "nameLocal": "গাদিয়াড়া বাস টার্মিনাস",
+      "aliases": [
+        "Gadiara",
+        "গাদিয়াড়া বাস টার্মিনাস"
+      ],
+      "category": "bus_terminal",
+      "listingStatus": "LISTED_IN_OFFICIAL_DIRECTORY",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-TERM-011",
+      "district": "Howrah",
+      "name": "Danesh Sheikh Lane Bus Terminus",
+      "nameLocal": "দানেশ শেখ লেন বাস টার্মিনাস",
+      "aliases": [
+        "Danesh Sheikh Lane",
+        "দানেশ শেখ লেন বাস টার্মিনাস"
+      ],
+      "category": "bus_terminal",
+      "listingStatus": "LISTED_IN_OFFICIAL_DIRECTORY",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-TERM-012",
+      "district": "Howrah",
+      "name": "Bakultala Bus Terminus",
+      "nameLocal": "বকুলতলা বাস টার্মিনাস",
+      "aliases": [
+        "Bakultala",
+        "বকুলতলা বাস টার্মিনাস"
+      ],
+      "category": "bus_terminal",
+      "listingStatus": "LISTED_IN_OFFICIAL_DIRECTORY",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-TERM-013",
+      "district": "Howrah",
+      "name": "Botanical Garden Bus Terminus",
+      "nameLocal": "বোটানিক্যাল গার্ডেন বাস টার্মিনাস",
+      "aliases": [
+        "Botanical Garden",
+        "বোটানিক্যাল গার্ডেন বাস টার্মিনাস"
+      ],
+      "category": "bus_terminal",
+      "listingStatus": "LISTED_IN_OFFICIAL_DIRECTORY",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-TERM-014",
+      "district": "Howrah",
+      "name": "Bally Khal Bus Terminus",
+      "nameLocal": "বালি খাল বাস টার্মিনাস",
+      "aliases": [
+        "Bally Khal",
+        "বালি খাল বাস টার্মিনাস"
+      ],
+      "category": "bus_terminal",
+      "listingStatus": "LISTED_IN_OFFICIAL_DIRECTORY",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-TERM-015",
+      "district": "Hooghly",
+      "name": "Arambagh Municipality Bus Terminus",
+      "nameLocal": "আরামবাগ পৌরসভা বাস টার্মিনাস",
+      "aliases": [
+        "Arambagh Municipality",
+        "আরামবাগ পৌরসভা বাস টার্মিনাস"
+      ],
+      "category": "bus_terminal",
+      "listingStatus": "LISTED_IN_OFFICIAL_DIRECTORY",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-TERM-016",
+      "district": "Hooghly",
+      "name": "Arambagh SBSTC Bus Terminus",
+      "nameLocal": "আরামবাগ এসবিএসটিসি বাস টার্মিনাস",
+      "aliases": [
+        "Arambagh SBSTC",
+        "আরামবাগ এসবিএসটিসি বাস টার্মিনাস"
+      ],
+      "category": "bus_terminal",
+      "listingStatus": "LISTED_IN_OFFICIAL_DIRECTORY",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-TERM-017",
+      "district": "Hooghly",
+      "name": "Tarakeswar Central Bus Terminus",
+      "nameLocal": "তারকেশ্বর কেন্দ্রীয় বাস টার্মিনাস",
+      "aliases": [
+        "Tarakeswar Central",
+        "তারকেশ্বর কেন্দ্রীয় বাস টার্মিনাস"
+      ],
+      "category": "bus_terminal",
+      "listingStatus": "LISTED_IN_OFFICIAL_DIRECTORY",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-TERM-018",
+      "district": "Hooghly",
+      "name": "Dhaniakhali Bus Terminus",
+      "nameLocal": "ধনেখালি বাস টার্মিনাস",
+      "aliases": [
+        "Dhaniakhali",
+        "ধনেখালি বাস টার্মিনাস"
+      ],
+      "category": "bus_terminal",
+      "listingStatus": "LISTED_IN_OFFICIAL_DIRECTORY",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-TERM-019",
+      "district": "Hooghly",
+      "name": "Serampore Bus Terminus",
+      "nameLocal": "শ্রীরামপুর বাস টার্মিনাস",
+      "aliases": [
+        "Serampore",
+        "শ্রীরামপুর বাস টার্মিনাস"
+      ],
+      "category": "bus_terminal",
+      "listingStatus": "LISTED_IN_OFFICIAL_DIRECTORY",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-TERM-020",
+      "district": "Hooghly",
+      "name": "Kamarpukur Bus Terminus",
+      "nameLocal": "কামারপুকুর বাস টার্মিনাস",
+      "aliases": [
+        "Kamarpukur",
+        "কামারপুকুর বাস টার্মিনাস"
+      ],
+      "category": "bus_terminal",
+      "listingStatus": "PROPOSED_IN_SOURCE",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-TERM-021",
+      "district": "North 24 Parganas",
+      "name": "Baduria Bus Terminus",
+      "nameLocal": "বাদুড়িয়া বাস টার্মিনাস",
+      "aliases": [
+        "Baduria",
+        "বাদুড়িয়া বাস টার্মিনাস"
+      ],
+      "category": "bus_terminal",
+      "listingStatus": "LISTED_IN_OFFICIAL_DIRECTORY",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-TERM-022",
+      "district": "North 24 Parganas",
+      "name": "Duttapukur Bus Terminus",
+      "nameLocal": "দত্তপুকুর বাস টার্মিনাস",
+      "aliases": [
+        "Duttapukur",
+        "দত্তপুকুর বাস টার্মিনাস"
+      ],
+      "category": "bus_terminal",
+      "listingStatus": "LISTED_IN_OFFICIAL_DIRECTORY",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-TERM-023",
+      "district": "North 24 Parganas",
+      "name": "Habra Bus Terminus",
+      "nameLocal": "হাবড়া বাস টার্মিনাস",
+      "aliases": [
+        "Habra",
+        "হাবড়া বাস টার্মিনাস"
+      ],
+      "category": "bus_terminal",
+      "listingStatus": "LISTED_IN_OFFICIAL_DIRECTORY",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-TERM-024",
+      "district": "North 24 Parganas",
+      "name": "Hasnabad Bus Terminus",
+      "nameLocal": "হাসনাবাদ বাস টার্মিনাস",
+      "aliases": [
+        "Hasnabad",
+        "হাসনাবাদ বাস টার্মিনাস"
+      ],
+      "category": "bus_terminal",
+      "listingStatus": "LISTED_IN_OFFICIAL_DIRECTORY",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-TERM-025",
+      "district": "North 24 Parganas",
+      "name": "Barasat Bus Terminus",
+      "nameLocal": "বারাসাত বাস টার্মিনাস",
+      "aliases": [
+        "Barasat",
+        "বারাসাত বাস টার্মিনাস"
+      ],
+      "category": "bus_terminal",
+      "listingStatus": "LISTED_IN_OFFICIAL_DIRECTORY",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-TERM-026",
+      "district": "North 24 Parganas",
+      "name": "Dakshineswar Bus Terminus",
+      "nameLocal": "দক্ষিণেশ্বর বাস টার্মিনাস",
+      "aliases": [
+        "Dakshineswar",
+        "দক্ষিণেশ্বর বাস টার্মিনাস"
+      ],
+      "category": "bus_terminal",
+      "listingStatus": "LISTED_IN_OFFICIAL_DIRECTORY",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-TERM-027",
+      "district": "North 24 Parganas",
+      "name": "Basirhat Bus Terminus",
+      "nameLocal": "বসিরহাট বাস টার্মিনাস",
+      "aliases": [
+        "Basirhat",
+        "বসিরহাট বাস টার্মিনাস"
+      ],
+      "category": "bus_terminal",
+      "listingStatus": "LISTED_IN_OFFICIAL_DIRECTORY",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-TERM-028",
+      "district": "North 24 Parganas",
+      "name": "Kanchrapara Bus Terminus",
+      "nameLocal": "কাঁচরাপাড়া বাস টার্মিনাস",
+      "aliases": [
+        "Kanchrapara",
+        "কাঁচরাপাড়া বাস টার্মিনাস"
+      ],
+      "category": "bus_terminal",
+      "listingStatus": "LISTED_IN_OFFICIAL_DIRECTORY",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-TERM-029",
+      "district": "North 24 Parganas",
+      "name": "Dum Dum Park Bus Terminus",
+      "nameLocal": "দমদম পার্ক বাস টার্মিনাস",
+      "aliases": [
+        "Dum Dum Park",
+        "দমদম পার্ক বাস টার্মিনাস"
+      ],
+      "category": "bus_terminal",
+      "listingStatus": "LISTED_IN_OFFICIAL_DIRECTORY",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-TERM-030",
+      "district": "North 24 Parganas",
+      "name": "Gouripur Bus Terminus",
+      "nameLocal": "গৌরীপুর বাস টার্মিনাস",
+      "aliases": [
+        "Gouripur",
+        "গৌরীপুর বাস টার্মিনাস"
+      ],
+      "category": "bus_terminal",
+      "listingStatus": "LISTED_IN_OFFICIAL_DIRECTORY",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-TERM-031",
+      "district": "North 24 Parganas",
+      "name": "Dum Dum Cantonment Bus Terminus",
+      "nameLocal": "দমদম ক্যান্টনমেন্ট বাস টার্মিনাস",
+      "aliases": [
+        "Dum Dum Cantonment",
+        "দমদম ক্যান্টনমেন্ট বাস টার্মিনাস"
+      ],
+      "category": "bus_terminal",
+      "listingStatus": "LISTED_IN_OFFICIAL_DIRECTORY",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-TERM-032",
+      "district": "North 24 Parganas",
+      "name": "Salt Lake Karunamoyee Bus Terminus",
+      "nameLocal": "সল্টলেক করুণাময়ী বাস টার্মিনাস",
+      "aliases": [
+        "Salt Lake Karunamoyee",
+        "সল্টলেক করুণাময়ী বাস টার্মিনাস"
+      ],
+      "category": "bus_terminal",
+      "listingStatus": "LISTED_IN_OFFICIAL_DIRECTORY",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-TERM-033",
+      "district": "North 24 Parganas",
+      "name": "New Town International Bus Terminus",
+      "nameLocal": "নিউ টাউন আন্তর্জাতিক বাস টার্মিনাস",
+      "aliases": [
+        "New Town International",
+        "নিউ টাউন আন্তর্জাতিক বাস টার্মিনাস"
+      ],
+      "category": "bus_terminal",
+      "listingStatus": "LISTED_IN_OFFICIAL_DIRECTORY",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-TERM-034",
+      "district": "South 24 Parganas",
+      "name": "Raidighi Bus Terminus",
+      "nameLocal": "রায়দিঘি বাস টার্মিনাস",
+      "aliases": [
+        "Raidighi",
+        "রায়দিঘি বাস টার্মিনাস"
+      ],
+      "category": "bus_terminal",
+      "listingStatus": "LISTED_IN_OFFICIAL_DIRECTORY",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-TERM-035",
+      "district": "South 24 Parganas",
+      "name": "Usthi Bus Terminus",
+      "nameLocal": "উস্থি বাস টার্মিনাস",
+      "aliases": [
+        "Usthi",
+        "উস্থি বাস টার্মিনাস"
+      ],
+      "category": "bus_terminal",
+      "listingStatus": "LISTED_IN_OFFICIAL_DIRECTORY",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-TERM-036",
+      "district": "South 24 Parganas",
+      "name": "Bakkhali Bus Terminus",
+      "nameLocal": "বকখালি বাস টার্মিনাস",
+      "aliases": [
+        "Bakkhali",
+        "বকখালি বাস টার্মিনাস"
+      ],
+      "category": "bus_terminal",
+      "listingStatus": "LISTED_IN_OFFICIAL_DIRECTORY",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-TERM-037",
+      "district": "South 24 Parganas",
+      "name": "Diamond Harbour Bus Terminus",
+      "nameLocal": "ডায়মন্ড হারবার বাস টার্মিনাস",
+      "aliases": [
+        "Diamond Harbour",
+        "ডায়মন্ড হারবার বাস টার্মিনাস"
+      ],
+      "category": "bus_terminal",
+      "listingStatus": "LISTED_IN_OFFICIAL_DIRECTORY",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-TERM-038",
+      "district": "South 24 Parganas",
+      "name": "Kakdwip Lot 8 Bus Terminus",
+      "nameLocal": "কাকদ্বীপ লট ৮ বাস টার্মিনাস",
+      "aliases": [
+        "Kakdwip Lot 8",
+        "কাকদ্বীপ লট ৮ বাস টার্মিনাস"
+      ],
+      "category": "bus_terminal",
+      "listingStatus": "LISTED_IN_OFFICIAL_DIRECTORY",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-TERM-039",
+      "district": "South 24 Parganas",
+      "name": "Thakurpukur Bus Terminus",
+      "nameLocal": "ঠাকুরপুকুর বাস টার্মিনাস",
+      "aliases": [
+        "Thakurpukur",
+        "ঠাকুরপুকুর বাস টার্মিনাস"
+      ],
+      "category": "bus_terminal",
+      "listingStatus": "LISTED_IN_OFFICIAL_DIRECTORY",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-TERM-040",
+      "district": "South 24 Parganas",
+      "name": "Jadavpur 8B Bus Terminus",
+      "nameLocal": "যাদবপুর ৮বি বাস টার্মিনাস",
+      "aliases": [
+        "Jadavpur 8B",
+        "যাদবপুর ৮বি বাস টার্মিনাস"
+      ],
+      "category": "bus_terminal",
+      "listingStatus": "LISTED_IN_OFFICIAL_DIRECTORY",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-TERM-041",
+      "district": "South 24 Parganas",
+      "name": "Behala 14 No Bus Terminus",
+      "nameLocal": "বেহালা ১৪ নম্বর বাস টার্মিনাস",
+      "aliases": [
+        "Behala 14 No",
+        "বেহালা ১৪ নম্বর বাস টার্মিনাস"
+      ],
+      "category": "bus_terminal",
+      "listingStatus": "LISTED_IN_OFFICIAL_DIRECTORY",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-TERM-042",
+      "district": "South 24 Parganas",
+      "name": "Kachuberia Bus Terminus",
+      "nameLocal": "কচুবেড়িয়া বাস টার্মিনাস",
+      "aliases": [
+        "Kachuberia",
+        "কচুবেড়িয়া বাস টার্মিনাস"
+      ],
+      "category": "bus_terminal",
+      "listingStatus": "LISTED_IN_OFFICIAL_DIRECTORY",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-TERM-043",
+      "district": "South 24 Parganas",
+      "name": "Garia Bus Terminus",
+      "nameLocal": "গড়িয়া বাস টার্মিনাস",
+      "aliases": [
+        "Garia",
+        "গড়িয়া বাস টার্মিনাস"
+      ],
+      "category": "bus_terminal",
+      "listingStatus": "LISTED_IN_OFFICIAL_DIRECTORY",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-TERM-044",
+      "district": "South 24 Parganas",
+      "name": "Sarsuna Bus Terminus",
+      "nameLocal": "সরশুনা বাস টার্মিনাস",
+      "aliases": [
+        "Sarsuna",
+        "সরশুনা বাস টার্মিনাস"
+      ],
+      "category": "bus_terminal",
+      "listingStatus": "LISTED_IN_OFFICIAL_DIRECTORY",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-TERM-045",
+      "district": "South 24 Parganas",
+      "name": "Maheshtala Bus Terminus",
+      "nameLocal": "মহেশতলা বাস টার্মিনাস",
+      "aliases": [
+        "Maheshtala",
+        "মহেশতলা বাস টার্মিনাস"
+      ],
+      "category": "bus_terminal",
+      "listingStatus": "LISTED_IN_OFFICIAL_DIRECTORY",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-TERM-046",
+      "district": "Purba Medinipur",
+      "name": "Tamluk Bus Terminus",
+      "nameLocal": "তমলুক বাস টার্মিনাস",
+      "aliases": [
+        "Tamluk",
+        "তমলুক বাস টার্মিনাস"
+      ],
+      "category": "bus_terminal",
+      "listingStatus": "LISTED_IN_OFFICIAL_DIRECTORY",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-TERM-047",
+      "district": "Purba Medinipur",
+      "name": "Sankarpur Bus Terminus",
+      "nameLocal": "শংকরপুর বাস টার্মিনাস",
+      "aliases": [
+        "Sankarpur",
+        "শংকরপুর বাস টার্মিনাস"
+      ],
+      "category": "bus_terminal",
+      "listingStatus": "LISTED_IN_OFFICIAL_DIRECTORY",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-TERM-048",
+      "district": "Purba Medinipur",
+      "name": "Panskura Bus Terminus",
+      "nameLocal": "পাঁশকুড়া বাস টার্মিনাস",
+      "aliases": [
+        "Panskura",
+        "পাঁশকুড়া বাস টার্মিনাস"
+      ],
+      "category": "bus_terminal",
+      "listingStatus": "LISTED_IN_OFFICIAL_DIRECTORY",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-TERM-049",
+      "district": "Purba Medinipur",
+      "name": "Haldia Bus Terminus",
+      "nameLocal": "হলদিয়া বাস টার্মিনাস",
+      "aliases": [
+        "Haldia",
+        "হলদিয়া বাস টার্মিনাস"
+      ],
+      "category": "bus_terminal",
+      "listingStatus": "LISTED_IN_OFFICIAL_DIRECTORY",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-TERM-050",
+      "district": "Purba Medinipur",
+      "name": "Ramnagar Bus Terminus",
+      "nameLocal": "রামনগর বাস টার্মিনাস",
+      "aliases": [
+        "Ramnagar",
+        "রামনগর বাস টার্মিনাস"
+      ],
+      "category": "bus_terminal",
+      "listingStatus": "LISTED_IN_OFFICIAL_DIRECTORY",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-TERM-051",
+      "district": "Purba Medinipur",
+      "name": "Egra Bus Terminus",
+      "nameLocal": "এগরা বাস টার্মিনাস",
+      "aliases": [
+        "Egra",
+        "এগরা বাস টার্মিনাস"
+      ],
+      "category": "bus_terminal",
+      "listingStatus": "LISTED_IN_OFFICIAL_DIRECTORY",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-TERM-052",
+      "district": "Purba Medinipur",
+      "name": "Contai Bus Terminus",
+      "nameLocal": "কাঁথি বাস টার্মিনাস",
+      "aliases": [
+        "Contai",
+        "কাঁথি বাস টার্মিনাস"
+      ],
+      "category": "bus_terminal",
+      "listingStatus": "LISTED_IN_OFFICIAL_DIRECTORY",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-TERM-053",
+      "district": "Purba Medinipur",
+      "name": "Digha Bus Terminus",
+      "nameLocal": "দিঘা বাস টার্মিনাস",
+      "aliases": [
+        "Digha",
+        "দিঘা বাস টার্মিনাস"
+      ],
+      "category": "bus_terminal",
+      "listingStatus": "LISTED_IN_OFFICIAL_DIRECTORY",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-TERM-054",
+      "district": "Purba Medinipur",
+      "name": "Nandigram Bus Terminus",
+      "nameLocal": "নন্দীগ্রাম বাস টার্মিনাস",
+      "aliases": [
+        "Nandigram",
+        "নন্দীগ্রাম বাস টার্মিনাস"
+      ],
+      "category": "bus_terminal",
+      "listingStatus": "PROPOSED_IN_SOURCE",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-TERM-055",
+      "district": "Jhargram",
+      "name": "Jhargram Central Bus Terminus",
+      "nameLocal": "ঝাড়গ্রাম কেন্দ্রীয় বাস টার্মিনাস",
+      "aliases": [
+        "Jhargram Central",
+        "ঝাড়গ্রাম কেন্দ্রীয় বাস টার্মিনাস"
+      ],
+      "category": "bus_terminal",
+      "listingStatus": "LISTED_IN_OFFICIAL_DIRECTORY",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-TERM-056",
+      "district": "Paschim Medinipur",
+      "name": "Belda Bus Terminus",
+      "nameLocal": "বেলদা বাস টার্মিনাস",
+      "aliases": [
+        "Belda",
+        "বেলদা বাস টার্মিনাস"
+      ],
+      "category": "bus_terminal",
+      "listingStatus": "LISTED_IN_OFFICIAL_DIRECTORY",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-TERM-057",
+      "district": "Paschim Medinipur",
+      "name": "Khas Jungle Bus Terminus",
+      "nameLocal": "খাস জঙ্গল বাস টার্মিনাস",
+      "aliases": [
+        "Khas Jungle",
+        "খাস জঙ্গল বাস টার্মিনাস"
+      ],
+      "category": "bus_terminal",
+      "listingStatus": "LISTED_IN_OFFICIAL_DIRECTORY",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-TERM-058",
+      "district": "Paschim Medinipur",
+      "name": "Midnapore Central Bus Terminus",
+      "nameLocal": "মেদিনীপুর কেন্দ্রীয় বাস টার্মিনাস",
+      "aliases": [
+        "Midnapore Central",
+        "মেদিনীপুর কেন্দ্রীয় বাস টার্মিনাস"
+      ],
+      "category": "bus_terminal",
+      "listingStatus": "LISTED_IN_OFFICIAL_DIRECTORY",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-TERM-059",
+      "district": "Paschim Medinipur",
+      "name": "Ghatal Bus Terminus",
+      "nameLocal": "ঘাটাল বাস টার্মিনাস",
+      "aliases": [
+        "Ghatal",
+        "ঘাটাল বাস টার্মিনাস"
+      ],
+      "category": "bus_terminal",
+      "listingStatus": "LISTED_IN_OFFICIAL_DIRECTORY",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-TERM-060",
+      "district": "Paschim Medinipur",
+      "name": "Ramjibanpur Bus Terminus",
+      "nameLocal": "রামজীবনপুর বাস টার্মিনাস",
+      "aliases": [
+        "Ramjibanpur",
+        "রামজীবনপুর বাস টার্মিনাস"
+      ],
+      "category": "bus_terminal",
+      "listingStatus": "LISTED_IN_OFFICIAL_DIRECTORY",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-TERM-061",
+      "district": "Paschim Medinipur",
+      "name": "Kharar Bus Terminus",
+      "nameLocal": "খড়ার বাস টার্মিনাস",
+      "aliases": [
+        "Kharar",
+        "খড়ার বাস টার্মিনাস"
+      ],
+      "category": "bus_terminal",
+      "listingStatus": "LISTED_IN_OFFICIAL_DIRECTORY",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-TERM-062",
+      "district": "Paschim Medinipur",
+      "name": "Chandrakona Road Bus Terminus",
+      "nameLocal": "চন্দ্রকোনা রোড বাস টার্মিনাস",
+      "aliases": [
+        "Chandrakona Road",
+        "চন্দ্রকোনা রোড বাস টার্মিনাস"
+      ],
+      "category": "bus_terminal",
+      "listingStatus": "LISTED_IN_OFFICIAL_DIRECTORY",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-TERM-063",
+      "district": "Paschim Medinipur",
+      "name": "Chandrakona Town Bus Terminus",
+      "nameLocal": "চন্দ্রকোনা টাউন বাস টার্মিনাস",
+      "aliases": [
+        "Chandrakona Town",
+        "চন্দ্রকোনা টাউন বাস টার্মিনাস"
+      ],
+      "category": "bus_terminal",
+      "listingStatus": "LISTED_IN_OFFICIAL_DIRECTORY",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-TERM-064",
+      "district": "Paschim Medinipur",
+      "name": "Kharagpur Bus Terminus",
+      "nameLocal": "খড়গপুর বাস টার্মিনাস",
+      "aliases": [
+        "Kharagpur",
+        "খড়গপুর বাস টার্মিনাস"
+      ],
+      "category": "bus_terminal",
+      "listingStatus": "LISTED_IN_OFFICIAL_DIRECTORY",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-TERM-065",
+      "district": "Paschim Medinipur",
+      "name": "Lalgarh Bus Terminus",
+      "nameLocal": "লালগড় বাস টার্মিনাস",
+      "aliases": [
+        "Lalgarh",
+        "লালগড় বাস টার্মিনাস"
+      ],
+      "category": "bus_terminal",
+      "listingStatus": "LISTED_IN_OFFICIAL_DIRECTORY",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-TERM-066",
+      "district": "Paschim Medinipur",
+      "name": "Silda Bus Terminus",
+      "nameLocal": "শিলদা বাস টার্মিনাস",
+      "aliases": [
+        "Silda",
+        "শিলদা বাস টার্মিনাস"
+      ],
+      "category": "bus_terminal",
+      "listingStatus": "LISTED_IN_OFFICIAL_DIRECTORY",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    },
+    {
+      "id": "WB-TERM-067",
+      "district": "Paschim Medinipur",
+      "name": "Gopiballavpur Bus Terminus",
+      "nameLocal": "গোপীবল্লভপুর বাস টার্মিনাস",
+      "aliases": [
+        "Gopiballavpur",
+        "গোপীবল্লভপুর বাস টার্মিনাস"
+      ],
+      "category": "bus_terminal",
+      "listingStatus": "LISTED_IN_OFFICIAL_DIRECTORY",
+      "operationalStatus": "UNKNOWN",
+      "coordinates": null
+    }
+  ],
+  "sources": [
+    {
+      "id": "WB-TRANSPORT-DEPOTS-2017",
+      "publisher": "Transport Department, Government of West Bengal",
+      "title": "Bus Depots & Terminals",
+      "url": "https://transport.wb.gov.in/infrastructure/bus-depots-terminals/",
+      "lastUpdated": "2017-03-03",
+      "limitations": "Terminal listing states last updated 3 March 2017; historical reference only, not proof of current operation."
+    },
+    {
+      "id": "WBTIDCL-DEPOTS",
+      "publisher": "West Bengal Transport Infrastructure Development Corporation Limited",
+      "title": "Bus Depots & Terminals",
+      "url": "https://wbtidcl.com/services/bus-depots-terminals/",
+      "limitations": "Used as a cross-reference for STU depot listings; current service status and coordinates are not asserted."
+    },
+    {
+      "id": "WB-TRANSPORT-HOME",
+      "publisher": "Transport Department, Government of West Bengal",
+      "title": "Department overview",
+      "url": "https://transport.wb.gov.in/",
+      "limitations": "General operator service-area reference, not a route or timetable feed."
+    },
+    {
+      "id": "WBTC-ROUTES",
+      "publisher": "West Bengal Transport Corporation",
+      "title": "Official booking and route portal",
+      "url": "https://wbtconline.in/home",
+      "limitations": "Route/timetable records are not copied into this terminal/depot directory."
+    }
+  ],
+  "rules": {
+    "coordinates": "null until independently verified",
+    "schedules": "not included; never infer a timetable from a terminal listing",
+    "operationalStatus": "UNKNOWN until current official source or human verifier confirms operation",
+    "proposedTerminals": "must remain visibly marked PROPOSED_IN_SOURCE"
+  }
+}
