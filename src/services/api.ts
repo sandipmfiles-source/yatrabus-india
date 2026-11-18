@@ -77,7 +77,7 @@ export const api = {
     return data;
   },
 
-  async getNearbyStops(lat: number, lon: number, radius = 3000) {
+  async getNearbyStops(lat: number, lon: number, radius = 4000) {
     const res = await fetch(`${getApiBase()}/places/nearby?lat=${lat}&lon=${lon}&radius=${radius}`);
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.message || data.error || 'Nearby stops are unavailable.');
