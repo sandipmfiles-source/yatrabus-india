@@ -64,11 +64,10 @@ jobs:
           VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
         run: |
           if [ -z "$VITE_API_BASE_URL" ]; then
-            echo "::warning::VITE_API_BASE_URL is not configured. Native APK API calls will fail closed until an HTTPS backend URL is configured."
-          elif [[ "$VITE_API_BASE_URL" != https://* ]]; then
-            echo "::error::VITE_API_BASE_URL must use HTTPS for Android builds."
+            echo "::error::VITE_API_BASE_URL is missing. Configure the repository Actions variable with the verified HTTPS backend URL before building an Android APK."
             exit 1
           fi
+          node --input-type=module -e 'const value = process.env.VITE_API_BASE_URL; let parsed; try { parsed = new URL(value); } catch { console.error("::error::VITE_API_BASE_URL is not a valid URL."); process.exit(1); } if (parsed.protocol !== "https:" || !parsed.hostname) { console.error("::error::VITE_API_BASE_URL must be a valid HTTPS URL."); process.exit(1); } console.log("Using verified-format HTTPS API base URL:", parsed.origin);'
           npm run build
 
       - name: Run Automated Test Suites
