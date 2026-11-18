@@ -283,24 +283,107 @@ placesRouter.get('/search', publicSearchLimiter, async (req: Request, res: Respo
   });
 });
 
-// GET /api/places/nearby?lat=28.6675&lon=77.2285&radius=3000
-placesRouter.get('/nearby', (req: Request, res: Response) => {
-  const latStr = req.query.lat as string;
-  const lonStr = req.query.lon as string;
-  const radius = req.query.radius ? parseInt(req.query.radius as string, 10) : 3000;
+// GET /api/places/nearby?lat=22.467&lon=86.990&radius=4000
+// Combine the local verified catalogue with mapped individual bus stops and terminals.
+// The old implementation only queried the small in-memory catalogue and returned 10 rows,
+// which hid ordinary roadside stops and almost every mapped stop not in the seed data.
+const nearbyCache = new Map<string, { expiresAt: number; stops: any[]; source: string }>();
+const distanceBetweenMeters = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+  const toRad = (value: number) => value * Math.PI / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  return 6371000 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+};
 
-  if (!latStr || !lonStr) {
-    return res.status(400).json({ error: 'Missing coordinates: lat and lon required' });
+placesRouter.get('/nearby', publicSearchLimiter, async (req: Request, res: Response) => {
+  const lat = Number(req.query.lat);
+  const lon = Number(req.query.lon);
+  const radius = req.query.radius ? Number.parseInt(String(req.query.radius), 10) : 4000;
+  if (!Number.isFinite(lat) || !Number.isFinite(lon) || lat < 6 || lat > 38 || lon < 68 || lon > 98 ||
+      !Number.isFinite(radius) || radius < 100 || radius > 15000) {
+    return res.status(400).json({ error: 'INVALID_NEARBY_QUERY', message: 'Valid India coordinates and a radius between 100m and 15km are required.' });
   }
 
-  const lat = parseFloat(latStr);
-  const lon = parseFloat(lonStr);
-  if (!Number.isFinite(lat) || !Number.isFinite(lon) || !Number.isFinite(radius) || radius < 1 || radius > 50000) {
-    return res.status(400).json({ error: 'Invalid coordinates or radius' });
+  const cacheKey = lat.toFixed(3) + ',' + lon.toFixed(3) + ':' + radius;
+  const cached = nearbyCache.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) {
+    return res.json({ count: cached.stops.length, stops: cached.stops, source: cached.source, cache: 'HIT', radiusMeters: radius });
   }
 
-  const stops = repository.findNearbyStops(lat, lon, radius);
-  return res.json({ count: stops.length, stops });
+  const localStops = repository.findNearbyStops(lat, lon, radius).map(item => ({
+    place: item.place,
+    distanceMeters: item.distanceMeters,
+    source: item.place.sourceDataset || 'YATRIBUS_DIRECTORY',
+    stopKind: item.place.placeType,
+  }));
+
+  let mappedStops: any[] = [];
+  let source = 'YATRIBUS_DIRECTORY';
+  try {
+    const query = '[out:json][timeout:20];(' +
+      'nwr(around:' + radius + ',' + lat + ',' + lon + ')[highway=bus_stop];' +
+      'nwr(around:' + radius + ',' + lat + ',' + lon + ')[amenity=bus_station];' +
+      'nwr(around:' + radius + ',' + lat + ',' + lon + ')[public_transport=platform][bus=yes];' +
+      'nwr(around:' + radius + ',' + lat + ',' + lon + ')[public_transport=station][bus=yes];' +
+      ');out center tags;';
+    const response = await fetch('https://overpass-api.de/api/interpreter', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8', 'User-Agent': 'YatraBusIndia/1.0 (+https://github.com/sandipmfiles-source/yatrabus-india)' },
+      body: 'data=' + encodeURIComponent(query),
+      signal: AbortSignal.timeout(22000),
+    });
+    if (response.ok) {
+      const payload = await response.json() as any;
+      mappedStops = (Array.isArray(payload.elements) ? payload.elements : []).map((element: any) => {
+        const tags = element.tags || {};
+        const latitude = Number(element.lat ?? element.center?.lat);
+        const longitude = Number(element.lon ?? element.center?.lon);
+        if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
+        const distanceMeters = Math.round(distanceBetweenMeters(lat, lon, latitude, longitude));
+        if (distanceMeters > radius) return null;
+        const station = tags.amenity === 'bus_station' || tags.public_transport === 'station';
+        const name = String(tags.name || tags['name:en'] || tags['name:hi'] || tags['name:bn'] || (station ? 'Bus terminal' : 'Bus stop')).trim();
+        const place = {
+          id: 'osm-' + String(element.type) + '-' + String(element.id),
+          canonicalName: name,
+          names: { en: name, hi: tags['name:hi'], bn: tags['name:bn'] },
+          placeType: station ? 'BUS_TERMINAL' : 'BUS_STOP',
+          latitude,
+          longitude,
+          district: tags['addr:district'] || tags['addr:city'] || tags['addr:town'] || undefined,
+          state: tags['addr:state'] || undefined,
+          sourceDataset: 'OPENSTREETMAP',
+          sourceRecordId: String(element.type) + '/' + String(element.id),
+          sourceLicense: 'ODbL',
+          sourceUrl: 'https://www.openstreetmap.org/' + String(element.type) + '/' + String(element.id),
+          verificationStatus: 'UNVERIFIED',
+          aliases: [tags.operator, tags.network, tags.ref].filter(Boolean).map(String),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+        return { place, distanceMeters, source: 'OPENSTREETMAP', stopKind: place.placeType };
+      }).filter(Boolean);
+      source = 'YATRIBUS_DIRECTORY + OPENSTREETMAP';
+    }
+  } catch {
+    // Keep local results available when the public OpenStreetMap Overpass service is busy.
+  }
+
+  const merged = new Map<string, any>();
+  for (const item of [...localStops, ...mappedStops]) {
+    const place = item.place;
+    const normalizedName = String(place?.canonicalName || '').trim().toLocaleLowerCase('en-IN');
+    const key = place?.latitude !== undefined && place?.longitude !== undefined && normalizedName && normalizedName !== 'bus stop' && normalizedName !== 'bus terminal'
+      ? normalizedName + '|' + place.latitude.toFixed(4) + ',' + place.longitude.toFixed(4)
+      : String(place?.id || '');
+    if (key && !merged.has(key)) merged.set(key, item);
+  }
+  const stops = Array.from(merged.values())
+    .sort((a, b) => a.distanceMeters - b.distanceMeters);
+  if (nearbyCache.size > 300) nearbyCache.delete(nearbyCache.keys().next().value as string);
+  nearbyCache.set(cacheKey, { expiresAt: Date.now() + 5 * 60 * 1000, stops, source });
+  return res.json({ count: stops.length, stops, source, cache: 'MISS', radiusMeters: radius, attribution: '© OpenStreetMap contributors' });
 });
 
 // GET /api/places/:id

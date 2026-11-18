@@ -138,8 +138,9 @@ export class TransitRepository {
 
   public findNearbyStops(lat: number, lon: number, maxDistanceMeters: number = 3000): { place: Place; distanceMeters: number }[] {
     const matches: { place: Place; distanceMeters: number }[] = [];
+    const transitTypes = new Set(['BUS_STATION', 'BUS_TERMINAL', 'BUS_STOP', 'TRANSIT_HUB']);
     for (const p of this.places.values()) {
-      if (p.latitude !== undefined && p.longitude !== undefined) {
+      if (transitTypes.has(p.placeType) && p.latitude !== undefined && p.longitude !== undefined) {
         const dist = haversineDistanceMeters(lat, lon, p.latitude, p.longitude);
         if (dist <= maxDistanceMeters) {
           matches.push({ place: p, distanceMeters: Math.round(dist) });
@@ -147,7 +148,7 @@ export class TransitRepository {
       }
     }
     matches.sort((a, b) => a.distanceMeters - b.distanceMeters);
-    return matches.slice(0, 10);
+    return matches;
   }
 
   public getPlaceById(id: string): Place | undefined {

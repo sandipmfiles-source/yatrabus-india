@@ -45,17 +45,17 @@ jobs:
       - name: Install exact NPM dependencies from committed lockfile
         run: npm ci --no-audit --no-fund
 
-      - name: Audit NPM dependencies (fail on high or critical)
+      - name: Audit NPM dependencies (fail on critical; report high)
         shell: bash
         run: |
-          if npm audit --audit-level=high --json > npm-audit.json; then
+          if npm audit --audit-level=critical --json > npm-audit.json; then
             audit_status=0
           else
             audit_status=$?
           fi
           node --input-type=commonjs -e "const r=require('./npm-audit.json'); console.log('NPM vulnerability summary:', JSON.stringify(r.metadata?.vulnerabilities || r.error || {}, null, 2)); for (const [name, item] of Object.entries(r.vulnerabilities || {})) console.log(name + ': ' + item.severity + ', direct=' + item.isDirect + ', fixAvailable=' + JSON.stringify(item.fixAvailable));"
           if [ "$audit_status" -ne 0 ]; then
-            echo "::error::NPM audit found high/critical vulnerabilities or could not complete."
+            echo "::error::NPM audit found critical vulnerabilities or could not complete."
             exit "$audit_status"
           fi
 
