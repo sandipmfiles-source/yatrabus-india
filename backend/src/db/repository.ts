@@ -147,7 +147,7 @@ export class TransitRepository {
       }
     }
     matches.sort((a, b) => a.distanceMeters - b.distanceMeters);
-    return matches.slice(0, 10);
+    return matches;
   }
 
   public getPlaceById(id: string): Place | undefined {
