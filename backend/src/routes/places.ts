@@ -326,7 +326,6 @@ placesRouter.get('/nearby', publicSearchLimiter, async (req: Request, res: Respo
       'nwr(around:' + radius + ',' + lat + ',' + lon + ')[amenity=bus_station];' +
       'nwr(around:' + radius + ',' + lat + ',' + lon + ')[public_transport=platform][bus=yes];' +
       'nwr(around:' + radius + ',' + lat + ',' + lon + ')[public_transport=station][bus=yes];' +
-      'nwr(around:' + radius + ',' + lat + ',' + lon + ')[bus=yes][name];' +
       ');out center tags;';
     const response = await fetch('https://overpass-api.de/api/interpreter', {
       method: 'POST',
