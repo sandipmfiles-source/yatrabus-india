@@ -373,14 +373,14 @@ placesRouter.get('/nearby', publicSearchLimiter, async (req: Request, res: Respo
   const merged = new Map<string, any>();
   for (const item of [...localStops, ...mappedStops]) {
     const place = item.place;
-    const key = place?.latitude !== undefined && place?.longitude !== undefined
-      ? place.latitude.toFixed(5) + ',' + place.longitude.toFixed(5)
+    const normalizedName = String(place?.canonicalName || '').trim().toLocaleLowerCase('en-IN');
+    const key = place?.latitude !== undefined && place?.longitude !== undefined && normalizedName && normalizedName !== 'bus stop' && normalizedName !== 'bus terminal'
+      ? normalizedName + '|' + place.latitude.toFixed(4) + ',' + place.longitude.toFixed(4)
       : String(place?.id || '');
     if (key && !merged.has(key)) merged.set(key, item);
   }
   const stops = Array.from(merged.values())
-    .sort((a, b) => a.distanceMeters - b.distanceMeters)
-    .slice(0, 200);
+    .sort((a, b) => a.distanceMeters - b.distanceMeters);
   if (nearbyCache.size > 300) nearbyCache.delete(nearbyCache.keys().next().value as string);
   nearbyCache.set(cacheKey, { expiresAt: Date.now() + 5 * 60 * 1000, stops, source });
   return res.json({ count: stops.length, stops, source, cache: 'MISS', radiusMeters: radius, attribution: '© OpenStreetMap contributors' });
