@@ -20,7 +20,7 @@ export const HomePage: React.FC = () => {
   const [isToFocused, setIsToFocused] = useState(false);
   const [recentSearches, setRecentSearches] = useState<RecentSearchItem[]>([]);
   const [nearbyStops, setNearbyStops] = useState<{ place: any; distanceMeters: number }[]>([]);
-  const [isLocating, setIsLocating] = useState(false);
+  const [isLocating, setIsLocating] = useState(false);\n  const [nearbyOrigin, setNearbyOrigin] = useState<{ latitude: number; longitude: number } | null>(null);\n  const [selectedNearbyStop, setSelectedNearbyStop] = useState<{ place: any; distanceMeters: number } | null>(null);
 
   useEffect(() => {
     setRecentSearches(storage.getRecentSearches());
@@ -310,7 +310,7 @@ export const HomePage: React.FC = () => {
             {nearbyStops.map(item => (
               <div
                 key={item.place.id}
-                onClick={() => setFromQuery(item.place.canonicalName)}
+                onClick={() => setSelectedNearbyStop(item)}
                 className="p-2.5 rounded-xl bg-yatriwarm-50 hover:bg-yatribrand-50 cursor-pointer border border-yatriwarm-200/80 transition-colors flex items-center justify-between"
               >
                 <div>
@@ -326,7 +326,35 @@ export const HomePage: React.FC = () => {
         )}
       </div>
 
-      {/* Popular Corridors */}
+
+      {selectedNearbyStop && nearbyOrigin && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-3" role="dialog" aria-modal="true" aria-label="Nearby bus stop map">
+          <div className="w-full max-w-xl overflow-hidden rounded-2xl bg-white shadow-2xl">
+            <div className="flex items-start justify-between gap-3 border-b border-yatriwarm-200 p-4">
+              <div>
+                <h3 className="text-base font-bold text-yatriwarm-900">{selectedNearbyStop.place.canonicalName}</h3>
+                <p className="text-xs text-yatriwarm-500">{Math.round(selectedNearbyStop.distanceMeters)} m away · {selectedNearbyStop.place.placeType === 'BUS_TERMINAL' ? 'Bus terminal' : 'Bus stop'}</p>
+              </div>
+              <button type="button" onClick={() => setSelectedNearbyStop(null)} className="rounded-lg px-3 py-1.5 text-sm font-semibold text-yatriwarm-700 hover:bg-yatriwarm-100" aria-label="Close map">✕</button>
+            </div>
+            <iframe
+              title="Directions to selected bus stop"
+              className="h-64 w-full border-0"
+              loading="lazy"
+              src={`https://www.openstreetmap.org/directions?engine=fossgis_osrm_car&route=${nearbyOrigin.latitude}%2C${nearbyOrigin.longitude}%3B${selectedNearbyStop.place.latitude}%2C${selectedNearbyStop.place.longitude}`}
+            />
+            <div className="flex flex-wrap items-center justify-between gap-2 p-4">
+              <button type="button" onClick={() => { setFromQuery(selectedNearbyStop.place.canonicalName); setSelectedNearbyStop(null); }} className="rounded-xl border border-yatriwarm-300 px-4 py-2 text-xs font-bold text-yatriwarm-800">Use as starting point</button>
+              <a
+                href={`https://www.openstreetmap.org/directions?engine=fossgis_osrm_car&route=${nearbyOrigin.latitude}%2C${nearbyOrigin.longitude}%3B${selectedNearbyStop.place.latitude}%2C${selectedNearbyStop.place.longitude}`}
+                target="_blank" rel="noreferrer"
+                className="rounded-xl bg-yatribrand-900 px-4 py-2 text-xs font-bold text-white"
+              >Get directions</a>
+            </div>
+          </div>
+        </div>
+      )}
+\n      {/* Popular Corridors */}
       <div className="space-y-3">
         <h3 className="text-xs font-bold text-yatriwarm-700 uppercase tracking-wider">
           {t('popular_routes')}
