@@ -97,9 +97,17 @@ export const HomePage: React.FC = () => {
     setIsLocating(true);
     navigator.geolocation.getCurrentPosition(
       async pos => {
-        const stops = await api.getNearbyStops(pos.coords.latitude, pos.coords.longitude, 4000);
-        setNearbyStops(stops);
-        setIsLocating(false);
+        try {
+          const stops = await api.getNearbyStops(pos.coords.latitude, pos.coords.longitude, 4000);
+          setNearbyOrigin({ latitude: pos.coords.latitude, longitude: pos.coords.longitude });
+          setNearbyStops(stops);
+          if (stops.length === 0) alert('No mapped bus stops were found within 4 km. Please try again later.');
+        } catch (error) {
+          setNearbyStops([]);
+          alert(error instanceof Error ? error.message : t('location_error_nearby'));
+        } finally {
+          setIsLocating(false);
+        }
       },
       err => {
         // Respectful error handling without guilt
