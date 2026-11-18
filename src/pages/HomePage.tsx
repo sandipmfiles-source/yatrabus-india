@@ -351,7 +351,7 @@ export const HomePage: React.FC = () => {
               title="Directions to selected bus stop"
               className="h-64 w-full border-0"
               loading="lazy"
-              src={`https://www.openstreetmap.org/directions?engine=fossgis_osrm_car&route=${nearbyOrigin.latitude}%2C${nearbyOrigin.longitude}%3B${selectedNearbyStop.place.latitude}%2C${selectedNearbyStop.place.longitude}`}
+              src={`https://www.openstreetmap.org/export/embed.html?bbox=${selectedNearbyStop.place.longitude - 0.01}%2C${selectedNearbyStop.place.latitude - 0.01}%2C${selectedNearbyStop.place.longitude + 0.01}%2C${selectedNearbyStop.place.latitude + 0.01}&layer=mapnik&marker=${selectedNearbyStop.place.latitude}%2C${selectedNearbyStop.place.longitude}`}
             />
             <div className="flex flex-wrap items-center justify-between gap-2 p-4">
               <button type="button" onClick={() => { setFromQuery(selectedNearbyStop.place.canonicalName); setSelectedNearbyStop(null); }} className="rounded-xl border border-yatriwarm-300 px-4 py-2 text-xs font-bold text-yatriwarm-800">Use as starting point</button>
@@ -364,7 +364,8 @@ export const HomePage: React.FC = () => {
           </div>
         </div>
       )}
-\n      {/* Popular Corridors */}
+
+      {/* Popular Corridors */}
       <div className="space-y-3">
         <h3 className="text-xs font-bold text-yatriwarm-700 uppercase tracking-wider">
           {t('popular_routes')}
