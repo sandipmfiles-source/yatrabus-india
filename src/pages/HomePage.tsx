@@ -20,7 +20,9 @@ export const HomePage: React.FC = () => {
   const [isToFocused, setIsToFocused] = useState(false);
   const [recentSearches, setRecentSearches] = useState<RecentSearchItem[]>([]);
   const [nearbyStops, setNearbyStops] = useState<{ place: any; distanceMeters: number }[]>([]);
-  const [isLocating, setIsLocating] = useState(false);\n  const [nearbyOrigin, setNearbyOrigin] = useState<{ latitude: number; longitude: number } | null>(null);\n  const [selectedNearbyStop, setSelectedNearbyStop] = useState<{ place: any; distanceMeters: number } | null>(null);
+  const [isLocating, setIsLocating] = useState(false);
+  const [nearbyOrigin, setNearbyOrigin] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [selectedNearbyStop, setSelectedNearbyStop] = useState<{ place: any; distanceMeters: number } | null>(null);
 
   useEffect(() => {
     setRecentSearches(storage.getRecentSearches());
