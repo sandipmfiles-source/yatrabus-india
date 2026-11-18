@@ -356,7 +356,7 @@ export const HomePage: React.FC = () => {
             <div className="flex flex-wrap items-center justify-between gap-2 p-4">
               <button type="button" onClick={() => { setFromQuery(selectedNearbyStop.place.canonicalName); setSelectedNearbyStop(null); }} className="rounded-xl border border-yatriwarm-300 px-4 py-2 text-xs font-bold text-yatriwarm-800">Use as starting point</button>
               <a
-                href={`https://www.openstreetmap.org/directions?engine=fossgis_osrm_car&route=${nearbyOrigin.latitude}%2C${nearbyOrigin.longitude}%3B${selectedNearbyStop.place.latitude}%2C${selectedNearbyStop.place.longitude}`}
+                href={`https://www.google.com/maps/dir/?api=1&origin=${nearbyOrigin.latitude}%2C${nearbyOrigin.longitude}&destination=${selectedNearbyStop.place.latitude}%2C${selectedNearbyStop.place.longitude}&travelmode=driving`}
                 target="_blank" rel="noreferrer"
                 className="rounded-xl bg-yatribrand-900 px-4 py-2 text-xs font-bold text-white"
               >Get directions</a>
